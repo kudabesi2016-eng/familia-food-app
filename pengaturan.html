@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pengaturan - Familia Food</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f5f7f6;
+    color:#333;
+}
+
+.sidebar{
+    width:230px;
+    height:100vh;
+    position:fixed;
+    background:#146b3a;
+    color:white;
+    padding:20px;
+    box-sizing:border-box;
+}
+
+.logo{
+    font-size:20px;
+    font-weight:bold;
+    margin-bottom:30px;
+}
+
+.menu{
+    display:block;
+    color:white;
+    text-decoration:none;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:5px;
+}
+
+.menu:hover{
+    background:#1d8249;
+}
+
+.main{
+    margin-left:230px;
+    padding:30px;
+}
+
+.card{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    max-width:700px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+h1{
+    color:#146b3a;
+}
+
+label{
+    display:block;
+    margin-top:18px;
+    margin-bottom:6px;
+    font-weight:bold;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    box-sizing:border-box;
+    border:1px solid #ccc;
+    border-radius:8px;
+}
+
+button{
+    margin-top:25px;
+    padding:12px 20px;
+    border:0;
+    border-radius:8px;
+    background:#146b3a;
+    color:white;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#0f572f;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<div class="logo">🍀 Familia Food</div>
+
+<a class="menu" href="dashboard.html">Dashboard</a>
+<a class="menu" href="produk.html">Produk</a>
+<a class="menu" href="bahan-baku.html">Bahan Baku</a>
+<a class="menu" href="resep.html">Resep</a>
+<a class="menu" href="hpp.html">HPP</a>
+<a class="menu" href="penjualan.html">Penjualan</a>
+<a class="menu" href="rekap.html">Rekap</a>
+<a class="menu" href="data-lama.html">Data Lama</a>
+<a class="menu" href="pengaturan.html">Pengaturan</a>
+
+</div>
+
+<div class="main">
+
+<h1>Pengaturan</h1>
+
+<div class="card">
+
+<label>Nama Usaha</label>
+<input type="text" value="Familia Food">
+
+<label>Logo</label>
+<input type="text" placeholder="Masukkan URL logo">
+
+<label>Warna Aplikasi</label>
+<input type="text" value="#146b3a">
+
+<label>Admin</label>
+<input type="text" placeholder="Nama admin">
+
+<button>Simpan Pengaturan</button>
+
+</div>
+
+</div>
+
+</body>
+</html>
