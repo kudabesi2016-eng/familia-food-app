@@ -1,26 +1,320 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-<title>Familia Food App</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Familia Food</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f5f7f6;
+    color:#333;
+}
+
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    width:240px;
+    height:100vh;
+    background:#146b3a;
+    color:white;
+    padding:22px 15px;
+}
+
+.logo{
+    font-size:22px;
+    font-weight:bold;
+    padding:10px;
+    margin-bottom:25px;
+}
+
+.menu{
+    display:block;
+    color:white;
+    text-decoration:none;
+    padding:13px 15px;
+    margin:4px 0;
+    border-radius:9px;
+}
+
+.menu:hover,
+.menu.active{
+    background:#1f844b;
+}
+
+.main{
+    margin-left:240px;
+    padding:30px;
+}
+
+.header{
+    margin-bottom:25px;
+}
+
+.header h1{
+    margin:0 0 8px;
+    color:#146b3a;
+}
+
+.header p{
+    margin:0;
+    color:#777;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+}
+
+.card{
+    background:white;
+    padding:22px;
+    border-radius:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+
+.card-title{
+    color:#777;
+    font-size:14px;
+}
+
+.card-number{
+    font-size:30px;
+    font-weight:bold;
+    color:#146b3a;
+    margin-top:10px;
+}
+
+.section{
+    margin-top:25px;
+}
+
+.section h2{
+    color:#146b3a;
+}
+
+.quick{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+
+.quick a{
+    text-decoration:none;
+    background:white;
+    color:#146b3a;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,.07);
+    font-weight:bold;
+}
+
+.quick a:hover{
+    background:#eaf5ee;
+}
+
+.status{
+    margin-top:25px;
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    color:#666;
+}
+
+@media(max-width:800px){
+
+    .sidebar{
+        width:100%;
+        height:auto;
+        position:relative;
+    }
+
+    .main{
+        margin-left:0;
+        padding:20px;
+    }
+
+    .cards{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .quick{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:500px){
+
+    .cards{
+        grid-template-columns:1fr;
+    }
+}
+</style>
 </head>
 
 <body>
 
-<h1>FAMILIA FOOD</h1>
+<div class="sidebar">
 
-<p>Aplikasi Pencatatan Usaha</p>
+    <div class="logo">🍀 Familia Food</div>
 
-<ul>
-<li>Dashboard</li>
-<li>Produk</li>
-<li>Bahan Baku</li>
-<li>Resep</li>
-<li>HPP</li>
-<li>Penjualan</li>
-<li>Rekap</li>
-<li>Data Lama</li>
-<li>Pengaturan</li>
-</ul>
+    <a class="menu active" href="index.html">🏠 Dashboard</a>
+    <a class="menu" href="produk.html">📦 Produk</a>
+    <a class="menu" href="bahan-baku.html">🥣 Bahan Baku</a>
+    <a class="menu" href="resep.html">📋 Resep</a>
+    <a class="menu" href="hpp.html">💰 HPP</a>
+    <a class="menu" href="penjualan.html">🛒 Penjualan</a>
+    <a class="menu" href="rekap.html">📊 Rekap</a>
+    <a class="menu" href="data-lama.html">📁 Data Lama</a>
+    <a class="menu" href="pengaturan.html">⚙️ Pengaturan</a>
+
+</div>
+
+
+<div class="main">
+
+    <div class="header">
+
+        <h1>Dashboard</h1>
+
+        <p>
+            Selamat datang di aplikasi pencatatan usaha
+            <b>Familia Food</b>.
+        </p>
+
+    </div>
+
+
+    <div class="cards">
+
+        <div class="card">
+            <div class="card-title">Total Produk</div>
+            <div class="card-number" id="totalProduk">-</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Bahan Baku</div>
+            <div class="card-number" id="totalBahan">-</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Resep</div>
+            <div class="card-number" id="totalResep">-</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Penjualan</div>
+            <div class="card-number" id="totalPenjualan">-</div>
+        </div>
+
+    </div>
+
+
+    <div class="section">
+
+        <h2>Akses Cepat</h2>
+
+        <div class="quick">
+
+            <a href="produk.html">
+                📦 Kelola Produk
+            </a>
+
+            <a href="bahan-baku.html">
+                🥣 Kelola Bahan Baku
+            </a>
+
+            <a href="penjualan.html">
+                🛒 Catat Penjualan
+            </a>
+
+            <a href="hpp.html">
+                💰 Hitung HPP
+            </a>
+
+            <a href="rekap.html">
+                📊 Lihat Rekap
+            </a>
+
+            <a href="data-lama.html">
+                📁 Data Lama
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="status">
+
+        <b>Status Aplikasi</b>
+
+        <p>
+            Dashboard Familia Food sudah terhubung
+            dengan database Supabase.
+        </p>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
+
+<script>
+
+async function hitungData(){
+
+    try{
+
+        const produk = await supabaseClient
+            .from("produk")
+            .select("*",{count:"exact",head:true});
+
+        const bahan = await supabaseClient
+            .from("bahan_baku")
+            .select("*",{count:"exact",head:true});
+
+        const resep = await supabaseClient
+            .from("resep")
+            .select("*",{count:"exact",head:true});
+
+        const penjualan = await supabaseClient
+            .from("penjualan")
+            .select("*",{count:"exact",head:true});
+
+
+        document.getElementById("totalProduk").textContent =
+            produk.count ?? 0;
+
+        document.getElementById("totalBahan").textContent =
+            bahan.count ?? 0;
+
+        document.getElementById("totalResep").textContent =
+            resep.count ?? 0;
+
+        document.getElementById("totalPenjualan").textContent =
+            penjualan.count ?? 0;
+
+    }catch(error){
+
+        console.error(error);
+
+    }
+
+}
+
+hitungData();
+
+</script>
 
 </body>
 </html>
