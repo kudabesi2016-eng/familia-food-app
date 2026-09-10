@@ -1,280 +1,925 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produk - Familia Food</title>
 
-    <title>Produk - Familia Food</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f5f7f6;
-            color: #333;
-        }
+    body {
+      background: #f4f7f5;
+      color: #1f2937;
+    }
 
-        .sidebar {
-            width: 230px;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            background: #146b3a;
-            color: white;
-            padding: 20px;
-        }
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 240px;
+      height: 100vh;
+      background: #126b3a;
+      color: white;
+      padding: 25px 15px;
+    }
 
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
+    .brand {
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 30px;
+    }
 
-        .menu {
-            display: block;
-            color: white;
-            text-decoration: none;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 5px;
-        }
+    .menu a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 12px 15px;
+      margin-bottom: 6px;
+      border-radius: 8px;
+    }
 
-        .menu:hover,
-        .menu.active {
-            background: #1d8249;
-        }
+    .menu a:hover,
+    .menu a.active {
+      background: #0d542d;
+    }
 
-        .main {
-            margin-left: 230px;
-            padding: 30px;
-        }
+    .main {
+      margin-left: 240px;
+      padding: 30px;
+    }
 
-        h1 {
-            color: #146b3a;
-            margin-top: 0;
-        }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      gap: 15px;
+    }
 
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            overflow-x: auto;
-        }
+    .header h1 {
+      color: #126b3a;
+      font-size: 28px;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+    .header p {
+      margin-top: 5px;
+      color: #6b7280;
+    }
 
-        th,
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
+    .btn {
+      border: none;
+      background: #126b3a;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
 
-        th {
-            background: #146b3a;
-            color: white;
-        }
+    .btn:hover {
+      background: #0d542d;
+    }
 
-        .status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #e1f3e8;
-            color: #146b3a;
-        }
+    .btn-secondary {
+      background: #6b7280;
+    }
 
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
+    .btn-danger {
+      background: #dc2626;
+    }
 
-        .error {
-            padding: 15px;
-            background: #ffe5e5;
-            color: #a00000;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      margin-bottom: 25px;
+    }
 
-        @media (max-width: 700px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-            }
+    .card h2 {
+      margin-bottom: 18px;
+      color: #126b3a;
+      font-size: 20px;
+    }
 
-            .main {
-                margin-left: 0;
-                padding: 15px;
-            }
-        }
-    </style>
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #d1d5db;
+      border-radius: 7px;
+      font-size: 14px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: #126b3a;
+    }
+
+    .form-actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 850px;
+    }
+
+    th,
+    td {
+      padding: 13px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f0f7f3;
+      color: #126b3a;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .status-aktif {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-nonaktif {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .action-buttons button {
+      border: none;
+      padding: 7px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      font-size: 12px;
+    }
+
+    .edit-btn {
+      background: #2563eb;
+    }
+
+    .delete-btn {
+      background: #dc2626;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 30px;
+      color: #6b7280;
+    }
+
+    .info {
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      font-size: 14px;
+    }
+
+    .error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      display: none;
+    }
+
+    @media (max-width: 800px) {
+      .sidebar {
+        width: 190px;
+      }
+
+      .main {
+        margin-left: 190px;
+        padding: 20px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+      }
+
+      .main {
+        margin-left: 0;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-    <div class="sidebar">
+  <aside class="sidebar">
+    <div class="brand">Familia Food</div>
 
-        <div class="logo">🍀 Familia Food</div>
+    <nav class="menu">
+      <a href="index.html">Dashboard</a>
+      <a href="produk.html" class="active">Produk</a>
+      <a href="bahan-baku.html">Bahan Baku</a>
+      <a href="resep.html">Resep</a>
+      <a href="hpp.html">HPP</a>
+      <a href="penjualan.html">Penjualan</a>
+      <a href="rekap.html">Rekap</a>
+      <a href="data-lama.html">Data Lama</a>
+      <a href="pengaturan.html">Pengaturan</a>
+    </nav>
+  </aside>
 
-        <a class="menu" href="dashboard.html">Dashboard</a>
-        <a class="menu active" href="produk.html">Produk</a>
-        <a class="menu" href="bahan-baku.html">Bahan Baku</a>
-        <a class="menu" href="resep.html">Resep</a>
-        <a class="menu" href="hpp.html">HPP</a>
-        <a class="menu" href="penjualan.html">Penjualan</a>
-        <a class="menu" href="rekap.html">Rekap</a>
-        <a class="menu" href="data-lama.html">Data Lama</a>
-        <a class="menu" href="pengaturan.html">Pengaturan</a>
+  <main class="main">
 
+    <div class="header">
+      <div>
+        <h1>Produk</h1>
+        <p>Kelola produk dan harga jual Familia Food</p>
+      </div>
+
+      <button class="btn" onclick="tampilkanForm()">
+        + Tambah Produk
+      </button>
     </div>
 
+    <div id="errorBox" class="error"></div>
 
-    <div class="main">
+    <div id="formCard" class="card" style="display:none;">
 
-        <h1>Produk</h1>
+      <h2 id="formTitle">Tambah Produk</h2>
 
-        <div id="pesan"></div>
+      <div class="info">
+        HPP offline untuk 5 produk utama sudah disiapkan sesuai data yang kita tetapkan.
+        Harga jual offline silakan diisi sesuai harga jual Familia Food.
+      </div>
 
-        <div class="card">
+      <form id="produkForm">
 
-            <table>
+        <div class="form-grid">
 
-                <thead>
-                    <tr>
-                        <th>Nama Produk</th>
-                        <th>Satuan</th>
-                        <th>Harga Offline</th>
-                        <th>Harga Online</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
+          <div class="form-group">
+            <label>Nama Produk</label>
+            <input
+              type="text"
+              id="nama_produk"
+              placeholder="Contoh: Naget isi 10"
+              required
+            >
+          </div>
 
-                <tbody id="daftarProduk">
+          <div class="form-group">
+            <label>Satuan</label>
+            <select id="satuan" required>
+              <option value="bungkus">Bungkus</option>
+              <option value="pcs">Pcs</option>
+            </select>
+          </div>
 
-                    <tr>
-                        <td colspan="5" class="loading">
-                            Memuat data produk...
-                        </td>
-                    </tr>
+          <div class="form-group">
+            <label>HPP Offline</label>
+            <input
+              type="number"
+              id="hpp_offline"
+              placeholder="Contoh: 3100"
+              min="0"
+            >
+          </div>
 
-                </tbody>
+          <div class="form-group">
+            <label>Harga Jual Offline</label>
+            <input
+              type="number"
+              id="harga_offline"
+              placeholder="Masukkan harga jual"
+              min="0"
+            >
+          </div>
 
-            </table>
+          <div class="form-group">
+            <label>HPP Online</label>
+            <input
+              type="number"
+              id="hpp_online"
+              placeholder="Belum diisi"
+              min="0"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Harga Jual Online</label>
+            <input
+              type="number"
+              id="harga_online"
+              placeholder="Belum diisi"
+              min="0"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <select id="status">
+              <option value="aktif">Aktif</option>
+              <option value="nonaktif">Nonaktif</option>
+            </select>
+          </div>
 
         </div>
 
+        <div class="form-actions">
+          <button type="submit" class="btn">
+            Simpan Produk
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="tutupForm()"
+          >
+            Batal
+          </button>
+        </div>
+
+      </form>
     </div>
 
+    <div class="card">
 
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <h2>Daftar Produk</h2>
 
-    <!-- Koneksi Supabase Familia Food -->
-    <script src="supabase.js"></script>
+      <div class="table-container">
 
+        <table>
+          <thead>
+            <tr>
+              <th>Nama Produk</th>
+              <th>Satuan</th>
+              <th>HPP Offline</th>
+              <th>Harga Offline</th>
+              <th>HPP Online</th>
+              <th>Harga Online</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
 
-    <script>
+          <tbody id="produkTable">
+            <tr>
+              <td colspan="8" class="empty">
+                Memuat data...
+              </td>
+            </tr>
+          </tbody>
 
-        async function tampilkanProduk() {
+        </table>
 
-            const tabel = document.getElementById("daftarProduk");
-            const pesan = document.getElementById("pesan");
+      </div>
+    </div>
 
-            const { data, error } = await supabaseClient
-                .from("produk")
-                .select("*")
-                .order("id", { ascending: true });
+  </main>
 
+  <script>
 
-            if (error) {
+    let produkEditId = null;
 
-                console.error(error);
+    const hppOfflineDefault = {
+      "Naget isi 10": 3100,
+      "Naget isi 12": 3720,
+      "Cireng isi": 2900,
+      "Cireng biasa": 2700,
+      "Cibay": 3000
+    };
 
-                tabel.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="loading">
-                            Gagal mengambil data produk.
-                        </td>
-                    </tr>
-                `;
+    function formatRupiah(angka) {
+      if (
+        angka === null ||
+        angka === undefined ||
+        angka === "" ||
+        isNaN(angka)
+      ) {
+        return "-";
+      }
 
-                pesan.innerHTML = `
-                    <div class="error">
-                        Gagal terhubung ke database:<br>
-                        ${error.message}
-                    </div>
-                `;
+      return "Rp " + Number(angka).toLocaleString("id-ID");
+    }
 
-                return;
-            }
+    function tampilkanForm() {
+      document.getElementById("formCard").style.display = "block";
+      document.getElementById("formTitle").textContent = "Tambah Produk";
 
+      produkEditId = null;
 
-            if (!data || data.length === 0) {
+      document.getElementById("produkForm").reset();
 
-                tabel.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="loading">
-                            Belum ada data produk.
-                        </td>
-                    </tr>
-                `;
+      document.getElementById("satuan").value = "bungkus";
+      document.getElementById("status").value = "aktif";
 
-                return;
-            }
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
 
+    function tutupForm() {
+      document.getElementById("formCard").style.display = "none";
+      produkEditId = null;
+      document.getElementById("produkForm").reset();
+    }
 
-            tabel.innerHTML = "";
+    function tampilkanError(pesan) {
+      const box = document.getElementById("errorBox");
 
+      box.textContent = pesan;
+      box.style.display = "block";
+    }
 
-            data.forEach(function(produk) {
+    function sembunyikanError() {
+      document.getElementById("errorBox").style.display = "none";
+    }
 
-                const baris = document.createElement("tr");
+    async function loadProduk() {
 
-                baris.innerHTML = `
-                    <td>${produk.nama_produk || ""}</td>
+      sembunyikanError();
 
-                    <td>${produk.satuan || ""}</td>
+      const table = document.getElementById("produkTable");
 
-                    <td>
-                        Rp ${Number(
-                            produk.harga_offline || 0
-                        ).toLocaleString("id-ID")}
-                    </td>
+      table.innerHTML = `
+        <tr>
+          <td colspan="8" class="empty">
+            Memuat data...
+          </td>
+        </tr>
+      `;
 
-                    <td>
-                        Rp ${Number(
-                            produk.harga_online || 0
-                        ).toLocaleString("id-ID")}
-                    </td>
+      const { data, error } = await supabaseClient
+        .from("produk")
+        .select("*")
+        .order("id", { ascending: true });
 
-                    <td>
-                        <span class="status">
-                            ${produk.status || "Aktif"}
-                        </span>
-                    </td>
-                `;
+      if (error) {
 
-                tabel.appendChild(baris);
+        console.error(error);
 
-            });
+        tampilkanError(
+          "Gagal mengambil data produk: " + error.message
+        );
 
+        table.innerHTML = `
+          <tr>
+            <td colspan="8" class="empty">
+              Gagal memuat data.
+            </td>
+          </tr>
+        `;
+
+        return;
+      }
+
+      if (!data || data.length === 0) {
+
+        table.innerHTML = `
+          <tr>
+            <td colspan="8" class="empty">
+              Belum ada data produk.
+            </td>
+          </tr>
+        `;
+
+        return;
+      }
+
+      table.innerHTML = "";
+
+      data.forEach(produk => {
+
+        const tr = document.createElement("tr");
+
+        const statusClass =
+          produk.status === "aktif"
+            ? "status-aktif"
+            : "status-nonaktif";
+
+        const statusText =
+          produk.status === "aktif"
+            ? "Aktif"
+            : "Nonaktif";
+
+        tr.innerHTML = `
+          <td>${produk.nama_produk || "-"}</td>
+
+          <td>${produk.satuan || "-"}</td>
+
+          <td>${formatRupiah(produk.hpp_offline)}</td>
+
+          <td>${formatRupiah(produk.harga_offline)}</td>
+
+          <td>${formatRupiah(produk.hpp_online)}</td>
+
+          <td>${formatRupiah(produk.harga_online)}</td>
+
+          <td>
+            <span class="status ${statusClass}">
+              ${statusText}
+            </span>
+          </td>
+
+          <td>
+            <div class="action-buttons">
+
+              <button
+                class="edit-btn"
+                onclick="editProduk(${produk.id})"
+              >
+                Edit
+              </button>
+
+              <button
+                class="delete-btn"
+                onclick="hapusProduk(${produk.id})"
+              >
+                Hapus
+              </button>
+
+            </div>
+          </td>
+        `;
+
+        table.appendChild(tr);
+      });
+    }
+
+    document
+      .getElementById("nama_produk")
+      .addEventListener("input", function() {
+
+        const nama = this.value.trim();
+
+        if (
+          hppOfflineDefault[nama] !== undefined &&
+          !produkEditId
+        ) {
+
+          document.getElementById("hpp_offline").value =
+            hppOfflineDefault[nama];
+
+          document.getElementById("satuan").value =
+            "bungkus";
+        }
+      });
+
+    document
+      .getElementById("produkForm")
+      .addEventListener("submit", async function(e) {
+
+        e.preventDefault();
+
+        sembunyikanError();
+
+        const nama_produk =
+          document.getElementById("nama_produk").value.trim();
+
+        const satuan =
+          document.getElementById("satuan").value;
+
+        const hpp_offline =
+          document.getElementById("hpp_offline").value;
+
+        const harga_offline =
+          document.getElementById("harga_offline").value;
+
+        const hpp_online =
+          document.getElementById("hpp_online").value;
+
+        const harga_online =
+          document.getElementById("harga_online").value;
+
+        const status =
+          document.getElementById("status").value;
+
+        if (!nama_produk) {
+
+          tampilkanError("Nama produk wajib diisi.");
+          return;
         }
 
+        const dataProduk = {
+          nama_produk: nama_produk,
+          satuan: satuan,
+          harga_offline:
+            harga_offline === ""
+              ? null
+              : Number(harga_offline),
+          harga_online:
+            harga_online === ""
+              ? null
+              : Number(harga_online),
+          status: status
+        };
 
-        tampilkanProduk();
+        /*
+          Catatan:
+          Kolom HPP offline/online belum ada di tabel produk
+          pada struktur Supabase awal.
 
-    </script>
+          Jadi HPP akan disimpan ke tabel hpp,
+          sedangkan harga jual disimpan ke tabel produk.
+        */
+
+        let produkId = produkEditId;
+
+        if (produkEditId) {
+
+          const { error } = await supabaseClient
+            .from("produk")
+            .update(dataProduk)
+            .eq("id", produkEditId);
+
+          if (error) {
+
+            console.error(error);
+
+            tampilkanError(
+              "Gagal mengubah produk: " + error.message
+            );
+
+            return;
+          }
+
+        } else {
+
+          const { data, error } = await supabaseClient
+            .from("produk")
+            .insert([dataProduk])
+            .select()
+            .single();
+
+          if (error) {
+
+            console.error(error);
+
+            tampilkanError(
+              "Gagal menambah produk: " + error.message
+            );
+
+            return;
+          }
+
+          produkId = data.id;
+        }
+
+        /*
+          Simpan HPP offline/online ke tabel HPP.
+          HPP online hanya disimpan jika memang diisi.
+        */
+
+        if (produkId) {
+
+          const { data: hppLama } =
+            await supabaseClient
+              .from("hpp")
+              .select("id")
+              .eq("produk_id", produkId)
+              .maybeSingle();
+
+          const dataHpp = {
+            produk_id: produkId,
+            hpp_unit:
+              hpp_offline === ""
+                ? null
+                : Number(hpp_offline),
+            harga_offline:
+              harga_offline === ""
+                ? null
+                : Number(harga_offline),
+            harga_online:
+              harga_online === ""
+                ? null
+                : Number(harga_online),
+            untung_offline:
+              hpp_offline !== "" &&
+              harga_offline !== ""
+                ? Number(harga_offline) -
+                  Number(hpp_offline)
+                : null,
+            untung_online:
+              hpp_online !== "" &&
+              harga_online !== ""
+                ? Number(harga_online) -
+                  Number(hpp_online)
+                : null
+          };
+
+          /*
+            Untuk sementara HPP online belum ditentukan.
+            Jadi tidak mengarang angka online.
+          */
+
+          if (hppLama && hppLama.id) {
+
+            await supabaseClient
+              .from("hpp")
+              .update(dataHpp)
+              .eq("id", hppLama.id);
+
+          } else {
+
+            await supabaseClient
+              .from("hpp")
+              .insert([dataHpp]);
+
+          }
+        }
+
+        tutupForm();
+
+        await loadProduk();
+
+        alert("Produk berhasil disimpan.");
+
+      });
+
+    async function editProduk(id) {
+
+      sembunyikanError();
+
+      const { data: produk, error } =
+        await supabaseClient
+          .from("produk")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+      if (error) {
+
+        tampilkanError(
+          "Gagal mengambil data produk: " + error.message
+        );
+
+        return;
+      }
+
+      const { data: hpp } =
+        await supabaseClient
+          .from("hpp")
+          .select("*")
+          .eq("produk_id", id)
+          .maybeSingle();
+
+      produkEditId = id;
+
+      document.getElementById("formTitle").textContent =
+        "Edit Produk";
+
+      document.getElementById("formCard").style.display =
+        "block";
+
+      document.getElementById("nama_produk").value =
+        produk.nama_produk || "";
+
+      document.getElementById("satuan").value =
+        produk.satuan || "bungkus";
+
+      document.getElementById("harga_offline").value =
+        produk.harga_offline ?? "";
+
+      document.getElementById("harga_online").value =
+        produk.harga_online ?? "";
+
+      document.getElementById("status").value =
+        produk.status || "aktif";
+
+      document.getElementById("hpp_offline").value =
+        hpp && hpp.hpp_unit !== null
+          ? hpp.hpp_unit
+          : "";
+
+      document.getElementById("hpp_online").value =
+        "";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+
+    async function hapusProduk(id) {
+
+      const yakin = confirm(
+        "Yakin ingin menghapus produk ini?"
+      );
+
+      if (!yakin) {
+        return;
+      }
+
+      sembunyikanError();
+
+      const { error: hppError } =
+        await supabaseClient
+          .from("hpp")
+          .delete()
+          .eq("produk_id", id);
+
+      if (hppError) {
+
+        tampilkanError(
+          "Gagal menghapus HPP: " + hppError.message
+        );
+
+        return;
+      }
+
+      const { error } =
+        await supabaseClient
+          .from("produk")
+          .delete()
+          .eq("id", id);
+
+      if (error) {
+
+        console.error(error);
+
+        tampilkanError(
+          "Gagal menghapus produk: " + error.message
+        );
+
+        return;
+      }
+
+      await loadProduk();
+
+      alert("Produk berhasil dihapus.");
+    }
+
+    loadProduk();
+
+  </script>
 
 </body>
 </html>
