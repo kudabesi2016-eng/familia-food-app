@@ -95,8 +95,8 @@
       background: #6b7280;
     }
 
-    .btn-danger {
-      background: #dc2626;
+    .btn-secondary:hover {
+      background: #4b5563;
     }
 
     .card {
@@ -123,10 +123,6 @@
       display: flex;
       flex-direction: column;
       gap: 7px;
-    }
-
-    .form-group.full {
-      grid-column: 1 / -1;
     }
 
     label {
@@ -244,6 +240,16 @@
       display: none;
     }
 
+    .success {
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      display: none;
+    }
+
     @media (max-width: 800px) {
       .sidebar {
         width: 190px;
@@ -310,14 +316,15 @@
     </div>
 
     <div id="errorBox" class="error"></div>
+    <div id="successBox" class="success"></div>
 
     <div id="formCard" class="card" style="display:none;">
 
       <h2 id="formTitle">Tambah Produk</h2>
 
       <div class="info">
-        HPP offline untuk 5 produk utama sudah disiapkan sesuai data yang kita tetapkan.
-        Harga jual offline silakan diisi sesuai harga jual Familia Food.
+        HPP Offline diisi sesuai data produk. HPP Online akan kita masukkan
+        setelah data HPP Online tersedia. Harga jual dapat diubah kapan saja.
       </div>
 
       <form id="produkForm">
@@ -347,7 +354,7 @@
             <input
               type="number"
               id="hpp_offline"
-              placeholder="Contoh: 3100"
+              placeholder="Masukkan HPP offline"
               min="0"
             >
           </div>
@@ -357,7 +364,7 @@
             <input
               type="number"
               id="harga_offline"
-              placeholder="Masukkan harga jual"
+              placeholder="Masukkan harga jual offline"
               min="0"
             >
           </div>
@@ -377,7 +384,7 @@
             <input
               type="number"
               id="harga_online"
-              placeholder="Belum diisi"
+              placeholder="Masukkan harga jual online"
               min="0"
             >
           </div>
@@ -393,6 +400,7 @@
         </div>
 
         <div class="form-actions">
+
           <button type="submit" class="btn">
             Simpan Produk
           </button>
@@ -404,6 +412,7 @@
           >
             Batal
           </button>
+
         </div>
 
       </form>
@@ -416,6 +425,7 @@
       <div class="table-container">
 
         <table>
+
           <thead>
             <tr>
               <th>Nama Produk</th>
@@ -430,11 +440,13 @@
           </thead>
 
           <tbody id="produkTable">
+
             <tr>
               <td colspan="8" class="empty">
                 Memuat data...
               </td>
             </tr>
+
           </tbody>
 
         </table>
@@ -457,6 +469,7 @@
     };
 
     function formatRupiah(angka) {
+
       if (
         angka === null ||
         angka === undefined ||
@@ -470,15 +483,23 @@
     }
 
     function tampilkanForm() {
+
       document.getElementById("formCard").style.display = "block";
-      document.getElementById("formTitle").textContent = "Tambah Produk";
+
+      document.getElementById("formTitle").textContent =
+        "Tambah Produk";
 
       produkEditId = null;
 
       document.getElementById("produkForm").reset();
 
-      document.getElementById("satuan").value = "bungkus";
-      document.getElementById("status").value = "aktif";
+      document.getElementById("satuan").value =
+        "bungkus";
+
+      document.getElementById("status").value =
+        "aktif";
+
+      sembunyikanPesan();
 
       window.scrollTo({
         top: 0,
@@ -487,27 +508,52 @@
     }
 
     function tutupForm() {
-      document.getElementById("formCard").style.display = "none";
+
+      document.getElementById("formCard").style.display =
+        "none";
+
       produkEditId = null;
+
       document.getElementById("produkForm").reset();
+
+      sembunyikanPesan();
     }
 
     function tampilkanError(pesan) {
-      const box = document.getElementById("errorBox");
+
+      const box =
+        document.getElementById("errorBox");
 
       box.textContent = pesan;
+
       box.style.display = "block";
     }
 
-    function sembunyikanError() {
-      document.getElementById("errorBox").style.display = "none";
+    function tampilkanSuccess(pesan) {
+
+      const box =
+        document.getElementById("successBox");
+
+      box.textContent = pesan;
+
+      box.style.display = "block";
+    }
+
+    function sembunyikanPesan() {
+
+      document.getElementById("errorBox").style.display =
+        "none";
+
+      document.getElementById("successBox").style.display =
+        "none";
     }
 
     async function loadProduk() {
 
-      sembunyikanError();
+      sembunyikanPesan();
 
-      const table = document.getElementById("produkTable");
+      const table =
+        document.getElementById("produkTable");
 
       table.innerHTML = `
         <tr>
@@ -517,23 +563,31 @@
         </tr>
       `;
 
-      const { data, error } = await supabaseClient
+      /*
+        Ambil data produk
+      */
+
+      const {
+        data: produkData,
+        error: produkError
+      } = await supabaseClient
         .from("produk")
         .select("*")
         .order("id", { ascending: true });
 
-      if (error) {
+      if (produkError) {
 
-        console.error(error);
+        console.error(produkError);
 
         tampilkanError(
-          "Gagal mengambil data produk: " + error.message
+          "Gagal mengambil data produk: " +
+          produkError.message
         );
 
         table.innerHTML = `
           <tr>
             <td colspan="8" class="empty">
-              Gagal memuat data.
+              Gagal memuat data produk.
             </td>
           </tr>
         `;
@@ -541,7 +595,44 @@
         return;
       }
 
-      if (!data || data.length === 0) {
+      /*
+        Ambil semua HPP
+      */
+
+      const {
+        data: hppData,
+        error: hppError
+      } = await supabaseClient
+        .from("hpp")
+        .select("*");
+
+      if (hppError) {
+
+        console.error(hppError);
+
+        tampilkanError(
+          "Produk berhasil dibaca, tetapi data HPP gagal dibaca: " +
+          hppError.message
+        );
+      }
+
+      /*
+        Buat pasangan:
+        produk_id -> data HPP
+      */
+
+      const hppMap = {};
+
+      if (hppData) {
+
+        hppData.forEach(hpp => {
+
+          hppMap[hpp.produk_id] = hpp;
+
+        });
+      }
+
+      if (!produkData || produkData.length === 0) {
 
         table.innerHTML = `
           <tr>
@@ -556,9 +647,37 @@
 
       table.innerHTML = "";
 
-      data.forEach(produk => {
+      produkData.forEach(produk => {
 
-        const tr = document.createElement("tr");
+        const hpp =
+          hppMap[produk.id] || null;
+
+        /*
+          hpp_unit pada tabel HPP digunakan
+          sebagai HPP Offline sementara.
+
+          HPP Online akan dibuat terpisah
+          setelah data online tersedia.
+        */
+
+        const hppOffline =
+          hpp && hpp.hpp_unit !== null
+            ? hpp.hpp_unit
+            : null;
+
+        const hppOnline =
+          hpp && hpp.untung_online !== null
+            ? (
+                produk.harga_online !== null &&
+                produk.harga_online !== undefined
+                  ? Number(produk.harga_online) -
+                    Number(hpp.untung_online)
+                  : null
+              )
+            : null;
+
+        const tr =
+          document.createElement("tr");
 
         const statusClass =
           produk.status === "aktif"
@@ -571,17 +690,30 @@
             : "Nonaktif";
 
         tr.innerHTML = `
-          <td>${produk.nama_produk || "-"}</td>
 
-          <td>${produk.satuan || "-"}</td>
+          <td>
+            ${escapeHtml(produk.nama_produk || "-")}
+          </td>
 
-          <td>${formatRupiah(produk.hpp_offline)}</td>
+          <td>
+            ${escapeHtml(produk.satuan || "-")}
+          </td>
 
-          <td>${formatRupiah(produk.harga_offline)}</td>
+          <td>
+            ${formatRupiah(hppOffline)}
+          </td>
 
-          <td>${formatRupiah(produk.hpp_online)}</td>
+          <td>
+            ${formatRupiah(produk.harga_offline)}
+          </td>
 
-          <td>${formatRupiah(produk.harga_online)}</td>
+          <td>
+            ${formatRupiah(hppOnline)}
+          </td>
+
+          <td>
+            ${formatRupiah(produk.harga_online)}
+          </td>
 
           <td>
             <span class="status ${statusClass}">
@@ -590,6 +722,7 @@
           </td>
 
           <td>
+
             <div class="action-buttons">
 
               <button
@@ -607,166 +740,256 @@
               </button>
 
             </div>
+
           </td>
         `;
 
         table.appendChild(tr);
+
       });
+    }
+
+    function escapeHtml(text) {
+
+      const div =
+        document.createElement("div");
+
+      div.textContent = text;
+
+      return div.innerHTML;
     }
 
     document
       .getElementById("nama_produk")
-      .addEventListener("input", function() {
+      .addEventListener(
+        "input",
+        function() {
 
-        const nama = this.value.trim();
+          const nama =
+            this.value.trim();
 
-        if (
-          hppOfflineDefault[nama] !== undefined &&
-          !produkEditId
-        ) {
+          if (
+            hppOfflineDefault[nama] !== undefined &&
+            !produkEditId
+          ) {
 
-          document.getElementById("hpp_offline").value =
-            hppOfflineDefault[nama];
+            document.getElementById(
+              "hpp_offline"
+            ).value =
+              hppOfflineDefault[nama];
 
-          document.getElementById("satuan").value =
-            "bungkus";
+            document.getElementById(
+              "satuan"
+            ).value =
+              "bungkus";
+          }
+
         }
-      });
+      );
 
     document
       .getElementById("produkForm")
-      .addEventListener("submit", async function(e) {
+      .addEventListener(
+        "submit",
+        async function(e) {
 
-        e.preventDefault();
+          e.preventDefault();
 
-        sembunyikanError();
+          sembunyikanPesan();
 
-        const nama_produk =
-          document.getElementById("nama_produk").value.trim();
+          const nama_produk =
+            document
+              .getElementById("nama_produk")
+              .value
+              .trim();
 
-        const satuan =
-          document.getElementById("satuan").value;
+          const satuan =
+            document
+              .getElementById("satuan")
+              .value;
 
-        const hpp_offline =
-          document.getElementById("hpp_offline").value;
+          const hpp_offline =
+            document
+              .getElementById("hpp_offline")
+              .value;
 
-        const harga_offline =
-          document.getElementById("harga_offline").value;
+          const harga_offline =
+            document
+              .getElementById("harga_offline")
+              .value;
 
-        const hpp_online =
-          document.getElementById("hpp_online").value;
+          const hpp_online =
+            document
+              .getElementById("hpp_online")
+              .value;
 
-        const harga_online =
-          document.getElementById("harga_online").value;
+          const harga_online =
+            document
+              .getElementById("harga_online")
+              .value;
 
-        const status =
-          document.getElementById("status").value;
+          const status =
+            document
+              .getElementById("status")
+              .value;
 
-        if (!nama_produk) {
-
-          tampilkanError("Nama produk wajib diisi.");
-          return;
-        }
-
-        const dataProduk = {
-          nama_produk: nama_produk,
-          satuan: satuan,
-          harga_offline:
-            harga_offline === ""
-              ? null
-              : Number(harga_offline),
-          harga_online:
-            harga_online === ""
-              ? null
-              : Number(harga_online),
-          status: status
-        };
-
-        /*
-          Catatan:
-          Kolom HPP offline/online belum ada di tabel produk
-          pada struktur Supabase awal.
-
-          Jadi HPP akan disimpan ke tabel hpp,
-          sedangkan harga jual disimpan ke tabel produk.
-        */
-
-        let produkId = produkEditId;
-
-        if (produkEditId) {
-
-          const { error } = await supabaseClient
-            .from("produk")
-            .update(dataProduk)
-            .eq("id", produkEditId);
-
-          if (error) {
-
-            console.error(error);
+          if (!nama_produk) {
 
             tampilkanError(
-              "Gagal mengubah produk: " + error.message
+              "Nama produk wajib diisi."
             );
 
             return;
           }
 
-        } else {
+          /*
+            Data untuk tabel produk.
+          */
 
-          const { data, error } = await supabaseClient
-            .from("produk")
-            .insert([dataProduk])
-            .select()
-            .single();
+          const dataProduk = {
 
-          if (error) {
+            nama_produk:
+              nama_produk,
 
-            console.error(error);
+            satuan:
+              satuan,
 
-            tampilkanError(
-              "Gagal menambah produk: " + error.message
-            );
-
-            return;
-          }
-
-          produkId = data.id;
-        }
-
-        /*
-          Simpan HPP offline/online ke tabel HPP.
-          HPP online hanya disimpan jika memang diisi.
-        */
-
-        if (produkId) {
-
-          const { data: hppLama } =
-            await supabaseClient
-              .from("hpp")
-              .select("id")
-              .eq("produk_id", produkId)
-              .maybeSingle();
-
-          const dataHpp = {
-            produk_id: produkId,
-            hpp_unit:
-              hpp_offline === ""
-                ? null
-                : Number(hpp_offline),
             harga_offline:
               harga_offline === ""
                 ? null
                 : Number(harga_offline),
+
             harga_online:
               harga_online === ""
                 ? null
                 : Number(harga_online),
+
+            status:
+              status
+          };
+
+          let produkId =
+            produkEditId;
+
+          /*
+            EDIT PRODUK
+          */
+
+          if (produkEditId) {
+
+            const {
+              error
+            } = await supabaseClient
+              .from("produk")
+              .update(dataProduk)
+              .eq("id", produkEditId);
+
+            if (error) {
+
+              console.error(error);
+
+              tampilkanError(
+                "Gagal mengubah produk: " +
+                error.message
+              );
+
+              return;
+            }
+
+          }
+
+          /*
+            TAMBAH PRODUK
+          */
+
+          else {
+
+            const {
+              data,
+              error
+            } = await supabaseClient
+              .from("produk")
+              .insert([dataProduk])
+              .select()
+              .single();
+
+            if (error) {
+
+              console.error(error);
+
+              tampilkanError(
+                "Gagal menambah produk: " +
+                error.message
+              );
+
+              return;
+            }
+
+            produkId =
+              data.id;
+          }
+
+          /*
+            Cari HPP yang sudah ada.
+          */
+
+          const {
+            data: hppLama,
+            error: hppCariError
+          } = await supabaseClient
+            .from("hpp")
+            .select("*")
+            .eq("produk_id", produkId)
+            .maybeSingle();
+
+          if (hppCariError) {
+
+            console.error(hppCariError);
+
+            tampilkanError(
+              "Produk tersimpan, tetapi HPP gagal diperiksa: " +
+              hppCariError.message
+            );
+
+            return;
+          }
+
+          /*
+            Data HPP.
+            
+            hpp_unit = HPP Offline.
+            
+            HPP Online belum dimasukkan
+            karena datanya belum tersedia.
+          */
+
+          const dataHpp = {
+
+            produk_id:
+              produkId,
+
+            hpp_unit:
+              hpp_offline === ""
+                ? null
+                : Number(hpp_offline),
+
+            harga_offline:
+              harga_offline === ""
+                ? null
+                : Number(harga_offline),
+
+            harga_online:
+              harga_online === ""
+                ? null
+                : Number(harga_online),
+
             untung_offline:
               hpp_offline !== "" &&
               harga_offline !== ""
                 ? Number(harga_offline) -
                   Number(hpp_offline)
                 : null,
+
             untung_online:
               hpp_online !== "" &&
               harga_online !== ""
@@ -776,90 +999,166 @@
           };
 
           /*
-            Untuk sementara HPP online belum ditentukan.
-            Jadi tidak mengarang angka online.
+            UPDATE HPP jika sudah ada.
           */
 
-          if (hppLama && hppLama.id) {
+          if (
+            hppLama &&
+            hppLama.id
+          ) {
 
-            await supabaseClient
+            const {
+              error
+            } = await supabaseClient
               .from("hpp")
               .update(dataHpp)
               .eq("id", hppLama.id);
 
-          } else {
+            if (error) {
 
-            await supabaseClient
+              console.error(error);
+
+              tampilkanError(
+                "Produk tersimpan, tetapi HPP gagal diperbarui: " +
+                error.message
+              );
+
+              return;
+            }
+
+          }
+
+          /*
+            INSERT HPP jika belum ada.
+          */
+
+          else {
+
+            const {
+              error
+            } = await supabaseClient
               .from("hpp")
               .insert([dataHpp]);
 
+            if (error) {
+
+              console.error(error);
+
+              tampilkanError(
+                "Produk tersimpan, tetapi HPP gagal disimpan: " +
+                error.message
+              );
+
+              return;
+            }
           }
+
+          tutupForm();
+
+          await loadProduk();
+
+          tampilkanSuccess(
+            "Produk berhasil disimpan."
+          );
+
         }
-
-        tutupForm();
-
-        await loadProduk();
-
-        alert("Produk berhasil disimpan.");
-
-      });
+      );
 
     async function editProduk(id) {
 
-      sembunyikanError();
+      sembunyikanPesan();
 
-      const { data: produk, error } =
-        await supabaseClient
-          .from("produk")
-          .select("*")
-          .eq("id", id)
-          .single();
+      const {
+        data: produk,
+        error: produkError
+      } = await supabaseClient
+        .from("produk")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-      if (error) {
+      if (produkError) {
 
         tampilkanError(
-          "Gagal mengambil data produk: " + error.message
+          "Gagal mengambil data produk: " +
+          produkError.message
         );
 
         return;
       }
 
-      const { data: hpp } =
-        await supabaseClient
-          .from("hpp")
-          .select("*")
-          .eq("produk_id", id)
-          .maybeSingle();
+      const {
+        data: hpp,
+        error: hppError
+      } = await supabaseClient
+        .from("hpp")
+        .select("*")
+        .eq("produk_id", id)
+        .maybeSingle();
 
-      produkEditId = id;
+      if (hppError) {
 
-      document.getElementById("formTitle").textContent =
+        tampilkanError(
+          "Gagal mengambil data HPP: " +
+          hppError.message
+        );
+
+        return;
+      }
+
+      produkEditId =
+        id;
+
+      document.getElementById(
+        "formTitle"
+      ).textContent =
         "Edit Produk";
 
-      document.getElementById("formCard").style.display =
+      document.getElementById(
+        "formCard"
+      ).style.display =
         "block";
 
-      document.getElementById("nama_produk").value =
+      document.getElementById(
+        "nama_produk"
+      ).value =
         produk.nama_produk || "";
 
-      document.getElementById("satuan").value =
+      document.getElementById(
+        "satuan"
+      ).value =
         produk.satuan || "bungkus";
 
-      document.getElementById("harga_offline").value =
+      document.getElementById(
+        "harga_offline"
+      ).value =
         produk.harga_offline ?? "";
 
-      document.getElementById("harga_online").value =
+      document.getElementById(
+        "harga_online"
+      ).value =
         produk.harga_online ?? "";
 
-      document.getElementById("status").value =
+      document.getElementById(
+        "status"
+      ).value =
         produk.status || "aktif";
 
-      document.getElementById("hpp_offline").value =
-        hpp && hpp.hpp_unit !== null
+      document.getElementById(
+        "hpp_offline"
+      ).value =
+        hpp &&
+        hpp.hpp_unit !== null
           ? hpp.hpp_unit
           : "";
 
-      document.getElementById("hpp_online").value =
+      /*
+        HPP Online belum tersedia.
+      */
+
+      document.getElementById(
+        "hpp_online"
+      ).value =
         "";
 
       window.scrollTo({
@@ -870,43 +1169,56 @@
 
     async function hapusProduk(id) {
 
-      const yakin = confirm(
-        "Yakin ingin menghapus produk ini?"
-      );
+      const yakin =
+        confirm(
+          "Yakin ingin menghapus produk ini?"
+        );
 
       if (!yakin) {
         return;
       }
 
-      sembunyikanError();
+      sembunyikanPesan();
 
-      const { error: hppError } =
-        await supabaseClient
-          .from("hpp")
-          .delete()
-          .eq("produk_id", id);
+      /*
+        Hapus HPP terlebih dahulu.
+      */
+
+      const {
+        error: hppError
+      } = await supabaseClient
+        .from("hpp")
+        .delete()
+        .eq("produk_id", id);
 
       if (hppError) {
 
         tampilkanError(
-          "Gagal menghapus HPP: " + hppError.message
+          "Gagal menghapus HPP: " +
+          hppError.message
         );
 
         return;
       }
 
-      const { error } =
-        await supabaseClient
-          .from("produk")
-          .delete()
-          .eq("id", id);
+      /*
+        Kemudian hapus produk.
+      */
+
+      const {
+        error
+      } = await supabaseClient
+        .from("produk")
+        .delete()
+        .eq("id", id);
 
       if (error) {
 
         console.error(error);
 
         tampilkanError(
-          "Gagal menghapus produk: " + error.message
+          "Gagal menghapus produk: " +
+          error.message
         );
 
         return;
@@ -914,8 +1226,14 @@
 
       await loadProduk();
 
-      alert("Produk berhasil dihapus.");
+      tampilkanSuccess(
+        "Produk berhasil dihapus."
+      );
     }
+
+    /*
+      Jalankan saat halaman dibuka.
+    */
 
     loadProduk();
 
