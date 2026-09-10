@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Penjualan - Familia Food</title>
+
+<style>
+body{
+font-family:Arial,sans-serif;
+background:#f5faf7;
+margin:0;
+padding:30px;
+}
+
+.container{
+background:white;
+padding:25px;
+border-radius:15px;
+max-width:1200px;
+margin:auto;
+}
+
+h1{
+color:#087443;
+}
+
+.form{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
+margin-top:20px;
+}
+
+.box{
+padding:15px;
+border:1px solid #ddd;
+border-radius:10px;
+}
+
+label{
+display:block;
+font-weight:bold;
+margin-bottom:7px;
+}
+
+input,select{
+width:100%;
+box-sizing:border-box;
+padding:10px;
+border:1px solid #ccc;
+border-radius:8px;
+}
+
+button{
+background:#087443;
+color:white;
+border:0;
+padding:12px 20px;
+border-radius:8px;
+cursor:pointer;
+}
+
+table{
+width:100%;
+margin-top:25px;
+border-collapse:collapse;
+}
+
+th{
+background:#087443;
+color:white;
+padding:12px;
+}
+
+td{
+padding:12px;
+border-bottom:1px solid #ddd;
+}
+
+.total{
+margin-top:20px;
+padding:20px;
+background:#f0f8f3;
+border-radius:12px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🛒 Penjualan</h1>
+
+<div class="form">
+
+<div class="box">
+<label>Tanggal</label>
+<input type="date">
+</div>
+
+<div class="box">
+<label>Produk</label>
+<select>
+<option>Pilih Produk</option>
+<option>Tempura Aci</option>
+</select>
+</div>
+
+<div class="box">
+<label>Jumlah Terjual</label>
+<input type="number" placeholder="Contoh: 10">
+</div>
+
+<div class="box">
+<label>Channel Penjualan</label>
+<select>
+<option>Offline</option>
+<option>Online</option>
+</select>
+</div>
+
+<div class="box">
+<label>Harga Jual</label>
+<input type="number" placeholder="Rp 0">
+</div>
+
+</div>
+
+<br>
+
+<button>+ Simpan Penjualan</button>
+
+<table>
+
+<tr>
+<th>Tanggal</th>
+<th>Produk</th>
+<th>Qty</th>
+<th>Channel</th>
+<th>Harga</th>
+<th>Total</th>
+<th>Laba</th>
+<th>Aksi</th>
+</tr>
+
+<tr>
+<td>-</td>
+<td>-</td>
+<td>0</td>
+<td>-</td>
+<td>Rp 0</td>
+<td>Rp 0</td>
+<td>Rp 0</td>
+<td>Edit</td>
+</tr>
+
+</table>
+
+<div class="total">
+
+<h2>Ringkasan</h2>
+
+<p>Total Terjual: <strong>0</strong></p>
+<p>Total Omzet: <strong>Rp 0</strong></p>
+<p>Total Laba: <strong>Rp 0</strong></p>
+
+</div>
+
+</div>
+
+</body>
+</html>
