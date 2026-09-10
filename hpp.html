@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>HPP - Familia Food</title>
+
+<style>
+body{
+font-family:Arial,sans-serif;
+background:#f5faf7;
+margin:0;
+padding:30px;
+}
+
+.container{
+background:white;
+padding:25px;
+border-radius:15px;
+max-width:1100px;
+margin:auto;
+}
+
+h1{
+color:#087443;
+}
+
+.form{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+margin-top:20px;
+}
+
+.box{
+border:1px solid #ddd;
+padding:15px;
+border-radius:10px;
+}
+
+label{
+display:block;
+font-weight:bold;
+margin-bottom:6px;
+}
+
+input,select{
+width:100%;
+box-sizing:border-box;
+padding:10px;
+border:1px solid #ccc;
+border-radius:8px;
+}
+
+.result{
+margin-top:20px;
+padding:20px;
+background:#f0f8f3;
+border-radius:12px;
+}
+
+.result h2{
+color:#087443;
+}
+
+button{
+background:#087443;
+color:white;
+border:0;
+padding:12px 20px;
+border-radius:8px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🧮 Perhitungan HPP</h1>
+
+<div class="form">
+
+<div class="box">
+<label>Produk</label>
+<select>
+<option>Pilih Produk</option>
+<option>Tempura Aci</option>
+</select>
+</div>
+
+<div class="box">
+<label>Jumlah Hasil Produksi</label>
+<input type="number" placeholder="Contoh: 100">
+</div>
+
+<div class="box">
+<label>Total Biaya Bahan</label>
+<input type="number" placeholder="Rp 0">
+</div>
+
+<div class="box">
+<label>Biaya Produksi</label>
+<input type="number" placeholder="Rp 0">
+</div>
+
+<div class="box">
+<label>Harga Jual Offline</label>
+<input type="number" placeholder="Rp 0">
+</div>
+
+<div class="box">
+<label>Harga Jual Online</label>
+<input type="number" placeholder="Rp 0">
+</div>
+
+</div>
+
+<div class="result">
+
+<h2>Hasil Perhitungan</h2>
+
+<p>Total Modal: <strong>Rp 0</strong></p>
+
+<p>HPP per Bungkus/Pcs: <strong>Rp 0</strong></p>
+
+<p>Keuntungan Offline: <strong>Rp 0</strong></p>
+
+<p>Keuntungan Online: <strong>Rp 0</strong></p>
+
+</div>
+
+<br>
+
+<button>Simpan HPP</button>
+
+</div>
+
+</body>
+</html>
