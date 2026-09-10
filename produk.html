@@ -1,95 +1,280 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-<title>Master Produk - Familia Food</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-body{
-font-family:Arial;
-background:#f5faf7;
-margin:0;
-padding:30px;
-}
+    <title>Produk - Familia Food</title>
 
-.container{
-background:white;
-padding:25px;
-border-radius:15px;
-}
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-h1{
-color:#087443;
-}
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7f6;
+            color: #333;
+        }
 
-button{
-background:#087443;
-color:white;
-border:none;
-padding:10px 20px;
-border-radius:8px;
-}
+        .sidebar {
+            width: 230px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: #146b3a;
+            color: white;
+            padding: 20px;
+        }
 
-table{
-width:100%;
-margin-top:20px;
-border-collapse:collapse;
-}
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
 
-th{
-background:#087443;
-color:white;
-padding:12px;
-}
+        .menu {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
 
-td{
-padding:12px;
-border-bottom:1px solid #ddd;
-}
+        .menu:hover,
+        .menu.active {
+            background: #1d8249;
+        }
 
-.status{
-background:#d8f5e5;
-color:#087443;
-padding:5px 10px;
-border-radius:20px;
-}
-</style>
+        .main {
+            margin-left: 230px;
+            padding: 30px;
+        }
 
+        h1 {
+            color: #146b3a;
+            margin-top: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #146b3a;
+            color: white;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: #e1f3e8;
+            color: #146b3a;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            padding: 15px;
+            background: #ffe5e5;
+            color: #a00000;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 700px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="container">
+    <div class="sidebar">
 
-<h1>📦 Master Produk</h1>
+        <div class="logo">🍀 Familia Food</div>
 
-<button>+ Tambah Produk</button>
+        <a class="menu" href="dashboard.html">Dashboard</a>
+        <a class="menu active" href="produk.html">Produk</a>
+        <a class="menu" href="bahan-baku.html">Bahan Baku</a>
+        <a class="menu" href="resep.html">Resep</a>
+        <a class="menu" href="hpp.html">HPP</a>
+        <a class="menu" href="penjualan.html">Penjualan</a>
+        <a class="menu" href="rekap.html">Rekap</a>
+        <a class="menu" href="data-lama.html">Data Lama</a>
+        <a class="menu" href="pengaturan.html">Pengaturan</a>
 
-<table>
-
-<tr>
-<th>Nama Produk</th>
-<th>Satuan</th>
-<th>Harga Offline</th>
-<th>Harga Online</th>
-<th>Status</th>
-<th>Aksi</th>
-</tr>
-
-
-<tr>
-<td>Tempura Aci</td>
-<td>Bungkus</td>
-<td>Rp 14.000</td>
-<td>Rp 16.500</td>
-<td><span class="status">Aktif</span></td>
-<td>Edit</td>
-</tr>
+    </div>
 
 
-</table>
+    <div class="main">
 
-</div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
+        <h1>Produk</h1>
+
+        <div id="pesan"></div>
+
+        <div class="card">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Nama Produk</th>
+                        <th>Satuan</th>
+                        <th>Harga Offline</th>
+                        <th>Harga Online</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="daftarProduk">
+
+                    <tr>
+                        <td colspan="5" class="loading">
+                            Memuat data produk...
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Koneksi Supabase Familia Food -->
+    <script src="supabase.js"></script>
+
+
+    <script>
+
+        async function tampilkanProduk() {
+
+            const tabel = document.getElementById("daftarProduk");
+            const pesan = document.getElementById("pesan");
+
+            const { data, error } = await supabaseClient
+                .from("produk")
+                .select("*")
+                .order("id", { ascending: true });
+
+
+            if (error) {
+
+                console.error(error);
+
+                tabel.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="loading">
+                            Gagal mengambil data produk.
+                        </td>
+                    </tr>
+                `;
+
+                pesan.innerHTML = `
+                    <div class="error">
+                        Gagal terhubung ke database:<br>
+                        ${error.message}
+                    </div>
+                `;
+
+                return;
+            }
+
+
+            if (!data || data.length === 0) {
+
+                tabel.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="loading">
+                            Belum ada data produk.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+            }
+
+
+            tabel.innerHTML = "";
+
+
+            data.forEach(function(produk) {
+
+                const baris = document.createElement("tr");
+
+                baris.innerHTML = `
+                    <td>${produk.nama_produk || ""}</td>
+
+                    <td>${produk.satuan || ""}</td>
+
+                    <td>
+                        Rp ${Number(
+                            produk.harga_offline || 0
+                        ).toLocaleString("id-ID")}
+                    </td>
+
+                    <td>
+                        Rp ${Number(
+                            produk.harga_online || 0
+                        ).toLocaleString("id-ID")}
+                    </td>
+
+                    <td>
+                        <span class="status">
+                            ${produk.status || "Aktif"}
+                        </span>
+                    </td>
+                `;
+
+                tabel.appendChild(baris);
+
+            });
+
+        }
+
+
+        tampilkanProduk();
+
+    </script>
+
 </body>
 </html>
