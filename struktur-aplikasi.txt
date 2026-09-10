@@ -1,0 +1,22 @@
+FAMILIA FOOD APP
+
+MENU:
+1. Dashboard
+2. Produk
+3. Bahan Baku
+4. Resep
+5. HPP
+6. Penjualan
+7. Rekap
+8. Data Lama
+9. Pengaturan
+
+
+DATABASE:
+produk
+bahan_baku
+resep
+hpp
+penjualan
+data_lama
+pengaturan
