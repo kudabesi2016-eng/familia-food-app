@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Familia Food Dashboard</title>
+
+<style>
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#f5faf7;
+ display:flex;
+}
+
+/* Sidebar */
+.sidebar{
+ width:240px;
+ height:100vh;
+ background:#087443;
+ color:white;
+ padding:20px;
+}
+
+.logo{
+ font-size:24px;
+ font-weight:bold;
+ margin-bottom:30px;
+}
+
+.menu{
+ padding:12px;
+ margin:8px 0;
+ border-radius:10px;
+ cursor:pointer;
+}
+
+.menu:hover{
+ background:#12945a;
+}
+
+/* Main */
+.main{
+ flex:1;
+ padding:30px;
+}
+
+.header{
+ background:white;
+ padding:25px;
+ border-radius:15px;
+ margin-bottom:20px;
+}
+
+.cards{
+ display:grid;
+ grid-template-columns:repeat(5,1fr);
+ gap:15px;
+}
+
+.card{
+ background:white;
+ padding:20px;
+ border-radius:15px;
+ box-shadow:0 3px 10px #ddd;
+}
+
+.card h3{
+ color:#087443;
+}
+
+.number{
+ font-size:28px;
+ font-weight:bold;
+}
+
+/* Grafik */
+.box{
+ background:white;
+ margin-top:20px;
+ padding:25px;
+ border-radius:15px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<div class="logo">
+🍀 Familia Food
+</div>
+
+<div class="menu">🏠 Dashboard</div>
+<div class="menu">📦 Produk</div>
+<div class="menu">🌾 Bahan Baku</div>
+<div class="menu">📋 Resep</div>
+<div class="menu">🧮 HPP</div>
+<div class="menu">🛒 Penjualan</div>
+<div class="menu">📊 Rekap</div>
+<div class="menu">📁 Data Lama</div>
+<div class="menu">⚙ Pengaturan</div>
+
+</div>
+
+
+<div class="main">
+
+<div class="header">
+<h1>Selamat Datang di Familia Food App</h1>
+<p>Kelola produksi, penjualan, dan laporan usaha dengan mudah</p>
+</div>
+
+
+<div class="cards">
+
+<div class="card">
+<h3>Total Produk</h3>
+<div class="number">0</div>
+</div>
+
+<div class="card">
+<h3>Bahan Baku</h3>
+<div class="number">0</div>
+</div>
+
+<div class="card">
+<h3>Resep</h3>
+<div class="number">0</div>
+</div>
+
+<div class="card">
+<h3>Penjualan</h3>
+<div class="number">Rp 0</div>
+</div>
+
+<div class="card">
+<h3>HPP</h3>
+<div class="number">Rp 0</div>
+</div>
+
+</div>
+
+
+<div class="box">
+<h2>📈 Rekap Penjualan</h2>
+<p>Harian | Mingguan | Bulanan</p>
+</div>
+
+
+</div>
+
+</body>
+</html>
