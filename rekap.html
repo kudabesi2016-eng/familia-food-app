@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Rekap Penjualan - Familia Food</title>
+
+<style>
+body{
+font-family:Arial,sans-serif;
+background:#f5faf7;
+margin:0;
+padding:30px;
+}
+
+.container{
+background:white;
+padding:25px;
+border-radius:15px;
+max-width:1200px;
+margin:auto;
+}
+
+h1{
+color:#087443;
+}
+
+.tabs{
+display:flex;
+gap:10px;
+margin:20px 0;
+}
+
+.tab{
+padding:12px 22px;
+border:1px solid #087443;
+border-radius:8px;
+color:#087443;
+cursor:pointer;
+}
+
+.active{
+background:#087443;
+color:white;
+}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:15px;
+}
+
+.card{
+background:#f0f8f3;
+padding:20px;
+border-radius:12px;
+}
+
+.card h3{
+margin-top:0;
+color:#087443;
+}
+
+.nilai{
+font-size:24px;
+font-weight:bold;
+}
+
+table{
+width:100%;
+margin-top:25px;
+border-collapse:collapse;
+}
+
+th{
+background:#087443;
+color:white;
+padding:12px;
+}
+
+td{
+padding:12px;
+border-bottom:1px solid #ddd;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📊 Rekap Penjualan</h1>
+
+<div class="tabs">
+
+<div class="tab active">
+Harian
+</div>
+
+<div class="tab">
+Mingguan
+</div>
+
+<div class="tab">
+Bulanan
+</div>
+
+</div>
+
+<div class="cards">
+
+<div class="card">
+<h3>Total Terjual</h3>
+<div class="nilai">0</div>
+</div>
+
+<div class="card">
+<h3>Omzet</h3>
+<div class="nilai">Rp 0</div>
+</div>
+
+<div class="card">
+<h3>Total HPP</h3>
+<div class="nilai">Rp 0</div>
+</div>
+
+<div class="card">
+<h3>Total Laba</h3>
+<div class="nilai">Rp 0</div>
+</div>
+
+</div>
+
+<h2>Detail Penjualan</h2>
+
+<table>
+
+<tr>
+<th>Tanggal</th>
+<th>Produk</th>
+<th>Qty</th>
+<th>Channel</th>
+<th>Omzet</th>
+<th>HPP</th>
+<th>Laba</th>
+</tr>
+
+<tr>
+<td>-</td>
+<td>-</td>
+<td>0</td>
+<td>-</td>
+<td>Rp 0</td>
+<td>Rp 0</td>
+<td>Rp 0</td>
+</tr>
+
+</table>
+
+</div>
+
+</body>
+</html>
