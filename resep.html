@@ -1,107 +1,1587 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Resep Produk - Familia Food</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
 <style>
-body{
-font-family:Arial,sans-serif;
-background:#f5faf7;
-margin:0;
-padding:30px;
+*{
+  box-sizing:border-box;
 }
 
-.container{
-background:white;
-padding:25px;
-border-radius:15px;
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f5faf7;
+  color:#333;
+}
+
+.sidebar{
+  position:fixed;
+  left:0;
+  top:0;
+  width:230px;
+  height:100vh;
+  background:#087443;
+  color:white;
+  padding:25px 15px;
+}
+
+.logo{
+  font-size:21px;
+  font-weight:bold;
+  margin-bottom:30px;
+  padding:0 10px;
+}
+
+.menu a{
+  display:block;
+  color:white;
+  text-decoration:none;
+  padding:12px 15px;
+  border-radius:8px;
+  margin-bottom:6px;
+}
+
+.menu a:hover,
+.menu a.active{
+  background:rgba(255,255,255,0.15);
+}
+
+.content{
+  margin-left:230px;
+  padding:30px;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:25px;
 }
 
 h1{
-color:#087443;
+  color:#087443;
+  margin:0 0 5px;
+}
+
+.subtitle{
+  color:#777;
+}
+
+.card{
+  background:white;
+  border-radius:15px;
+  padding:22px;
+  margin-bottom:20px;
+  box-shadow:0 3px 12px rgba(0,0,0,0.05);
 }
 
 button{
-background:#087443;
-color:white;
-border:0;
-padding:10px 20px;
-border-radius:8px;
+  border:0;
+  border-radius:8px;
+  padding:10px 16px;
+  cursor:pointer;
+  font-size:14px;
 }
 
-select,input{
-padding:10px;
-margin:5px;
-border:1px solid #ccc;
-border-radius:8px;
+.btn-primary{
+  background:#087443;
+  color:white;
+}
+
+.btn-secondary{
+  background:#eee;
+  color:#333;
+}
+
+.btn-danger{
+  background:#c62828;
+  color:white;
+}
+
+.btn-edit{
+  background:#e8f5ee;
+  color:#087443;
+  margin-right:5px;
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+}
+
+.form-group{
+  margin-bottom:5px;
+}
+
+.form-group label{
+  display:block;
+  font-weight:bold;
+  margin-bottom:7px;
+}
+
+input,
+select{
+  width:100%;
+  padding:11px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  font-size:14px;
+  background:white;
+}
+
+.note{
+  font-size:13px;
+  color:#777;
+  margin-top:7px;
+  line-height:1.5;
 }
 
 table{
-width:100%;
-margin-top:20px;
-border-collapse:collapse;
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
 }
 
 th{
-background:#087443;
-color:white;
-padding:12px;
+  background:#087443;
+  color:white;
+  padding:12px;
+  text-align:left;
 }
 
 td{
-padding:12px;
-border-bottom:1px solid #ddd;
+  padding:11px;
+  border-bottom:1px solid #e5e5e5;
 }
 
+.total-box{
+  background:#f1faf5;
+  border-radius:10px;
+  padding:15px;
+  margin-top:15px;
+}
+
+.total-box strong{
+  color:#087443;
+}
+
+.message{
+  display:none;
+  padding:12px 15px;
+  border-radius:8px;
+  margin-bottom:15px;
+}
+
+.success{
+  display:block;
+  background:#e8f5ee;
+  color:#087443;
+}
+
+.error{
+  display:block;
+  background:#fdecec;
+  color:#c62828;
+}
+
+.loading{
+  text-align:center;
+  padding:25px;
+  color:#777;
+}
+
+.empty{
+  text-align:center;
+  padding:30px;
+  color:#777;
+}
+
+/* MODAL */
+.modal{
+  display:none;
+  position:fixed;
+  z-index:1000;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.45);
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.modal-box{
+  background:white;
+  width:100%;
+  max-width:600px;
+  max-height:90vh;
+  overflow-y:auto;
+  border-radius:15px;
+  padding:25px;
+}
+
+.modal-box h2{
+  color:#087443;
+  margin-top:0;
+}
+
+.modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:20px;
+}
+
+.badge{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  background:#e8f5ee;
+  color:#087443;
+  font-size:12px;
+}
+
+@media(max-width:800px){
+  .sidebar{
+    position:relative;
+    width:100%;
+    height:auto;
+  }
+
+  .content{
+    margin-left:0;
+    padding:20px;
+  }
+
+  .header{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:15px;
+  }
+
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .card{
+    overflow-x:auto;
+  }
+
+  table{
+    min-width:800px;
+  }
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<aside class="sidebar">
 
-<h1>📋 Resep Produk</h1>
+  <div class="logo">🌿 Familia Food</div>
 
-<button>+ Tambah Resep</button>
+  <div class="menu">
+    <a href="index.html">Dashboard</a>
+    <a href="produk.html">Produk</a>
+    <a href="bahan-baku.html">Bahan Baku</a>
+    <a href="resep.html" class="active">Resep</a>
+    <a href="hpp.html">HPP</a>
+    <a href="penjualan.html">Penjualan</a>
+    <a href="rekap.html">Rekap</a>
+    <a href="data-lama.html">Data Lama</a>
+    <a href="pengaturan.html">Pengaturan</a>
+  </div>
 
-<br><br>
+</aside>
 
-<label>Produk:</label>
 
-<select>
-<option>Pilih Produk</option>
-<option>Tempura Aci</option>
-</select>
+<main class="content">
 
-<table>
+  <div class="header">
+    <div>
+      <h1>📋 Resep Produk</h1>
+      <div class="subtitle">
+        Pemakaian bahan dan hasil produksi Familia Food
+      </div>
+    </div>
 
-<tr>
-<th>Bahan Baku</th>
-<th>Satuan</th>
-<th>Jumlah Pemakaian</th>
-<th>Biaya Bahan</th>
-<th>Aksi</th>
-</tr>
+    <button class="btn-primary" onclick="bukaTambah()">
+      + Tambah Resep
+    </button>
+  </div>
 
-<tr>
-<td>Tepung Tapioka</td>
-<td>Kg</td>
-<td>0</td>
-<td>Rp 0</td>
-<td>Edit</td>
-</tr>
 
-<tr>
-<td>Bumbu</td>
-<td>Kg</td>
-<td>0</td>
-<td>Rp 0</td>
-<td>Edit</td>
-</tr>
+  <div id="message" class="message"></div>
 
-</table>
+
+  <!-- PILIH PRODUK -->
+
+  <div class="card">
+
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Pilih Produk</label>
+
+        <select id="produkPilih" onchange="tampilkanResep()">
+          <option value="">Pilih produk</option>
+        </select>
+      </div>
+
+
+      <div class="form-group">
+        <label>Hasil Produksi</label>
+
+        <input
+          type="number"
+          id="hasilProduksi"
+          min="0"
+          step="0.01"
+          placeholder="Contoh: 10"
+          onchange="simpanHasilProduksi()"
+        >
+
+        <div class="note">
+          Jumlah hasil dalam satuan produk, misalnya bungkus.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- RESEP -->
+
+  <div class="card">
+
+    <h3 style="color:#087443;margin-top:0;">
+      Bahan yang digunakan
+    </h3>
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Bahan Baku</th>
+          <th>Satuan</th>
+          <th>Harga Saat Ini</th>
+          <th>Jumlah Dipakai</th>
+          <th>Biaya Bahan</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+
+      <tbody id="tabelResep">
+
+        <tr>
+          <td colspan="6" class="empty">
+            Pilih produk terlebih dahulu.
+          </td>
+        </tr>
+
+      </tbody>
+
+    </table>
+
+
+    <div class="total-box">
+
+      <div>
+        Total biaya bahan:
+        <strong id="totalBahan">Rp0</strong>
+      </div>
+
+      <div style="margin-top:8px;">
+        Biaya bahan per hasil produksi:
+        <strong id="biayaPerUnit">Rp0</strong>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- KETERANGAN POLA -->
+
+  <div class="card">
+
+    <h3 style="color:#087443;margin-top:0;">
+      🔄 Cara kerja perhitungan
+    </h3>
+
+    <div class="note">
+
+      Harga bahan selalu mengambil harga terbaru dari menu
+      <b>Bahan Baku</b>.
+
+      <br><br>
+
+      Jadi apabila harga bahan berubah, biaya resep akan ikut berubah
+      otomatis.
+
+      <br><br>
+
+      Contoh:
+      harga Lumpia Rp2.500 → Rp2.700,
+      maka biaya Lumpia pada resep Cibay ikut berubah.
+
+      <br><br>
+
+      HPP final nantinya tetap dihitung di menu
+      <b>HPP</b> dengan pola produksi dan overhead Familia Food.
+
+    </div>
+
+  </div>
+
+</main>
+
+
+<!-- MODAL -->
+
+<div id="modal" class="modal">
+
+  <div class="modal-box">
+
+    <h2 id="judulModal">Tambah Bahan Resep</h2>
+
+    <form id="formResep">
+
+      <input type="hidden" id="resepId">
+
+      <div class="form-group">
+        <label>Produk</label>
+
+        <select id="produkForm" required>
+          <option value="">Pilih produk</option>
+        </select>
+      </div>
+
+
+      <div class="form-group" style="margin-top:15px;">
+        <label>Bahan Baku</label>
+
+        <select id="bahanForm" required onchange="tampilkanHargaBahan()">
+          <option value="">Pilih bahan</option>
+        </select>
+      </div>
+
+
+      <div class="form-group" style="margin-top:15px;">
+        <label>Jumlah Pemakaian</label>
+
+        <input
+          type="number"
+          id="jumlahPakai"
+          min="0"
+          step="0.000001"
+          placeholder="Contoh: 0.7"
+          required
+        >
+
+        <div id="catatanBahan" class="note"></div>
+      </div>
+
+
+      <div id="hargaBahanInfo" class="total-box">
+        Harga saat ini:
+        <strong id="hargaBahanText">Rp0</strong>
+
+        <br><br>
+
+        Perkiraan biaya bahan:
+        <strong id="biayaPreview">Rp0</strong>
+      </div>
+
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          class="btn-secondary"
+          onclick="tutupModal()"
+        >
+          Batal
+        </button>
+
+        <button
+          type="submit"
+          class="btn-primary"
+        >
+          Simpan
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
 
 </div>
+
+
+<script>
+
+let daftarProduk = [];
+let daftarBahan = [];
+let daftarResep = [];
+
+let modeEdit = false;
+
+
+/* =========================
+   FORMAT RUPIAH
+========================= */
+
+function rupiah(angka){
+
+  if(
+    angka === null ||
+    angka === undefined ||
+    isNaN(angka)
+  ){
+    return "Rp0";
+  }
+
+  return "Rp" +
+    Number(angka).toLocaleString(
+      "id-ID",
+      {
+        maximumFractionDigits:0
+      }
+    );
+}
+
+
+/* =========================
+   PESAN
+========================= */
+
+function tampilPesan(teks, tipe){
+
+  const el =
+    document.getElementById("message");
+
+  el.textContent = teks;
+
+  el.className =
+    "message " + tipe;
+
+  setTimeout(function(){
+
+    el.className = "message";
+
+  },4000);
+}
+
+
+/* =========================
+   LOAD PRODUK
+========================= */
+
+async function loadProduk(){
+
+  const { data, error } =
+    await supabaseClient
+      .from("produk")
+      .select("*")
+      .order("nama_produk");
+
+  if(error){
+
+    console.error(error);
+
+    tampilPesan(
+      "Gagal mengambil produk: " +
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+  daftarProduk = data || [];
+
+  const pilih =
+    document.getElementById("produkPilih");
+
+  const form =
+    document.getElementById("produkForm");
+
+  pilih.innerHTML =
+    '<option value="">Pilih produk</option>';
+
+  form.innerHTML =
+    '<option value="">Pilih produk</option>';
+
+  daftarProduk.forEach(function(produk){
+
+    const option1 =
+      document.createElement("option");
+
+    option1.value = produk.id;
+
+    option1.textContent =
+      produk.nama_produk;
+
+    pilih.appendChild(option1);
+
+
+    const option2 =
+      document.createElement("option");
+
+    option2.value = produk.id;
+
+    option2.textContent =
+      produk.nama_produk;
+
+    form.appendChild(option2);
+
+  });
+
+}
+
+
+/* =========================
+   LOAD BAHAN
+========================= */
+
+async function loadBahan(){
+
+  const { data, error } =
+    await supabaseClient
+      .from("bahan_baku")
+      .select("*")
+      .order("nama_bahan");
+
+  if(error){
+
+    console.error(error);
+
+    tampilPesan(
+      "Gagal mengambil bahan baku: " +
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+  daftarBahan = data || [];
+
+  const select =
+    document.getElementById("bahanForm");
+
+  select.innerHTML =
+    '<option value="">Pilih bahan</option>';
+
+  daftarBahan.forEach(function(bahan){
+
+    const option =
+      document.createElement("option");
+
+    option.value = bahan.id;
+
+    option.textContent =
+      bahan.nama_bahan +
+      " (" +
+      bahan.satuan +
+      ")";
+
+    select.appendChild(option);
+
+  });
+
+}
+
+
+/* =========================
+   LOAD RESEP
+========================= */
+
+async function loadResep(){
+
+  const { data, error } =
+    await supabaseClient
+      .from("resep")
+      .select("*")
+      .order("id");
+
+  if(error){
+
+    console.error(error);
+
+    tampilPesan(
+      "Gagal mengambil resep: " +
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+  daftarResep = data || [];
+
+}
+
+
+/* =========================
+   TAMPILKAN RESEP PRODUK
+========================= */
+
+async function tampilkanResep(){
+
+  const produkId =
+    document.getElementById("produkPilih").value;
+
+  const tabel =
+    document.getElementById("tabelResep");
+
+  if(!produkId){
+
+    tabel.innerHTML =
+      '<tr><td colspan="6" class="empty">' +
+      'Pilih produk terlebih dahulu.' +
+      '</td></tr>';
+
+    document.getElementById("hasilProduksi").value = "";
+
+    document.getElementById("totalBahan").textContent =
+      "Rp0";
+
+    document.getElementById("biayaPerUnit").textContent =
+      "Rp0";
+
+    return;
+  }
+
+
+  /* Ambil resep terbaru */
+
+  const { data, error } =
+    await supabaseClient
+      .from("resep")
+      .select("*")
+      .eq("produk_id", produkId)
+      .order("id");
+
+
+  if(error){
+
+    console.error(error);
+
+    tampilPesan(
+      "Gagal mengambil resep.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  daftarResep =
+    daftarResep.filter(function(r){
+
+      return r.produk_id != produkId;
+
+    }).concat(data || []);
+
+
+  /* Ambil hasil produksi dari HPP */
+
+  const { data: hppData } =
+    await supabaseClient
+      .from("hpp")
+      .select("jumlah_batch")
+      .eq("produk_id", produkId)
+      .maybeSingle();
+
+
+  document.getElementById("hasilProduksi").value =
+    hppData &&
+    hppData.jumlah_batch !== null
+      ? hppData.jumlah_batch
+      : "";
+
+
+  tabel.innerHTML = "";
+
+
+  if(!data || data.length === 0){
+
+    tabel.innerHTML =
+      '<tr><td colspan="6" class="empty">' +
+      'Belum ada bahan dalam resep produk ini.' +
+      '</td></tr>';
+
+    hitungTotal();
+
+    return;
+  }
+
+
+  let total = 0;
+
+
+  data.forEach(function(resep){
+
+    const bahan =
+      daftarBahan.find(function(b){
+
+        return Number(b.id) === Number(resep.bahan_id);
+
+      });
+
+
+    if(!bahan){
+      return;
+    }
+
+
+    const harga =
+      Number(bahan.harga_beli || 0);
+
+    const jumlah =
+      Number(resep.jumlah_pakai || 0);
+
+    const biaya =
+      hitungBiayaBahan(
+        bahan,
+        jumlah
+      );
+
+
+    total += biaya;
+
+
+    const tr =
+      document.createElement("tr");
+
+
+    tr.innerHTML = `
+
+      <td>
+        <b>${escapeHtml(bahan.nama_bahan)}</b>
+      </td>
+
+      <td>
+        ${escapeHtml(bahan.satuan || "-")}
+      </td>
+
+      <td>
+        ${rupiah(harga)}
+      </td>
+
+      <td>
+        ${jumlah}
+      </td>
+
+      <td>
+        <b>${rupiah(biaya)}</b>
+      </td>
+
+      <td>
+
+        <button
+          class="btn-edit"
+          onclick="editResep(${resep.id})"
+        >
+          Edit
+        </button>
+
+        <button
+          class="btn-danger"
+          onclick="hapusResep(${resep.id})"
+        >
+          Hapus
+        </button>
+
+      </td>
+
+    `;
+
+
+    tabel.appendChild(tr);
+
+  });
+
+
+  hitungTotal();
+
+}
+
+
+/* =========================
+   HITUNG BIAYA BAHAN
+========================= */
+
+function hitungBiayaBahan(
+  bahan,
+  jumlah
+){
+
+  const nama =
+    String(bahan.nama_bahan || "")
+      .toLowerCase()
+      .trim();
+
+
+  /*
+    Plastik:
+    Rp44.000/kg
+    1 kg = 240 lembar
+
+    Jumlah resep dimasukkan
+    dalam jumlah lembar.
+  */
+
+  if(
+    nama === "plastik"
+  ){
+
+    return (
+      Number(bahan.harga_beli || 0)
+      *
+      Number(jumlah || 0)
+      /
+      240
+    );
+
+  }
+
+
+  /*
+    Bahan lain:
+    harga beli mengikuti satuan bahan.
+
+    Contoh:
+    Aci Rp13.600/kg
+    jumlah 0,7
+    = Rp9.520
+  */
+
+  return (
+    Number(bahan.harga_beli || 0)
+    *
+    Number(jumlah || 0)
+  );
+
+}
+
+
+/* =========================
+   HITUNG TOTAL
+========================= */
+
+function hitungTotal(){
+
+  const produkId =
+    document.getElementById("produkPilih").value;
+
+  if(!produkId){
+
+    document.getElementById("totalBahan").textContent =
+      "Rp0";
+
+    document.getElementById("biayaPerUnit").textContent =
+      "Rp0";
+
+    return;
+  }
+
+
+  const resepProduk =
+    daftarResep.filter(function(r){
+
+      return Number(r.produk_id) ===
+        Number(produkId);
+
+    });
+
+
+  let total = 0;
+
+
+  resepProduk.forEach(function(resep){
+
+    const bahan =
+      daftarBahan.find(function(b){
+
+        return Number(b.id) ===
+          Number(resep.bahan_id);
+
+      });
+
+
+    if(!bahan){
+      return;
+    }
+
+
+    total +=
+      hitungBiayaBahan(
+        bahan,
+        Number(resep.jumlah_pakai || 0)
+      );
+
+  });
+
+
+  const hasil =
+    Number(
+      document.getElementById("hasilProduksi").value
+    );
+
+
+  document.getElementById("totalBahan").textContent =
+    rupiah(total);
+
+
+  if(hasil > 0){
+
+    document.getElementById("biayaPerUnit").textContent =
+      rupiah(total / hasil);
+
+  }else{
+
+    document.getElementById("biayaPerUnit").textContent =
+      "Rp0";
+
+  }
+
+}
+
+
+/* =========================
+   SIMPAN HASIL PRODUKSI
+========================= */
+
+async function simpanHasilProduksi(){
+
+  const produkId =
+    document.getElementById("produkPilih").value;
+
+  const hasil =
+    Number(
+      document.getElementById("hasilProduksi").value
+    );
+
+
+  if(!produkId || !hasil){
+    return;
+  }
+
+
+  const { data: lama } =
+    await supabaseClient
+      .from("hpp")
+      .select("*")
+      .eq("produk_id", produkId)
+      .maybeSingle();
+
+
+  const dataHpp = {
+
+    produk_id:
+      Number(produkId),
+
+    jumlah_batch:
+      hasil
+
+  };
+
+
+  let hasilSimpan;
+
+
+  if(lama){
+
+    hasilSimpan =
+      await supabaseClient
+        .from("hpp")
+        .update(dataHpp)
+        .eq("produk_id", produkId);
+
+  }else{
+
+    hasilSimpan =
+      await supabaseClient
+        .from("hpp")
+        .insert([dataHpp]);
+
+  }
+
+
+  if(hasilSimpan.error){
+
+    console.error(
+      hasilSimpan.error
+    );
+
+    tampilPesan(
+      "Gagal menyimpan hasil produksi.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  hitungTotal();
+
+}
+
+
+/* =========================
+   BUKA TAMBAH
+========================= */
+
+function bukaTambah(){
+
+  modeEdit = false;
+
+  document.getElementById("resepId").value = "";
+
+  document.getElementById("judulModal").textContent =
+    "Tambah Bahan Resep";
+
+  const produkPilih =
+    document.getElementById("produkPilih").value;
+
+
+  document.getElementById("produkForm").value =
+    produkPilih;
+
+
+  document.getElementById("bahanForm").value = "";
+
+  document.getElementById("jumlahPakai").value = "";
+
+  document.getElementById("hargaBahanText").textContent =
+    "Rp0";
+
+  document.getElementById("biayaPreview").textContent =
+    "Rp0";
+
+  document.getElementById("catatanBahan").textContent =
+    "";
+
+
+  document.getElementById("modal").style.display =
+    "flex";
+
+}
+
+
+/* =========================
+   TUTUP MODAL
+========================= */
+
+function tutupModal(){
+
+  document.getElementById("modal").style.display =
+    "none";
+
+}
+
+
+/* =========================
+   TAMPILKAN HARGA BAHAN
+========================= */
+
+function tampilkanHargaBahan(){
+
+  const bahanId =
+    document.getElementById("bahanForm").value;
+
+  const bahan =
+    daftarBahan.find(function(b){
+
+      return Number(b.id) ===
+        Number(bahanId);
+
+    });
+
+
+  if(!bahan){
+
+    document.getElementById("hargaBahanText").textContent =
+      "Rp0";
+
+    document.getElementById("biayaPreview").textContent =
+      "Rp0";
+
+    document.getElementById("catatanBahan").textContent =
+      "";
+
+    return;
+  }
+
+
+  document.getElementById("hargaBahanText").textContent =
+    rupiah(bahan.harga_beli);
+
+
+  const nama =
+    String(bahan.nama_bahan || "")
+      .toLowerCase()
+      .trim();
+
+
+  if(nama === "plastik"){
+
+    document.getElementById("catatanBahan").textContent =
+      "Untuk Plastik: masukkan jumlah lembar. " +
+      "Sistem menghitung berdasarkan 240 lembar/kg.";
+
+  }else{
+
+    document.getElementById("catatanBahan").textContent =
+      "Masukkan jumlah sesuai satuan bahan: " +
+      (bahan.satuan || "");
+
+  }
+
+
+  hitungPreview();
+
+}
+
+
+/* =========================
+   PREVIEW BIAYA
+========================= */
+
+function hitungPreview(){
+
+  const bahanId =
+    document.getElementById("bahanForm").value;
+
+  const jumlah =
+    Number(
+      document.getElementById("jumlahPakai").value
+    );
+
+
+  const bahan =
+    daftarBahan.find(function(b){
+
+      return Number(b.id) ===
+        Number(bahanId);
+
+    });
+
+
+  if(!bahan || !jumlah){
+
+    document.getElementById("biayaPreview").textContent =
+      "Rp0";
+
+    return;
+  }
+
+
+  const biaya =
+    hitungBiayaBahan(
+      bahan,
+      jumlah
+    );
+
+
+  document.getElementById("biayaPreview").textContent =
+    rupiah(biaya);
+
+}
+
+
+document.getElementById("jumlahPakai")
+  .addEventListener(
+    "input",
+    hitungPreview
+  );
+
+
+/* =========================
+   SIMPAN RESEP
+========================= */
+
+document.getElementById("formResep")
+  .addEventListener(
+    "submit",
+    async function(e){
+
+      e.preventDefault();
+
+
+      const id =
+        document.getElementById("resepId").value;
+
+      const produkId =
+        document.getElementById("produkForm").value;
+
+      const bahanId =
+        document.getElementById("bahanForm").value;
+
+      const jumlah =
+        Number(
+          document.getElementById("jumlahPakai").value
+        );
+
+
+      if(
+        !produkId ||
+        !bahanId ||
+        !jumlah ||
+        jumlah <= 0
+      ){
+
+        tampilPesan(
+          "Produk, bahan, dan jumlah pemakaian harus diisi.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      const bahan =
+        daftarBahan.find(function(b){
+
+          return Number(b.id) ===
+            Number(bahanId);
+
+        });
+
+
+      const biaya =
+        hitungBiayaBahan(
+          bahan,
+          jumlah
+        );
+
+
+      const dataResep = {
+
+        produk_id:
+          Number(produkId),
+
+        bahan_id:
+          Number(bahanId),
+
+        jumlah_pakai:
+          jumlah,
+
+        biaya_bahan:
+          biaya
+
+      };
+
+
+      let hasil;
+
+
+      if(modeEdit && id){
+
+        hasil =
+          await supabaseClient
+            .from("resep")
+            .update(dataResep)
+            .eq("id", id);
+
+      }else{
+
+        hasil =
+          await supabaseClient
+            .from("resep")
+            .insert([dataResep]);
+
+      }
+
+
+      if(hasil.error){
+
+        console.error(
+          hasil.error
+        );
+
+        tampilPesan(
+          "Gagal menyimpan resep: " +
+          hasil.error.message,
+          "error"
+        );
+
+        return;
+      }
+
+
+      tutupModal();
+
+
+      tampilPesan(
+        modeEdit
+          ? "Resep berhasil diperbarui."
+          : "Bahan berhasil ditambahkan ke resep.",
+        "success"
+      );
+
+
+      await loadResep();
+
+      await tampilkanResep();
+
+    }
+  );
+
+
+/* =========================
+   EDIT RESEP
+========================= */
+
+async function editResep(id){
+
+  const resep =
+    daftarResep.find(function(r){
+
+      return Number(r.id) ===
+        Number(id);
+
+    });
+
+
+  if(!resep){
+
+    tampilPesan(
+      "Data resep tidak ditemukan.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  modeEdit = true;
+
+
+  document.getElementById("resepId").value =
+    resep.id;
+
+  document.getElementById("judulModal").textContent =
+    "Edit Bahan Resep";
+
+
+  document.getElementById("produkForm").value =
+    resep.produk_id;
+
+  document.getElementById("bahanForm").value =
+    resep.bahan_id;
+
+  document.getElementById("jumlahPakai").value =
+    resep.jumlah_pakai;
+
+
+  tampilkanHargaBahan();
+
+
+  document.getElementById("modal").style.display =
+    "flex";
+
+}
+
+
+/* =========================
+   HAPUS RESEP
+========================= */
+
+async function hapusResep(id){
+
+  const yakin =
+    confirm(
+      "Hapus bahan ini dari resep?"
+    );
+
+
+  if(!yakin){
+    return;
+  }
+
+
+  const { error } =
+    await supabaseClient
+      .from("resep")
+      .delete()
+      .eq("id", id);
+
+
+  if(error){
+
+    console.error(error);
+
+    tampilPesan(
+      "Gagal menghapus resep: " +
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  tampilPesan(
+    "Bahan berhasil dihapus dari resep.",
+    "success"
+  );
+
+
+  await loadResep();
+
+  await tampilkanResep();
+
+}
+
+
+/* =========================
+   ESCAPE HTML
+========================= */
+
+function escapeHtml(text){
+
+  return String(text)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+/* =========================
+   MULAI
+========================= */
+
+async function mulai(){
+
+  await loadProduk();
+
+  await loadBahan();
+
+  await loadResep();
+
+}
+
+
+mulai();
+
+</script>
 
 </body>
 </html>
