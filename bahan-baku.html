@@ -1,93 +1,938 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-<title>Bahan Baku - Familia Food</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bahan Baku - Familia Food</title>
 
-<style>
-body{
-font-family:Arial;
-background:#f5faf7;
-padding:30px;
-}
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
 
-.container{
-background:white;
-padding:25px;
-border-radius:15px;
-}
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-h1{
-color:#087443;
-}
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5faf7;
+      color: #222;
+    }
 
-button{
-background:#087443;
-color:white;
-border:0;
-padding:10px 20px;
-border-radius:8px;
-}
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 220px;
+      height: 100vh;
+      background: #087443;
+      color: white;
+      padding: 25px 15px;
+    }
 
-table{
-width:100%;
-margin-top:20px;
-border-collapse:collapse;
-}
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      text-align: center;
+    }
 
-th{
-background:#087443;
-color:white;
-padding:12px;
-}
+    .menu a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 11px 13px;
+      margin-bottom: 6px;
+      border-radius: 8px;
+    }
 
-td{
-padding:12px;
-border-bottom:1px solid #ddd;
-}
+    .menu a:hover {
+      background: rgba(255,255,255,0.15);
+    }
 
-</style>
+    .menu .active {
+      background: rgba(255,255,255,0.2);
+      font-weight: bold;
+    }
+
+    .content {
+      margin-left: 220px;
+      padding: 30px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    h1 {
+      margin: 0;
+      color: #087443;
+    }
+
+    .subtitle {
+      margin-top: 7px;
+      color: #666;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-primary {
+      background: #087443;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #065d35;
+    }
+
+    .btn-edit {
+      background: #e9f6ef;
+      color: #087443;
+      margin-right: 5px;
+    }
+
+    .btn-delete {
+      background: #fdecec;
+      color: #c62828;
+    }
+
+    .card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: #087443;
+      color: white;
+      padding: 13px;
+      text-align: left;
+    }
+
+    td {
+      padding: 13px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .empty {
+      text-align: center;
+      color: #777;
+      padding: 30px;
+    }
+
+    .message {
+      display: none;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .success {
+      background: #e8f7ee;
+      color: #087443;
+    }
+
+    .error {
+      background: #fdecec;
+      color: #c62828;
+    }
+
+    /* MODAL */
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.45);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+    }
+
+    .modal-title {
+      color: #087443;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    .form-note {
+      font-size: 12px;
+      color: #777;
+      margin-top: 5px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-cancel {
+      background: #eee;
+      color: #333;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 25px;
+      color: #666;
+    }
+
+    @media (max-width: 800px) {
+      .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+      }
+
+      .content {
+        margin-left: 0;
+        padding: 20px;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .card {
+        overflow-x: auto;
+      }
+
+      table {
+        min-width: 750px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="container">
+  <aside class="sidebar">
+    <div class="logo">🌿 Familia Food</div>
 
-<h1>🌾 Bahan Baku</h1>
+    <div class="menu">
+      <a href="index.html">Dashboard</a>
+      <a href="produk.html">Produk</a>
+      <a href="bahan-baku.html" class="active">Bahan Baku</a>
+      <a href="resep.html">Resep</a>
+      <a href="hpp.html">HPP</a>
+      <a href="penjualan.html">Penjualan</a>
+      <a href="rekap.html">Rekap</a>
+      <a href="data-lama.html">Data Lama</a>
+      <a href="pengaturan.html">Pengaturan</a>
+    </div>
+  </aside>
 
-<button>+ Tambah Bahan</button>
 
-<table>
+  <main class="content">
 
-<tr>
-<th>Nama Bahan</th>
-<th>Satuan</th>
-<th>Harga Beli</th>
-<th>Stok</th>
-<th>Total</th>
-<th>Aksi</th>
-</tr>
+    <div class="header">
+      <div>
+        <h1>🌾 Bahan Baku</h1>
+        <div class="subtitle">
+          Kelola bahan baku dan harga satuan Familia Food
+        </div>
+      </div>
 
-<tr>
-<td>Tepung Tapioka</td>
-<td>Kg</td>
-<td>Rp 13.000</td>
-<td>20</td>
-<td>Rp 260.000</td>
-<td>Edit</td>
-</tr>
+      <button class="btn-primary" onclick="bukaTambah()">
+        + Tambah Bahan
+      </button>
+    </div>
 
-<tr>
-<td>Minyak</td>
-<td>Liter</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>Edit</td>
-</tr>
 
-</table>
+    <div id="message" class="message"></div>
 
-</div>
+
+    <div class="card">
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nama Bahan</th>
+            <th>Satuan</th>
+            <th>Harga Beli</th>
+            <th>Isi Kemasan</th>
+            <th>Harga Satuan</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+
+        <tbody id="tabelBahan">
+          <tr>
+            <td colspan="7" class="loading">
+              Memuat data...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+  </main>
+
+
+  <!-- MODAL TAMBAH / EDIT -->
+
+  <div id="modal" class="modal">
+
+    <div class="modal-box">
+
+      <h2 id="judulModal" class="modal-title">
+        Tambah Bahan
+      </h2>
+
+      <form id="formBahan">
+
+        <input type="hidden" id="bahanId">
+
+        <div class="form-group">
+          <label>Nama Bahan</label>
+          <input
+            type="text"
+            id="namaBahan"
+            placeholder="Contoh: Tepung Tapioka"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Satuan</label>
+
+          <select id="satuan" required>
+            <option value="">Pilih satuan</option>
+            <option value="Kg">Kg</option>
+            <option value="Gram">Gram</option>
+            <option value="Liter">Liter</option>
+            <option value="Ml">Ml</option>
+            <option value="Pcs">Pcs</option>
+            <option value="Bungkus">Bungkus</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Harga Beli</label>
+
+          <input
+            type="number"
+            id="hargaBeli"
+            min="0"
+            placeholder="Contoh: 13000"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Isi Kemasan</label>
+
+          <input
+            type="number"
+            id="isiKemasan"
+            min="0"
+            step="any"
+            placeholder="Contoh: 1"
+            required
+          >
+
+          <div class="form-note">
+            Contoh: tepung 1 karung berisi 20 Kg → isi kemasan = 20
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+
+          <select id="status" required>
+            <option value="Aktif">Aktif</option>
+            <option value="Arsip">Arsip</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="btn-cancel"
+            onclick="tutupModal()"
+          >
+            Batal
+          </button>
+
+          <button
+            type="submit"
+            class="btn-primary"
+          >
+            Simpan
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+<script>
+
+  let modeEdit = false;
+
+
+  // =========================
+  // TAMPILKAN PESAN
+  // =========================
+
+  function tampilPesan(teks, tipe) {
+
+    const box = document.getElementById("message");
+
+    box.textContent = teks;
+
+    box.className = "message " + tipe;
+
+    box.style.display = "block";
+
+    setTimeout(() => {
+      box.style.display = "none";
+    }, 3500);
+  }
+
+
+  // =========================
+  // BUKA TAMBAH
+  // =========================
+
+  function bukaTambah() {
+
+    modeEdit = false;
+
+    document.getElementById("judulModal").textContent =
+      "Tambah Bahan";
+
+    document.getElementById("formBahan").reset();
+
+    document.getElementById("bahanId").value = "";
+
+    document.getElementById("status").value = "Aktif";
+
+    document.getElementById("modal").style.display = "flex";
+  }
+
+
+  // =========================
+  // TUTUP MODAL
+  // =========================
+
+  function tutupModal() {
+
+    document.getElementById("modal").style.display = "none";
+  }
+
+
+  // =========================
+  // FORMAT RUPIAH
+  // =========================
+
+  function rupiah(angka) {
+
+    if (
+      angka === null ||
+      angka === undefined ||
+      angka === ""
+    ) {
+      return "-";
+    }
+
+    return "Rp " + Number(angka).toLocaleString("id-ID");
+  }
+
+
+  // =========================
+  // LOAD DATA
+  // =========================
+
+  async function loadBahan() {
+
+    const tbody = document.getElementById("tabelBahan");
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="loading">
+          Memuat data...
+        </td>
+      </tr>
+    `;
+
+
+    const { data, error } = await supabaseClient
+      .from("bahan_baku")
+      .select("*")
+      .order("id", { ascending: true });
+
+
+    if (error) {
+
+      console.error(error);
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="empty">
+            Gagal mengambil data bahan baku.
+          </td>
+        </tr>
+      `;
+
+      tampilPesan(
+        "Gagal mengambil data: " + error.message,
+        "error"
+      );
+
+      return;
+    }
+
+
+    if (!data || data.length === 0) {
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="empty">
+            Belum ada data bahan baku.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+
+    tbody.innerHTML = "";
+
+
+    data.forEach(bahan => {
+
+      /*
+        Minyak tidak ditampilkan karena sebelumnya
+        sudah ditetapkan tidak digunakan dalam HPP.
+      */
+
+      if (
+        bahan.nama_bahan &&
+        bahan.nama_bahan.toLowerCase().trim() === "minyak"
+      ) {
+        return;
+      }
+
+
+      const tr = document.createElement("tr");
+
+
+      tr.innerHTML = `
+
+        <td>
+          <strong>${escapeHtml(bahan.nama_bahan || "-")}</strong>
+        </td>
+
+        <td>
+          ${escapeHtml(bahan.satuan || "-")}
+        </td>
+
+        <td>
+          ${rupiah(bahan.harga_beli)}
+        </td>
+
+        <td>
+          ${bahan.isi_kemasan ?? "-"}
+        </td>
+
+        <td>
+          ${rupiah(bahan.harga_satuan)}
+        </td>
+
+        <td>
+          <strong>
+            ${escapeHtml(bahan.status || "Aktif")}
+          </strong>
+        </td>
+
+        <td>
+
+          <button
+            class="btn-edit"
+            onclick="editBahan(${bahan.id})"
+          >
+            Edit
+          </button>
+
+          <button
+            class="btn-delete"
+            onclick="hapusBahan(${bahan.id}, '${escapeJs(bahan.nama_bahan || "")}')"
+          >
+            Hapus
+          </button>
+
+        </td>
+
+      `;
+
+
+      tbody.appendChild(tr);
+
+    });
+
+  }
+
+
+  // =========================
+  // EDIT BAHAN
+  // =========================
+
+  async function editBahan(id) {
+
+    const { data, error } = await supabaseClient
+      .from("bahan_baku")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+
+    if (error) {
+
+      tampilPesan(
+        "Gagal mengambil data bahan.",
+        "error"
+      );
+
+      console.error(error);
+
+      return;
+    }
+
+
+    modeEdit = true;
+
+
+    document.getElementById("judulModal").textContent =
+      "Edit Bahan";
+
+
+    document.getElementById("bahanId").value =
+      data.id;
+
+
+    document.getElementById("namaBahan").value =
+      data.nama_bahan || "";
+
+
+    document.getElementById("satuan").value =
+      data.satuan || "";
+
+
+    document.getElementById("hargaBeli").value =
+      data.harga_beli ?? "";
+
+
+    document.getElementById("isiKemasan").value =
+      data.isi_kemasan ?? "";
+
+
+    document.getElementById("status").value =
+      data.status || "Aktif";
+
+
+    document.getElementById("modal").style.display =
+      "flex";
+  }
+
+
+  // =========================
+  // SIMPAN BAHAN
+  // =========================
+
+  document.getElementById("formBahan").addEventListener(
+    "submit",
+    async function(event) {
+
+      event.preventDefault();
+
+
+      const id =
+        document.getElementById("bahanId").value;
+
+
+      const nama =
+        document.getElementById("namaBahan").value.trim();
+
+
+      const satuan =
+        document.getElementById("satuan").value;
+
+
+      const hargaBeli =
+        Number(document.getElementById("hargaBeli").value);
+
+
+      const isiKemasan =
+        Number(document.getElementById("isiKemasan").value);
+
+
+      const status =
+        document.getElementById("status").value;
+
+
+      if (!nama) {
+
+        tampilPesan(
+          "Nama bahan wajib diisi.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      if (
+        !hargaBeli ||
+        hargaBeli < 0
+      ) {
+
+        tampilPesan(
+          "Harga beli belum benar.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      if (
+        !isiKemasan ||
+        isiKemasan <= 0
+      ) {
+
+        tampilPesan(
+          "Isi kemasan harus lebih dari 0.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      // Minyak tidak digunakan
+
+      if (
+        nama.toLowerCase() === "minyak"
+      ) {
+
+        tampilPesan(
+          "Minyak tidak digunakan dalam HPP Familia Food.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      const hargaSatuan =
+        hargaBeli / isiKemasan;
+
+
+      const dataBahan = {
+
+        nama_bahan: nama,
+
+        satuan: satuan,
+
+        harga_beli: hargaBeli,
+
+        isi_kemasan: isiKemasan,
+
+        harga_satuan: hargaSatuan,
+
+        status: status
+
+      };
+
+
+      let hasil;
+
+
+      if (modeEdit && id) {
+
+        hasil = await supabaseClient
+          .from("bahan_baku")
+          .update(dataBahan)
+          .eq("id", id);
+
+      } else {
+
+        hasil = await supabaseClient
+          .from("bahan_baku")
+          .insert([dataBahan]);
+
+      }
+
+
+      if (hasil.error) {
+
+        console.error(hasil.error);
+
+        tampilPesan(
+          "Gagal menyimpan: " +
+          hasil.error.message,
+          "error"
+        );
+
+        return;
+      }
+
+
+      tutupModal();
+
+      tampilPesan(
+        modeEdit
+          ? "Bahan berhasil diperbarui."
+          : "Bahan berhasil ditambahkan.",
+        "success"
+      );
+
+
+      loadBahan();
+
+    }
+  );
+
+
+  // =========================
+  // HAPUS BAHAN
+  // =========================
+
+  async function hapusBahan(id, nama) {
+
+    const yakin = confirm(
+      "Hapus bahan \"" +
+      nama +
+      "\"?"
+    );
+
+
+    if (!yakin) {
+      return;
+    }
+
+
+    const { error } = await supabaseClient
+      .from("bahan_baku")
+      .delete()
+      .eq("id", id);
+
+
+    if (error) {
+
+      console.error(error);
+
+      tampilPesan(
+        "Gagal menghapus bahan: " +
+        error.message,
+        "error"
+      );
+
+      return;
+    }
+
+
+    tampilPesan(
+      "Bahan berhasil dihapus.",
+      "success"
+    );
+
+
+    loadBahan();
+
+  }
+
+
+  // =========================
+  // KEAMANAN TEKS
+  // =========================
+
+  function escapeHtml(text) {
+
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+
+  function escapeJs(text) {
+
+    return String(text)
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'");
+  }
+
+
+  // =========================
+  // MULAI
+  // =========================
+
+  loadBahan();
+
+</script>
 
 </body>
 </html>
