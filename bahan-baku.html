@@ -249,7 +249,7 @@
       }
 
       table {
-        min-width: 750px;
+        min-width: 600px;
       }
     }
   </style>
@@ -280,7 +280,7 @@
       <div>
         <h1>🌾 Bahan Baku</h1>
         <div class="subtitle">
-          Kelola bahan baku dan harga satuan Familia Food
+          Kelola bahan baku dan harga beli Familia Food
         </div>
       </div>
 
@@ -301,8 +301,6 @@
             <th>Nama Bahan</th>
             <th>Satuan</th>
             <th>Harga Beli</th>
-            <th>Isi Kemasan</th>
-            <th>Harga Satuan</th>
             <th>Status</th>
             <th>Aksi</th>
           </tr>
@@ -310,7 +308,7 @@
 
         <tbody id="tabelBahan">
           <tr>
-            <td colspan="7" class="loading">
+            <td colspan="5" class="loading">
               Memuat data...
             </td>
           </tr>
@@ -338,13 +336,15 @@
 
         <div class="form-group">
           <label>Nama Bahan</label>
+
           <input
             type="text"
             id="namaBahan"
-            placeholder="Contoh: Tepung Tapioka"
+            placeholder="Contoh: Aci"
             required
           >
         </div>
+
 
         <div class="form-group">
           <label>Satuan</label>
@@ -360,6 +360,7 @@
           </select>
         </div>
 
+
         <div class="form-group">
           <label>Harga Beli</label>
 
@@ -367,27 +368,11 @@
             type="number"
             id="hargaBeli"
             min="0"
-            placeholder="Contoh: 13000"
+            placeholder="Contoh: 13600"
             required
           >
         </div>
 
-        <div class="form-group">
-          <label>Isi Kemasan</label>
-
-          <input
-            type="number"
-            id="isiKemasan"
-            min="0"
-            step="any"
-            placeholder="Contoh: 1"
-            required
-          >
-
-          <div class="form-note">
-            Contoh: tepung 1 karung berisi 20 Kg → isi kemasan = 20
-          </div>
-        </div>
 
         <div class="form-group">
           <label>Status</label>
@@ -397,6 +382,7 @@
             <option value="Arsip">Arsip</option>
           </select>
         </div>
+
 
         <div class="modal-actions">
 
@@ -508,7 +494,7 @@
 
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="loading">
+        <td colspan="5" class="loading">
           Memuat data...
         </td>
       </tr>
@@ -527,7 +513,7 @@
 
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" class="empty">
+          <td colspan="5" class="empty">
             Gagal mengambil data bahan baku.
           </td>
         </tr>
@@ -546,7 +532,7 @@
 
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" class="empty">
+          <td colspan="5" class="empty">
             Belum ada data bahan baku.
           </td>
         </tr>
@@ -589,14 +575,6 @@
 
         <td>
           ${rupiah(bahan.harga_beli)}
-        </td>
-
-        <td>
-          ${bahan.isi_kemasan ?? "-"}
-        </td>
-
-        <td>
-          ${rupiah(bahan.harga_satuan)}
         </td>
 
         <td>
@@ -682,10 +660,6 @@
       data.harga_beli ?? "";
 
 
-    document.getElementById("isiKemasan").value =
-      data.isi_kemasan ?? "";
-
-
     document.getElementById("status").value =
       data.status || "Aktif";
 
@@ -722,10 +696,6 @@
         Number(document.getElementById("hargaBeli").value);
 
 
-      const isiKemasan =
-        Number(document.getElementById("isiKemasan").value);
-
-
       const status =
         document.getElementById("status").value;
 
@@ -755,20 +725,6 @@
       }
 
 
-      if (
-        !isiKemasan ||
-        isiKemasan <= 0
-      ) {
-
-        tampilPesan(
-          "Isi kemasan harus lebih dari 0.",
-          "error"
-        );
-
-        return;
-      }
-
-
       // Minyak tidak digunakan
 
       if (
@@ -784,10 +740,6 @@
       }
 
 
-      const hargaSatuan =
-        hargaBeli / isiKemasan;
-
-
       const dataBahan = {
 
         nama_bahan: nama,
@@ -795,10 +747,6 @@
         satuan: satuan,
 
         harga_beli: hargaBeli,
-
-        isi_kemasan: isiKemasan,
-
-        harga_satuan: hargaSatuan,
 
         status: status
 
