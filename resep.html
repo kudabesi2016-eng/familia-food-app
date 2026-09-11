@@ -203,7 +203,6 @@ td{
   color:#777;
 }
 
-/* MODAL */
 .modal{
   display:none;
   position:fixed;
@@ -240,16 +239,8 @@ td{
   margin-top:20px;
 }
 
-.badge{
-  display:inline-block;
-  padding:5px 9px;
-  border-radius:20px;
-  background:#e8f5ee;
-  color:#087443;
-  font-size:12px;
-}
-
 @media(max-width:800px){
+
   .sidebar{
     position:relative;
     width:100%;
@@ -302,7 +293,6 @@ td{
 
 </aside>
 
-
 <main class="content">
 
   <div class="header">
@@ -318,11 +308,7 @@ td{
     </button>
   </div>
 
-
   <div id="message" class="message"></div>
-
-
-  <!-- PILIH PRODUK -->
 
   <div class="card">
 
@@ -335,7 +321,6 @@ td{
           <option value="">Pilih produk</option>
         </select>
       </div>
-
 
       <div class="form-group">
         <label>Hasil Produksi</label>
@@ -357,9 +342,6 @@ td{
     </div>
 
   </div>
-
-
-  <!-- RESEP -->
 
   <div class="card">
 
@@ -392,7 +374,6 @@ td{
 
     </table>
 
-
     <div class="total-box">
 
       <div>
@@ -408,9 +389,6 @@ td{
     </div>
 
   </div>
-
-
-  <!-- KETERANGAN POLA -->
 
   <div class="card">
 
@@ -430,6 +408,17 @@ td{
 
       <br><br>
 
+      Bumbu dipakai bersama dengan pembagian:
+
+      <br>
+
+      Naget <b>30%</b> —
+      Cibay <b>20%</b> —
+      Cireng isi <b>45%</b> —
+      Cireng biasa <b>5%</b>.
+
+      <br><br>
+
       Contoh:
       harga Lumpia Rp2.500 → Rp2.700,
       maka biaya Lumpia pada resep Cibay ikut berubah.
@@ -444,9 +433,6 @@ td{
   </div>
 
 </main>
-
-
-<!-- MODAL -->
 
 <div id="modal" class="modal">
 
@@ -466,33 +452,39 @@ td{
         </select>
       </div>
 
-
       <div class="form-group" style="margin-top:15px;">
         <label>Bahan Baku</label>
 
-        <select id="bahanForm" required onchange="tampilkanHargaBahan()">
+        <select
+          id="bahanForm"
+          required
+          onchange="tampilkanHargaBahan()"
+        >
           <option value="">Pilih bahan</option>
         </select>
       </div>
 
-
       <div class="form-group" style="margin-top:15px;">
-        <label>Jumlah Pemakaian</label>
+
+        <label id="labelJumlahPakai">
+          Jumlah Pemakaian
+        </label>
 
         <input
           type="number"
           id="jumlahPakai"
           min="0"
-          step="0.000001"
+          step="0.01"
           placeholder="Contoh: 0.7"
           required
         >
 
         <div id="catatanBahan" class="note"></div>
+
       </div>
 
-
       <div id="hargaBahanInfo" class="total-box">
+
         Harga saat ini:
         <strong id="hargaBahanText">Rp0</strong>
 
@@ -500,8 +492,8 @@ td{
 
         Perkiraan biaya bahan:
         <strong id="biayaPreview">Rp0</strong>
-      </div>
 
+      </div>
 
       <div class="modal-actions">
 
@@ -527,7 +519,6 @@ td{
   </div>
 
 </div>
-
 
 <script>
 
@@ -635,7 +626,6 @@ async function loadProduk(){
 
     pilih.appendChild(option1);
 
-
     const option2 =
       document.createElement("option");
 
@@ -686,6 +676,16 @@ async function loadBahan(){
 
   daftarBahan.forEach(function(bahan){
 
+    const nama =
+      String(bahan.nama_bahan || "")
+        .toLowerCase()
+        .trim();
+
+    /* Minyak tidak digunakan */
+    if(nama === "minyak"){
+      return;
+    }
+
     const option =
       document.createElement("option");
 
@@ -735,7 +735,7 @@ async function loadResep(){
 
 
 /* =========================
-   TAMPILKAN RESEP PRODUK
+   TAMPILKAN RESEP
 ========================= */
 
 async function tampilkanResep(){
@@ -764,16 +764,12 @@ async function tampilkanResep(){
     return;
   }
 
-
-  /* Ambil resep terbaru */
-
   const { data, error } =
     await supabaseClient
       .from("resep")
       .select("*")
       .eq("produk_id", produkId)
       .order("id");
-
 
   if(error){
 
@@ -787,16 +783,10 @@ async function tampilkanResep(){
     return;
   }
 
-
   daftarResep =
     daftarResep.filter(function(r){
-
       return r.produk_id != produkId;
-
     }).concat(data || []);
-
-
-  /* Ambil hasil produksi dari HPP */
 
   const { data: hppData } =
     await supabaseClient
@@ -805,16 +795,13 @@ async function tampilkanResep(){
       .eq("produk_id", produkId)
       .maybeSingle();
 
-
   document.getElementById("hasilProduksi").value =
     hppData &&
     hppData.jumlah_batch !== null
       ? hppData.jumlah_batch
       : "";
 
-
   tabel.innerHTML = "";
-
 
   if(!data || data.length === 0){
 
@@ -828,24 +815,17 @@ async function tampilkanResep(){
     return;
   }
 
-
-  let total = 0;
-
-
   data.forEach(function(resep){
 
     const bahan =
       daftarBahan.find(function(b){
-
-        return Number(b.id) === Number(resep.bahan_id);
-
+        return Number(b.id) ===
+          Number(resep.bahan_id);
       });
-
 
     if(!bahan){
       return;
     }
-
 
     const harga =
       Number(bahan.harga_beli || 0);
@@ -853,19 +833,49 @@ async function tampilkanResep(){
     const jumlah =
       Number(resep.jumlah_pakai || 0);
 
+    const namaBahan =
+      String(bahan.nama_bahan || "")
+        .toLowerCase()
+        .trim();
+
+    let jumlahTampil;
+    let satuanTampil;
+
+    if(namaBahan === "bumbu"){
+
+      jumlahTampil =
+        (jumlah <= 1
+          ? jumlah * 100
+          : jumlah) + "%";
+
+      satuanTampil =
+        "Persen (%)";
+
+    }else if(namaBahan === "plastik"){
+
+      jumlahTampil =
+        jumlah + " lembar";
+
+      satuanTampil =
+        "Lembar";
+
+    }else{
+
+      jumlahTampil =
+        jumlah;
+
+      satuanTampil =
+        bahan.satuan || "-";
+    }
+
     const biaya =
       hitungBiayaBahan(
         bahan,
         jumlah
       );
 
-
-    total += biaya;
-
-
     const tr =
       document.createElement("tr");
-
 
     tr.innerHTML = `
 
@@ -874,7 +884,7 @@ async function tampilkanResep(){
       </td>
 
       <td>
-        ${escapeHtml(bahan.satuan || "-")}
+        ${escapeHtml(satuanTampil)}
       </td>
 
       <td>
@@ -882,7 +892,7 @@ async function tampilkanResep(){
       </td>
 
       <td>
-        ${jumlah}
+        ${jumlahTampil}
       </td>
 
       <td>
@@ -909,11 +919,9 @@ async function tampilkanResep(){
 
     `;
 
-
     tabel.appendChild(tr);
 
   });
-
 
   hitungTotal();
 
@@ -924,56 +932,66 @@ async function tampilkanResep(){
    HITUNG BIAYA BAHAN
 ========================= */
 
-function hitungBiayaBahan(
-  bahan,
-  jumlah
-){
+function hitungBiayaBahan(bahan, jumlah){
+
+  if(!bahan){
+    return 0;
+  }
 
   const nama =
     String(bahan.nama_bahan || "")
       .toLowerCase()
       .trim();
 
+  const harga =
+    Number(bahan.harga_beli || 0);
+
+  const nilai =
+    Number(jumlah || 0);
 
   /*
-    Plastik:
-    Rp44.000/kg
-    1 kg = 240 lembar
+    BUMBU DIPAKAI BERSAMA
 
-    Jumlah resep dimasukkan
-    dalam jumlah lembar.
+    Nilai 20 = 20%
+    Nilai 45 = 45%
+
+    Data lama 0.2 juga tetap dibaca sebagai 20%.
   */
 
-  if(
-    nama === "plastik"
-  ){
+  if(nama === "bumbu"){
 
-    return (
-      Number(bahan.harga_beli || 0)
-      *
-      Number(jumlah || 0)
-      /
-      240
-    );
+    if(nilai > 0 && nilai <= 1){
+      return harga * nilai;
+    }
 
+    return harga * nilai / 100;
   }
 
 
   /*
-    Bahan lain:
-    harga beli mengikuti satuan bahan.
+    PLASTIK
 
-    Contoh:
-    Aci Rp13.600/kg
-    jumlah 0,7
-    = Rp9.520
+    Rp44.000/kg
+    1 kg = 240 lembar.
   */
 
-  return (
-    Number(bahan.harga_beli || 0)
-    *
-    Number(jumlah || 0)
-  );
+  if(nama === "plastik"){
+
+    return (
+      harga *
+      nilai /
+      240
+    );
+  }
+
+
+  /*
+    BAHAN LAIN
+
+    Harga mengikuti satuan bahan.
+  */
+
+  return harga * nilai;
 
 }
 
@@ -998,7 +1016,6 @@ function hitungTotal(){
     return;
   }
 
-
   const resepProduk =
     daftarResep.filter(function(r){
 
@@ -1007,9 +1024,7 @@ function hitungTotal(){
 
     });
 
-
   let total = 0;
-
 
   resepProduk.forEach(function(resep){
 
@@ -1021,11 +1036,9 @@ function hitungTotal(){
 
       });
 
-
     if(!bahan){
       return;
     }
-
 
     total +=
       hitungBiayaBahan(
@@ -1035,16 +1048,13 @@ function hitungTotal(){
 
   });
 
-
   const hasil =
     Number(
       document.getElementById("hasilProduksi").value
     );
 
-
   document.getElementById("totalBahan").textContent =
     rupiah(total);
-
 
   if(hasil > 0){
 
@@ -1055,7 +1065,6 @@ function hitungTotal(){
 
     document.getElementById("biayaPerUnit").textContent =
       "Rp0";
-
   }
 
 }
@@ -1075,11 +1084,9 @@ async function simpanHasilProduksi(){
       document.getElementById("hasilProduksi").value
     );
 
-
   if(!produkId || !hasil){
     return;
   }
-
 
   const { data: lama } =
     await supabaseClient
@@ -1087,7 +1094,6 @@ async function simpanHasilProduksi(){
       .select("*")
       .eq("produk_id", produkId)
       .maybeSingle();
-
 
   const dataHpp = {
 
@@ -1099,9 +1105,7 @@ async function simpanHasilProduksi(){
 
   };
 
-
   let hasilSimpan;
-
 
   if(lama){
 
@@ -1120,7 +1124,6 @@ async function simpanHasilProduksi(){
 
   }
 
-
   if(hasilSimpan.error){
 
     console.error(
@@ -1134,7 +1137,6 @@ async function simpanHasilProduksi(){
 
     return;
   }
-
 
   hitungTotal();
 
@@ -1157,14 +1159,18 @@ function bukaTambah(){
   const produkPilih =
     document.getElementById("produkPilih").value;
 
-
   document.getElementById("produkForm").value =
     produkPilih;
-
 
   document.getElementById("bahanForm").value = "";
 
   document.getElementById("jumlahPakai").value = "";
+
+  document.getElementById("labelJumlahPakai").textContent =
+    "Jumlah Pemakaian";
+
+  document.getElementById("jumlahPakai").placeholder =
+    "Contoh: 0.7";
 
   document.getElementById("hargaBahanText").textContent =
     "Rp0";
@@ -1174,7 +1180,6 @@ function bukaTambah(){
 
   document.getElementById("catatanBahan").textContent =
     "";
-
 
   document.getElementById("modal").style.display =
     "flex";
@@ -1211,6 +1216,11 @@ function tampilkanHargaBahan(){
 
     });
 
+  const label =
+    document.getElementById("labelJumlahPakai");
+
+  const input =
+    document.getElementById("jumlahPakai");
 
   if(!bahan){
 
@@ -1223,34 +1233,70 @@ function tampilkanHargaBahan(){
     document.getElementById("catatanBahan").textContent =
       "";
 
+    label.textContent =
+      "Jumlah Pemakaian";
+
+    input.placeholder =
+      "Contoh: 0.7";
+
+    input.step =
+      "0.01";
+
     return;
   }
 
-
   document.getElementById("hargaBahanText").textContent =
     rupiah(bahan.harga_beli);
-
 
   const nama =
     String(bahan.nama_bahan || "")
       .toLowerCase()
       .trim();
 
+  if(nama === "bumbu"){
 
-  if(nama === "plastik"){
+    label.textContent =
+      "Persentase Alokasi (%)";
+
+    input.placeholder =
+      "Contoh: 20";
+
+    input.step =
+      "0.01";
 
     document.getElementById("catatanBahan").textContent =
-      "Untuk Plastik: masukkan jumlah lembar. " +
-      "Sistem menghitung berdasarkan 240 lembar/kg.";
+      "Bumbu dipakai bersama. Masukkan persentase alokasi produk ini dari total harga Bumbu.";
+
+  }else if(nama === "plastik"){
+
+    label.textContent =
+      "Jumlah Pemakaian";
+
+    input.placeholder =
+      "Contoh: 10";
+
+    input.step =
+      "1";
+
+    document.getElementById("catatanBahan").textContent =
+      "Untuk Plastik: masukkan jumlah lembar. Sistem menghitung berdasarkan 240 lembar/kg.";
 
   }else{
+
+    label.textContent =
+      "Jumlah Pemakaian";
+
+    input.placeholder =
+      "Contoh: 0.7";
+
+    input.step =
+      "0.01";
 
     document.getElementById("catatanBahan").textContent =
       "Masukkan jumlah sesuai satuan bahan: " +
       (bahan.satuan || "");
 
   }
-
 
   hitungPreview();
 
@@ -1271,7 +1317,6 @@ function hitungPreview(){
       document.getElementById("jumlahPakai").value
     );
 
-
   const bahan =
     daftarBahan.find(function(b){
 
@@ -1279,7 +1324,6 @@ function hitungPreview(){
         Number(bahanId);
 
     });
-
 
   if(!bahan || !jumlah){
 
@@ -1289,19 +1333,16 @@ function hitungPreview(){
     return;
   }
 
-
   const biaya =
     hitungBiayaBahan(
       bahan,
       jumlah
     );
 
-
   document.getElementById("biayaPreview").textContent =
     rupiah(biaya);
 
 }
-
 
 document.getElementById("jumlahPakai")
   .addEventListener(
@@ -1321,7 +1362,6 @@ document.getElementById("formResep")
 
       e.preventDefault();
 
-
       const id =
         document.getElementById("resepId").value;
 
@@ -1335,7 +1375,6 @@ document.getElementById("formResep")
         Number(
           document.getElementById("jumlahPakai").value
         );
-
 
       if(
         !produkId ||
@@ -1352,7 +1391,6 @@ document.getElementById("formResep")
         return;
       }
 
-
       const bahan =
         daftarBahan.find(function(b){
 
@@ -1361,13 +1399,33 @@ document.getElementById("formResep")
 
         });
 
+      if(!bahan){
+        return;
+      }
+
+      const namaBahan =
+        String(bahan.nama_bahan || "")
+          .toLowerCase()
+          .trim();
+
+      if(
+        namaBahan === "bumbu" &&
+        jumlah > 100
+      ){
+
+        tampilPesan(
+          "Persentase Bumbu tidak boleh lebih dari 100%.",
+          "error"
+        );
+
+        return;
+      }
 
       const biaya =
         hitungBiayaBahan(
           bahan,
           jumlah
         );
-
 
       const dataResep = {
 
@@ -1385,9 +1443,7 @@ document.getElementById("formResep")
 
       };
 
-
       let hasil;
-
 
       if(modeEdit && id){
 
@@ -1406,7 +1462,6 @@ document.getElementById("formResep")
 
       }
 
-
       if(hasil.error){
 
         console.error(
@@ -1422,9 +1477,7 @@ document.getElementById("formResep")
         return;
       }
 
-
       tutupModal();
-
 
       tampilPesan(
         modeEdit
@@ -1432,7 +1485,6 @@ document.getElementById("formResep")
           : "Bahan berhasil ditambahkan ke resep.",
         "success"
       );
-
 
       await loadResep();
 
@@ -1456,7 +1508,6 @@ async function editResep(id){
 
     });
 
-
   if(!resep){
 
     tampilPesan(
@@ -1467,16 +1518,13 @@ async function editResep(id){
     return;
   }
 
-
   modeEdit = true;
-
 
   document.getElementById("resepId").value =
     resep.id;
 
   document.getElementById("judulModal").textContent =
     "Edit Bahan Resep";
-
 
   document.getElementById("produkForm").value =
     resep.produk_id;
@@ -1487,9 +1535,7 @@ async function editResep(id){
   document.getElementById("jumlahPakai").value =
     resep.jumlah_pakai;
 
-
   tampilkanHargaBahan();
-
 
   document.getElementById("modal").style.display =
     "flex";
@@ -1508,18 +1554,15 @@ async function hapusResep(id){
       "Hapus bahan ini dari resep?"
     );
 
-
   if(!yakin){
     return;
   }
-
 
   const { error } =
     await supabaseClient
       .from("resep")
       .delete()
       .eq("id", id);
-
 
   if(error){
 
@@ -1534,12 +1577,10 @@ async function hapusResep(id){
     return;
   }
 
-
   tampilPesan(
     "Bahan berhasil dihapus dari resep.",
     "success"
   );
-
 
   await loadResep();
 
@@ -1577,7 +1618,6 @@ async function mulai(){
   await loadResep();
 
 }
-
 
 mulai();
 
