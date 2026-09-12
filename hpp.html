@@ -599,7 +599,7 @@ isNaN(nilai)
 return "Rp0";
 }
 
-return "Rp" + Number(nilai).toLocaleString("id-ID");
+return "Rp" + Math.round(Number(nilai)).toLocaleString("id-ID");
 
 }
 
