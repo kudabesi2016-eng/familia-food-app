@@ -7,234 +7,252 @@
 <title>HPP - Familia Food</title>
 
 <style>
+
 *{
-  box-sizing:border-box;
+box-sizing:border-box;
 }
 
 body{
-  font-family:Arial,sans-serif;
-  background:#f5faf7;
-  margin:0;
-  color:#26352d;
+font-family:Arial,sans-serif;
+background:#f5faf7;
+margin:0;
+padding:0;
+color:#26352d;
 }
 
+/* SIDEBAR */
+
 .sidebar{
-  position:fixed;
-  left:0;
-  top:0;
-  bottom:0;
-  width:230px;
-  background:#087443;
-  color:white;
-  padding:25px 15px;
+position:fixed;
+left:0;
+top:0;
+bottom:0;
+width:230px;
+background:#087443;
+color:white;
+padding:25px 15px;
 }
 
 .logo{
-  font-size:23px;
-  font-weight:bold;
-  text-align:center;
-  margin-bottom:30px;
+font-size:23px;
+font-weight:bold;
+text-align:center;
+margin-bottom:30px;
 }
 
 .menu a{
-  display:block;
-  color:white;
-  text-decoration:none;
-  padding:12px 15px;
-  border-radius:8px;
-  margin-bottom:6px;
+display:block;
+color:white;
+text-decoration:none;
+padding:12px 15px;
+border-radius:8px;
+margin-bottom:6px;
 }
 
 .menu a:hover,
 .menu a.active{
-  background:rgba(255,255,255,.15);
+background:rgba(255,255,255,0.15);
 }
 
+/* CONTENT */
+
 .main{
-  margin-left:230px;
-  padding:30px;
+margin-left:230px;
+padding:30px;
 }
 
 .container{
-  background:white;
-  padding:25px;
-  border-radius:15px;
-  max-width:1100px;
-  margin:auto;
-  box-shadow:0 5px 20px rgba(0,0,0,.04);
+background:white;
+padding:25px;
+border-radius:15px;
+max-width:1100px;
+margin:auto;
+box-shadow:0 5px 20px rgba(0,0,0,0.04);
 }
 
 h1{
-  color:#087443;
-  margin-top:0;
+color:#087443;
+margin-top:0;
 }
 
 .subtitle{
-  color:#68756e;
-  margin-bottom:25px;
+color:#68756e;
+margin-bottom:25px;
 }
 
+/* FORM */
+
 .form{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:15px;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
 }
 
 .box{
-  border:1px solid #ddd;
-  padding:15px;
-  border-radius:10px;
+border:1px solid #ddd;
+padding:15px;
+border-radius:10px;
 }
 
 label{
-  display:block;
-  font-weight:bold;
-  margin-bottom:7px;
+display:block;
+font-weight:bold;
+margin-bottom:7px;
 }
 
 input,
 select{
-  width:100%;
-  padding:11px;
-  border:1px solid #ccc;
-  border-radius:8px;
-  font-size:14px;
-  background:white;
+width:100%;
+padding:11px;
+border:1px solid #ccc;
+border-radius:8px;
+font-size:14px;
+background:white;
 }
 
 input[readonly]{
-  background:#f4f7f5;
+background:#f4f7f5;
 }
 
+/* RECIPE */
+
 .recipe-box{
-  margin-top:25px;
-  border:1px solid #ddd;
-  border-radius:12px;
-  overflow:hidden;
+margin-top:25px;
+border:1px solid #ddd;
+border-radius:12px;
+overflow:hidden;
 }
 
 .recipe-title{
-  padding:15px;
-  background:#f0f8f3;
-  font-weight:bold;
-  color:#087443;
+padding:15px;
+background:#f0f8f3;
+font-weight:bold;
+color:#087443;
 }
 
 table{
-  width:100%;
-  border-collapse:collapse;
+width:100%;
+border-collapse:collapse;
 }
 
 th,
 td{
-  padding:11px;
-  border-bottom:1px solid #eee;
-  text-align:left;
-  font-size:14px;
+padding:11px;
+border-bottom:1px solid #eee;
+text-align:left;
+font-size:14px;
 }
 
 th{
-  background:#fafafa;
+background:#fafafa;
 }
 
 .empty{
-  padding:25px;
-  text-align:center;
-  color:#777;
+padding:25px;
+text-align:center;
+color:#777;
 }
 
+/* RESULT */
+
 .result{
-  margin-top:25px;
-  padding:20px;
-  background:#f0f8f3;
-  border-radius:12px;
+margin-top:25px;
+padding:20px;
+background:#f0f8f3;
+border-radius:12px;
 }
 
 .result h2{
-  color:#087443;
-  margin-top:0;
+color:#087443;
+margin-top:0;
 }
 
 .result-row{
-  display:flex;
-  justify-content:space-between;
-  gap:20px;
-  padding:10px 0;
-  border-bottom:1px solid #dcebe2;
+display:flex;
+justify-content:space-between;
+gap:20px;
+padding:10px 0;
+border-bottom:1px solid #dcebe2;
 }
 
 .result-row:last-child{
-  border-bottom:0;
+border-bottom:0;
 }
 
 .result-row strong{
-  color:#087443;
+color:#087443;
 }
 
 .big-result{
-  font-size:20px;
-  font-weight:bold;
+font-size:20px;
+font-weight:bold;
 }
 
 .profit{
-  color:#087443;
-  font-weight:bold;
+color:#087443;
+font-weight:bold;
 }
 
+/* BUTTON */
+
 button{
-  background:#087443;
-  color:white;
-  border:0;
-  padding:12px 20px;
-  border-radius:8px;
-  cursor:pointer;
-  font-size:14px;
+background:#087443;
+color:white;
+border:0;
+padding:12px 20px;
+border-radius:8px;
+cursor:pointer;
+font-size:14px;
 }
 
 button:hover{
-  opacity:.9;
+opacity:.9;
 }
 
 button:disabled{
-  background:#aaa;
-  cursor:not-allowed;
+background:#aaa;
+cursor:not-allowed;
 }
 
+/* STATUS */
+
 .status{
-  margin-top:15px;
-  padding:12px;
-  border-radius:8px;
-  display:none;
+margin-top:15px;
+padding:12px;
+border-radius:8px;
+display:none;
 }
 
 .status.success{
-  display:block;
-  background:#e8f7ed;
-  color:#087443;
+display:block;
+background:#e8f7ed;
+color:#087443;
 }
 
 .status.error{
-  display:block;
-  background:#ffeaea;
-  color:#a00000;
+display:block;
+background:#ffeaea;
+color:#a00000;
 }
+
+/* MOBILE */
 
 @media(max-width:800px){
 
-  .sidebar{
-    position:relative;
-    width:100%;
-    height:auto;
-  }
+.sidebar{
+position:relative;
+width:100%;
+height:auto;
+}
 
-  .main{
-    margin-left:0;
-    padding:15px;
-  }
+.main{
+margin-left:0;
+padding:15px;
+}
 
-  .form{
-    grid-template-columns:1fr;
-  }
+.form{
+grid-template-columns:1fr;
+}
 
 }
 </style>
@@ -246,31 +264,31 @@ button:disabled{
 
 <div class="sidebar">
 
-  <div class="logo">
-    🍀 Familia Food
-  </div>
+<div class="logo">
+🍀 Familia Food
+</div>
 
-  <div class="menu">
+<div class="menu">
 
-    <a href="index.html">🏠 Dashboard</a>
+<a href="index.html">🏠 Dashboard</a>
 
-    <a href="produk.html">📦 Produk</a>
+<a href="produk.html">📦 Produk</a>
 
-    <a href="bahan-baku.html">🥣 Bahan Baku</a>
+<a href="bahan-baku.html">🥣 Bahan Baku</a>
 
-    <a href="resep.html">📋 Resep</a>
+<a href="resep.html">📋 Resep</a>
 
-    <a href="hpp.html" class="active">🧮 HPP</a>
+<a href="hpp.html" class="active">🧮 HPP</a>
 
-    <a href="penjualan.html">💰 Penjualan</a>
+<a href="penjualan.html">💰 Penjualan</a>
 
-    <a href="rekap.html">📊 Rekap</a>
+<a href="rekap.html">📊 Rekap</a>
 
-    <a href="data-lama.html">📁 Data Lama</a>
+<a href="data-lama.html">📁 Data Lama</a>
 
-    <a href="pengaturan.html">⚙️ Pengaturan</a>
+<a href="pengaturan.html">⚙️ Pengaturan</a>
 
-  </div>
+</div>
 
 </div>
 
@@ -290,203 +308,217 @@ HPP dihitung otomatis berdasarkan resep dan harga bahan baku terbaru.
 
 <div class="form">
 
-  <div class="box">
+<div class="box">
 
-    <label>Produk</label>
+<label>Produk</label>
 
-    <select id="produkSelect">
+<select id="produkSelect">
 
-      <option value="">
-        Pilih Produk
-      </option>
+<option value="">
+Pilih Produk
+</option>
 
-    </select>
-
-  </div>
-
-
-  <div class="box">
-
-    <label>Jumlah Hasil Produksi</label>
-
-    <input
-      type="number"
-      id="jumlahProduksi"
-      readonly
-      placeholder="Otomatis"
-    >
-
-  </div>
-
-
-  <div class="box">
-
-    <label>Total Biaya Bahan</label>
-
-    <input
-      type="text"
-      id="totalBahan"
-      readonly
-      value="Rp0"
-    >
-
-  </div>
-
-
-  <div class="box">
-
-    <label>Biaya Produksi / Overhead</label>
-
-    <input
-      type="text"
-      id="biayaProduksi"
-      readonly
-      value="Rp0"
-    >
-
-  </div>
-
-
-  <div class="box">
-
-    <label>Harga Jual Offline</label>
-
-    <input
-      type="number"
-      id="hargaOffline"
-      placeholder="Masukkan harga jual offline"
-    >
-
-  </div>
-
-
-  <div class="box">
-
-    <label>Harga Jual Online</label>
-
-    <input
-      type="number"
-      id="hargaOnline"
-      placeholder="Masukkan harga jual online"
-    >
-
-  </div>
+</select>
 
 </div>
 
 
-<!-- RESEP -->
+<div class="box">
+
+<label>Jumlah Hasil Produksi</label>
+
+<input
+type="number"
+id="jumlahProduksi"
+readonly
+placeholder="Otomatis dari resep"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Total Biaya Bahan</label>
+
+<input
+type="text"
+id="totalBahan"
+readonly
+value="Rp0"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Biaya Produksi / Overhead</label>
+
+<input
+type="text"
+id="biayaProduksi"
+readonly
+value="Rp0"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Harga Jual Offline</label>
+
+<input
+type="number"
+id="hargaOffline"
+placeholder="Masukkan harga jual offline"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Harga Jual Online</label>
+
+<input
+type="number"
+id="hargaOnline"
+placeholder="Masukkan harga jual online"
+>
+
+</div>
+
+</div>
+
+
+<!-- RECIPE -->
 
 <div class="recipe-box">
 
-  <div class="recipe-title">
-    Bahan yang digunakan
-  </div>
+<div class="recipe-title">
+Bahan yang digunakan
+</div>
 
-  <table>
+<table>
 
-    <thead>
+<thead>
 
-      <tr>
+<tr>
 
-        <th>Bahan</th>
-        <th>Satuan</th>
-        <th>Harga Saat Ini</th>
-        <th>Jumlah</th>
-        <th>Biaya</th>
+<th>Bahan</th>
 
-      </tr>
+<th>Satuan</th>
 
-    </thead>
+<th>Harga Saat Ini</th>
 
-    <tbody id="recipeBody">
+<th>Jumlah</th>
 
-      <tr>
+<th>Biaya</th>
 
-        <td colspan="5" class="empty">
-          Pilih produk terlebih dahulu.
-        </td>
+</tr>
 
-      </tr>
+</thead>
 
-    </tbody>
+<tbody id="recipeBody">
 
-  </table>
+<tr>
+
+<td colspan="5" class="empty">
+Pilih produk terlebih dahulu.
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
 
 </div>
 
 
-<!-- HASIL -->
+<!-- RESULT -->
 
 <div class="result">
 
-  <h2>Hasil Perhitungan</h2>
+<h2>Hasil Perhitungan</h2>
 
 
-  <div class="result-row">
+<div class="result-row">
 
-    <span>Total Biaya Bahan</span>
+<span>Total Biaya Bahan</span>
 
-    <strong id="hasilBahan">
-      Rp0
-    </strong>
+<strong id="hasilBahan">
+Rp0
+</strong>
 
-  </div>
-
-
-  <div class="result-row">
-
-    <span>Biaya Produksi / Overhead</span>
-
-    <strong id="hasilProduksi">
-      Rp0
-    </strong>
-
-  </div>
+</div>
 
 
-  <div class="result-row">
+<div class="result-row">
 
-    <span>Total Modal</span>
+<span>Biaya Produksi / Overhead</span>
 
-    <strong id="hasilModal">
-      Rp0
-    </strong>
+<strong id="hasilProduksi">
+Rp0
+</strong>
 
-  </div>
-
-
-  <div class="result-row big-result">
-
-    <span>HPP per Bungkus</span>
-
-    <strong id="hasilHpp">
-      Rp0
-    </strong>
-
-  </div>
+</div>
 
 
-  <div class="result-row">
+<div class="result-row">
 
-    <span>Keuntungan Offline</span>
+<span>Total Modal</span>
 
-    <strong id="hasilUntungOffline" class="profit">
-      Rp0
-    </strong>
+<strong id="hasilModal">
+Rp0
+</strong>
 
-  </div>
+</div>
 
 
-  <div class="result-row">
+<div class="result-row big-result">
 
-    <span>Keuntungan Online</span>
+<span>HPP per Pcs</span>
 
-    <strong id="hasilUntungOnline" class="profit">
-      Rp0
-    </strong>
+<strong id="hasilHpp">
+Rp0
+</strong>
 
-  </div>
+</div>
+
+<div class="result-row">
+<span>Isi per Bungkus</span>
+<strong id="hasilIsi">-</strong>
+</div>
+
+<div class="result-row big-result">
+<span>HPP per Bungkus</span>
+<strong id="hasilHppBungkus">Rp0</strong>
+</div>
+
+
+<div class="result-row">
+
+<span>Keuntungan Offline</span>
+
+<strong id="hasilUntungOffline" class="profit">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>Keuntungan Online</span>
+
+<strong id="hasilUntungOnline" class="profit">
+Rp0
+</strong>
+
+</div>
 
 </div>
 
@@ -494,8 +526,9 @@ HPP dihitung otomatis berdasarkan resep dan harga bahan baku terbaru.
 <br>
 
 <button id="btnSimpan" disabled>
-  💾 Simpan HPP
+💾 Simpan HPP
 </button>
+
 
 <div id="status" class="status"></div>
 
@@ -513,1296 +546,1089 @@ HPP dihitung otomatis berdasarkan resep dan harga bahan baku terbaru.
 
 <script>
 
-/* =====================================================
+/* =========================
    DATA
-===================================================== */
+========================= */
 
 let produkData = [];
-
 let bahanData = [];
-
 let resepData = [];
 
 let produkTerpilih = null;
-
 let resepProduk = [];
 
 let totalBiayaBahan = 0;
-
 let jumlahHasilProduksi = 0;
 
 
-/* =====================================================
+/*
+  Biaya overhead per bungkus
+  mengikuti pola HPP lama Familia Food.
+
+  Nilai ini bukan harga bahan.
+  Ini adalah bagian biaya produksi yang
+  sebelumnya melekat pada HPP masing-masing produk.
+*/
+
+const overheadPerBungkus = {
+
+"Naget isi 10": 859,
+
+"Naget isi 12": 1031,
+
+"Cireng isi": 950,
+
+"Cireng biasa": 1070,
+
+"Cibay": 820
+
+};
+
+
+/* =========================
    FORMAT RUPIAH
-   SEMUA UANG DIBULATKAN KE RUPIAH
-===================================================== */
+========================= */
 
 function rupiah(nilai){
 
-  if(
-    nilai === null ||
-    nilai === undefined ||
-    isNaN(nilai)
-  ){
-    return "Rp0";
-  }
+if(
+nilai === null ||
+nilai === undefined ||
+isNaN(nilai)
+){
+return "Rp0";
+}
 
-  return "Rp" +
-    Math.round(Number(nilai))
-      .toLocaleString("id-ID");
+return "Rp" + Number(nilai).toLocaleString("id-ID");
 
 }
 
 
-/* =====================================================
-   JUMLAH PRODUKSI
-===================================================== */
-
-function tentukanJumlahProduksi(){
-
-  if(!produkTerpilih){
-    return 0;
-  }
-
-  const nama =
-    String(produkTerpilih.nama_produk || "")
-      .toLowerCase()
-      .trim();
-
-
-  /*
-    DATA PRODUKSI TERBARU
-  */
-
-  if(nama === "naget isi 10"){
-    return 264;
-  }
-
-  if(nama === "naget isi 12"){
-    return 30;
-  }
-
-  if(nama === "cireng isi"){
-    return 40;
-  }
-
-  if(nama === "cireng biasa"){
-    return 10;
-  }
-
-  if(nama === "cibay"){
-    return 10;
-  }
-
-  return 0;
+function isiPerBungkus() {
+  return Number((produkTerpilih && produkTerpilih.isi_per_bungkus) || 1);
 }
 
-
-/* =====================================================
-   OVERHEAD
-===================================================== */
-
-/*
-  Untuk produk yang sudah ditentukan OH-nya:
-
-  Cibay         = Rp3.147
-  Cireng biasa  = Rp2.000
-  Cireng isi    = Rp38.000
-
-  Nilai ini adalah TOTAL OH untuk 1 kali
-  produksi produk tersebut.
-
-  Naget memakai HPP yang sudah ditetapkan.
-*/
-
-function hitungBiayaProduksi(){
-
-  if(!produkTerpilih){
-    return 0;
-  }
-
-  const nama =
-    String(produkTerpilih.nama_produk || "")
-      .toLowerCase()
-      .trim();
-
-
-  /* CIBAY */
-
-  if(nama === "cibay"){
-    return 3147;
-  }
-
-
-  /* CIRENG BIASA */
-
-  if(nama === "cireng biasa"){
-    return 2000;
-  }
-
-
-  /* CIRENG ISI */
-
-  if(nama === "cireng isi"){
-    return 38000;
-  }
-
-
-  /*
-    NAGET
-
-    HPP sudah ditetapkan:
-    Isi 10 = Rp3.100
-    Isi 12 = Rp3.720
-
-    OH dihitung sebagai selisih
-    antara total HPP yang ditetapkan
-    dengan biaya bahan terbaru.
-
-    Dengan demikian HPP Naget tetap
-    mengikuti angka yang sudah ditetapkan.
-  */
-
-  if(nama === "naget isi 10"){
-
-    const target =
-      3100 * jumlahHasilProduksi;
-
-    return Math.max(
-      0,
-      target - totalBiayaBahan
-    );
-
-  }
-
-
-  if(nama === "naget isi 12"){
-
-    const target =
-      3720 * jumlahHasilProduksi;
-
-    return Math.max(
-      0,
-      target - totalBiayaBahan
-    );
-
-  }
-
-
-  return 0;
-}
-
-
-/* =====================================================
-   CARI PRODUK
-===================================================== */
-
-function cariProduk(id){
-
-  return produkData.find(function(item){
-
-    return String(item.id) === String(id);
-
-  });
-
-}
-
-
-/* =====================================================
-   CARI BAHAN
-===================================================== */
-
-function cariBahan(id){
-
-  return bahanData.find(function(item){
-
-    return String(item.id) === String(id);
-
-  });
-
-}
-
-
-/* =====================================================
-   HITUNG BIAYA BAHAN
-===================================================== */
-
-function hitungBiayaResep(item,bahan){
-
-  if(!bahan){
-    return 0;
-  }
-
-  const harga =
-    Number(bahan.harga_beli || 0);
-
-  const jumlah =
-    Number(item.jumlah_pakai || 0);
-
-  const nama =
-    String(bahan.nama_bahan || "")
-      .toLowerCase();
-
-
-  /*
-    BUMBU
-
-    20 = 20%
-    45 = 45%
-    30 = 30%
-    5  = 5%
-  */
-
-  if(nama.includes("bumbu")){
-
-    if(jumlah <= 1){
-
-      return harga * jumlah;
-
-    }
-
-    return harga * jumlah / 100;
-
-  }
-
-
-  /*
-    PLASTIK
-
-    240 lembar = 1 kg
-  */
-
-  if(nama.includes("plastik")){
-
-    return harga * jumlah / 240;
-
-  }
-
-
-  /*
-    BAHAN LAIN
-  */
-
-  return harga * jumlah;
-
-}
-
-
-/* =====================================================
+/* =========================
    LOAD PRODUK
-===================================================== */
+========================= */
 
 async function loadProduk(){
 
-  const {
-    data,
-    error
-  } = await supabaseClient
+const {
+data,
+error
+} = await supabaseClient
 
-    .from("produk")
+.from("produk")
 
-    .select("*")
+.select("*")
 
-    .order("nama_produk");
-
-
-  if(error){
-
-    console.error(error);
-
-    tampilkanStatus(
-      "Gagal mengambil data produk: " +
-      error.message,
-      "error"
-    );
-
-    return;
-
-  }
+.order("nama_produk");
 
 
-  produkData = data || [];
+if(error){
+
+console.error(error);
+
+tampilkanStatus(
+"Gagal mengambil data produk: " + error.message,
+"error"
+);
+
+return;
+}
 
 
-  const select =
-    document.getElementById("produkSelect");
+produkData = data || [];
+
+const select =
+document.getElementById("produkSelect");
 
 
-  select.innerHTML =
-    '<option value="">Pilih Produk</option>';
+select.innerHTML =
+'<option value="">Pilih Produk</option>';
 
 
-  produkData.forEach(function(produk){
+produkData.forEach(function(produk){
 
-    const option =
-      document.createElement("option");
+const option =
+document.createElement("option");
 
-    option.value =
-      produk.id;
+option.value = produk.id;
 
-    option.textContent =
-      produk.nama_produk;
+option.textContent =
+produk.nama_produk;
 
-    select.appendChild(option);
+select.appendChild(option);
 
-  });
+});
 
 }
 
 
-/* =====================================================
+/* =========================
    LOAD BAHAN
-===================================================== */
+========================= */
 
 async function loadBahan(){
 
-  const {
-    data,
-    error
-  } = await supabaseClient
+const {
+data,
+error
+} = await supabaseClient
 
-    .from("bahan_baku")
+.from("bahan_baku")
 
-    .select("*")
+.select("*")
 
-    .order("nama_bahan");
-
-
-  if(error){
-
-    console.error(error);
-
-    tampilkanStatus(
-      "Gagal mengambil bahan baku: " +
-      error.message,
-      "error"
-    );
-
-    return;
-
-  }
+.order("nama_bahan");
 
 
-  bahanData = data || [];
+if(error){
+
+console.error(error);
+
+tampilkanStatus(
+"Gagal mengambil bahan baku: " + error.message,
+"error"
+);
+
+return;
+}
+
+
+bahanData = data || [];
 
 }
 
 
-/* =====================================================
+/* =========================
    LOAD RESEP
-===================================================== */
+========================= */
 
 async function loadResep(){
 
-  const {
-    data,
-    error
-  } = await supabaseClient
+const {
+data,
+error
+} = await supabaseClient
 
-    .from("resep")
+.from("resep")
 
-    .select("*");
-
-
-  if(error){
-
-    console.error(error);
-
-    tampilkanStatus(
-      "Gagal mengambil resep: " +
-      error.message,
-      "error"
-    );
-
-    return;
-
-  }
+.select("*");
 
 
-  resepData = data || [];
+if(error){
+
+console.error(error);
+
+tampilkanStatus(
+"Gagal mengambil resep: " + error.message,
+"error"
+);
+
+return;
+}
+
+
+resepData = data || [];
 
 }
 
 
-/* =====================================================
+/* =========================
+   CARI PRODUK
+========================= */
+
+function cariProduk(id){
+
+return produkData.find(function(item){
+
+return String(item.id) === String(id);
+
+});
+
+}
+
+
+/* =========================
+   CARI BAHAN
+========================= */
+
+function cariBahan(id){
+
+return bahanData.find(function(item){
+
+return String(item.id) === String(id);
+
+});
+
+}
+
+
+/* =========================
+   HITUNG BIAYA RESEP
+========================= */
+
+function hitungBiayaResep(item, bahan){
+
+if(!bahan){
+
+return 0;
+
+}
+
+
+const harga =
+Number(bahan.harga_beli || 0);
+
+const jumlah =
+Number(item.jumlah_pakai || 0);
+
+const nama =
+String(bahan.nama_bahan || "")
+.toLowerCase();
+
+
+/*
+ BUMBU
+
+ Disimpan sebagai persen.
+
+ Contoh:
+ 20 = 20%
+ harga bumbu = Rp10.000
+
+ biaya = 20% × Rp10.000
+       = Rp2.000
+*/
+
+if(nama.includes("bumbu")){
+
+if(jumlah <= 1){
+
+return harga * jumlah;
+
+}
+
+return harga * jumlah / 100;
+
+}
+
+
+/*
+ PLASTIK
+
+ Harga plastik = harga per kg.
+
+ 1 kg = 240 lembar.
+
+ Contoh:
+ 10 lembar × Rp44.000 ÷ 240
+*/
+
+if(nama.includes("plastik")){
+
+return harga * jumlah / 240;
+
+}
+
+
+/*
+ BAHAN LAIN
+
+ Menggunakan harga sesuai satuannya.
+*/
+
+return harga * jumlah;
+
+}
+
+
+/* =========================
+   TENTUKAN HASIL PRODUKSI
+========================= */
+
+function tentukanJumlahProduksi(){
+
+if(!produkTerpilih){
+
+return 0;
+
+}
+
+
+/*
+ Jumlah produksi berasal dari resep.
+
+ Kita gunakan bahan yang memiliki jumlah
+ produksi paling masuk akal.
+
+ Untuk produk Familia Food saat ini:
+
+ Naget isi 10  = 264 bungkus
+ Naget isi 12  = 30 bungkus
+
+ Cireng isi    = 40 bungkus
+ Cireng biasa  = 10 bungkus
+ Cibay         = 10 bungkus
+*/
+
+
+const nama =
+produkTerpilih.nama_produk
+.toLowerCase();
+
+
+if(nama === "naget isi 10"){
+
+return 264;
+
+}
+
+if(nama === "naget isi 12"){
+
+return 30;
+
+}
+
+if(nama === "cireng isi"){
+
+return 40;
+
+}
+
+if(nama === "cireng biasa"){
+
+return 10;
+
+}
+
+if(nama === "cibay"){
+
+return 10;
+
+}
+
+
+/*
+ Jika produk baru belum memiliki aturan,
+ pengguna tetap dapat melihat biaya bahan,
+ tetapi jumlah hasil produksi belum diketahui.
+*/
+
+return 0;
+
+}
+
+
+/* =========================
+   HITUNG OVERHEAD
+========================= */
+
+function hitungBiayaProduksi(){
+
+if(!produkTerpilih){
+
+return 0;
+
+}
+
+
+const nama =
+produkTerpilih.nama_produk;
+
+
+/*
+ Naget isi 12:
+
+ HPP lama Rp3.720 per bungkus.
+ Pola bahan menghasilkan bagian overhead
+ sekitar Rp1.031 per bungkus.
+
+ Nilai ini digunakan agar perubahan harga
+ bahan baku tetap mengubah HPP,
+ tanpa mengubah pola biaya produksi lama.
+*/
+
+const overhead =
+overheadPerBungkus[nama];
+
+
+if(overhead !== undefined){
+
+return overhead * jumlahHasilProduksi;
+
+}
+
+
+return 0;
+
+}
+
+
+/* =========================
    TAMPILKAN RESEP
-===================================================== */
+========================= */
 
 function tampilkanResep(){
 
-  const tbody =
-    document.getElementById("recipeBody");
+const tbody =
+document.getElementById("recipeBody");
 
 
-  tbody.innerHTML = "";
+tbody.innerHTML = "";
 
 
-  if(resepProduk.length === 0){
+if(resepProduk.length === 0){
 
-    tbody.innerHTML = `
+tbody.innerHTML = `
 
-      <tr>
+<tr>
 
-        <td colspan="5" class="empty">
+<td colspan="5" class="empty">
 
-          Belum ada resep untuk produk ini.
+Belum ada resep untuk produk ini.
 
-        </td>
+</td>
 
-      </tr>
+</tr>
 
-    `;
+`;
 
-    totalBiayaBahan = 0;
-
-    document.getElementById("totalBahan").value =
-      "Rp0";
-
-    document.getElementById("hasilBahan").textContent =
-      "Rp0";
-
-    return;
-
-  }
-
-
-  totalBiayaBahan = 0;
-
-
-  resepProduk.forEach(function(item){
-
-    const bahan =
-      cariBahan(item.bahan_id);
-
-
-    if(!bahan){
-      return;
-    }
-
-
-    const biaya =
-      hitungBiayaResep(item,bahan);
-
-
-    totalBiayaBahan += biaya;
-
-
-    const tr =
-      document.createElement("tr");
-
-
-    const namaBahan =
-      String(bahan.nama_bahan || "")
-        .toLowerCase();
-
-
-    let jumlahTampil =
-      Number(item.jumlah_pakai || 0);
-
-
-    /*
-      BUMBU
-    */
-
-    if(namaBahan.includes("bumbu")){
-
-      const persen =
-        Number(item.jumlah_pakai) <= 1
-
-        ? Number(item.jumlah_pakai) * 100
-
-        : Number(item.jumlah_pakai);
-
-
-      jumlahTampil =
-        persen + "%";
-
-    }
-
-
-    /*
-      PLASTIK
-    */
-
-    else if(namaBahan.includes("plastik")){
-
-      jumlahTampil =
-        Number(item.jumlah_pakai) +
-        " lembar";
-
-    }
-
-
-    tr.innerHTML = `
-
-      <td>
-        ${bahan.nama_bahan}
-      </td>
-
-      <td>
-        ${bahan.satuan || "-"}
-      </td>
-
-      <td>
-        ${rupiah(bahan.harga_beli)}
-      </td>
-
-      <td>
-        ${jumlahTampil}
-      </td>
-
-      <td>
-        <strong>
-          ${rupiah(biaya)}
-        </strong>
-      </td>
-
-    `;
-
-
-    tbody.appendChild(tr);
-
-  });
-
-
-  /*
-    TAMPILKAN TOTAL BAHAN
-    SUDAH DIBULATKAN
-  */
-
-  document.getElementById("totalBahan").value =
-    rupiah(totalBiayaBahan);
-
-
-  document.getElementById("hasilBahan").textContent =
-    rupiah(totalBiayaBahan);
+return;
 
 }
 
 
-/* =====================================================
+totalBiayaBahan = 0;
+
+
+resepProduk.forEach(function(item){
+
+const bahan =
+cariBahan(item.bahan_id);
+
+
+if(!bahan){
+
+return;
+
+}
+
+
+const biaya =
+hitungBiayaResep(item,bahan);
+
+
+totalBiayaBahan += biaya;
+
+
+const tr =
+document.createElement("tr");
+
+
+const namaBahan =
+String(bahan.nama_bahan || "")
+.toLowerCase();
+
+
+let jumlahTampil =
+item.jumlah_pakai;
+
+
+if(namaBahan.includes("bumbu")){
+
+const persen =
+Number(item.jumlah_pakai) <= 1
+? Number(item.jumlah_pakai) * 100
+: Number(item.jumlah_pakai);
+
+jumlahTampil =
+persen + "%";
+
+}
+
+else if(namaBahan.includes("plastik")){
+
+jumlahTampil =
+item.jumlah_pakai + " lembar";
+
+}
+
+
+tr.innerHTML = `
+
+<td>
+${bahan.nama_bahan}
+</td>
+
+<td>
+${bahan.satuan || "-"}
+</td>
+
+<td>
+${rupiah(bahan.harga_beli)}
+</td>
+
+<td>
+${jumlahTampil}
+</td>
+
+<td>
+<strong>
+${rupiah(biaya)}
+</strong>
+</td>
+
+`;
+
+
+tbody.appendChild(tr);
+
+});
+
+
+document.getElementById("totalBahan").value =
+rupiah(totalBiayaBahan);
+
+document.getElementById("hasilBahan").textContent =
+rupiah(totalBiayaBahan);
+
+}
+
+
+/* =========================
    HITUNG SEMUA
-===================================================== */
+========================= */
 
 function hitungSemua(){
 
-  if(!produkTerpilih){
-    return;
-  }
+if(!produkTerpilih){
 
-
-  /*
-    JUMLAH PRODUKSI
-  */
-
-  jumlahHasilProduksi =
-    tentukanJumlahProduksi();
-
-
-  document.getElementById(
-    "jumlahProduksi"
-  ).value =
-    jumlahHasilProduksi || "";
-
-
-  /*
-    OVERHEAD
-  */
-
-  const biayaProduksi =
-    hitungBiayaProduksi();
-
-
-  /*
-    TOTAL MODAL
-  */
-
-  const totalModal =
-    totalBiayaBahan +
-    biayaProduksi;
-
-
-  /*
-    HPP
-  */
-
-  let hppUnit = 0;
-
-
-  if(jumlahHasilProduksi > 0){
-
-    hppUnit =
-      totalModal /
-      jumlahHasilProduksi;
-
-  }
-
-
-  /*
-    NAGET ISI 10
-    HPP HARUS Rp3.100
-  */
-
-  const nama =
-    String(produkTerpilih.nama_produk || "")
-      .toLowerCase()
-      .trim();
-
-
-  if(nama === "naget isi 10"){
-
-    hppUnit = 3100;
-
-  }
-
-
-  /*
-    NAGET ISI 12
-    HPP HARUS Rp3.720
-  */
-
-  if(nama === "naget isi 12"){
-
-    hppUnit = 3720;
-
-  }
-
-
-  /*
-    HARGA JUAL
-  */
-
-  const hargaOffline =
-    Number(
-      document.getElementById(
-        "hargaOffline"
-      ).value ||
-      produkTerpilih.harga_offline ||
-      0
-    );
-
-
-  const hargaOnline =
-    Number(
-      document.getElementById(
-        "hargaOnline"
-      ).value ||
-      produkTerpilih.harga_online ||
-      0
-    );
-
-
-  /*
-    KEUNTUNGAN
-  */
-
-  const untungOffline =
-    hargaOffline > 0
-
-    ? hargaOffline - hppUnit
-
-    : 0;
-
-
-  const untungOnline =
-    hargaOnline > 0
-
-    ? hargaOnline - hppUnit
-
-    : 0;
-
-
-  /*
-    TAMPILKAN
-  */
-
-  document.getElementById(
-    "biayaProduksi"
-  ).value =
-    rupiah(biayaProduksi);
-
-
-  document.getElementById(
-    "hasilProduksi"
-  ).textContent =
-    rupiah(biayaProduksi);
-
-
-  document.getElementById(
-    "hasilModal"
-  ).textContent =
-    rupiah(totalModal);
-
-
-  document.getElementById(
-    "hasilHpp"
-  ).textContent =
-    rupiah(hppUnit);
-
-
-  document.getElementById(
-    "hasilUntungOffline"
-  ).textContent =
-
-    hargaOffline > 0
-
-    ? rupiah(untungOffline)
-
-    : "Belum diisi";
-
-
-  document.getElementById(
-    "hasilUntungOnline"
-  ).textContent =
-
-    hargaOnline > 0
-
-    ? rupiah(untungOnline)
-
-    : "Belum diisi";
-
-
-  document.getElementById(
-    "btnSimpan"
-  ).disabled =
-    jumlahHasilProduksi <= 0;
+return;
 
 }
 
 
-/* =====================================================
+jumlahHasilProduksi =
+tentukanJumlahProduksi();
+
+
+document.getElementById(
+"jumlahProduksi"
+).value =
+jumlahHasilProduksi || "";
+
+
+const biayaProduksi =
+hitungBiayaProduksi();
+
+
+const totalModal =
+totalBiayaBahan + biayaProduksi;
+
+
+let hppUnit = 0;
+
+
+if(jumlahHasilProduksi > 0){
+
+hppUnit =
+totalModal / jumlahHasilProduksi;
+
+}
+
+
+const hargaOffline =
+Number(
+document.getElementById("hargaOffline").value
+|| produkTerpilih.harga_offline
+|| 0
+);
+
+
+const hargaOnline =
+Number(
+document.getElementById("hargaOnline").value
+|| produkTerpilih.harga_online
+|| 0
+);
+
+
+const untungOffline =
+hargaOffline > 0
+? hargaOffline - hppUnit
+: 0;
+
+
+const untungOnline =
+hargaOnline > 0
+? hargaOnline - hppUnit
+: 0;
+
+
+document.getElementById("biayaProduksi").value =
+rupiah(biayaProduksi);
+
+
+document.getElementById("hasilProduksi").textContent =
+rupiah(biayaProduksi);
+
+
+document.getElementById("hasilModal").textContent =
+rupiah(totalModal);
+
+
+document.getElementById("hasilHpp").textContent = rupiah(Math.round(hppUnit));
+document.getElementById("hasilIsi").textContent = isiPerBungkus() + " pcs";
+document.getElementById("hasilHppBungkus").textContent = rupiah(Math.round(hppUnit * isiPerBungkus()));
+
+
+document.getElementById("hasilUntungOffline").textContent =
+hargaOffline > 0
+? rupiah(Math.round(untungOffline))
+: "Belum diisi";
+
+
+document.getElementById("hasilUntungOnline").textContent =
+hargaOnline > 0
+? rupiah(Math.round(untungOnline))
+: "Belum diisi";
+
+
+document.getElementById("btnSimpan").disabled =
+jumlahHasilProduksi <= 0;
+
+}
+
+
+/* =========================
    PILIH PRODUK
-===================================================== */
+========================= */
 
 document.getElementById(
-  "produkSelect"
+"produkSelect"
 ).addEventListener(
-  "change",
-  async function(){
+"change",
+async function(){
 
-    const id =
-      this.value;
-
-
-    if(!id){
-
-      produkTerpilih = null;
-
-      resepProduk = [];
-
-      totalBiayaBahan = 0;
-
-      jumlahHasilProduksi = 0;
+const id =
+this.value;
 
 
-      document.getElementById(
-        "recipeBody"
-      ).innerHTML = `
+if(!id){
 
-        <tr>
+produkTerpilih = null;
 
-          <td colspan="5" class="empty">
+resepProduk = [];
 
-            Pilih produk terlebih dahulu.
+document.getElementById(
+"recipeBody"
+).innerHTML = `
 
-          </td>
+<tr>
 
-        </tr>
+<td colspan="5" class="empty">
 
-      `;
+Pilih produk terlebih dahulu.
 
+</td>
 
-      document.getElementById(
-        "jumlahProduksi"
-      ).value = "";
+</tr>
 
+`;
 
-      document.getElementById(
-        "totalBahan"
-      ).value = "Rp0";
+document.getElementById(
+"jumlahProduksi"
+).value = "";
 
+document.getElementById(
+"totalBahan"
+).value = "Rp0";
 
-      document.getElementById(
-        "biayaProduksi"
-      ).value = "Rp0";
+document.getElementById(
+"biayaProduksi"
+).value = "Rp0";
 
+document.getElementById(
+"hargaOffline"
+).value = "";
 
-      document.getElementById(
-        "hargaOffline"
-      ).value = "";
+document.getElementById(
+"hargaOnline"
+).value = "";
 
+document.getElementById(
+"hasilBahan"
+).textContent = "Rp0";
 
-      document.getElementById(
-        "hargaOnline"
-      ).value = "";
+document.getElementById(
+"hasilProduksi"
+).textContent = "Rp0";
 
+document.getElementById(
+"hasilModal"
+).textContent = "Rp0";
 
-      document.getElementById(
-        "hasilBahan"
-      ).textContent = "Rp0";
+document.getElementById(
+"hasilHpp"
+).textContent = "Rp0";
 
+document.getElementById(
+"hasilUntungOffline"
+).textContent = "Rp0";
 
-      document.getElementById(
-        "hasilProduksi"
-      ).textContent = "Rp0";
+document.getElementById(
+"hasilUntungOnline"
+).textContent = "Rp0";
 
+document.getElementById(
+"btnSimpan"
+).disabled = true;
 
-      document.getElementById(
-        "hasilModal"
-      ).textContent = "Rp0";
+return;
 
-
-      document.getElementById(
-        "hasilHpp"
-      ).textContent = "Rp0";
-
-
-      document.getElementById(
-        "hasilUntungOffline"
-      ).textContent = "Rp0";
-
-
-      document.getElementById(
-        "hasilUntungOnline"
-      ).textContent = "Rp0";
-
-
-      document.getElementById(
-        "btnSimpan"
-      ).disabled = true;
+}
 
 
-      return;
-
-    }
-
-
-    /*
-      PRODUK TERPILIH
-    */
-
-    produkTerpilih =
-      cariProduk(id);
+produkTerpilih =
+cariProduk(id);
 
 
-    /*
-      AMBIL RESEP PRODUK
-    */
+resepProduk =
+resepData.filter(function(item){
 
-    resepProduk =
-      resepData.filter(function(item){
+return String(item.produk_id) === String(id);
 
-        return String(item.produk_id) ===
-          String(id);
-
-      });
+});
 
 
-    /*
-      HARGA JUAL
-    */
+/*
+ Harga jual dari tabel produk
+*/
 
-    document.getElementById(
-      "hargaOffline"
-    ).value =
-      produkTerpilih.harga_offline || "";
-
-
-    document.getElementById(
-      "hargaOnline"
-    ).value =
-      produkTerpilih.harga_online || "";
+document.getElementById(
+"hargaOffline"
+).value =
+produkTerpilih.harga_offline || "";
 
 
-    /*
-      TAMPILKAN RESEP
-    */
+document.getElementById(
+"hargaOnline"
+).value =
+produkTerpilih.harga_online || "";
 
-    tampilkanResep();
 
+/*
+ Tampilkan resep berdasarkan
+ harga bahan baku TERBARU.
+*/
 
-    /*
-      HITUNG
-    */
+tampilkanResep();
 
-    hitungSemua();
+hitungSemua();
 
-  }
+}
 );
 
 
-/* =====================================================
+/* =========================
    HARGA JUAL BERUBAH
-===================================================== */
+========================= */
 
 document.getElementById(
-  "hargaOffline"
+"hargaOffline"
 ).addEventListener(
-  "input",
-  hitungSemua
+"input",
+hitungSemua
 );
 
 
 document.getElementById(
-  "hargaOnline"
+"hargaOnline"
 ).addEventListener(
-  "input",
-  hitungSemua
+"input",
+hitungSemua
 );
 
 
-/* =====================================================
+/* =========================
    SIMPAN HPP
-===================================================== */
+========================= */
 
 document.getElementById(
-  "btnSimpan"
+"btnSimpan"
 ).addEventListener(
-  "click",
-  async function(){
+"click",
+async function(){
 
-    if(!produkTerpilih){
+if(!produkTerpilih){
 
-      tampilkanStatus(
-        "Silakan pilih produk terlebih dahulu.",
-        "error"
-      );
+tampilkanStatus(
+"Silakan pilih produk terlebih dahulu.",
+"error"
+);
 
-      return;
+return;
 
-    }
+}
 
 
-    if(jumlahHasilProduksi <= 0){
+if(jumlahHasilProduksi <= 0){
 
-      tampilkanStatus(
-        "Jumlah hasil produksi belum tersedia.",
-        "error"
-      );
+tampilkanStatus(
+"Jumlah hasil produksi belum tersedia.",
+"error"
+);
 
-      return;
+return;
 
-    }
+}
 
 
-    const nama =
-      String(produkTerpilih.nama_produk || "")
-        .toLowerCase()
-        .trim();
+const biayaProduksi =
+hitungBiayaProduksi();
 
 
-    const biayaProduksi =
-      hitungBiayaProduksi();
+const totalModal =
+totalBiayaBahan + biayaProduksi;
 
 
-    const totalModal =
-      totalBiayaBahan +
-      biayaProduksi;
+const hppUnit =
+totalModal / jumlahHasilProduksi;
 
 
-    let hppUnit =
-      totalModal /
-      jumlahHasilProduksi;
-
-
-    /*
-      NAGET TETAP
-    */
-
-    if(nama === "naget isi 10"){
-
-      hppUnit = 3100;
-
-    }
-
-
-    if(nama === "naget isi 12"){
-
-      hppUnit = 3720;
-
-    }
-
-
-    const hargaOffline =
-      Number(
-        document.getElementById(
-          "hargaOffline"
-        ).value || 0
-      );
-
-
-    const hargaOnline =
-      Number(
-        document.getElementById(
-          "hargaOnline"
-        ).value || 0
-      );
-
-
-    const untungOffline =
-      hargaOffline > 0
-
-      ? hargaOffline - hppUnit
-
-      : null;
-
-
-    const untungOnline =
-      hargaOnline > 0
-
-      ? hargaOnline - hppUnit
-
-      : null;
-
-
-    /*
-      CEK HPP LAMA
-    */
-
-    const {
-      data: hppLama,
-      error: cariError
-    } = await supabaseClient
-
-      .from("hpp")
-
-      .select("*")
-
-      .eq(
-        "produk_id",
-        produkTerpilih.id
-      )
-
-      .maybeSingle();
-
-
-    if(cariError){
-
-      tampilkanStatus(
-        "Gagal mengecek HPP: " +
-        cariError.message,
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    /*
-      DATA YANG DISIMPAN
-    */
-
-    const dataHpp = {
-
-      produk_id:
-        produkTerpilih.id,
-
-      total_bahan:
-        Math.round(totalBiayaBahan),
-
-      biaya_produksi:
-        Math.round(biayaProduksi),
-
-      jumlah_batch:
-        jumlahHasilProduksi,
-
-      total_modal:
-        Math.round(totalModal),
-
-      hpp_unit:
-        Math.round(hppUnit),
-
-      harga_offline:
-        hargaOffline > 0
-        ? hargaOffline
-        : null,
-
-      harga_online:
-        hargaOnline > 0
-        ? hargaOnline
-        : null,
-
-      untung_offline:
-        untungOffline !== null
-        ? Math.round(untungOffline)
-        : null,
-
-      untung_online:
-        untungOnline !== null
-        ? Math.round(untungOnline)
-        : null
-
-    };
-
-
-    let error;
-
-
-    /*
-      UPDATE
-    */
-
-    if(hppLama){
-
-      const result =
-        await supabaseClient
-
-          .from("hpp")
-
-          .update(dataHpp)
-
-          .eq(
-            "id",
-            hppLama.id
-          );
-
-
-      error =
-        result.error;
-
-    }
-
-
-    /*
-      INSERT
-    */
-
-    else{
-
-      const result =
-        await supabaseClient
-
-          .from("hpp")
-
-          .insert([
-            dataHpp
-          ]);
-
-
-      error =
-        result.error;
-
-    }
-
-
-    if(error){
-
-      console.error(error);
-
-      tampilkanStatus(
-        "Gagal menyimpan HPP: " +
-        error.message,
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    /*
-      UPDATE HARGA JUAL PRODUK
-    */
-
-    const updateProduk = {
-
-      harga_offline:
-        hargaOffline > 0
-
-        ? hargaOffline
-
-        : produkTerpilih.harga_offline,
-
-      harga_online:
-        hargaOnline > 0
-
-        ? hargaOnline
-
-        : produkTerpilih.harga_online
-
-    };
-
-
-    const {
-      error: produkError
-    } = await supabaseClient
-
-      .from("produk")
-
-      .update(updateProduk)
-
-      .eq(
-        "id",
-        produkTerpilih.id
-      );
-
-
-    if(produkError){
-
-      console.error(produkError);
-
-    }
-
-
-    produkTerpilih.harga_offline =
-      updateProduk.harga_offline;
-
-
-    produkTerpilih.harga_online =
-      updateProduk.harga_online;
-
-
-    tampilkanStatus(
-
-      "HPP " +
-      produkTerpilih.nama_produk +
-      " berhasil disimpan.",
-
-      "success"
-
-    );
-
-  }
+const hargaOffline =
+Number(
+document.getElementById(
+"hargaOffline"
+).value || 0
 );
 
 
-/* =====================================================
+const hargaOnline =
+Number(
+document.getElementById(
+"hargaOnline"
+).value || 0
+);
+
+
+const untungOffline =
+hargaOffline > 0
+? hargaOffline - hppUnit
+: null;
+
+
+const untungOnline =
+hargaOnline > 0
+? hargaOnline - hppUnit
+: null;
+
+
+/*
+ Cek apakah HPP produk ini sudah ada.
+*/
+
+const {
+data: hppLama,
+error: cariError
+} = await supabaseClient
+
+.from("hpp")
+
+.select("*")
+
+.eq("produk_id",produkTerpilih.id)
+
+.maybeSingle();
+
+
+if(cariError){
+
+tampilkanStatus(
+"Gagal mengecek HPP: " + cariError.message,
+"error"
+);
+
+return;
+
+}
+
+
+const dataHpp = {
+
+produk_id: produkTerpilih.id,
+
+total_bahan: totalBiayaBahan,
+
+biaya_produksi: biayaProduksi,
+
+jumlah_batch: jumlahHasilProduksi,
+
+total_modal: totalModal,
+
+hpp_unit: Math.round(hppUnit),
+
+harga_offline:
+hargaOffline > 0
+? hargaOffline
+: null,
+
+harga_online:
+hargaOnline > 0
+? hargaOnline
+: null,
+
+untung_offline:
+untungOffline !== null
+? Math.round(untungOffline)
+: null,
+
+untung_online:
+untungOnline !== null
+? Math.round(untungOnline)
+: null
+
+};
+
+
+let error;
+
+
+if(hppLama){
+
+const result =
+await supabaseClient
+
+.from("hpp")
+
+.update(dataHpp)
+
+.eq("id",hppLama.id);
+
+error = result.error;
+
+}
+
+else{
+
+const result =
+await supabaseClient
+
+.from("hpp")
+
+.insert([dataHpp]);
+
+error = result.error;
+
+}
+
+
+if(error){
+
+console.error(error);
+
+tampilkanStatus(
+"Gagal menyimpan HPP: " + error.message,
+"error"
+);
+
+return;
+
+}
+
+
+/*
+ Update harga jual produk juga
+ jika user mengisi harga baru.
+*/
+
+const updateProduk = {
+
+harga_offline:
+hargaOffline > 0
+? hargaOffline
+: produkTerpilih.harga_offline,
+
+harga_online:
+hargaOnline > 0
+? hargaOnline
+: produkTerpilih.harga_online
+
+};
+
+
+const {
+error: produkError
+} = await supabaseClient
+
+.from("produk")
+
+.update(updateProduk)
+
+.eq("id",produkTerpilih.id);
+
+
+if(produkError){
+
+console.error(produkError);
+
+}
+
+
+produkTerpilih.harga_offline =
+updateProduk.harga_offline;
+
+produkTerpilih.harga_online =
+updateProduk.harga_online;
+
+
+tampilkanStatus(
+"HPP " +
+produkTerpilih.nama_produk +
+" berhasil disimpan.",
+"success"
+);
+
+});
+
+
+/* =========================
    STATUS
-===================================================== */
+========================= */
 
 function tampilkanStatus(pesan,tipe){
 
-  const status =
-    document.getElementById("status");
+const status =
+document.getElementById("status");
 
 
-  status.textContent =
-    pesan;
+status.textContent =
+pesan;
 
 
-  status.className =
-    "status " + tipe;
+status.className =
+"status " + tipe;
 
 }
 
 
-/* =====================================================
+/* =========================
    INIT
-===================================================== */
+========================= */
 
 async function init(){
 
-  await loadProduk();
+await loadProduk();
 
-  await loadBahan();
+await loadBahan();
 
-  await loadResep();
+await loadResep();
 
 }
 
-
-/* JALANKAN */
 
 init();
 
