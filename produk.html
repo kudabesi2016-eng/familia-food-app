@@ -336,7 +336,7 @@
             <input
               type="text"
               id="nama_produk"
-              placeholder="Contoh: Naget isi 10"
+              placeholder="Contoh: Naget"
               required
             >
           </div>
@@ -817,6 +817,17 @@
             document
               .getElementById("satuan")
               .value;
+
+          const isi_per_bungkus = Number(
+            document
+              .getElementById("isi_per_bungkus")
+              .value
+          );
+
+          if (!Number.isInteger(isi_per_bungkus) || isi_per_bungkus < 1) {
+            tampilkanError("Isi per bungkus harus berupa angka minimal 1.");
+            return;
+          }
 
           const hpp_offline =
             document
