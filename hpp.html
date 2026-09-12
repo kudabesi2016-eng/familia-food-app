@@ -683,6 +683,22 @@ select.appendChild(option);
 
 });
 
+// Naget isi 25 adalah produk khusus dengan tambahan saus.
+// Tampilkan di nama produk, bukan di pilihan isi per bungkus.
+const sudahAdaNaget25 = Array.from(select.options).some(function(option){
+  return option.textContent.trim().toLowerCase() === "naget isi 25";
+});
+if(!sudahAdaNaget25){
+  const nagetDasar = produkData.find(function(produk){
+    return String(produk.nama_produk || "").trim().toLowerCase() === "naget";
+  });
+  if(nagetDasar){
+    const option25 = document.createElement("option");
+    option25.value = nagetDasar.id;
+    option25.textContent = "Naget isi 25";
+    select.appendChild(option25);
+  }
+}
 
 }
 
@@ -1142,8 +1158,12 @@ const biayaProduksi =
 hitungBiayaProduksi();
 
 
+const biayaSausKhusus = (produkTerpilih && String(produkTerpilih.nama_produk).toLowerCase() === "naget isi 25") ? 1400 : 0;
+
+const totalBiayaBahanDenganSaus = totalBiayaBahan + biayaSausKhusus;
+
 const totalModal =
-totalBiayaBahan + biayaProduksi;
+totalBiayaBahanDenganSaus + biayaProduksi;
 
 
 let hppUnit = 0;
@@ -1179,9 +1199,13 @@ hargaOffline > 0
 : 0;
 
 
+// Khusus Naget isi 25 online memakai plastik vakum Rp1.000 per lembar.
+const namaProdukUntukKemasanOnline = produkTerpilih ? String(produkTerpilih.nama_produk || "").toLowerCase() : "";
+// Semua varian Naget online memakai 1 lembar plastik vakum @Rp1.000.
+const biayaPlastikVakumOnline = namaProdukUntukKemasanOnline.startsWith("naget") ? 1000 : 0;
 const untungOnline =
 hargaOnline > 0
-? hargaOnline - hppUnit
+? hargaOnline - (hppUnit + biayaPlastikVakumOnline)
 : 0;
 
 
@@ -1196,10 +1220,14 @@ rupiah(biayaProduksi);
 document.getElementById("hasilModal").textContent =
 rupiah(totalModal);
 
+// Untuk Naget isi 25, dua saus @Rp700 otomatis ditambahkan.
+document.getElementById("hasilBahan").textContent = rupiah(totalBiayaBahanDenganSaus);
+
 
 document.getElementById("hasilHpp").textContent = rupiah(Math.round(hppUnit));
-document.getElementById("hasilIsi").textContent = isiPerBungkus() + " pcs";
-document.getElementById("hasilHppBungkus").textContent = rupiah(Math.round(hppUnit * isiPerBungkus()));
+document.getElementById("hasilIsi").textContent = (produkTerpilih && produkTerpilih.nama_produk.toLowerCase() === "naget isi 25" ? 25 : isiPerBungkus()) + " pcs";
+const jumlahIsiTampil = (produkTerpilih && produkTerpilih.nama_produk.toLowerCase() === "naget isi 25" ? 25 : isiPerBungkus());
+document.getElementById("hasilHppBungkus").textContent = rupiah(Math.round(hppUnit * jumlahIsiTampil));
 
 
 document.getElementById("hasilUntungOffline").textContent =
@@ -1240,6 +1268,7 @@ async function(){
 
 const id =
 this.value;
+const namaPilihan = this.options[this.selectedIndex] ? this.options[this.selectedIndex].textContent.trim() : "";
 
 
 if(!id){
@@ -1319,6 +1348,16 @@ return;
 
 produkTerpilih =
 cariProduk(id);
+
+// Naget isi 25 adalah varian khusus: 25 pcs naget + tambahan saus.
+const nagetIsi25 = namaPilihan.toLowerCase() === "naget isi 25";
+if (nagetIsi25 && produkTerpilih) {
+  produkTerpilih = Object.assign({}, produkTerpilih, { nama_produk: "Naget isi 25", isi_per_bungkus: 25 });
+  document.getElementById("isiBungkusSelect").value = "10";
+  document.getElementById("isiBungkusSelect").disabled = true;
+} else {
+  document.getElementById("isiBungkusSelect").disabled = false;
+}
 
 
 resepProduk =
@@ -1416,8 +1455,12 @@ const biayaProduksi =
 hitungBiayaProduksi();
 
 
+const biayaSausKhusus = (produkTerpilih && String(produkTerpilih.nama_produk).toLowerCase() === "naget isi 25") ? 1400 : 0;
+
+const totalBiayaBahanDenganSaus = totalBiayaBahan + biayaSausKhusus;
+
 const totalModal =
-totalBiayaBahan + biayaProduksi;
+totalBiayaBahanDenganSaus + biayaProduksi;
 
 
 const hppUnit =
