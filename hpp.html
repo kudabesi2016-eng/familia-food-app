@@ -322,6 +322,13 @@ Pilih Produk
 
 </div>
 
+<div class="box">
+<label>Isi per Bungkus</label>
+<select id="isiBungkusSelect">
+<option value="10">10 pcs</option>
+<option value="12">12 pcs</option>
+</select>
+</div>
 
 <div class="box">
 
@@ -607,7 +614,8 @@ return "Rp" + Math.round(Number(nilai)).toLocaleString("id-ID");
 
 
 function isiPerBungkus() {
-  return Number((produkTerpilih && produkTerpilih.isi_per_bungkus) || 1);
+  const pilihan = document.getElementById("isiBungkusSelect");
+  return Number((pilihan && pilihan.value) || (produkTerpilih && produkTerpilih.isi_per_bungkus) || 1);
 }
 
 /* =========================
@@ -652,6 +660,9 @@ select.innerHTML =
 
 
 const namaSudahAda = new Set();
+
+// Pastikan setiap nama produk hanya muncul satu kali di pilihan HPP.
+select.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
 
 produkData.forEach(function(produk){
 
@@ -1209,6 +1220,10 @@ jumlahHasilProduksi <= 0;
 ========================= */
 
 document.getElementById("jumlahProduksi").addEventListener("input", function(){
+  if (produkTerpilih) hitungSemua();
+});
+
+document.getElementById("isiBungkusSelect").addEventListener("change", function(){
   if (produkTerpilih) hitungSemua();
 });
 
