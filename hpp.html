@@ -330,8 +330,8 @@ Pilih Produk
 <input
 type="number"
 id="jumlahProduksi"
-readonly
-placeholder="Otomatis dari resep"
+min="1"
+placeholder="Masukkan jumlah pcs produksi"
 >
 
 </div>
@@ -572,9 +572,11 @@ let jumlahHasilProduksi = 0;
 
 const overheadPerBungkus = {
 
-"Naget isi 10": 859,
+"Naget": 85.9,
 
-"Naget isi 12": 1031,
+"Naget isi 10": 85.9,
+
+"Naget isi 12": 85.9,
 
 "Cireng isi": 950,
 
@@ -649,16 +651,19 @@ select.innerHTML =
 '<option value="">Pilih Produk</option>';
 
 
+const namaSudahAda = new Set();
+
 produkData.forEach(function(produk){
 
-const option =
-document.createElement("option");
+const nama = String(produk.nama_produk || "").trim();
 
+if(!nama || namaSudahAda.has(nama.toLowerCase())) return;
+
+namaSudahAda.add(nama.toLowerCase());
+
+const option = document.createElement("option");
 option.value = produk.id;
-
-option.textContent =
-produk.nama_produk;
-
+option.textContent = nama;
 select.appendChild(option);
 
 });
@@ -880,15 +885,10 @@ produkTerpilih.nama_produk
 .toLowerCase();
 
 
-if(nama === "naget isi 10"){
+if(nama === "naget" || nama === "naget isi 10" || nama === "naget isi 12"){
 
-return 264;
-
-}
-
-if(nama === "naget isi 12"){
-
-return 30;
+// Resep Naget menghasilkan total 2.500 pcs, bukan jumlah bungkus.
+return 2500;
 
 }
 
@@ -1111,14 +1111,15 @@ return;
 }
 
 
-jumlahHasilProduksi =
-tentukanJumlahProduksi();
+const inputJumlah = document.getElementById("jumlahProduksi");
+const nilaiManual = Number(inputJumlah.value);
 
-
-document.getElementById(
-"jumlahProduksi"
-).value =
-jumlahHasilProduksi || "";
+if (nilaiManual > 0) {
+  jumlahHasilProduksi = nilaiManual;
+} else {
+  jumlahHasilProduksi = tentukanJumlahProduksi();
+  inputJumlah.value = jumlahHasilProduksi || "";
+}
 
 
 const biayaProduksi =
@@ -1206,6 +1207,10 @@ jumlahHasilProduksi <= 0;
 /* =========================
    PILIH PRODUK
 ========================= */
+
+document.getElementById("jumlahProduksi").addEventListener("input", function(){
+  if (produkTerpilih) hitungSemua();
+});
 
 document.getElementById(
 "produkSelect"
