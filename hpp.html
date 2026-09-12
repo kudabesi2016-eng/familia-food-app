@@ -108,13 +108,6 @@ input[readonly]{
 background:#f4f7f5;
 }
 
-.production-detail{
-margin-top:8px;
-font-size:13px;
-color:#087443;
-font-weight:bold;
-}
-
 .recipe-box{
 margin-top:25px;
 border:1px solid #ddd;
@@ -246,7 +239,6 @@ grid-template-columns:1fr;
 }
 
 }
-
 </style>
 </head>
 
@@ -282,7 +274,6 @@ grid-template-columns:1fr;
 
 </div>
 
-
 <div class="main">
 
 <div class="container">
@@ -290,9 +281,8 @@ grid-template-columns:1fr;
 <h1>🧮 Perhitungan HPP</h1>
 
 <div class="subtitle">
-HPP dihitung otomatis berdasarkan resep dan harga bahan baku terbaru.
+HPP dihitung berdasarkan resep, harga bahan baku terbaru, dan pola biaya produksi Familia Food.
 </div>
-
 
 <div class="form">
 
@@ -310,27 +300,18 @@ Pilih Produk
 
 </div>
 
-
 <div class="box">
 
-<label>Hasil Produksi</label>
+<label>Jumlah Hasil Produksi</label>
 
 <input
 type="number"
 id="jumlahProduksi"
 readonly
-placeholder="Otomatis dari resep"
+placeholder="Otomatis"
 >
 
-<div
-id="productionDetail"
-class="production-detail"
->
-Jumlah pcs akan ditampilkan setelah produk dipilih.
 </div>
-
-</div>
-
 
 <div class="box">
 
@@ -345,7 +326,6 @@ value="Rp0"
 
 </div>
 
-
 <div class="box">
 
 <label>Biaya Produksi / Overhead</label>
@@ -359,7 +339,6 @@ value="Rp0"
 
 </div>
 
-
 <div class="box">
 
 <label>Harga Jual Offline</label>
@@ -371,7 +350,6 @@ placeholder="Masukkan harga jual offline"
 >
 
 </div>
-
 
 <div class="box">
 
@@ -386,7 +364,6 @@ placeholder="Masukkan harga jual online"
 </div>
 
 </div>
-
 
 <div class="recipe-box">
 
@@ -430,7 +407,6 @@ Pilih produk terlebih dahulu.
 
 </div>
 
-
 <div class="result">
 
 <h2>Hasil Perhitungan</h2>
@@ -445,7 +421,6 @@ Rp0
 
 </div>
 
-
 <div class="result-row">
 
 <span>Biaya Produksi / Overhead</span>
@@ -455,7 +430,6 @@ Rp0
 </strong>
 
 </div>
-
 
 <div class="result-row">
 
@@ -467,7 +441,6 @@ Rp0
 
 </div>
 
-
 <div class="result-row big-result">
 
 <span>HPP per Bungkus</span>
@@ -478,7 +451,6 @@ Rp0
 
 </div>
 
-
 <div class="result-row">
 
 <span>Keuntungan Offline</span>
@@ -488,7 +460,6 @@ Rp0
 </strong>
 
 </div>
-
 
 <div class="result-row">
 
@@ -502,13 +473,11 @@ Rp0
 
 </div>
 
-
 <br>
 
 <button id="btnSimpan" disabled>
 💾 Simpan HPP
 </button>
-
 
 <div id="status" class="status"></div>
 
@@ -516,11 +485,9 @@ Rp0
 
 </div>
 
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script src="supabase.js"></script>
-
 
 <script>
 
@@ -540,42 +507,25 @@ let jumlahHasilProduksi = 0;
 
 
 /* =========================
-   OVERHEAD
-   POLA HPP LAMA
+   HPP DATA LAMA
+=========================
+
+   HPP Naget tetap mengikuti
+   data lama Familia Food.
+
+   Naget isi 10 = Rp3.100/bungkus
+   Naget isi 12 = Rp3.720/bungkus
+
+   Pembagian produksi terbaru:
+
+   Naget isi 10 = 2.640 pcs
+                    = 264 bungkus
+
+   Naget isi 12 = 360 pcs
+                   = 30 bungkus
+
+   Total Naget = 3.000 pcs
 ========================= */
-
-const overheadPerBungkus = {
-
-"Naget isi 10": 859,
-
-"Naget isi 12": 1031,
-
-"Cireng isi": 950,
-
-"Cireng biasa": 1070,
-
-"Cibay": 820
-
-};
-
-
-/* =========================
-   JUMLAH PRODUKSI
-========================= */
-
-const jumlahProduksiPerProduk = {
-
-"Naget isi 10": 300,
-
-"Naget isi 12": 250,
-
-"Cireng isi": 40,
-
-"Cireng biasa": 10,
-
-"Cibay": 10
-
-};
 
 
 /* =========================
@@ -589,9 +539,7 @@ nilai === null ||
 nilai === undefined ||
 isNaN(nilai)
 ){
-
 return "Rp0";
-
 }
 
 return "Rp" + Number(nilai).toLocaleString("id-ID");
@@ -772,7 +720,6 @@ return 0;
 
 }
 
-
 const harga =
 Number(bahan.harga_beli || 0);
 
@@ -786,15 +733,8 @@ String(bahan.nama_bahan || "")
 
 /*
  BUMBU
-
- Nilai di resep adalah persen.
-
- 20 = 20%
-
- Jika data lama menggunakan:
- 0.2 = 20%
-
- keduanya tetap didukung.
+ jumlah_pakai disimpan sebagai
+ persentase alokasi.
 */
 
 if(nama.includes("bumbu")){
@@ -812,14 +752,8 @@ return harga * jumlah / 100;
 
 /*
  PLASTIK
-
- Harga plastik adalah harga per kg.
-
- 1 kg = 240 lembar.
-
- Contoh:
-
- 10 lembar × Rp44.000 ÷ 240
+ Harga per Kg.
+ 1 Kg = 240 lembar.
 */
 
 if(nama.includes("plastik")){
@@ -831,9 +765,6 @@ return harga * jumlah / 240;
 
 /*
  BAHAN LAIN
-
- Harga mengikuti satuan
- bahan baku saat ini.
 */
 
 return harga * jumlah;
@@ -853,59 +784,61 @@ return 0;
 
 }
 
-
 const nama =
-produkTerpilih.nama_produk;
+String(produkTerpilih.nama_produk || "")
+.toLowerCase();
 
 
-if(jumlahProduksiPerProduk[nama] !== undefined){
+/*
+ NAGET
+ Total produksi = 3.000 pcs.
 
-return jumlahProduksiPerProduk[nama];
+ Isi 10:
+ 2.640 pcs / 10
+ = 264 bungkus.
+
+ Isi 12:
+ 360 pcs / 12
+ = 30 bungkus.
+*/
+
+if(nama === "naget isi 10"){
+
+return 264;
 
 }
 
+if(nama === "naget isi 12"){
 
-return 0;
-
-}
-
-
-/* =========================
-   TAMPILKAN DETAIL PRODUKSI
-========================= */
-
-function tampilkanDetailProduksi(){
-
-const detail =
-document.getElementById("productionDetail");
-
-
-if(!produkTerpilih || jumlahHasilProduksi <= 0){
-
-detail.textContent =
-"Jumlah pcs akan ditampilkan setelah produk dipilih.";
-
-return;
+return 30;
 
 }
 
 
 /*
- Semua produk saat ini:
-
- 1 bungkus = 10 pcs
+ PRODUK LAIN
 */
 
-const jumlahPcs =
-jumlahHasilProduksi * 10;
+if(nama === "cireng isi"){
+
+return 40;
+
+}
+
+if(nama === "cireng biasa"){
+
+return 10;
+
+}
+
+if(nama === "cibay"){
+
+return 10;
+
+}
 
 
-detail.textContent =
-"Setara dengan " +
-jumlahPcs.toLocaleString("id-ID") +
-" pcs (" +
-jumlahHasilProduksi.toLocaleString("id-ID") +
-" bungkus × 10 pcs).";
+return 0;
 
 }
 
@@ -922,17 +855,105 @@ return 0;
 
 }
 
-
 const nama =
-produkTerpilih.nama_produk;
-
-const overhead =
-overheadPerBungkus[nama];
+String(produkTerpilih.nama_produk || "")
+.toLowerCase();
 
 
-if(overhead !== undefined){
+/*
+ HPP NAGET MENGIKUTI DATA LAMA.
 
-return overhead * jumlahHasilProduksi;
+ Naget isi 10:
+ HPP Rp3.100/bungkus.
+
+ Naget isi 12:
+ HPP Rp3.720/bungkus.
+
+ Kita tidak menggunakan overhead
+ lama secara buta untuk menentukan
+ HPP baru.
+
+ Total OH saat ini Familia Food:
+ Rp380.000.
+
+ Untuk Naget, HPP lama dipertahankan
+ sebagai patokan hasil akhir.
+*/
+
+
+if(nama === "naget isi 10"){
+
+const targetHpp = 3100;
+
+const kebutuhanOverhead =
+(targetHpp * jumlahHasilProduksi)
+- totalBiayaBahan;
+
+return Math.max(0,kebutuhanOverhead);
+
+}
+
+
+if(nama === "naget isi 12"){
+
+const targetHpp = 3720;
+
+const kebutuhanOverhead =
+(targetHpp * jumlahHasilProduksi)
+- totalBiayaBahan;
+
+return Math.max(0,kebutuhanOverhead);
+
+}
+
+
+/*
+ Cireng Isi
+ HPP yang sudah ditetapkan:
+ Rp2.900/bungkus.
+
+ OH total:
+ Rp38.000.
+*/
+
+if(nama === "cireng isi"){
+
+return 38000;
+
+}
+
+
+/*
+ Cireng Biasa
+ OH yang sudah ditetapkan:
+ Rp2.000 total.
+*/
+
+if(nama === "cireng biasa"){
+
+return 2000;
+
+}
+
+
+/*
+ Cibay
+ HPP yang sudah ditetapkan:
+ Rp2.900/bungkus.
+
+ Biaya bahan sebelumnya:
+ sekitar Rp25.853.
+
+ Total modal ditetapkan sekitar
+ Rp29.000.
+
+ OH:
+ sekitar Rp3.147.
+*/
+
+if(nama === "cibay"){
+
+return 3147;
 
 }
 
@@ -1067,7 +1088,6 @@ tbody.appendChild(tr);
 document.getElementById("totalBahan").value =
 rupiah(totalBiayaBahan);
 
-
 document.getElementById("hasilBahan").textContent =
 rupiah(totalBiayaBahan);
 
@@ -1097,9 +1117,6 @@ document.getElementById(
 jumlahHasilProduksi || "";
 
 
-tampilkanDetailProduksi();
-
-
 const biayaProduksi =
 hitungBiayaProduksi();
 
@@ -1115,6 +1132,32 @@ if(jumlahHasilProduksi > 0){
 
 hppUnit =
 totalModal / jumlahHasilProduksi;
+
+}
+
+
+/*
+ Untuk Naget, hasil akhir harus
+ mengikuti HPP data lama.
+
+ Untuk produk lain dihitung dari
+ total modal / jumlah produksi.
+*/
+
+const nama =
+String(produkTerpilih.nama_produk || "")
+.toLowerCase();
+
+
+if(nama === "naget isi 10"){
+
+hppUnit = 3100;
+
+}
+
+if(nama === "naget isi 12"){
+
+hppUnit = 3720;
 
 }
 
@@ -1156,7 +1199,13 @@ rupiah(biayaProduksi);
 
 
 document.getElementById("hasilModal").textContent =
-rupiah(totalModal);
+rupiah(
+nama === "naget isi 10"
+? 3100 * jumlahHasilProduksi
+: nama === "naget isi 12"
+? 3720 * jumlahHasilProduksi
+: totalModal
+);
 
 
 document.getElementById("hasilHpp").textContent =
@@ -1182,19 +1231,24 @@ jumlahHasilProduksi <= 0;
 
 
 /* =========================
-   RESET
+   PILIH PRODUK
 ========================= */
 
-function resetHpp(){
+document.getElementById(
+"produkSelect"
+).addEventListener(
+"change",
+async function(){
+
+const id =
+this.value;
+
+
+if(!id){
 
 produkTerpilih = null;
 
 resepProduk = [];
-
-totalBiayaBahan = 0;
-
-jumlahHasilProduksi = 0;
-
 
 document.getElementById(
 "recipeBody"
@@ -1212,92 +1266,53 @@ Pilih produk terlebih dahulu.
 
 `;
 
-
 document.getElementById(
 "jumlahProduksi"
 ).value = "";
-
-
-document.getElementById(
-"productionDetail"
-).textContent =
-"Jumlah pcs akan ditampilkan setelah produk dipilih.";
-
 
 document.getElementById(
 "totalBahan"
 ).value = "Rp0";
 
-
 document.getElementById(
 "biayaProduksi"
 ).value = "Rp0";
-
 
 document.getElementById(
 "hargaOffline"
 ).value = "";
 
-
 document.getElementById(
 "hargaOnline"
 ).value = "";
-
 
 document.getElementById(
 "hasilBahan"
 ).textContent = "Rp0";
 
-
 document.getElementById(
 "hasilProduksi"
 ).textContent = "Rp0";
-
 
 document.getElementById(
 "hasilModal"
 ).textContent = "Rp0";
 
-
 document.getElementById(
 "hasilHpp"
 ).textContent = "Rp0";
-
 
 document.getElementById(
 "hasilUntungOffline"
 ).textContent = "Rp0";
 
-
 document.getElementById(
 "hasilUntungOnline"
 ).textContent = "Rp0";
 
-
 document.getElementById(
 "btnSimpan"
 ).disabled = true;
-
-}
-
-
-/* =========================
-   PILIH PRODUK
-========================= */
-
-document.getElementById(
-"produkSelect"
-).addEventListener(
-"change",
-async function(){
-
-const id =
-this.value;
-
-
-if(!id){
-
-resetHpp();
 
 return;
 
@@ -1316,10 +1331,6 @@ return String(item.produk_id) === String(id);
 });
 
 
-/*
- Harga jual dari tabel produk.
-*/
-
 document.getElementById(
 "hargaOffline"
 ).value =
@@ -1331,11 +1342,6 @@ document.getElementById(
 ).value =
 produkTerpilih.harga_online || "";
 
-
-/*
- Resep menggunakan harga bahan
- baku TERBARU dari tabel bahan_baku.
-*/
 
 tampilkanResep();
 
@@ -1399,16 +1405,47 @@ return;
 }
 
 
+const nama =
+String(produkTerpilih.nama_produk || "")
+.toLowerCase();
+
+
+let hppUnit;
+
+
+if(nama === "naget isi 10"){
+
+hppUnit = 3100;
+
+}
+
+else if(nama === "naget isi 12"){
+
+hppUnit = 3720;
+
+}
+
+else{
+
 const biayaProduksi =
 hitungBiayaProduksi();
-
 
 const totalModal =
 totalBiayaBahan + biayaProduksi;
 
-
-const hppUnit =
+hppUnit =
 totalModal / jumlahHasilProduksi;
+
+}
+
+
+const biayaProduksi =
+hppUnit * jumlahHasilProduksi
+- totalBiayaBahan;
+
+
+const totalModal =
+totalBiayaBahan + biayaProduksi;
 
 
 const hargaOffline =
@@ -1439,10 +1476,6 @@ hargaOnline > 0
 : null;
 
 
-/*
- Cek HPP lama.
-*/
-
 const {
 data: hppLama,
 error: cariError
@@ -1471,23 +1504,17 @@ return;
 
 const dataHpp = {
 
-produk_id:
-produkTerpilih.id,
+produk_id: produkTerpilih.id,
 
-total_bahan:
-totalBiayaBahan,
+total_bahan: totalBiayaBahan,
 
-biaya_produksi:
-biayaProduksi,
+biaya_produksi: biayaProduksi,
 
-jumlah_batch:
-jumlahHasilProduksi,
+jumlah_batch: jumlahHasilProduksi,
 
-total_modal:
-totalModal,
+total_modal: totalModal,
 
-hpp_unit:
-Math.round(hppUnit),
+hpp_unit: Math.round(hppUnit),
 
 harga_offline:
 hargaOffline > 0
@@ -1526,8 +1553,7 @@ await supabaseClient
 
 .eq("id",hppLama.id);
 
-error =
-result.error;
+error = result.error;
 
 }
 
@@ -1540,8 +1566,7 @@ await supabaseClient
 
 .insert([dataHpp]);
 
-error =
-result.error;
+error = result.error;
 
 }
 
@@ -1559,11 +1584,6 @@ return;
 
 }
 
-
-/*
- Update harga jual produk
- jika diubah di halaman HPP.
-*/
 
 const updateProduk = {
 
