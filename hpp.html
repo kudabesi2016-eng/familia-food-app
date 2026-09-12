@@ -327,6 +327,11 @@ Pilih Produk
 <select id="isiBungkusSelect">
 <option value="10">10 pcs</option>
 <option value="12">12 pcs</option>
+<option value="20">20 pcs</option>
+<option value="25">25 pcs</option>
+<option value="30">30 pcs</option>
+<option value="40">40 pcs</option>
+<option value="50">50 pcs</option>
 </select>
 </div>
 
@@ -678,6 +683,17 @@ option.textContent = nama;
 select.appendChild(option);
 
 });
+
+// Paket khusus Naget isi 25 dengan tambahan saus.
+if (!namaSudahAda.has("naget isi 25")) {
+  const nagetDasar = produkData.find(p => String(p.nama_produk || "").trim().toLowerCase() === "naget");
+  if (nagetDasar) {
+    const option25 = document.createElement("option");
+    option25.value = nagetDasar.id;
+    option25.textContent = "Naget isi 25";
+    select.appendChild(option25);
+  }
+}
 
 }
 
