@@ -350,6 +350,11 @@
           </div>
 
           <div class="form-group">
+            <label>Isi per Bungkus</label>
+            <input type="number" id="isi_per_bungkus" placeholder="Contoh: 10" min="1" value="1" required>
+          </div>
+
+          <div class="form-group">
             <label>HPP Offline</label>
             <input
               type="number"
@@ -430,6 +435,7 @@
             <tr>
               <th>Nama Produk</th>
               <th>Satuan</th>
+              <th>Isi/Bungkus</th>
               <th>HPP Offline</th>
               <th>Harga Offline</th>
               <th>HPP Online</th>
@@ -442,7 +448,7 @@
           <tbody id="produkTable">
 
             <tr>
-              <td colspan="8" class="empty">
+              <td colspan="9" class="empty">
                 Memuat data...
               </td>
             </tr>
@@ -557,7 +563,7 @@
 
       table.innerHTML = `
         <tr>
-          <td colspan="8" class="empty">
+          <td colspan="9" class="empty">
             Memuat data...
           </td>
         </tr>
@@ -586,7 +592,7 @@
 
         table.innerHTML = `
           <tr>
-            <td colspan="8" class="empty">
+            <td colspan="9" class="empty">
               Gagal memuat data produk.
             </td>
           </tr>
@@ -636,7 +642,7 @@
 
         table.innerHTML = `
           <tr>
-            <td colspan="8" class="empty">
+            <td colspan="9" class="empty">
               Belum ada data produk.
             </td>
           </tr>
@@ -697,6 +703,10 @@
 
           <td>
             ${escapeHtml(produk.satuan || "-")}
+          </td>
+
+          <td>
+            ${produk.isi_per_bungkus || 1} pcs
           </td>
 
           <td>
@@ -853,6 +863,8 @@
 
             satuan:
               satuan,
+
+            isi_per_bungkus: isi_per_bungkus,
 
             harga_offline:
               harga_offline === ""
@@ -1128,6 +1140,8 @@
         "satuan"
       ).value =
         produk.satuan || "bungkus";
+
+      document.getElementById("isi_per_bungkus").value = produk.isi_per_bungkus || 1;
 
       document.getElementById(
         "harga_offline"
