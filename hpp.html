@@ -35,7 +35,7 @@ function rBahan(r){return r?.bahan_baku_id??r?.bahan_id??r?.bahan_id_fk}
 function rQty(r){return Number(r?.jumlah??r?.qty??r?.kuantitas??r?.jumlah_bahan??0)}
 async function load(){
  try{
-  const [p,b,r]=await Promise.all([sb.from('produk').select('*').order('nama_produk'),sb.from('bahan_baku').select('*').order('nama_bahan'),sb.from('resep').select('*')]);
+  const [p,b,r]=await Promise.all([supabaseClient.from('produk').select('*').order('nama_produk'),supabaseClient.from('bahan_baku').select('*').order('nama_bahan'),supabaseClient.from('resep').select('*')]);
   if(p.error)throw p.error;if(b.error)throw b.error;if(r.error)throw r.error;
   produkList=p.data||[];bahan=b.data||[];resepList=r.data||[];
   document.getElementById('produk').innerHTML=produkList.map(x=>`<option value="${x.id}">${x.nama_produk}${x.isi_per_bungkus?' — '+x.isi_per_bungkus+' pcs/bungkus':''}</option>`).join('');
