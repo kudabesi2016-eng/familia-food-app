@@ -1,70 +1,1608 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kalkulator HPP - Familia Food</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>HPP - Familia Food</title>
+
 <style>
-body{font-family:Arial,sans-serif;margin:0;background:#f5faf7;color:#17352a}nav{background:#087443;padding:14px;display:flex;gap:14px;flex-wrap:wrap}nav a{color:#fff;text-decoration:none;font-weight:600}.container{max-width:1150px;margin:22px auto;padding:0 16px}.card{background:#fff;border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:0 2px 10px #0001}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}label{display:block;font-weight:600;margin:9px 0 5px}input,select,button{padding:9px;border:1px solid #ccd8d2;border-radius:7px;font-size:14px}input,select{width:100%;box-sizing:border-box}button{cursor:pointer;background:#087443;color:#fff;border:0}button.danger{background:#b42318}.row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:7px;align-items:end;margin-bottom:8px}.total{font-size:18px;font-weight:700;margin-top:10px}.result{background:#eef8f2;border-radius:10px;padding:13px;line-height:1.8}.muted{color:#60756c;font-size:13px}@media(max-width:800px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr 1fr}.row button{grid-column:1/-1}}
+
+*{
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,sans-serif;
+background:#f5faf7;
+margin:0;
+padding:0;
+color:#26352d;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+position:fixed;
+left:0;
+top:0;
+bottom:0;
+width:230px;
+background:#087443;
+color:white;
+padding:25px 15px;
+}
+
+.logo{
+font-size:23px;
+font-weight:bold;
+text-align:center;
+margin-bottom:30px;
+}
+
+.menu a{
+display:block;
+color:white;
+text-decoration:none;
+padding:12px 15px;
+border-radius:8px;
+margin-bottom:6px;
+}
+
+.menu a:hover,
+.menu a.active{
+background:rgba(255,255,255,0.15);
+}
+
+/* CONTENT */
+
+.main{
+margin-left:230px;
+padding:30px;
+}
+
+.container{
+background:white;
+padding:25px;
+border-radius:15px;
+max-width:1100px;
+margin:auto;
+box-shadow:0 5px 20px rgba(0,0,0,0.04);
+}
+
+h1{
+color:#087443;
+margin-top:0;
+}
+
+.subtitle{
+color:#68756e;
+margin-bottom:25px;
+}
+
+/* FORM */
+
+.form{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+}
+
+.box{
+border:1px solid #ddd;
+padding:15px;
+border-radius:10px;
+}
+
+label{
+display:block;
+font-weight:bold;
+margin-bottom:7px;
+}
+
+input,
+select{
+width:100%;
+padding:11px;
+border:1px solid #ccc;
+border-radius:8px;
+font-size:14px;
+background:white;
+}
+
+input[readonly]{
+background:#f4f7f5;
+}
+
+/* RECIPE */
+
+.recipe-box{
+margin-top:25px;
+border:1px solid #ddd;
+border-radius:12px;
+overflow:hidden;
+}
+
+.recipe-title{
+padding:15px;
+background:#f0f8f3;
+font-weight:bold;
+color:#087443;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,
+td{
+padding:11px;
+border-bottom:1px solid #eee;
+text-align:left;
+font-size:14px;
+}
+
+th{
+background:#fafafa;
+}
+
+.empty{
+padding:25px;
+text-align:center;
+color:#777;
+}
+
+/* RESULT */
+
+.result{
+margin-top:25px;
+padding:20px;
+background:#f0f8f3;
+border-radius:12px;
+}
+
+.result h2{
+color:#087443;
+margin-top:0;
+}
+
+.result-row{
+display:flex;
+justify-content:space-between;
+gap:20px;
+padding:10px 0;
+border-bottom:1px solid #dcebe2;
+}
+
+.result-row:last-child{
+border-bottom:0;
+}
+
+.result-row strong{
+color:#087443;
+}
+
+.big-result{
+font-size:20px;
+font-weight:bold;
+}
+
+.profit{
+color:#087443;
+font-weight:bold;
+}
+
+/* BUTTON */
+
+button{
+background:#087443;
+color:white;
+border:0;
+padding:12px 20px;
+border-radius:8px;
+cursor:pointer;
+font-size:14px;
+}
+
+button:hover{
+opacity:.9;
+}
+
+button:disabled{
+background:#aaa;
+cursor:not-allowed;
+}
+
+/* STATUS */
+
+.status{
+margin-top:15px;
+padding:12px;
+border-radius:8px;
+display:none;
+}
+
+.status.success{
+display:block;
+background:#e8f7ed;
+color:#087443;
+}
+
+.status.error{
+display:block;
+background:#ffeaea;
+color:#a00000;
+}
+
+/* MOBILE */
+
+@media(max-width:800px){
+
+.sidebar{
+position:relative;
+width:100%;
+height:auto;
+}
+
+.main{
+margin-left:0;
+padding:15px;
+}
+
+.form{
+grid-template-columns:1fr;
+}
+
+}
 </style>
 </head>
-<body>
-<nav><a href="index.html">🍀 Familia Food</a><a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a></nav>
-<div class="container">
-<div class="card">
-<h1>🧮 Kalkulator HPP</h1>
-<p>Resep produk dimuat sebagai bahan awal. Anda dapat menambah, mengurangi, atau mengubah jumlah bahan khusus untuk perhitungan ini.</p>
-<div class="grid">
-<div><label>Produk</label><select id="produk"></select><label>Jumlah hasil produksi (bungkus)</label><input id="hasil" type="number" min="1" step="1" placeholder="Isi sesuai hasil produksi nyata"><label>Biaya Produksi / Overhead Offline</label><input id="ohOffline" type="number" min="0" step="1" value="0"><label>Harga Jual Offline</label><input id="jualOffline" type="number" min="0" step="1" value="0"></div>
-<div><label>Biaya Produksi / Overhead Online</label><input id="ohOnline" type="number" min="0" step="1" value="0"><label>Harga Jual Online</label><input id="jualOnline" type="number" min="0" step="1" value="0"><p class="muted">Online dimulai dari resep yang sama; tambahkan Plastik Vakum atau bahan online lainnya bila diperlukan.</p></div>
-</div></div>
 
-<div class="grid">
-<div class="card"><h2>HPP Offline</h2><div id="offlineRows"></div><button onclick="addRow('offline')">+ Tambah Bahan</button><div class="total">Total Bahan: <span id="offMat">Rp0</span></div><div class="result">Total Modal: <b id="offModal">Rp0</b><br>HPP / Bungkus: <b id="offHpp">Rp0</b><br>Laba / Bungkus: <b id="offProfit">Rp0</b></div></div>
-<div class="card"><h2>HPP Online</h2><div id="onlineRows"></div><button onclick="addRow('online')">+ Tambah Bahan</button><div class="total">Total Bahan: <span id="onMat">Rp0</span></div><div class="result">Total Modal: <b id="onModal">Rp0</b><br>HPP / Bungkus: <b id="onHpp">Rp0</b><br>Laba / Bungkus: <b id="onProfit">Rp0</b></div></div>
+<body>
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+<div class="logo">
+🍀 Familia Food
 </div>
-<div class="card"><button onclick="hitung()">🧮 Hitung HPP</button><button onclick="resetRows()">Reset ke Resep</button><p id="msg"></p></div>
+
+<div class="menu">
+
+<a href="index.html">🏠 Dashboard</a>
+
+<a href="produk.html">📦 Produk</a>
+
+<a href="bahan-baku.html">🥣 Bahan Baku</a>
+
+<a href="resep.html">📋 Resep</a>
+
+<a href="hpp.html" class="active">🧮 HPP</a>
+
+<a href="penjualan.html">💰 Penjualan</a>
+
+<a href="rekap.html">📊 Rekap</a>
+
+<a href="data-lama.html">📁 Data Lama</a>
+
+<a href="pengaturan.html">⚙️ Pengaturan</a>
+
 </div>
+
+</div>
+
+
+<!-- MAIN -->
+
+<div class="main">
+
+<div class="container">
+
+<h1>🧮 Perhitungan HPP</h1>
+
+<div class="subtitle">
+HPP dihitung otomatis berdasarkan resep dan harga bahan baku terbaru.
+</div>
+
+
+<div class="form">
+
+<div class="box">
+
+<label>Produk</label>
+
+<select id="produkSelect">
+
+<option value="">
+Pilih Produk
+</option>
+
+</select>
+
+</div>
+
+<div class="box">
+
+<label>Jumlah Hasil Produksi (bungkus)</label>
+
+<input
+type="number"
+id="jumlahProduksi"
+min="1"
+placeholder="Masukkan jumlah bungkus hasil produksi"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Total Biaya Bahan</label>
+
+<input
+type="text"
+id="totalBahan"
+readonly
+value="Rp0"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Biaya Produksi / Overhead</label>
+
+<input
+type="number"
+id="biayaProduksiInput"
+min="0"
+placeholder="Masukkan total biaya produksi/overhead"
+value=""
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Harga Jual Offline</label>
+
+<input
+type="number"
+id="hargaOffline"
+placeholder="Masukkan harga jual offline"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Harga Jual Online</label>
+
+<input
+type="number"
+id="hargaOnline"
+placeholder="Masukkan harga jual online"
+>
+
+</div>
+
+</div>
+
+
+<!-- BAHAN OFFLINE / ONLINE -->
+
+<div class="form" style="margin-top:25px">
+
+<div class="box">
+
+<div class="recipe-title">
+Bahan HPP Offline
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Bahan</th>
+
+<th>Jumlah</th>
+
+<th>Harga</th>
+
+<th>Biaya</th>
+
+<th></th>
+
+</tr>
+
+</thead>
+
+<tbody id="offlineBody">
+</tbody>
+
+</table>
+
+<br>
+
+<button
+type="button"
+id="addOffline">
++ Tambah Bahan
+</button>
+
+<small style="display:block;margin-top:8px">
+
+Bahan dari resep produk tampil otomatis.
+Anda bisa menambah atau mengurangi bahan khusus
+untuk perhitungan ini.
+
+</small>
+
+</div>
+
+
+<div class="box">
+
+<div class="recipe-title">
+Bahan HPP Online
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Bahan</th>
+
+<th>Jumlah</th>
+
+<th>Harga</th>
+
+<th>Biaya</th>
+
+<th></th>
+
+</tr>
+
+</thead>
+
+<tbody id="onlineBody">
+</tbody>
+
+</table>
+
+<br>
+
+<button
+type="button"
+id="addOnline">
++ Tambah Bahan
+</button>
+
+<small style="display:block;margin-top:8px">
+
+Resep dasar sama.
+Tambahkan Plastik Vakum atau bahan kemasan
+online lainnya bila diperlukan.
+
+</small>
+
+</div>
+
+</div>
+
+
+<!-- RESULT -->
+
+<div class="result">
+
+<h2>Hasil Perhitungan</h2>
+
+
+<div class="result-row">
+
+<span>Total Biaya Bahan</span>
+
+<strong id="hasilBahan">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>Biaya Produksi / Overhead</span>
+
+<strong id="hasilProduksi">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>Total Modal</span>
+
+<strong id="hasilModal">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row big-result">
+
+<span>HPP per Bungkus</span>
+
+<strong id="hasilHpp">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>Keuntungan Offline</span>
+
+<strong
+id="hasilUntungOffline"
+class="profit">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>Keuntungan Online</span>
+
+<strong
+id="hasilUntungOnline"
+class="profit">
+Rp0
+</strong>
+
+</div>
+
+</div>
+
+
+<br>
+
+<button
+id="btnSimpan"
+disabled>
+💾 Simpan HPP
+</button>
+
+
+<div
+id="status"
+class="status">
+</div>
+
+</div>
+
+</div>
+
+
+<!-- SUPABASE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script src="supabase.js"></script>
+
 <script>
-let bahan=[], produkList=[], resepList=[];
-function rupiah(n){return 'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID')}
-function bName(b){return b?.nama_bahan||b?.nama||b?.nama_bahan_baku||'Bahan'}
-function bPrice(b){return Number(b?.harga??b?.harga_satuan??b?.harga_bahan??b?.harga_per_satuan??0)}
-function rProduct(r){return r?.produk_id??r?.id_produk}
-function rBahan(r){return r?.bahan_baku_id??r?.bahan_id??r?.bahan_id_fk}
-function rQty(r){return Number(r?.jumlah??r?.qty??r?.kuantitas??r?.jumlah_bahan??0)}
-async function load(){
- try{
-  const [p,b,r]=await Promise.all([supabaseClient.from('produk').select('*').order('nama_produk'),supabaseClient.from('bahan_baku').select('*').order('nama_bahan'),supabaseClient.from('resep').select('*')]);
-  if(p.error)throw p.error;if(b.error)throw b.error;if(r.error)throw r.error;
-  produkList=p.data||[];bahan=b.data||[];resepList=r.data||[];
-  document.getElementById('produk').innerHTML=produkList.map(x=>`<option value="${x.id}">${x.nama_produk}${x.isi_per_bungkus?' — '+x.isi_per_bungkus+' pcs/bungkus':''}</option>`).join('');
-  document.getElementById('produk').addEventListener('change',resetRows);resetRows();
- }catch(e){document.getElementById('msg').textContent='Gagal memuat data: '+e.message}
+
+let produkData = [];
+let bahanData = [];
+let resepData = [];
+
+let produkTerpilih = null;
+
+
+function rupiah(v){
+
+return 'Rp' +
+Math.round(Number(v) || 0)
+.toLocaleString('id-ID');
+
 }
-function opts(){return bahan.map(b=>`<option value="${b.id}">${bName(b)}</option>`).join('')}
-function addRow(kind, id='', qty=''){
- const box=document.getElementById(kind+'Rows'), d=document.createElement('div');d.className='row';
- d.innerHTML=`<div><label>Bahan</label><select class="mat">${opts()}</select></div><div><label>Jumlah</label><input class="qty" type="number" min="0" step="0.001" value="${qty}"></div><div><label>Harga</label><input class="price" type="number" min="0" step="1" value="0"></div><div class="unit"></div><button class="danger" type="button">−</button>`;
- box.appendChild(d);const s=d.querySelector('.mat');if(id)s.value=id;
- const update=()=>{const b=bahan.find(x=>String(x.id)===String(s.value));d.querySelector('.price').value=bPrice(b);d.querySelector('.unit').textContent=b?.satuan||'';hitung()};
- s.addEventListener('change',update);d.querySelector('.qty').addEventListener('input',hitung);d.querySelector('.price').addEventListener('input',hitung);d.querySelector('button').onclick=()=>{d.remove();hitung()};update();
+
+
+function bahanNama(b){
+
+return b?.nama_bahan ||
+b?.nama ||
+b?.nama_bahan_baku ||
+'Bahan';
+
 }
-function resetRows(){
- document.getElementById('offlineRows').innerHTML='';document.getElementById('onlineRows').innerHTML='';
- const pid=document.getElementById('produk').value;
- const rows=resepList.filter(r=>String(rProduct(r))===String(pid));
- if(rows.length){
-  rows.forEach(r=>{const id=rBahan(r);addRow('offline',id,rQty(r));addRow('online',id,rQty(r))});
- }else{addRow('offline');addRow('online')}
- hitung();
+
+
+function bahanHarga(b){
+
+return Number(
+b?.harga_beli ??
+b?.harga ??
+b?.harga_satuan ??
+b?.harga_bahan ??
+0
+);
+
 }
-function sum(kind){let t=0;document.querySelectorAll('#'+kind+'Rows .row').forEach(r=>t+=(Number(r.querySelector('.qty').value)||0)*(Number(r.querySelector('.price').value)||0));return t}
-function hitung(){
- const hasil=Number(document.getElementById('hasil').value)||0,off=sum('offline'),on=sum('online');
- const om=off+(Number(document.getElementById('ohOffline').value)||0),nm=on+(Number(document.getElementById('ohOnline').value)||0);
- const oh=hasil?om/hasil:0,nh=hasil?nm/hasil:0,jo=Number(document.getElementById('jualOffline').value)||0,jn=Number(document.getElementById('jualOnline').value)||0;
- document.getElementById('offMat').textContent=rupiah(off);document.getElementById('onMat').textContent=rupiah(on);document.getElementById('offModal').textContent=rupiah(om);document.getElementById('onModal').textContent=rupiah(nm);document.getElementById('offHpp').textContent=rupiah(oh);document.getElementById('onHpp').textContent=rupiah(nh);document.getElementById('offProfit').textContent=hasil?rupiah(jo-oh):'Isi hasil produksi';document.getElementById('onProfit').textContent=hasil?rupiah(jn-nh):'Isi hasil produksi';
+
+
+function cariBahan(id){
+
+return bahanData.find(
+x => String(x.id) === String(id)
+);
+
 }
-document.addEventListener('input',e=>{if(e.target.matches('input'))hitung()});load();
-</script></body></html>
+
+
+function tampilkanStatus(msg,type){
+
+const x =
+document.getElementById('status');
+
+if(!x) return;
+
+x.textContent = msg;
+
+x.className =
+'status ' + type;
+
+}
+
+
+/*
+Harga bahan mengikuti Master Bahan Baku.
+
+Jumlah mengikuti Resep dan tetap bisa
+diedit di kalkulator.
+*/
+
+
+function biayaItem(id,qty){
+
+const b =
+cariBahan(id);
+
+if(!b) return 0;
+
+return
+(Number(qty)||0)
+*
+bahanHarga(b);
+
+}
+
+
+function options(selected){
+
+return '<option value="">Pilih bahan</option>' +
+
+bahanData.map(b =>
+
+`<option value="${b.id}"
+${String(b.id)===String(selected)
+?'selected':''}>
+
+${bahanNama(b)}
+
+</option>`
+
+).join('');
+
+}
+
+
+function addRow(mode,id='',qty=''){
+
+const body =
+document.getElementById(
+mode+'Body'
+);
+
+const tr =
+document.createElement('tr');
+
+
+tr.innerHTML = `
+
+<td>
+
+<select class="bahan">
+
+${options(id)}
+
+</select>
+
+</td>
+
+
+<td>
+
+<input
+class="jumlah"
+type="number"
+min="0"
+step="0.001"
+value="${qty}">
+
+</td>
+
+
+<td class="harga">
+Rp0
+</td>
+
+
+<td class="biaya">
+Rp0
+</td>
+
+
+<td>
+
+<button
+type="button"
+class="danger remove">
+
+−
+
+</button>
+
+</td>
+
+`;
+
+
+body.appendChild(tr);
+
+
+const sel =
+tr.querySelector('.bahan');
+
+const jumlah =
+tr.querySelector('.jumlah');
+
+
+function refresh(){
+
+const b =
+cariBahan(sel.value);
+
+
+tr.querySelector(
+'.harga'
+).textContent =
+b
+? rupiah(bahanHarga(b))
+: 'Rp0';
+
+
+tr.querySelector(
+'.biaya'
+).textContent =
+rupiah(
+biayaItem(
+sel.value,
+jumlah.value
+)
+);
+
+
+hitungSemua();
+
+}
+
+
+sel.addEventListener(
+'change',
+refresh
+);
+
+
+jumlah.addEventListener(
+'input',
+refresh
+);
+
+
+tr.querySelector(
+'.remove'
+).addEventListener(
+'click',
+()=>{
+
+tr.remove();
+
+hitungSemua();
+
+});
+
+
+refresh();
+
+}
+
+
+function loadRowsFromRecipe(){
+
+document.getElementById(
+'offlineBody'
+).innerHTML='';
+
+
+document.getElementById(
+'onlineBody'
+).innerHTML='';
+
+
+const rows =
+resepData.filter(
+r =>
+String(r.produk_id)
+===
+String(produkTerpilih.id)
+);
+
+
+rows.forEach(r=>{
+
+addRow(
+'offline',
+r.bahan_id,
+r.jumlah_pakai
+);
+
+
+addRow(
+'online',
+r.bahan_id,
+r.jumlah_pakai
+);
+
+});
+
+
+if(!rows.length){
+
+addRow('offline');
+
+addRow('online');
+
+
+tampilkanStatus(
+'Produk ini belum memiliki resep. Anda bisa menambahkan bahan manual.',
+'error'
+);
+
+}
+
+else{
+
+const st =
+document.getElementById(
+'status'
+);
+
+if(st)
+st.className='status';
+
+}
+
+
+hitungSemua();
+
+}
+
+
+function totalMode(mode){
+
+let t=0;
+
+
+document.querySelectorAll(
+'#'+mode+'Body tr'
+).forEach(tr=>{
+
+t += biayaItem(
+
+tr.querySelector(
+'.bahan'
+).value,
+
+tr.querySelector(
+'.jumlah'
+).value
+
+);
+
+});
+
+
+return t;
+
+}
+
+
+function hitungSemua(){
+
+const hasil =
+Number(
+document.getElementById(
+'jumlahProduksi'
+).value
+)||0;
+
+
+const offB =
+totalMode('offline');
+
+
+const onB =
+totalMode('online');
+
+
+const oh =
+Number(
+document.getElementById(
+'biayaProduksiInput'
+).value
+)||0;
+
+
+const offM =
+offB + oh;
+
+
+const onM =
+onB + oh;
+
+
+const offH =
+hasil
+? offM / hasil
+: 0;
+
+
+const onH =
+hasil
+? onM / hasil
+: 0;
+
+
+const jo =
+Number(
+document.getElementById(
+'hargaOffline'
+).value
+)||0;
+
+
+const jn =
+Number(
+document.getElementById(
+'hargaOnline'
+).value
+)||0;
+
+
+const totalBahan =
+document.getElementById(
+'totalBahan'
+);
+
+
+if(totalBahan)
+totalBahan.value =
+rupiah(offB);
+
+
+document.getElementById(
+'hasilBahan'
+).textContent =
+rupiah(offB);
+
+
+document.getElementById(
+'hasilProduksi'
+).textContent =
+rupiah(oh);
+
+
+document.getElementById(
+'hasilModal'
+).textContent =
+rupiah(offM);
+
+
+document.getElementById(
+'hasilHpp'
+).textContent =
+hasil
+? rupiah(offH)
+: 'Rp0';
+
+
+document.getElementById(
+'hasilUntungOffline'
+).textContent =
+
+hasil && jo
+? rupiah(jo-offH)
+:
+(hasil
+? 'Belum diisi'
+: 'Isi hasil produksi');
+
+
+document.getElementById(
+'hasilUntungOnline'
+).textContent =
+
+hasil && jn
+? rupiah(jn-onH)
+:
+(hasil
+? 'Belum diisi'
+: 'Isi hasil produksi');
+
+
+let box =
+document.getElementById(
+'onlineSummary'
+);
+
+
+if(!box){
+
+box =
+document.createElement(
+'div'
+);
+
+box.id =
+'onlineSummary';
+
+box.className =
+'result';
+
+
+const result =
+document.querySelector(
+'.result'
+);
+
+
+if(result)
+result.after(box);
+
+}
+
+
+box.innerHTML = `
+
+<h2>
+Hasil HPP Online
+</h2>
+
+
+<div class="result-row">
+
+<span>
+Total Biaya Bahan Online
+</span>
+
+<strong>
+${rupiah(onB)}
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>
+Total Modal Online
+</span>
+
+<strong>
+${rupiah(onM)}
+</strong>
+
+</div>
+
+
+<div class="result-row big-result">
+
+<span>
+HPP Online / Bungkus
+</span>
+
+<strong>
+${hasil
+? rupiah(onH)
+: 'Rp0'}
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>
+Keuntungan Online
+</span>
+
+<strong class="profit">
+
+${hasil && jn
+? rupiah(jn-onH)
+:
+(hasil
+? 'Belum diisi'
+: 'Isi hasil produksi')}
+
+</strong>
+
+</div>
+
+`;
+
+}
+
+
+async function init(){
+
+try{
+
+if(typeof supabaseClient ===
+'undefined'){
+
+throw new Error(
+'Koneksi Supabase belum tersedia.'
+);
+
+}
+
+
+const [p,b,r] =
+await Promise.all([
+
+supabaseClient
+.from('produk')
+.select('*')
+.order('nama_produk'),
+
+
+supabaseClient
+.from('bahan_baku')
+.select('*')
+.order('nama_bahan'),
+
+
+supabaseClient
+.from('resep')
+.select('*')
+.order('id')
+
+]);
+
+
+if(p.error)
+throw new Error(
+'Produk: '+p.error.message
+);
+
+
+if(b.error)
+throw new Error(
+'Bahan Baku: '+b.error.message
+);
+
+
+if(r.error)
+throw new Error(
+'Resep: '+r.error.message
+);
+
+
+produkData =
+p.data || [];
+
+
+bahanData =
+b.data || [];
+
+
+resepData =
+r.data || [];
+
+
+const sel =
+document.getElementById(
+'produkSelect'
+);
+
+
+sel.innerHTML =
+'<option value="">Pilih Produk</option>';
+
+
+produkData.forEach(x=>{
+
+const o =
+document.createElement(
+'option'
+);
+
+o.value =
+x.id;
+
+
+o.textContent =
+(x.nama_produk || '') +
+
+(x.isi_per_bungkus
+?
+' — ' +
+x.isi_per_bungkus +
+' pcs/bungkus'
+:
+'');
+
+
+sel.appendChild(o);
+
+});
+
+
+if(!produkData.length){
+
+tampilkanStatus(
+'Data produk kosong. Cek menu Produk.',
+'error'
+);
+
+}
+
+}
+
+catch(e){
+
+console.error(e);
+
+tampilkanStatus(
+'Gagal memuat data: '+
+e.message,
+'error'
+);
+
+}
+
+}
+
+
+document.getElementById(
+'produkSelect'
+).addEventListener(
+'change',
+function(){
+
+produkTerpilih =
+produkData.find(
+x =>
+String(x.id)
+===
+String(this.value)
+)
+|| null;
+
+
+document.getElementById(
+'offlineBody'
+).innerHTML='';
+
+
+document.getElementById(
+'onlineBody'
+).innerHTML='';
+
+
+if(!produkTerpilih){
+
+hitungSemua();
+
+return;
+
+}
+
+
+document.getElementById(
+'hargaOffline'
+).value =
+produkTerpilih
+.harga_offline
+?? '';
+
+
+document.getElementById(
+'hargaOnline'
+).value =
+produkTerpilih
+.harga_online
+?? '';
+
+
+loadRowsFromRecipe();
+
+});
+
+
+document.getElementById(
+'addOffline'
+).addEventListener(
+'click',
+()=>addRow('offline')
+);
+
+
+document.getElementById(
+'addOnline'
+).addEventListener(
+'click',
+()=>addRow('online')
+);
+
+
+document.getElementById(
+'jumlahProduksi'
+).addEventListener(
+'input',
+hitungSemua
+);
+
+
+document.getElementById(
+'biayaProduksiInput'
+).addEventListener(
+'input',
+hitungSemua
+);
+
+
+document.getElementById(
+'hargaOffline'
+).addEventListener(
+'input',
+hitungSemua
+);
+
+
+document.getElementById(
+'hargaOnline'
+).addEventListener(
+'input',
+hitungSemua
+);
+
+
+document.getElementById(
+'btnSimpan'
+).addEventListener(
+'click',
+async()=>{
+
+const hasil =
+Number(
+document.getElementById(
+'jumlahProduksi'
+).value
+)||0;
+
+
+if(
+!produkTerpilih ||
+hasil<=0
+){
+
+tampilkanStatus(
+'Isi produk dan jumlah hasil produksi terlebih dahulu.',
+'error'
+);
+
+return;
+
+}
+
+
+const offB =
+totalMode('offline');
+
+
+const onB =
+totalMode('online');
+
+
+const oh =
+Number(
+document.getElementById(
+'biayaProduksiInput'
+).value
+)||0;
+
+
+const offM =
+offB + oh;
+
+
+const onM =
+onB + oh;
+
+
+const offH =
+offM / hasil;
+
+
+const onH =
+onM / hasil;
+
+
+const ho =
+Number(
+document.getElementById(
+'hargaOffline'
+).value
+)||0;
+
+
+const hn =
+Number(
+document.getElementById(
+'hargaOnline'
+).value
+)||0;
+
+
+/*
+Tabel hpp yang ada hanya punya satu hpp_unit.
+
+Yang disimpan sebagai HPP utama adalah Offline.
+
+HPP Online tetap dihitung di layar
+agar bahan online fleksibel.
+*/
+
+
+const payload={
+
+produk_id:
+produkTerpilih.id,
+
+total_bahan:
+offB,
+
+biaya_produksi:
+oh,
+
+jumlah_batch:
+hasil,
+
+total_modal:
+offM,
+
+hpp_unit:
+offH,
+
+harga_offline:
+ho,
+
+untung_offline:
+ho
+?
+ho-offH
+:
+null,
+
+harga_online:
+hn,
+
+untung_online:
+hn
+?
+hn-onH
+:
+null
+
+};
+
+
+const {
+data:old,
+error:e1
+} =
+await supabaseClient
+.from('hpp')
+.select('id')
+.eq(
+'produk_id',
+produkTerpilih.id
+)
+.maybeSingle();
+
+
+if(e1){
+
+tampilkanStatus(
+'Gagal mengecek HPP: '+
+e1.message,
+'error'
+);
+
+return;
+
+}
+
+
+const res =
+old
+
+?
+await supabaseClient
+.from('hpp')
+.update(payload)
+.eq('id',old.id)
+
+:
+
+await supabaseClient
+.from('hpp')
+.insert(payload);
+
+
+if(res.error){
+
+tampilkanStatus(
+'Gagal menyimpan HPP: '+
+res.error.message,
+'error'
+);
+
+}
+
+else{
+
+tampilkanStatus(
+'HPP Offline berhasil disimpan. HPP Online tetap dihitung dari bahan Online yang Anda pilih.',
+'success'
+);
+
+}
+
+});
+
+
+hitungSemua();
+
+init();
+
+</script>
+
+</body>
+</html>
