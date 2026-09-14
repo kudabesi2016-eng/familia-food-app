@@ -323,26 +323,14 @@ Pilih Produk
 </div>
 
 <div class="box">
-<label>Isi per Bungkus</label>
-<select id="isiBungkusSelect">
-<option value="10">10 pcs</option>
-<option value="12">12 pcs</option>
-<option value="20">20 pcs</option>
-<option value="30">30 pcs</option>
-<option value="40">40 pcs</option>
-<option value="50">50 pcs</option>
-</select>
-</div>
 
-<div class="box">
-
-<label>Jumlah Hasil Produksi</label>
+<label>Jumlah Hasil Produksi (bungkus)</label>
 
 <input
 type="number"
 id="jumlahProduksi"
 min="1"
-placeholder="Masukkan jumlah pcs produksi"
+placeholder="Masukkan jumlah bungkus hasil produksi"
 >
 
 </div>
@@ -367,10 +355,11 @@ value="Rp0"
 <label>Biaya Produksi / Overhead</label>
 
 <input
-type="text"
-id="biayaProduksi"
-readonly
-value="Rp0"
+type="number"
+id="biayaProduksiInput"
+min="0"
+placeholder="Masukkan total biaya produksi/overhead"
+value=""
 >
 
 </div>
@@ -491,22 +480,12 @@ Rp0
 
 <div class="result-row big-result">
 
-<span>HPP per Pcs</span>
+<span>HPP per Bungkus</span>
 
 <strong id="hasilHpp">
 Rp0
 </strong>
 
-</div>
-
-<div class="result-row">
-<span>Isi per Bungkus</span>
-<strong id="hasilIsi">-</strong>
-</div>
-
-<div class="result-row big-result">
-<span>HPP per Bungkus</span>
-<strong id="hasilHppBungkus">Rp0</strong>
 </div>
 
 
@@ -572,32 +551,6 @@ let totalBiayaBahan = 0;
 let jumlahHasilProduksi = 0;
 
 
-/*
-  Biaya overhead per bungkus
-  mengikuti pola HPP lama Familia Food.
-
-  Nilai ini bukan harga bahan.
-  Ini adalah bagian biaya produksi yang
-  sebelumnya melekat pada HPP masing-masing produk.
-*/
-
-const overheadPerBungkus = {
-
-"Naget": 85.9,
-
-"Naget isi 10": 85.9,
-
-"Naget isi 12": 85.9,
-
-"Cireng isi": 950,
-
-"Cireng biasa": 1070,
-
-"Cibay": 820
-
-};
-
-
 /* =========================
    FORMAT RUPIAH
 ========================= */
@@ -617,10 +570,6 @@ return "Rp" + Math.round(Number(nilai)).toLocaleString("id-ID");
 }
 
 
-function isiPerBungkus() {
-  const pilihan = document.getElementById("isiBungkusSelect");
-  return Number((pilihan && pilihan.value) || (produkTerpilih && produkTerpilih.isi_per_bungkus) || 1);
-}
 
 /* =========================
    LOAD PRODUK
@@ -663,42 +612,18 @@ select.innerHTML =
 '<option value="">Pilih Produk</option>';
 
 
-const namaSudahAda = new Set();
-
-// Pastikan setiap nama produk hanya muncul satu kali di pilihan HPP.
-select.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
-
 produkData.forEach(function(produk){
 
-const nama = String(produk.nama_produk || "").trim();
+  const nama = String(produk.nama_produk || "").trim();
+  if(!nama) return;
 
-if(!nama || namaSudahAda.has(nama.toLowerCase())) return;
-
-namaSudahAda.add(nama.toLowerCase());
-
-const option = document.createElement("option");
-option.value = produk.id;
-option.textContent = nama;
-select.appendChild(option);
+  const option = document.createElement("option");
+  option.value = produk.id;
+  const isi = Number(produk.isi_per_bungkus || 1);
+  option.textContent = nama + (isi > 1 ? " — " + isi + " pcs/bungkus" : "");
+  select.appendChild(option);
 
 });
-
-// Naget isi 25 adalah produk khusus dengan tambahan saus.
-// Tampilkan di nama produk, bukan di pilihan isi per bungkus.
-const sudahAdaNaget25 = Array.from(select.options).some(function(option){
-  return option.textContent.trim().toLowerCase() === "naget isi 25";
-});
-if(!sudahAdaNaget25){
-  const nagetDasar = produkData.find(function(produk){
-    return String(produk.nama_produk || "").trim().toLowerCase() === "naget";
-  });
-  if(nagetDasar){
-    const option25 = document.createElement("option");
-    option25.value = nagetDasar.id;
-    option25.textContent = "Naget isi 25";
-    select.appendChild(option25);
-  }
-}
 
 }
 
@@ -883,119 +808,12 @@ return harga * jumlah;
 
 
 /* =========================
-   TENTUKAN HASIL PRODUKSI
-========================= */
-
-function tentukanJumlahProduksi(){
-
-if(!produkTerpilih){
-
-return 0;
-
-}
-
-
-/*
- Jumlah produksi berasal dari resep.
-
- Kita gunakan bahan yang memiliki jumlah
- produksi paling masuk akal.
-
- Untuk produk Familia Food saat ini:
-
- Naget isi 10  = 264 bungkus
- Naget isi 12  = 30 bungkus
-
- Cireng isi    = 40 bungkus
- Cireng biasa  = 10 bungkus
- Cibay         = 10 bungkus
-*/
-
-
-const nama =
-produkTerpilih.nama_produk
-.toLowerCase();
-
-
-if(nama === "naget" || nama === "naget isi 10" || nama === "naget isi 12"){
-
-// Resep Naget menghasilkan total 2.500 pcs, bukan jumlah bungkus.
-return 2500;
-
-}
-
-if(nama === "cireng isi"){
-
-return 40;
-
-}
-
-if(nama === "cireng biasa"){
-
-return 10;
-
-}
-
-if(nama === "cibay"){
-
-return 10;
-
-}
-
-
-/*
- Jika produk baru belum memiliki aturan,
- pengguna tetap dapat melihat biaya bahan,
- tetapi jumlah hasil produksi belum diketahui.
-*/
-
-return 0;
-
-}
-
-
-/* =========================
-   HITUNG OVERHEAD
+   BIAYA PRODUKSI / OVERHEAD
 ========================= */
 
 function hitungBiayaProduksi(){
-
-if(!produkTerpilih){
-
-return 0;
-
-}
-
-
-const nama =
-produkTerpilih.nama_produk;
-
-
-/*
- Naget isi 12:
-
- HPP lama Rp3.720 per bungkus.
- Pola bahan menghasilkan bagian overhead
- sekitar Rp1.031 per bungkus.
-
- Nilai ini digunakan agar perubahan harga
- bahan baku tetap mengubah HPP,
- tanpa mengubah pola biaya produksi lama.
-*/
-
-const overhead =
-overheadPerBungkus[nama];
-
-
-if(overhead !== undefined){
-
-return overhead * jumlahHasilProduksi;
-
-}
-
-
-return 0;
-
+  const input = document.getElementById("biayaProduksiInput");
+  return Number((input && input.value) || 0);
 }
 
 
@@ -1136,115 +954,44 @@ rupiah(totalBiayaBahan);
 
 function hitungSemua(){
 
-if(!produkTerpilih){
+  if(!produkTerpilih){
+    return;
+  }
 
-return;
+  const inputJumlah = document.getElementById("jumlahProduksi");
+  jumlahHasilProduksi = Number(inputJumlah.value || 0);
 
-}
+  const biayaProduksi = hitungBiayaProduksi();
+  const totalModal = totalBiayaBahan + biayaProduksi;
+  const hppUnit = jumlahHasilProduksi > 0
+    ? totalModal / jumlahHasilProduksi
+    : 0;
 
+  const hargaOffline = Number(
+    document.getElementById("hargaOffline").value || 0
+  );
 
-const inputJumlah = document.getElementById("jumlahProduksi");
-const nilaiManual = Number(inputJumlah.value);
+  const hargaOnline = Number(
+    document.getElementById("hargaOnline").value || 0
+  );
 
-if (nilaiManual > 0) {
-  jumlahHasilProduksi = nilaiManual;
-} else {
-  jumlahHasilProduksi = tentukanJumlahProduksi();
-  inputJumlah.value = jumlahHasilProduksi || "";
-}
+  const untungOffline = hargaOffline > 0 ? hargaOffline - hppUnit : null;
+  const untungOnline = hargaOnline > 0 ? hargaOnline - hppUnit : null;
 
+  document.getElementById("totalBahan").value = rupiah(totalBiayaBahan);
+  document.getElementById("biayaProduksiInput").value = biayaProduksi || "";
+  document.getElementById("hasilProduksi").textContent = rupiah(biayaProduksi);
+  document.getElementById("hasilModal").textContent = rupiah(totalModal);
+  document.getElementById("hasilBahan").textContent = rupiah(totalBiayaBahan);
+  document.getElementById("hasilHpp").textContent = rupiah(Math.round(hppUnit));
 
-const biayaProduksi =
-hitungBiayaProduksi();
+  document.getElementById("hasilUntungOffline").textContent =
+    hargaOffline > 0 ? rupiah(Math.round(untungOffline)) : "Belum diisi";
 
+  document.getElementById("hasilUntungOnline").textContent =
+    hargaOnline > 0 ? rupiah(Math.round(untungOnline)) : "Belum diisi";
 
-const biayaSausKhusus = (produkTerpilih && String(produkTerpilih.nama_produk).toLowerCase() === "naget isi 25") ? 1400 : 0;
-
-const totalBiayaBahanDenganSaus = totalBiayaBahan + biayaSausKhusus;
-
-const totalModal =
-totalBiayaBahanDenganSaus + biayaProduksi;
-
-
-let hppUnit = 0;
-
-
-if(jumlahHasilProduksi > 0){
-
-hppUnit =
-totalModal / jumlahHasilProduksi;
-
-}
-
-
-const hargaOffline =
-Number(
-document.getElementById("hargaOffline").value
-|| produkTerpilih.harga_offline
-|| 0
-);
-
-
-const hargaOnline =
-Number(
-document.getElementById("hargaOnline").value
-|| produkTerpilih.harga_online
-|| 0
-);
-
-
-const untungOffline =
-hargaOffline > 0
-? hargaOffline - hppUnit
-: 0;
-
-
-// Khusus Naget isi 25 online memakai plastik vakum Rp1.000 per lembar.
-const namaProdukUntukKemasanOnline = produkTerpilih ? String(produkTerpilih.nama_produk || "").toLowerCase() : "";
-// Semua varian Naget online memakai 1 lembar plastik vakum @Rp1.000.
-const biayaPlastikVakumOnline = namaProdukUntukKemasanOnline.startsWith("naget") ? 1000 : 0;
-const untungOnline =
-hargaOnline > 0
-? hargaOnline - (hppUnit + biayaPlastikVakumOnline)
-: 0;
-
-
-document.getElementById("biayaProduksi").value =
-rupiah(biayaProduksi);
-
-
-document.getElementById("hasilProduksi").textContent =
-rupiah(biayaProduksi);
-
-
-document.getElementById("hasilModal").textContent =
-rupiah(totalModal);
-
-// Untuk Naget isi 25, dua saus @Rp700 otomatis ditambahkan.
-document.getElementById("hasilBahan").textContent = rupiah(totalBiayaBahanDenganSaus);
-
-
-document.getElementById("hasilHpp").textContent = rupiah(Math.round(hppUnit));
-document.getElementById("hasilIsi").textContent = (produkTerpilih && produkTerpilih.nama_produk.toLowerCase() === "naget isi 25" ? 25 : isiPerBungkus()) + " pcs";
-const jumlahIsiTampil = (produkTerpilih && produkTerpilih.nama_produk.toLowerCase() === "naget isi 25" ? 25 : isiPerBungkus());
-document.getElementById("hasilHppBungkus").textContent = rupiah(Math.round(hppUnit * jumlahIsiTampil));
-
-
-document.getElementById("hasilUntungOffline").textContent =
-hargaOffline > 0
-? rupiah(Math.round(untungOffline))
-: "Belum diisi";
-
-
-document.getElementById("hasilUntungOnline").textContent =
-hargaOnline > 0
-? rupiah(Math.round(untungOnline))
-: "Belum diisi";
-
-
-document.getElementById("btnSimpan").disabled =
-jumlahHasilProduksi <= 0;
-
+  document.getElementById("btnSimpan").disabled = jumlahHasilProduksi <= 0;
 }
 
 
@@ -1256,9 +1003,10 @@ document.getElementById("jumlahProduksi").addEventListener("input", function(){
   if (produkTerpilih) hitungSemua();
 });
 
-document.getElementById("isiBungkusSelect").addEventListener("change", function(){
+document.getElementById("biayaProduksiInput").addEventListener("input", function(){
   if (produkTerpilih) hitungSemua();
 });
+
 
 document.getElementById(
 "produkSelect"
@@ -1348,17 +1096,6 @@ return;
 
 produkTerpilih =
 cariProduk(id);
-
-// Naget isi 25 adalah varian khusus: 25 pcs naget + tambahan saus.
-const nagetIsi25 = namaPilihan.toLowerCase() === "naget isi 25";
-if (nagetIsi25 && produkTerpilih) {
-  produkTerpilih = Object.assign({}, produkTerpilih, { nama_produk: "Naget isi 25", isi_per_bungkus: 25 });
-  document.getElementById("isiBungkusSelect").value = "10";
-  document.getElementById("isiBungkusSelect").disabled = true;
-} else {
-  document.getElementById("isiBungkusSelect").disabled = false;
-}
-
 
 resepProduk =
 resepData.filter(function(item){
@@ -1455,12 +1192,9 @@ const biayaProduksi =
 hitungBiayaProduksi();
 
 
-const biayaSausKhusus = (produkTerpilih && String(produkTerpilih.nama_produk).toLowerCase() === "naget isi 25") ? 1400 : 0;
-
-const totalBiayaBahanDenganSaus = totalBiayaBahan + biayaSausKhusus;
 
 const totalModal =
-totalBiayaBahanDenganSaus + biayaProduksi;
+totalBiayaBahan + biayaProduksi;
 
 
 const hppUnit =
@@ -1539,25 +1273,9 @@ total_modal: totalModal,
 
 hpp_unit: Math.round(hppUnit),
 
-harga_offline:
-hargaOffline > 0
-? hargaOffline
-: null,
+// Harga jual dikelola di menu Produk.
+// Kalkulator hanya menyimpan biaya/HPP hasil perhitungan.
 
-harga_online:
-hargaOnline > 0
-? hargaOnline
-: null,
-
-untung_offline:
-untungOffline !== null
-? Math.round(untungOffline)
-: null,
-
-untung_online:
-untungOnline !== null
-? Math.round(untungOnline)
-: null
 
 };
 

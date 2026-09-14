@@ -323,8 +323,8 @@
       <h2 id="formTitle">Tambah Produk</h2>
 
       <div class="info">
-        HPP Offline diisi sesuai data produk. HPP Online akan kita masukkan
-        setelah data HPP Online tersedia. Harga jual dapat diubah kapan saja.
+        HPP dihitung otomatis dari Resep dan Kalkulator HPP.
+        Di halaman ini Anda hanya mengatur harga jual Offline dan Online.
       </div>
 
       <form id="produkForm">
@@ -355,31 +355,11 @@
           </div>
 
           <div class="form-group">
-            <label>HPP Offline</label>
-            <input
-              type="number"
-              id="hpp_offline"
-              placeholder="Masukkan HPP offline"
-              min="0"
-            >
-          </div>
-
-          <div class="form-group">
             <label>Harga Jual Offline</label>
             <input
               type="number"
               id="harga_offline"
               placeholder="Masukkan harga jual offline"
-              min="0"
-            >
-          </div>
-
-          <div class="form-group">
-            <label>HPP Online</label>
-            <input
-              type="number"
-              id="hpp_online"
-              placeholder="Belum diisi"
               min="0"
             >
           </div>
@@ -436,9 +416,8 @@
               <th>Nama Produk</th>
               <th>Satuan</th>
               <th>Isi/Bungkus</th>
-              <th>HPP Offline</th>
+              <th>HPP</th>
               <th>Harga Offline</th>
-              <th>HPP Online</th>
               <th>Harga Online</th>
               <th>Status</th>
               <th>Aksi</th>
@@ -448,7 +427,7 @@
           <tbody id="produkTable">
 
             <tr>
-              <td colspan="9" class="empty">
+              <td colspan="8" class="empty">
                 Memuat data...
               </td>
             </tr>
@@ -465,14 +444,6 @@
   <script>
 
     let produkEditId = null;
-
-    const hppOfflineDefault = {
-      "Naget isi 10": 3100,
-      "Naget isi 12": 3720,
-      "Cireng isi": 2900,
-      "Cireng biasa": 2700,
-      "Cibay": 3000
-    };
 
     function formatRupiah(angka) {
 
@@ -563,7 +534,7 @@
 
       table.innerHTML = `
         <tr>
-          <td colspan="9" class="empty">
+          <td colspan="8" class="empty">
             Memuat data...
           </td>
         </tr>
@@ -592,7 +563,7 @@
 
         table.innerHTML = `
           <tr>
-            <td colspan="9" class="empty">
+            <td colspan="8" class="empty">
               Gagal memuat data produk.
             </td>
           </tr>
@@ -642,7 +613,7 @@
 
         table.innerHTML = `
           <tr>
-            <td colspan="9" class="empty">
+            <td colspan="8" class="empty">
               Belum ada data produk.
             </td>
           </tr>
@@ -659,25 +630,14 @@
           hppMap[produk.id] || null;
 
         /*
-          hpp_unit pada tabel HPP digunakan
-          sebagai HPP Offline sementara.
-
-          HPP Online dihitung dari Harga Online dikurangi Laba Online.
-          Nilainya disimpan melalui field untung_online agar kompatibel
-          dengan struktur tabel HPP yang sudah dipakai aplikasi.
+          hpp_unit adalah HPP per bungkus hasil Kalkulator HPP.
+        HPP tidak diedit dari halaman Produk.
         */
 
-        const hppOffline =
+        const hppUnit =
           hpp && hpp.hpp_unit !== null
             ? hpp.hpp_unit
             : null;
-
-        const hppOnline =
-          hpp && hpp.untung_online !== null &&
-              produk.harga_online !== null &&
-              produk.harga_online !== undefined
-              ? Number(produk.harga_online) - Number(hpp.untung_online)
-              : null;
 
         const tr =
           document.createElement("tr");
@@ -707,15 +667,11 @@
           </td>
 
           <td>
-            ${formatRupiah(hppOffline)}
+            ${formatRupiah(hppUnit)}
           </td>
 
           <td>
             ${formatRupiah(produk.harga_offline)}
-          </td>
-
-          <td>
-            ${formatRupiah(hppOnline)}
           </td>
 
           <td>
@@ -767,34 +723,6 @@
     }
 
     document
-      .getElementById("nama_produk")
-      .addEventListener(
-        "input",
-        function() {
-
-          const nama =
-            this.value.trim();
-
-          if (
-            hppOfflineDefault[nama] !== undefined &&
-            !produkEditId
-          ) {
-
-            document.getElementById(
-              "hpp_offline"
-            ).value =
-              hppOfflineDefault[nama];
-
-            document.getElementById(
-              "satuan"
-            ).value =
-              "bungkus";
-          }
-
-        }
-      );
-
-    document
       .getElementById("produkForm")
       .addEventListener(
         "submit",
@@ -826,19 +754,9 @@
             return;
           }
 
-          const hpp_offline =
-            document
-              .getElementById("hpp_offline")
-              .value;
-
           const harga_offline =
             document
               .getElementById("harga_offline")
-              .value;
-
-          const hpp_online =
-            document
-              .getElementById("hpp_online")
               .value;
 
           const harga_online =
@@ -950,128 +868,9 @@
           }
 
           /*
-            Cari HPP yang sudah ada.
+            HPP tidak dibuat atau diubah dari menu Produk.
+            HPP hanya berasal dari Resep + Kalkulator HPP.
           */
-
-          const {
-            data: hppLama,
-            error: hppCariError
-          } = await supabaseClient
-            .from("hpp")
-            .select("*")
-            .eq("produk_id", produkId)
-            .maybeSingle();
-
-          if (hppCariError) {
-
-            console.error(hppCariError);
-
-            tampilkanError(
-              "Produk tersimpan, tetapi HPP gagal diperiksa: " +
-              hppCariError.message
-            );
-
-            return;
-          }
-
-          /*
-            Data HPP.
-            
-            hpp_unit = HPP Offline.
-            
-            HPP Online belum dimasukkan
-            karena datanya belum tersedia.
-          */
-
-          const dataHpp = {
-
-            produk_id:
-              produkId,
-
-            hpp_unit:
-              hpp_offline === ""
-                ? null
-                : Number(hpp_offline),
-
-            harga_offline:
-              harga_offline === ""
-                ? null
-                : Number(harga_offline),
-
-            harga_online:
-              harga_online === ""
-                ? null
-                : Number(harga_online),
-
-            untung_offline:
-              hpp_offline !== "" &&
-              harga_offline !== ""
-                ? Number(harga_offline) -
-                  Number(hpp_offline)
-                : null,
-
-            untung_online:
-              hpp_online !== "" &&
-              harga_online !== ""
-                ? Number(harga_online) -
-                  Number(hpp_online)
-                : null
-          };
-
-          /*
-            UPDATE HPP jika sudah ada.
-          */
-
-          if (
-            hppLama &&
-            hppLama.id
-          ) {
-
-            const {
-              error
-            } = await supabaseClient
-              .from("hpp")
-              .update(dataHpp)
-              .eq("id", hppLama.id);
-
-            if (error) {
-
-              console.error(error);
-
-              tampilkanError(
-                "Produk tersimpan, tetapi HPP gagal diperbarui: " +
-                error.message
-              );
-
-              return;
-            }
-
-          }
-
-          /*
-            INSERT HPP jika belum ada.
-          */
-
-          else {
-
-            const {
-              error
-            } = await supabaseClient
-              .from("hpp")
-              .insert([dataHpp]);
-
-            if (error) {
-
-              console.error(error);
-
-              tampilkanError(
-                "Produk tersimpan, tetapi HPP gagal disimpan: " +
-                error.message
-              );
-
-              return;
-            }
-          }
 
           tutupForm();
 
@@ -1102,25 +901,6 @@
         tampilkanError(
           "Gagal mengambil data produk: " +
           produkError.message
-        );
-
-        return;
-      }
-
-      const {
-        data: hpp,
-        error: hppError
-      } = await supabaseClient
-        .from("hpp")
-        .select("*")
-        .eq("produk_id", id)
-        .maybeSingle();
-
-      if (hppError) {
-
-        tampilkanError(
-          "Gagal mengambil data HPP: " +
-          hppError.message
         );
 
         return;
@@ -1165,32 +945,6 @@
         "status"
       ).value =
         produk.statustext || produk.status || "aktif";
-
-      document.getElementById(
-        "hpp_offline"
-      ).value =
-        hpp &&
-        hpp.hpp_unit !== null
-          ? hpp.hpp_unit
-          : "";
-
-      /*
-        Isi kembali HPP Online saat Edit.
-        HPP Online dihitung dari Harga Online - Untung Online,
-        sesuai struktur tabel HPP yang sudah ada.
-      */
-
-      const hppOnlineEdit =
-        hpp && hpp.untung_online !== null &&
-        produk.harga_online !== null &&
-        produk.harga_online !== undefined
-          ? Number(produk.harga_online) - Number(hpp.untung_online)
-          : "";
-
-      document.getElementById(
-        "hpp_online"
-      ).value =
-        hppOnlineEdit;
 
       window.scrollTo({
         top: 0,
