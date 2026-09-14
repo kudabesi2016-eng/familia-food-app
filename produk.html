@@ -662,8 +662,9 @@
           hpp_unit pada tabel HPP digunakan
           sebagai HPP Offline sementara.
 
-          HPP Online akan dibuat terpisah
-          setelah data online tersedia.
+          HPP Online dihitung dari Harga Online dikurangi Laba Online.
+          Nilainya disimpan melalui field untung_online agar kompatibel
+          dengan struktur tabel HPP yang sudah dipakai aplikasi.
         */
 
         const hppOffline =
@@ -672,30 +673,22 @@
             : null;
 
         const hppOnline =
-          hpp && hpp.untung_online !== null
-            ? (
-                produk.harga_online !== null &&
-                produk.harga_online !== undefined
-                  ? Number(produk.harga_online) -
-                    Number(hpp.untung_online)
-                  : null
-              )
-            : null;
+          hpp && hpp.untung_online !== null &&
+              produk.harga_online !== null &&
+              produk.harga_online !== undefined
+              ? Number(produk.harga_online) - Number(hpp.untung_online)
+              : null;
 
         const tr =
           document.createElement("tr");
 
-        const statusValue = String(
-          produk.status ?? produk.statustext ?? "aktif"
-        ).toLowerCase();
-
         const statusClass =
-          statusValue === "aktif"
+          (produk.statustext || produk.status) === "aktif"
             ? "status-aktif"
             : "status-nonaktif";
 
         const statusText =
-          statusValue === "aktif"
+          (produk.statustext || produk.status) === "aktif"
             ? "Aktif"
             : "Nonaktif";
 
@@ -858,20 +851,6 @@
               .getElementById("status")
               .value;
 
-          const hargaAngka = [
-            ["HPP Offline", hpp_offline],
-            ["Harga Offline", harga_offline],
-            ["HPP Online", hpp_online],
-            ["Harga Online", harga_online]
-          ];
-
-          for (const [label, value] of hargaAngka) {
-            if (value !== "" && (!Number.isFinite(Number(value)) || Number(value) < 0)) {
-              tampilkanError(label + " harus berupa angka 0 atau lebih.");
-              return;
-            }
-          }
-
           if (!nama_produk) {
 
             tampilkanError(
@@ -905,29 +884,9 @@
                 ? null
                 : Number(harga_online),
 
-            status:
+            statustext:
               status
           };
-
-          // Beberapa versi tabel lama memakai kolom `statustext`.
-          // Coba skema terbaru terlebih dahulu, lalu kompatibilitas lama
-          // hanya jika Supabase memang melaporkan kolom tersebut tidak ada.
-          async function simpanProduk(data) {
-            let query = produkEditId
-              ? supabaseClient.from("produk").update(data).eq("id", produkEditId)
-              : supabaseClient.from("produk").insert([data]).select().single();
-
-            let result = await query;
-            if (result.error && /column .*status.* does not exist|could not find the .*status.* column/i.test(result.error.message || "")) {
-              const legacyData = { ...data, statustext: data.status };
-              delete legacyData.status;
-              query = produkEditId
-                ? supabaseClient.from("produk").update(legacyData).eq("id", produkEditId)
-                : supabaseClient.from("produk").insert([legacyData]).select().single();
-              result = await query;
-            }
-            return result;
-          }
 
           let produkId =
             produkEditId;
@@ -937,20 +896,57 @@
           */
 
           if (produkEditId) {
-            const { error } = await simpanProduk(dataProduk);
+
+            const {
+              error
+            } = await supabaseClient
+              .from("produk")
+              .update(dataProduk)
+              .eq("id", produkEditId);
+
             if (error) {
+
               console.error(error);
-              tampilkanError("Gagal mengubah produk: " + error.message);
+
+              tampilkanError(
+                "Gagal mengubah produk: " +
+                error.message
+              );
+
               return;
             }
-          } else {
-            const { data, error } = await simpanProduk(dataProduk);
+
+          }
+
+          /*
+            TAMBAH PRODUK
+          */
+
+          else {
+
+            const {
+              data,
+              error
+            } = await supabaseClient
+              .from("produk")
+              .insert([dataProduk])
+              .select()
+              .single();
+
             if (error) {
+
               console.error(error);
-              tampilkanError("Gagal menambah produk: " + error.message);
+
+              tampilkanError(
+                "Gagal menambah produk: " +
+                error.message
+              );
+
               return;
             }
-            produkId = data.id;
+
+            produkId =
+              data.id;
           }
 
           /*
@@ -1168,7 +1164,7 @@
       document.getElementById(
         "status"
       ).value =
-        produk.status ?? produk.statustext ?? "aktif";
+        produk.statustext || produk.status || "aktif";
 
       document.getElementById(
         "hpp_offline"
@@ -1178,12 +1174,23 @@
           ? hpp.hpp_unit
           : "";
 
-      // HPP Online disimpan sebagai kombinasi harga_online - untung_online
-      // pada tabel HPP versi saat ini. Isi kembali saat mode Edit.
-      document.getElementById("hpp_online").value =
-        hpp && hpp.harga_online != null && hpp.untung_online != null
-          ? Number(hpp.harga_online) - Number(hpp.untung_online)
+      /*
+        Isi kembali HPP Online saat Edit.
+        HPP Online dihitung dari Harga Online - Untung Online,
+        sesuai struktur tabel HPP yang sudah ada.
+      */
+
+      const hppOnlineEdit =
+        hpp && hpp.untung_online !== null &&
+        produk.harga_online !== null &&
+        produk.harga_online !== undefined
+          ? Number(produk.harga_online) - Number(hpp.untung_online)
           : "";
+
+      document.getElementById(
+        "hpp_online"
+      ).value =
+        hppOnlineEdit;
 
       window.scrollTo({
         top: 0,
@@ -1204,33 +1211,47 @@
 
       sembunyikanPesan();
 
-      // Hapus produk lebih dulu agar HPP tidak terhapus jika produk gagal.
-      let { error } = await supabaseClient
+      /*
+        Hapus HPP terlebih dahulu.
+      */
+
+      const {
+        error: hppError
+      } = await supabaseClient
+        .from("hpp")
+        .delete()
+        .eq("produk_id", id);
+
+      if (hppError) {
+
+        tampilkanError(
+          "Gagal menghapus HPP: " +
+          hppError.message
+        );
+
+        return;
+      }
+
+      /*
+        Kemudian hapus produk.
+      */
+
+      const {
+        error
+      } = await supabaseClient
         .from("produk")
         .delete()
         .eq("id", id);
 
-      if (error && /foreign key|violates.*constraint|referenced/i.test(error.message || "")) {
-        // Jika ada FK tanpa CASCADE, hapus HPP lalu ulangi penghapusan produk.
-        const { error: hppError } = await supabaseClient
-          .from("hpp")
-          .delete()
-          .eq("produk_id", id);
-
-        if (hppError) {
-          tampilkanError("Gagal menghapus HPP: " + hppError.message);
-          return;
-        }
-
-        ({ error } = await supabaseClient
-          .from("produk")
-          .delete()
-          .eq("id", id));
-      }
-
       if (error) {
+
         console.error(error);
-        tampilkanError("Gagal menghapus produk: " + error.message);
+
+        tampilkanError(
+          "Gagal menghapus produk: " +
+          error.message
+        );
+
         return;
       }
 
