@@ -338,14 +338,20 @@ function optionList(list,id){return '<option value="">Pilih bahan</option>'+list
 function addRow(bodyId,id='',qty='',allowPlastic=false){const body=$(bodyId),tr=document.createElement('tr');const list=allowPlastic?bahanData:bahanData.filter(b=>!isPlastic(b));tr.innerHTML='<td><select class="bahan">'+optionList(list,id)+'</select></td><td><input class="jumlah" type="number" min="0" step="0.001" value="'+qty+'"></td><td class="harga">Rp0</td><td class="biaya">Rp0</td><td><button type="button" class="remove">−</button></td>';body.appendChild(tr);const s=tr.querySelector('.bahan'),q=tr.querySelector('.jumlah');function refresh(){const b=bahan(s.value);tr.querySelector('.harga').textContent=b?rupiah(hargaBahan(b)):'Rp0';tr.querySelector('.biaya').textContent=b?rupiah(biaya(b,q.value)):'Rp0';hitung()}s.onchange=refresh;q.oninput=refresh;tr.querySelector('.remove').onclick=()=>{tr.remove();hitung()};refresh()}
 function findBaseProduct(){
   const candidates=produkData.filter(p=>/naget|tempura\s*aci/i.test(namaProduk(p)));
-  return candidates.find(p=>/^naget/i.test(namaProduk(p)))||candidates[0]||null;
+  const withRecipe=candidates.find(p=>resepData.some(r=>String(r.produk_id)===String(p.id)));
+  return withRecipe||candidates.find(p=>/^naget/i.test(namaProduk(p)))||candidates[0]||null;
 }
 function loadRecipe(){
  $('baseBody').innerHTML='';
  if(!produkTerpilih){addRow('baseBody');return}
  let rows=resepData.filter(r=>String(r.produk_id)===String(produkTerpilih.id)).filter(r=>{const b=bahan(r.bahan_id);return b&&!isPlastic(b)});
+ // Jika yang dipilih adalah keluarga Naget/Tempura Aci tetapi resepnya tersimpan di varian lain, pakai resep keluarga yang pertama ditemukan.
+ if(!rows.length && /naget|tempura\s*aci/i.test(namaProduk(produkTerpilih))){
+   const familyId=resepData.find(r=>{const p=produkData.find(x=>String(x.id)===String(r.produk_id));return p&&/naget|tempura\s*aci/i.test(namaProduk(p));})?.produk_id;
+   if(familyId) rows=resepData.filter(r=>String(r.produk_id)===String(familyId)).filter(r=>{const b=bahan(r.bahan_id);return b&&!isPlastic(b)});
+ }
  rows.forEach(r=>addRow('baseBody',r.bahan_id,r.jumlah_pakai,false));
- if(!rows.length)msg('Resep belum ditemukan untuk produk dasar ini. Tambahkan bahan di halaman Resep terlebih dahulu.','error');else $('status').className='status';
+ if(!rows.length)msg('Resep belum ditemukan untuk produk dasar ini. Isi resep di menu Resep terlebih dahulu.','error');else $('status').className='status';
  $('familyNote').style.display='block';$('familyNote').textContent='Naget / Tempura Aci menggunakan resep dasar dan overhead yang sama. Nama paket dan kemasan hanya membedakan cara jual.';hitung()
 }
 function totalRows(id){let t=0;document.querySelectorAll('#'+id+' tr').forEach(tr=>{const s=tr.querySelector('.bahan');const q=tr.querySelector('.jumlah');if(!s||!q)return;const b=bahan(s.value);if(b)t+=biaya(b,q.value)});return t}
@@ -370,10 +376,12 @@ async function init(){
   ]);
   if(p.error)throw new Error('Produk: '+p.error.message);if(b.error)throw new Error('Bahan Baku: '+b.error.message);if(r.error)throw new Error('Resep: '+r.error.message);
   produkData=p.data||[];bahanData=b.data||[];resepData=r.data||[];
-  const normalProducts=produkData.filter(p=>!/^naget\s*isi\s*\d+/i.test(namaProduk(p))&&!/^tempura\s*aci\s*isi/i.test(namaProduk(p)));
+  // Naget/Tempura Aci adalah satu keluarga produk dasar. Jangan tampilkan duplikat varian isi 10/12/dll.
+  const familyProducts=produkData.filter(p=>/naget|tempura\s*aci/i.test(namaProduk(p)));
+  const normalProducts=produkData.filter(p=>!(/naget|tempura\s*aci/i.test(namaProduk(p))));
   const base=findBaseProduct();
   let html='<option value="">Pilih Produk Dasar</option>';
-  html+=normalProducts.filter(p=>!(/naget|tempura\s*aci/i.test(namaProduk(p)))).map(x=>'<option value="'+x.id+'">'+namaProduk(x)+'</option>').join('');
+  html+=normalProducts.map(x=>'<option value="'+x.id+'">'+namaProduk(x)+'</option>').join('');
   if(base)html+='<option value="'+base.id+'">Naget / Tempura Aci</option>';
   $('produkSelect').innerHTML=html;
   const regular=bahanData.filter(isRegularPlastic),vacuum=bahanData.filter(isVacuum);
