@@ -327,22 +327,77 @@ function rupiah(v){return 'Rp'+Math.round(Number(v)||0).toLocaleString('id-ID')}
 function namaBahan(b){return b?.nama_bahan||b?.nama||b?.nama_bahan_baku||'Bahan'}
 function hargaBahan(b){return Number(b?.harga_beli??b?.harga??b?.harga_satuan??b?.harga_bahan??0)}
 function bahan(id){return bahanData.find(x=>String(x.id)===String(id))}
+function namaProduk(p){return (p?.nama_produk||'').trim()}
 function isPlastic(b){return /plastik/i.test(namaBahan(b))}
-function isBumbu(b){return /^bumbu$/i.test(namaBahan(b).trim())}
-function biaya(b,q){if(!b)return 0;const n=Number(q)||0,h=hargaBahan(b);if(isBumbu(b))return n>0&&n<=1?h*n:h*n/100;if(/^plastik$/i.test(namaBahan(b).trim()))return h*n/240;return h*n}
+function isVacuum(b){return /plastik\s*vakum|vakum/i.test(namaBahan(b))}
+function isRegularPlastic(b){return isPlastic(b)&&!isVacuum(b)}
+function isBumbu(b){return /bumbu/i.test(namaBahan(b))}
+function biaya(b,q){if(!b)return 0;const n=Number(q)||0,h=hargaBahan(b),nm=namaBahan(b).toLowerCase();if(isBumbu(b))return n>0&&n<=1?h*n:h*n/100;if(/^plastik$/i.test(namaBahan(b).trim()))return h*n/240;if(isVacuum(b))return h*n/240;return h*n}
 function msg(t,c){$('status').textContent=t;$('status').className='status '+c}
-function addRow(bodyId,id='',qty='',allowPlastic=false){const body=$(bodyId),tr=document.createElement('tr');const list=allowPlastic?bahanData:bahanData.filter(b=>!isPlastic(b));tr.innerHTML='<td><select class="bahan"><option value="">Pilih bahan</option>'+list.map(b=>'<option value="'+b.id+'" '+(String(b.id)===String(id)?'selected':'')+'>'+namaBahan(b)+'</option>').join('')+'</select></td><td><input class="jumlah" type="number" min="0" step="0.001" value="'+qty+'"></td><td class="harga">Rp0</td><td class="biaya">Rp0</td><td><button type="button" class="remove">−</button></td>';body.appendChild(tr);const s=tr.querySelector('.bahan'),q=tr.querySelector('.jumlah');function refresh(){const b=bahan(s.value);tr.querySelector('.harga').textContent=b?rupiah(hargaBahan(b)):'Rp0';tr.querySelector('.biaya').textContent=b?rupiah(biaya(b,q.value)):'Rp0';hitung()}s.onchange=refresh;q.oninput=refresh;tr.querySelector('.remove').onclick=()=>{tr.remove();hitung()};refresh()}
+function optionList(list,id){return '<option value="">Pilih bahan</option>'+list.map(b=>'<option value="'+b.id+'" '+(String(b.id)===String(id)?'selected':'')+'>'+namaBahan(b)+'</option>').join('')}
+function addRow(bodyId,id='',qty='',allowPlastic=false){const body=$(bodyId),tr=document.createElement('tr');const list=allowPlastic?bahanData:bahanData.filter(b=>!isPlastic(b));tr.innerHTML='<td><select class="bahan">'+optionList(list,id)+'</select></td><td><input class="jumlah" type="number" min="0" step="0.001" value="'+qty+'"></td><td class="harga">Rp0</td><td class="biaya">Rp0</td><td><button type="button" class="remove">−</button></td>';body.appendChild(tr);const s=tr.querySelector('.bahan'),q=tr.querySelector('.jumlah');function refresh(){const b=bahan(s.value);tr.querySelector('.harga').textContent=b?rupiah(hargaBahan(b)):'Rp0';tr.querySelector('.biaya').textContent=b?rupiah(biaya(b,q.value)):'Rp0';hitung()}s.onchange=refresh;q.oninput=refresh;tr.querySelector('.remove').onclick=()=>{tr.remove();hitung()};refresh()}
+function findBaseProduct(){
+  const candidates=produkData.filter(p=>/naget|tempura\s*aci/i.test(namaProduk(p)));
+  return candidates.find(p=>/^naget/i.test(namaProduk(p)))||candidates[0]||null;
+}
 function loadRecipe(){
-$('baseBody').innerHTML='';if(!produkTerpilih){addRow('baseBody');return}
-let rows=resepData.filter(r=>String(r.produk_id)===String(produkTerpilih.id)).filter(r=>!isPlastic(bahan(r.bahan_id)));
-rows.forEach(r=>addRow('baseBody',r.bahan_id,r.jumlah_pakai,false));if(!rows.length){addRow('baseBody');msg('Resep belum ditemukan untuk produk ini. Tambahkan bahan manual.','error')}else $('status').className='status';$('familyNote').style.display='block';$('familyNote').textContent='Untuk Naget / Tempura Aci: resep dasar dan overhead sama. Isi paket dan kemasan hanya membedakan cara jual.';hitung()}
-function totalRows(id){let t=0;document.querySelectorAll('#'+id+' tr').forEach(tr=>{const b=bahan(tr.querySelector('.bahan').value);if(b)t+=biaya(b,tr.querySelector('.jumlah').value)});return t}
+ $('baseBody').innerHTML='';
+ if(!produkTerpilih){addRow('baseBody');return}
+ let rows=resepData.filter(r=>String(r.produk_id)===String(produkTerpilih.id)).filter(r=>{const b=bahan(r.bahan_id);return b&&!isPlastic(b)});
+ rows.forEach(r=>addRow('baseBody',r.bahan_id,r.jumlah_pakai,false));
+ if(!rows.length)msg('Resep belum ditemukan untuk produk dasar ini. Tambahkan bahan di halaman Resep terlebih dahulu.','error');else $('status').className='status';
+ $('familyNote').style.display='block';$('familyNote').textContent='Naget / Tempura Aci menggunakan resep dasar dan overhead yang sama. Nama paket dan kemasan hanya membedakan cara jual.';hitung()
+}
+function totalRows(id){let t=0;document.querySelectorAll('#'+id+' tr').forEach(tr=>{const s=tr.querySelector('.bahan');const q=tr.querySelector('.jumlah');if(!s||!q)return;const b=bahan(s.value);if(b)t+=biaya(b,q.value)});return t}
 function packCost(id){const b=bahan(id);return b?biaya(b,1):0}
-function hitung(){const pcs=Number($('hasilPcs').value)||0,base=totalRows('baseBody'),oh=Number($('overhead').value)||0,total=base+oh,hpp=pcs?total/pcs:0,io=Number($('isiOffline').value)||0,inl=Number($('isiOnline').value)||0,off=hpp*io+packCost($('packOffline').value),extra=totalRows('extraBody'),on=hpp*inl+packCost($('packOnline').value)+extra,ho=Number($('hargaOffline').value)||0,hn=Number($('hargaOnline').value)||0;$('hppPcs').value=rupiah(hpp);$('rBahan').textContent=rupiah(base);$('rOh').textContent=rupiah(oh);$('rModal').textContent=rupiah(total);$('rHpp').textContent=rupiah(hpp);$('rOffModal').textContent=rupiah(off);$('rOffProfit').textContent=ho?rupiah(ho-off):'Belum diisi';$('rOnModal').textContent=rupiah(on);$('rOnProfit').textContent=hn?rupiah(hn-on):'Belum diisi'}
-async function init(){try{if(typeof supabaseClient==='undefined')throw new Error('Koneksi Supabase belum tersedia.');const [p,b,r]=await Promise.all([supabaseClient.from('produk').select('*').order('nama_produk'),supabaseClient.from('bahan_baku').select('*').order('nama_bahan'),supabaseClient.from('resep').select('*').order('id')]);if(p.error)throw new Error('Produk: '+p.error.message);if(b.error)throw new Error('Bahan Baku: '+b.error.message);if(r.error)throw new Error('Resep: '+r.error.message);produkData=p.data||[];bahanData=b.data||[];resepData=r.data||[];$('produkSelect').innerHTML='<option value="">Pilih Produk</option>'+produkData.map(x=>'<option value="'+x.id+'">'+(x.nama_produk||'')+'</option>').join('');const plastics=bahanData.filter(isPlastic);$('packOffline').innerHTML='<option value="">Tanpa kemasan</option>'+plastics.map(b=>'<option value="'+b.id+'">'+namaBahan(b)+'</option>').join('');$('packOnline').innerHTML='<option value="">Tanpa kemasan</option>'+plastics.map(b=>'<option value="'+b.id+'">'+namaBahan(b)+'</option>').join('');if(!produkData.length)msg('Data produk kosong.','error')}catch(e){console.error(e);msg('Gagal memuat data: '+e.message,'error')}}
-$('produkSelect').onchange=()=>{produkTerpilih=produkData.find(x=>String(x.id)===String($('produkSelect').value))||null;loadRecipe()};$('addBase').onclick=()=>addRow('baseBody');$('addExtra').onclick=()=>addRow('extraBody','', '',true);['hasilPcs','overhead','hargaOffline','hargaOnline','isiOffline','isiOnline','packOffline','packOnline'].forEach(id=>$(id).oninput=hitung);$('packOffline').onchange=hitung;$('packOnline').onchange=hitung;$('btnReset').onclick=()=>location.reload();
-$('btnSimpan').onclick=async()=>{if(!produkTerpilih){msg('Pilih produk dasar terlebih dahulu.','error');return}const pcs=Number($('hasilPcs').value)||0;if(!pcs){msg('Isi total hasil produksi dalam pcs.','error');return}const base=totalRows('baseBody'),oh=Number($('overhead').value)||0,total=base+oh,hpp=total/pcs,ho=Number($('hargaOffline').value)||0,hn=Number($('hargaOnline').value)||0,payload={produk_id:produkTerpilih.id,total_bahan:base,biaya_produksi:oh,jumlah_batch:pcs,total_modal:total,hpp_unit:hpp,harga_offline:ho,untung_offline:ho?ho-hpp:null,harga_online:hn,untung_online:hn?hn-hpp:null};const {data:old,error:e}=await supabaseClient.from('hpp').select('id').eq('produk_id',produkTerpilih.id).maybeSingle();if(e){msg('Gagal mengecek HPP: '+e.message,'error');return}const res=old?await supabaseClient.from('hpp').update(payload).eq('id',old.id):await supabaseClient.from('hpp').insert(payload);if(res.error)msg('Gagal menyimpan HPP: '+res.error.message,'error');else msg('HPP dasar per pcs berhasil disimpan.','success')};
+function hitung(){
+ const pcs=Number($('hasilPcs').value)||0,base=totalRows('baseBody'),oh=Number($('overhead').value)||0,total=base+oh,hpp=pcs?total/pcs:0;
+ const io=Number($('isiOffline').value)||0,inl=Number($('isiOnline').value)||0;
+ const off=hpp*io+packCost($('packOffline').value);
+ const extra=totalRows('extraBody');
+ const on=hpp*inl+packCost($('packOnline').value)+extra;
+ const ho=Number($('hargaOffline').value)||0,hn=Number($('hargaOnline').value)||0;
+ $('hppPcs').value=rupiah(hpp);$('rBahan').textContent=rupiah(base);$('rOh').textContent=rupiah(oh);$('rModal').textContent=rupiah(total);$('rHpp').textContent=rupiah(hpp);
+ $('rOffModal').textContent=rupiah(off);$('rOffProfit').textContent=ho?rupiah(ho-off):'Belum diisi';$('rOnModal').textContent=rupiah(on);$('rOnProfit').textContent=hn?rupiah(hn-on):'Belum diisi';
+}
+async function init(){
+ try{
+  if(typeof supabaseClient==='undefined')throw new Error('Koneksi Supabase belum tersedia.');
+  const [p,b,r]=await Promise.all([
+   supabaseClient.from('produk').select('*').order('nama_produk'),
+   supabaseClient.from('bahan_baku').select('*').order('nama_bahan'),
+   supabaseClient.from('resep').select('*').order('id')
+  ]);
+  if(p.error)throw new Error('Produk: '+p.error.message);if(b.error)throw new Error('Bahan Baku: '+b.error.message);if(r.error)throw new Error('Resep: '+r.error.message);
+  produkData=p.data||[];bahanData=b.data||[];resepData=r.data||[];
+  const normalProducts=produkData.filter(p=>!/^naget\s*isi\s*\d+/i.test(namaProduk(p))&&!/^tempura\s*aci\s*isi/i.test(namaProduk(p)));
+  const base=findBaseProduct();
+  let html='<option value="">Pilih Produk Dasar</option>';
+  html+=normalProducts.filter(p=>!(/naget|tempura\s*aci/i.test(namaProduk(p)))).map(x=>'<option value="'+x.id+'">'+namaProduk(x)+'</option>').join('');
+  if(base)html+='<option value="'+base.id+'">Naget / Tempura Aci</option>';
+  $('produkSelect').innerHTML=html;
+  const regular=bahanData.filter(isRegularPlastic),vacuum=bahanData.filter(isVacuum);
+  $('packOffline').innerHTML='<option value="">Tanpa kemasan</option>'+regular.map(b=>'<option value="'+b.id+'">'+namaBahan(b)+'</option>').join('');
+  $('packOnline').innerHTML='<option value="">Tanpa kemasan</option>'+vacuum.map(b=>'<option value="'+b.id+'">'+namaBahan(b)+'</option>').join('');
+  if(!produkData.length)msg('Data produk kosong.','error');
+ }catch(e){console.error(e);msg('Gagal memuat data: '+e.message,'error')}
+}
+$('produkSelect').onchange=()=>{produkTerpilih=produkData.find(x=>String(x.id)===String($('produkSelect').value))||null;loadRecipe()};
+$('addBase').onclick=()=>addRow('baseBody');$('addExtra').onclick=()=>addRow('extraBody','', '',true);
+['hasilPcs','overhead','hargaOffline','hargaOnline'].forEach(id=>$(id).oninput=hitung);
+['isiOffline','isiOnline'].forEach(id=>$(id).onchange=hitung);$('packOffline').onchange=hitung;$('packOnline').onchange=hitung;
+$('btnReset').onclick=()=>location.reload();
+$('btnSimpan').onclick=async()=>{
+ if(!produkTerpilih){msg('Pilih produk dasar terlebih dahulu.','error');return}
+ const pcs=Number($('hasilPcs').value)||0;if(!pcs){msg('Isi total hasil produksi dalam pcs.','error');return}
+ const base=totalRows('baseBody'),oh=Number($('overhead').value)||0,total=base+oh,hpp=total/pcs,ho=Number($('hargaOffline').value)||0,hn=Number($('hargaOnline').value)||0;
+ const payload={produk_id:produkTerpilih.id,total_bahan:base,biaya_produksi:oh,jumlah_batch:pcs,total_modal:total,hpp_unit:hpp,harga_offline:ho,untung_offline:ho?ho-hpp:null,harga_online:hn,untung_online:hn?hn-hpp:null};
+ const {data:old,error:e}=await supabaseClient.from('hpp').select('id').eq('produk_id',produkTerpilih.id).maybeSingle();if(e){msg('Gagal mengecek HPP: '+e.message,'error');return}
+ const res=old?await supabaseClient.from('hpp').update(payload).eq('id',old.id):await supabaseClient.from('hpp').insert(payload);
+ if(res.error)msg('Gagal menyimpan HPP: '+res.error.message,'error');else msg('HPP dasar per pcs berhasil disimpan.','success')
+};
 addRow('baseBody');init();hitung();
+</script>
 </script>
 
 </body>
