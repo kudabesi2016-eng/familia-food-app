@@ -48,7 +48,7 @@ const norm=s=>(s||'').toLowerCase().trim();
 const isNaget=p=>/naget|tempura\\s*aci/.test(norm(p.nama_produk));
 const groupKey=p=>isNaget(p)?'naget_tempura':norm(p.nama_produk);
 const groupLabel=k=>k==='naget_tempura'?'Naget / Tempura Aci':k==='cireng isi'?'Cireng isi':k==='cireng biasa'?'Cireng biasa':(products.find(p=>groupKey(p)===k)?.nama_produk||k);
-function costFor(m,q){const n=norm(m?.nama_bahan||m?.nama),h=Number(m?.harga)||0,x=Number(q)||0;if(n.includes('bumbu'))return x>1?h*x/100:h*x;if(n.includes('plastik'))return h*x/240;return h*x;}
+function costFor(m,q){const n=norm(m?.nama_bahan||m?.nama),h=Number(m?.harga_beli ?? m?.harga)||0,x=Number(q)||0;if(n.includes('bumbu'))return x>1?h*x/100:h*x;if(n.includes('plastik'))return h*x/240;return h*x;}
 function showMsg(t){document.getElementById('msg').innerHTML=t?`<div class="notice">${t}</div>`:''}
 async function load(){
  const [pr,ma]=await Promise.all([sb.from('produk').select('*').order('nama_produk'),sb.from('bahan_baku').select('*').order('nama_bahan')]);
@@ -75,7 +75,7 @@ function addRow(){rows.push({id:null,bahan_id:'',jumlah:0});render()}
 function render(){
  const body=document.getElementById('rows');
  if(!rows.length){body.innerHTML='<tr><td colspan="5">Belum ada bahan dalam resep dasar.</td></tr>';calc();return}
- body.innerHTML=rows.map((r,i)=>{const opts='<option value="">Pilih bahan</option>'+materials.filter(m=>!norm(m.nama_bahan||m.nama).includes('plastik')).map(m=>`<option value="${m.id}" ${String(m.id)===String(r.bahan_id)?'selected':''}>${m.nama_bahan||m.nama}</option>`).join('');const m=materials.find(x=>String(x.id)===String(r.bahan_id));return `<tr><td><select data-i="${i}" data-k="bahan">${opts}</select></td><td><input data-i="${i}" data-k="jumlah" type="number" min="0" step="0.001" value="${r.jumlah??''}"></td><td>${rupiah(m?.harga)}</td><td>${rupiah(costFor(m,r.jumlah))}</td><td><button class="danger" data-del="${i}">Hapus</button></td></tr>`}).join('');
+ body.innerHTML=rows.map((r,i)=>{const opts='<option value="">Pilih bahan</option>'+materials.filter(m=>!norm(m.nama_bahan||m.nama).includes('plastik')).map(m=>`<option value="${m.id}" ${String(m.id)===String(r.bahan_id)?'selected':''}>${m.nama_bahan||m.nama}</option>`).join('');const m=materials.find(x=>String(x.id)===String(r.bahan_id));return `<tr><td><select data-i="${i}" data-k="bahan">${opts}</select></td><td><input data-i="${i}" data-k="jumlah" type="number" min="0" step="0.001" value="${r.jumlah??''}"></td><td>${rupiah(m?.harga_beli ?? m?.harga)}</td><td>${rupiah(costFor(m,r.jumlah))}</td><td><button class="danger" data-del="${i}">Hapus</button></td></tr>`}).join('');
  body.querySelectorAll('[data-k]').forEach(el=>el.oninput=el.onchange=()=>{const i=+el.dataset.i;if(el.dataset.k==='bahan')rows[i].bahan_id=el.value;else rows[i].jumlah=Number(el.value)||0;render()});
  body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.del,1);render()});calc();
 }
