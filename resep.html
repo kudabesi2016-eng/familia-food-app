@@ -38,7 +38,10 @@ button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:6
 <div class="card"><h2>Hubungan dengan HPP</h2><div class="hint">HPP mengambil total biaya resep, menambahkan overhead, lalu membaginya dengan hasil produksi PCS. Isi paket dan kemasan dihitung di HPP.</div>
 <div class="actions"><button class="primary" id="save">💾 Simpan Resep</button><button class="danger" id="reset">↺ Reset</button></div><div id="msg"></div></div>
 <script>
-const sb=window.supabaseClient;
+const sb = window.supabaseClient || window.supabase.createClient(
+  "https://zaqdjyhosksbdlafhluc.supabase.co",
+  "sb_publishable_v9HwG1jpZXKeo2MYrWmGdg_VO4Or8yt"
+);
 let products=[],materials=[],rows=[],currentGroup=null;
 const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 const norm=s=>(s||'').toLowerCase().trim();
@@ -52,11 +55,11 @@ async function load(){
  if(pr.error){showMsg(pr.error.message);return}if(ma.error){showMsg(ma.error.message);return}
  products=pr.data||[];materials=ma.data||[];const groups=[],seen=new Set();
  products.filter(p=>p.status===undefined||p.status!=='arsip').forEach(p=>{const k=groupKey(p);if(!seen.has(k)){seen.add(k);groups.push({k,label:groupLabel(k)})}});
- produk.innerHTML='<option value="">Pilih produk dasar</option>'+groups.map(g=>`<option value="${g.k}">${g.label}</option>`).join('');
- produk.onchange=()=>selectGroup(produk.value);add.onclick=addRow;save.onclick=saveRecipe;reset.onclick=resetForm;
+ document.getElementById('produk').innerHTML='<option value="">Pilih produk dasar</option>'+groups.map(g=>`<option value="${g.k}">${g.label}</option>`).join('');
+ document.getElementById('produk').onchange=()=>selectGroup(produk.value);document.getElementById('add').onclick=addRow;document.getElementById('save').onclick=saveRecipe;document.getElementById('reset').onclick=resetForm;
 }
 async function selectGroup(k){
- currentGroup=k;rows=[];hasil.value='';catatan.value='';
+ currentGroup=k;rows=[];document.getElementById('hasil').value='';document.getElementById('catatan').value='';
  if(!k){render();return}
  const ids=products.filter(p=>groupKey(p)===k).map(p=>p.id);
  const r=await sb.from('resep').select('*').in('produk_id',ids);
@@ -76,10 +79,10 @@ function render(){
  body.querySelectorAll('[data-k]').forEach(el=>el.oninput=el.onchange=()=>{const i=+el.dataset.i;if(el.dataset.k==='bahan')rows[i].bahan_id=el.value;else rows[i].jumlah=Number(el.value)||0;render()});
  body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.del,1);render()});calc();
 }
-function calc(){let t=0;rows.forEach(r=>t+=costFor(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah));total.textContent=rupiah(t);const h=Number(hasil.value)||0;perpcs.textContent=rupiah(h?t/h:0)}
-hasil.oninput=calc;
+function calc(){let t=0;rows.forEach(r=>t+=costFor(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah));document.getElementById('total').textContent=rupiah(t);const h=Number(document.getElementById('hasil').value)||0;document.getElementById('perpcs').textContent=rupiah(h?t/h:0)}
+document.getElementById('hasil').oninput=calc;
 async function saveRecipe(){
- if(!currentGroup){showMsg('Pilih produk dasar.');return}const h=Number(hasil.value)||0;if(!h){showMsg('Isi Hasil Produksi dalam PCS.');return}
+ if(!currentGroup){showMsg('Pilih produk dasar.');return}const h=Number(document.getElementById('hasil').value)||0;if(!h){showMsg('Isi Hasil Produksi dalam PCS.');return}
  const valid=rows.filter(r=>r.bahan_id&&Number(r.jumlah)>0);if(!valid.length){showMsg('Tambahkan minimal satu bahan.');return}
  const targets=products.filter(p=>groupKey(p)===currentGroup);const ids=targets.map(p=>p.id);
  const old=await sb.from('resep').select('produk_id').in('produk_id',ids);if(old.error){showMsg(old.error.message);return}
