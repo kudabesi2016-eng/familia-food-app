@@ -85,7 +85,10 @@ function render(){
    body.innerHTML='<tr><td colspan="5">Belum ada bahan dalam resep dasar.</td></tr>';
  }else{
    body.innerHTML=rows.map((r,i)=>{const opts='<option value="">Pilih bahan</option>'+materials.filter(m=>!isKemasan(m)&&!isOverhead(m)).map(m=>`<option value="${m.id}" ${String(m.id)===String(r.bahan_id)?'selected':''}>${m.nama_bahan||m.nama}</option>`).join('');const m=materials.find(x=>String(x.id)===String(r.bahan_id));return `<tr><td><select data-i="${i}" data-k="bahan">${opts}</select></td><td><input data-i="${i}" data-k="jumlah" type="number" min="0" step="0.001" value="${r.jumlah??''}"></td><td>${rupiah(m?.harga_beli ?? m?.harga)}</td><td>${rupiah(costFor(m,r.jumlah))}</td><td><button type="button" class="danger" data-del="${i}">Hapus</button></td></tr>`}).join('');
-   body.querySelectorAll('[data-k]').forEach(el=>el.oninput=el.onchange=()=>{const i=+el.dataset.i;if(el.dataset.k==='bahan')rows[i].bahan_id=el.value;else rows[i].jumlah=Number(el.value)||0;render()});
+   body.querySelectorAll('[data-k]').forEach(el=>{
+    const update=()=>{const i=+el.dataset.i;if(el.dataset.k==='bahan')rows[i].bahan_id=el.value;else rows[i].jumlah=el.value===''?'':Number(el.value);calc()};
+    el.addEventListener('input',update); el.addEventListener('change',update);
+  });
    body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.del);if(Number.isInteger(i)&&i>=0&&i<rows.length){rows.splice(i,1);render()}});
  }
  const pbody=document.getElementById('packRows');
@@ -93,7 +96,10 @@ function render(){
    pbody.innerHTML='<tr><td colspan="5">Belum ada kemasan dalam resep.</td></tr>';
  }else{
    pbody.innerHTML=packRows.map((r,i)=>{const opts='<option value="">Pilih kemasan</option>'+materials.filter(isKemasan).map(m=>`<option value="${m.id}" ${String(m.id)===String(r.bahan_id)?'selected':''}>${m.nama_bahan||m.nama}</option>`).join('');const m=materials.find(x=>String(x.id)===String(r.bahan_id));return `<tr><td><select data-pi="${i}" data-pk="bahan">${opts}</select></td><td><input data-pi="${i}" data-pk="jumlah" type="number" min="0" step="0.001" value="${r.jumlah??''}"></td><td>${rupiah(m?.harga_beli ?? m?.harga)}</td><td>${rupiah(packCostFor(m,r.jumlah))}</td><td><button type="button" class="danger" data-pdel="${i}">Hapus</button></td></tr>`}).join('');
-   pbody.querySelectorAll('[data-pk]').forEach(el=>el.oninput=el.onchange=()=>{const i=+el.dataset.pi;if(el.dataset.pk==='bahan')packRows[i].bahan_id=el.value;else packRows[i].jumlah=Number(el.value)||0;render()});
+   pbody.querySelectorAll('[data-pk]').forEach(el=>{
+    const update=()=>{const i=+el.dataset.pi;if(el.dataset.pk==='bahan')packRows[i].bahan_id=el.value;else packRows[i].jumlah=el.value===''?'':Number(el.value);calc()};
+    el.addEventListener('input',update); el.addEventListener('change',update);
+  });
    pbody.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.pdel);if(Number.isInteger(i)&&i>=0&&i<packRows.length){packRows.splice(i,1);render()}});
  }
  calc();
