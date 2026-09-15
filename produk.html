@@ -640,6 +640,14 @@
             ? hpp.hpp_unit
             : null;
 
+        // HPP online tidak disimpan sebagai kolom terpisah.
+        // Nilai modal online dapat direkonstruksi dari harga online - laba online,
+        // sehingga tabel tetap menampilkan angka HPP online tanpa mengubah database.
+        const hppOnline =
+          hpp && hpp.harga_online !== null && hpp.untung_online !== null
+            ? Number(hpp.harga_online) - Number(hpp.untung_online)
+            : null;
+
         const tr =
           document.createElement("tr");
 
@@ -669,6 +677,10 @@
 
           <td>
             ${formatRupiah(hppUnit)}
+          </td>
+
+          <td>
+            ${formatRupiah(hppOnline)}
           </td>
 
           <td>
