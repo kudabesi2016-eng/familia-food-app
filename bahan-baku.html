@@ -948,12 +948,17 @@
     const { data, error } = await supabaseClient.from("bahan_baku").select("*").order("id", { ascending: true });
     if (error) { body.innerHTML = '<tr><td colspan="3" class="empty">Gagal mengambil overhead.</td></tr>'; return; }
     const rows = (data || []).filter(x => isOverheadName(x.nama_bahan) && String(x.status || x.statustext || 'Aktif').toLowerCase() !== 'arsip');
-    body.innerHTML = rows.length ? rows.map(x => `
-      <tr>
-        <td><input data-oh-name="${x.id}" aria-label="Nama overhead" value="${escapeHtml(overheadDisplayName(x.nama_bahan))}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px"></td>
-        <td><input data-oh-value="${x.id}" aria-label="Nominal overhead harian" type="number" min="0" step="1" value="${Number(x.harga_beli)||0}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px"></td>
-        <td><button class="btn-edit" type="button" onclick="simpanOverhead(${x.id})">Simpan</button> <button class="btn-delete" type="button" onclick="hapusOverhead(${x.id}, '${escapeJs(overheadDisplayName(x.nama_bahan))}')">Hapus</button></td>
-      </tr>`).join('') : '<tr><td colspan="3" class="empty">Belum ada overhead.</td></tr>';
+    body.innerHTML = rows.length ? rows.map(x => {
+      const display = overheadDisplayName(x.nama_bahan);
+      const safeName = escapeHtml(display);
+      const safeJsName = escapeJs(display);
+      const nominal = Number(x.harga_beli) || 0;
+      return `<tr>
+        <td><input data-oh-name="${x.id}" aria-label="Nama overhead" value="${safeName}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px;color:#17352a;background:#fff"></td>
+        <td><input data-oh-value="${x.id}" aria-label="Nominal overhead harian" type="number" min="0" step="1" value="${nominal}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px;color:#17352a;background:#fff"></td>
+        <td><button class="btn-edit" type="button" onclick="simpanOverhead(${x.id})">Simpan</button> <button class="btn-delete" type="button" onclick="hapusOverhead(${x.id}, '${safeJsName}')">Hapus</button></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="3" class="empty">Belum ada overhead.</td></tr>';
     const total = rows.reduce((a,x)=>a+(Number(x.harga_beli)||0),0);
     document.getElementById("totalOverhead").textContent = rupiah(total);
   }
