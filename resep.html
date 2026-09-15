@@ -62,7 +62,48 @@ async function load(){
  products.filter(p=>p.status===undefined||p.status!=='arsip').forEach(p=>{const k=groupKey(p);if(!seen.has(k)){seen.add(k);groups.push({k,label:groupLabel(k)})}});
  document.getElementById('produk').innerHTML='<option value="">Pilih produk dasar</option>'+groups.map(g=>`<option value="${g.k}">${g.label}</option>`).join('');
  document.getElementById('produk').onchange=()=>selectGroup(document.getElementById('produk').value);document.getElementById('add').onclick=addRow;document.getElementById('addPack').onclick=addPackRow;document.getElementById('save').onclick=saveRecipe;document.getElementById('clearRecipe').onclick=clearRecipe;document.getElementById('reset').onclick=resetForm;
+ await seedInitialRecipes();
 }
+async function seedInitialRecipes(){
+ const SEED='ff_recipe_seed_v20260915_naget_cireng_cibay_1';
+ if(localStorage.getItem(SEED)==='done')return;
+ const findMat=name=>materials.find(m=>norm(m.nama_bahan||m.nama)===norm(name));
+ let garam=findMat('Garam');
+ if(!garam){
+   const ins=await sb.from('bahan_baku').insert([{nama_bahan:'Garam',satuan:'Kg',harga_beli:10000,status:'Aktif'}]).select('*').single();
+   if(ins.error){showMsg('Gagal menambah bahan baku Garam: '+ins.error.message);return}
+   garam=ins.data;materials.push(garam);
+ }
+ const aci=findMat('Aci'),roti=findMat('Tepung roti'),mie=findMat('Mie'),stik=findMat('Stik eskrim'),bumbu=findMat('Bumbu'),lumpia=findMat('Lumpia');
+ if(!aci||!roti||!mie||!stik||!bumbu||!lumpia){showMsg('Bahan resep belum lengkap di Master Bahan Baku. Resep belum diisi agar tidak ada data yang salah.');return}
+ const byName=n=>products.filter(p=>groupKey(p)===norm(n));
+ const naget=products.filter(p=>isNaget(p)),cirengIsi=byName('cireng isi'),cirengBiasa=byName('cireng biasa'),cibay=byName('cibay');
+ if(!naget.length||!cirengIsi.length||!cirengBiasa.length||!cibay.length){showMsg('Produk resep belum lengkap. Resep belum diisi agar tidak ada data yang salah.');return}
+ const groups=[
+   {ids:naget.map(p=>p.id),canonical:naget[0].id,result:3000,rows:[
+     [aci.id,30],[roti.id,25],[garam.id,1],[mie.id,2],[stik.id,2]
+   ]},
+   {ids:cirengIsi.map(p=>p.id),canonical:cirengIsi[0].id,result:100,rows:[[aci.id,2],[bumbu.id,0.5]]},
+   {ids:cirengBiasa.map(p=>p.id),canonical:cirengBiasa[0].id,result:100,rows:[[aci.id,2],[bumbu.id,0.2]]},
+   {ids:cibay.map(p=>p.id),canonical:cibay[0].id,result:100,rows:[[aci.id,0.7],[bumbu.id,0.5],[lumpia.id,6]]}
+ ];
+ for(const g of groups){
+   const d=await sb.from('resep').delete().in('produk_id',g.ids);
+   if(d.error){showMsg('Gagal menyiapkan resep: '+d.error.message);return}
+   const ins=await sb.from('resep').insert(g.rows.map(([bahan_id,jumlah_pakai])=>({produk_id:g.canonical,bahan_id,jumlah_pakai})));
+   if(ins.error){showMsg('Gagal memasukkan resep: '+ins.error.message);return}
+   for(const pid of g.ids){
+     const hr=await sb.from('hpp').select('id').eq('produk_id',pid).limit(1);
+     if(hr.error){showMsg('Resep masuk, tetapi HPP belum diperbarui: '+hr.error.message);return}
+     const payload={jumlah_batch:g.result};
+     const wr=hr.data?.length?await sb.from('hpp').update(payload).eq('id',hr.data[0].id):await sb.from('hpp').insert([{produk_id:pid,jumlah_batch:g.result}]);
+     if(wr.error){showMsg('Resep masuk, tetapi hasil produksi HPP gagal diperbarui: '+wr.error.message);return}
+   }
+ }
+ localStorage.setItem(SEED,'done');
+ showMsg('Data resep awal berhasil dimasukkan. Semua data tetap dapat diedit dari modul Resep.');
+}
+
 async function selectGroup(k){
  currentGroup=k;rows=[];packRows=[];document.getElementById('hasil').value='';document.getElementById('catatan').value='';
  if(!k){render();return}
