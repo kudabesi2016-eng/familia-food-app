@@ -514,7 +514,7 @@
       return "-";
     }
 
-    return "Rp " + Number(angka).toLocaleString("id-ID");
+    return "Rp " + Math.round(Number(angka)||0).toLocaleString("id-ID");
   }
 
 
