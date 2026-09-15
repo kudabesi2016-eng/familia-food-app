@@ -1,11 +1,51 @@
-<!DOCTYPE html>
+<section class="card" style="margin-top:18px">
+<h2>⚙️ Overhead Produksi</h2>
+<p class="muted">Masukkan biaya overhead secara detail. Total dihitung otomatis dan dipakai oleh HPP.</p>
+<div class="grid" style="grid-template-columns:2fr 1fr auto;align-items:end">
+<label>Nama Overhead<input id="ohNama" placeholder="Contoh: Gas"></label>
+<label>Nominal<input id="ohNominal" type="number" min="0" step="1" placeholder="0"></label>
+<button id="ohTambah" class="primary">+ Tambah</button>
+</div>
+<div style="overflow:auto;margin-top:12px"><table>
+<thead><tr><th>Overhead</th><th>Nominal</th><th>Aksi</th></tr></thead>
+<tbody id="tabelOverhead"></tbody>
+<tfoot><tr><th>TOTAL OVERHEAD</th><th id="totalOverhead">Rp0</th><th></th></tr></tfoot>
+</table></div></section><!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bahan Baku - Familia Food</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+const OH_PREFIX="__OH__:";
+function isOH(x){return String(x||"").startsWith(OH_PREFIX);}
+function ohName(x){return String(x||"").slice(OH_PREFIX.length);}
+function ohRupiah(n){return "Rp"+Number(n||0).toLocaleString("id-ID");}
+async function loadOverhead(){
+ const {data,error}=await sb.from("bahan").select("*");
+ if(error){console.error("Overhead:",error);return;}
+ const rows=(data||[]).filter(r=>isOH(r.nama_bahan)), tb=document.getElementById("tabelOverhead");
+ if(!tb)return;
+ tb.innerHTML=rows.map(r=>`<tr><td>${ohName(r.nama_bahan)}</td><td>${ohRupiah(r.harga||r.harga_bahan||r.nominal||0)}</td><td><button data-oh-del="${r.id}">Hapus</button></td></tr>`).join("");
+ document.getElementById("totalOverhead").textContent=ohRupiah(rows.reduce((a,r)=>a+Number(r.harga||r.harga_bahan||r.nominal||0),0));
+ tb.querySelectorAll("[data-oh-del]").forEach(b=>b.onclick=async()=>{
+  const {error}=await sb.from("bahan").delete().eq("id",b.dataset.ohDel);
+  if(error)alert("Gagal menghapus overhead: "+error.message); else loadOverhead();
+ });
+}
+document.addEventListener("DOMContentLoaded",()=>{
+ const b=document.getElementById("ohTambah"); if(!b)return;
+ b.onclick=async()=>{
+  const n=document.getElementById("ohNama").value.trim(), v=Number(document.getElementById("ohNominal").value)||0;
+  if(!n||v<=0)return alert("Isi nama overhead dan nominal lebih dari 0.");
+  const {error}=await sb.from("bahan").insert([{nama_bahan:OH_PREFIX+n,harga:v}]);
+  if(error)return alert("Gagal menyimpan overhead: "+error.message);
+  document.getElementById("ohNama").value="";document.getElementById("ohNominal").value="";loadOverhead();
+ };
+ loadOverhead();
+});
+</script>
   <script src="supabase.js"></script>
 
   <style>
