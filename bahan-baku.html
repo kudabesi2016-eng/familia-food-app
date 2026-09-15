@@ -947,7 +947,7 @@
     if (!body) return;
     const { data, error } = await supabaseClient.from("bahan_baku").select("*").order("id", { ascending: true });
     if (error) { body.innerHTML = '<tr><td colspan="3" class="empty">Gagal mengambil overhead.</td></tr>'; return; }
-    const rows = (data || []).filter(x => isOverheadName(x.nama_bahan));
+    const rows = (data || []).filter(x => isOverheadName(x.nama_bahan) && String(x.status || x.statustext || 'Aktif').toLowerCase() !== 'arsip');
     body.innerHTML = rows.length ? rows.map(x => `
       <tr>
         <td><input data-oh-name="${x.id}" value="${escapeHtml(overheadDisplayName(x.nama_bahan))}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px"></td>
