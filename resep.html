@@ -43,7 +43,10 @@ button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:6
 <div class="card"><h2>Hubungan dengan HPP</h2><div class="hint">HPP mengambil total biaya resep, menambahkan overhead, lalu membaginya dengan hasil produksi PCS. Isi paket dan kemasan dihitung di HPP.</div>
 <div class="actions"><button class="primary" id="save">💾 Simpan Resep</button><button class="danger" id="reset">↺ Reset</button></div><div id="msg"></div></div>
 <script>
-const sb = (typeof supabaseClient !== 'undefined' && supabaseClient) ? supabaseClient : window.supabaseClient;
+const sb = window.supabaseClient || window.supabase.createClient(
+  "https://zaqdjyhosksbdlafhluc.supabase.co",
+  "sb_publishable_v9HwG1jpZXKeo2MYrWmGdg_VO4Or8yt"
+);
 let products=[],materials=[],rows=[],packRows=[],currentGroup=null;
 const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 const norm=s=>(s||'').toLowerCase().trim();
@@ -55,9 +58,9 @@ function costFor(m,q){const n=norm(m?.nama_bahan||m?.nama),h=Number(m?.harga_bel
 function packCostFor(m,q){const h=Number(m?.harga_beli ?? m?.harga)||0,x=Number(q)||0;return h*x;}
 function showMsg(t){document.getElementById('msg').innerHTML=t?`<div class="notice">${t}</div>`:''}
 async function load(){
- const [pr,ma]=await Promise.all([sb.from('produk').select('*'),sb.from('bahan_baku').select('*')]);
+ const [pr,ma]=await Promise.all([sb.from('produk').select('*').order('nama_produk'),sb.from('bahan_baku').select('*').order('nama_bahan')]);
  if(pr.error){showMsg(pr.error.message);return}if(ma.error){showMsg(ma.error.message);return}
- products=(pr.data||[]).slice().sort((a,b)=>Number(a.id||0)-Number(b.id||0));materials=(ma.data||[]).slice().sort((a,b)=>String(a.nama_bahan||a.nama||'').localeCompare(String(b.nama_bahan||b.nama||'')));const groups=[],seen=new Set();
+ products=pr.data||[];materials=ma.data||[];const groups=[],seen=new Set();
  products.filter(p=>p.status===undefined||p.status!=='arsip').forEach(p=>{const k=groupKey(p);if(!seen.has(k)){seen.add(k);groups.push({k,label:groupLabel(k)})}});
  document.getElementById('produk').innerHTML='<option value="">Pilih produk dasar</option>'+groups.map(g=>`<option value="${g.k}">${g.label}</option>`).join('');
  document.getElementById('produk').onchange=()=>selectGroup(document.getElementById('produk').value);document.getElementById('add').onclick=addRow;document.getElementById('addPack').onclick=addPackRow;document.getElementById('save').onclick=saveRecipe;document.getElementById('reset').onclick=resetForm;
@@ -95,7 +98,7 @@ async function saveRecipe(){
  const valid=rows.filter(r=>r.bahan_id&&Number(r.jumlah)>0),validP=packRows.filter(r=>r.bahan_id&&Number(r.jumlah)>0);if(!valid.length&&!validP.length){showMsg('Tambahkan minimal satu bahan atau kemasan.');return}
  const targets=products.filter(p=>groupKey(p)===currentGroup);const ids=targets.map(p=>p.id);
  const old=await sb.from('resep').select('produk_id').in('produk_id',ids);if(old.error){showMsg(old.error.message);return}
- const canonical=targets[0].id;
+ const canonical=old.data?.[0]?.produk_id||targets[0].id;
  const del=await sb.from('resep').delete().eq('produk_id',canonical);if(del.error){showMsg(del.error.message);return}
  const ins=await sb.from('resep').insert([...valid.map(r=>({produk_id:canonical,bahan_id:r.bahan_id,jumlah_pakai:Number(r.jumlah)})),...validP.map(r=>({produk_id:canonical,bahan_id:r.bahan_id,jumlah_pakai:Number(r.jumlah)}))]);
  if(ins.error){showMsg(ins.error.message);return}showMsg('Resep dasar berhasil disimpan. HPP akan membaca resep ini.');await selectGroup(currentGroup);
