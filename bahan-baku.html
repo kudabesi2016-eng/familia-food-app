@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bahan Baku - Familia Food</title>
+  <title>Bahan Baku - Familia Food v3</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
@@ -950,8 +950,8 @@
     const rows = (data || []).filter(x => isOverheadName(x.nama_bahan) && String(x.status || x.statustext || 'Aktif').toLowerCase() !== 'arsip');
     body.innerHTML = rows.length ? rows.map(x => `
       <tr>
-        <td><input data-oh-name="${x.id}" value="${escapeHtml(overheadDisplayName(x.nama_bahan))}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px"></td>
-        <td><input data-oh-value="${x.id}" type="number" min="0" step="1" value="${Number(x.harga_beli)||0}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px"></td>
+        <td><input data-oh-name="${x.id}" aria-label="Nama overhead" value="${escapeHtml(overheadDisplayName(x.nama_bahan))}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px"></td>
+        <td><input data-oh-value="${x.id}" aria-label="Nominal overhead harian" type="number" min="0" step="1" value="${Number(x.harga_beli)||0}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px"></td>
         <td><button class="btn-edit" type="button" onclick="simpanOverhead(${x.id})">Simpan</button> <button class="btn-delete" type="button" onclick="hapusOverhead(${x.id}, '${escapeJs(overheadDisplayName(x.nama_bahan))}')">Hapus</button></td>
       </tr>`).join('') : '<tr><td colspan="3" class="empty">Belum ada overhead.</td></tr>';
     const total = rows.reduce((a,x)=>a+(Number(x.harga_beli)||0),0);
