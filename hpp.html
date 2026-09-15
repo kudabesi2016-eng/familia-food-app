@@ -65,16 +65,31 @@ function fillExtra(){
  $('extra').innerHTML='<option value="">Tidak ada tambahan</option>'+arr.map(m=>`<option value="${m.id}">${m.nama_bahan||m.nama}</option>`).join('');
 }
 async function load(){
- const [p,m]=await Promise.all([sb.from('produk').select('*').order('nama_produk'),sb.from('bahan_baku').select('*').order('nama_bahan')]);
- if(p.error||m.error){msg((p.error||m.error).message);return}
- products=p.data||[];materials=m.data||[];
- const groups=[],seen=new Set();products.filter(p=>p.status===undefined||p.status!=='arsip').forEach(p=>{const k=key(p);if(!seen.has(k)){seen.add(k);groups.push(k)}});
- $('produk').innerHTML='<option value="">Pilih produk dasar</option>'+groups.map(k=>`<option value="${k}">${label(k)}</option>`).join('');
- fillQty('offQty');fillQty('onQty');fillPacks('offPack',false);fillPacks('onPack',true);fillExtra();
- $('produk').onchange=()=>selectGroup($('produk').value);
- ['hasil','oh','offQty','offPack','offPrice','onQty','onPack','extra','onPrice'].forEach(id=>$(id).addEventListener('input',calc));
- ['offQty','offPack','extra','onQty','onPack'].forEach(id=>$(id).addEventListener('change',calc));
- $('save').onclick=save; $('reset').onclick=reset; calc();
+ try{
+   if(!sb) throw new Error('Koneksi Supabase belum tersedia.');
+   // Hindari query yang bergantung pada nama kolom pengurutan. Data diurutkan di browser.
+   const requests=[sb.from('produk').select('*'),sb.from('bahan_baku').select('*')];
+   const result=await Promise.race([
+     Promise.all(requests),
+     new Promise((_,reject)=>setTimeout(()=>reject(new Error('Koneksi database terlalu lama. Silakan refresh dan coba lagi.')),10000))
+   ]);
+   const [p,m]=result;
+   if(p.error||m.error) throw new Error((p.error||m.error).message);
+   products=(p.data||[]).slice().sort((a,b)=>String(a.nama_produk||'').localeCompare(String(b.nama_produk||'')));
+   materials=(m.data||[]).slice().sort((a,b)=>String(a.nama_bahan||a.nama||'').localeCompare(String(b.nama_bahan||b.nama||'')));
+   const groups=[],seen=new Set();
+   products.filter(p=>norm(p.status||p.statustext||'aktif')!=='arsip').forEach(p=>{const k=key(p);if(!seen.has(k)){seen.add(k);groups.push(k)}});
+   $('produk').innerHTML='<option value="">Pilih produk dasar</option>'+groups.map(k=>`<option value="${k}">${label(k)}</option>`).join('');
+   if(!groups.length) $('produk').innerHTML='<option value="">Tidak ada produk aktif</option>';
+   fillQty('offQty');fillQty('onQty');fillPacks('offPack',false);fillPacks('onPack',true);fillExtra();
+   $('produk').onchange=()=>selectGroup($('produk').value);
+   ['hasil','oh','offQty','offPack','offPrice','onQty','onPack','extra','onPrice'].forEach(id=>$(id).addEventListener('input',calc));
+   ['offQty','offPack','extra','onQty','onPack'].forEach(id=>$(id).addEventListener('change',calc));
+   $('save').onclick=save; $('reset').onclick=reset; calc();
+ }catch(e){
+   $('produk').innerHTML='<option value="">Gagal memuat produk</option>';
+   msg('HPP gagal memuat data produk: '+(e?.message||e),false);
+ }
 }
 async function selectGroup(k){
  current=k?products.find(p=>key(p)===k):null;
