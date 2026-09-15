@@ -1,51 +1,11 @@
-<section class="card" style="margin-top:18px">
-<h2>⚙️ Overhead Produksi</h2>
-<p class="muted">Masukkan biaya overhead secara detail. Total dihitung otomatis dan dipakai oleh HPP.</p>
-<div class="grid" style="grid-template-columns:2fr 1fr auto;align-items:end">
-<label>Nama Overhead<input id="ohNama" placeholder="Contoh: Gas"></label>
-<label>Nominal<input id="ohNominal" type="number" min="0" step="1" placeholder="0"></label>
-<button id="ohTambah" class="primary">+ Tambah</button>
-</div>
-<div style="overflow:auto;margin-top:12px"><table>
-<thead><tr><th>Overhead</th><th>Nominal</th><th>Aksi</th></tr></thead>
-<tbody id="tabelOverhead"></tbody>
-<tfoot><tr><th>TOTAL OVERHEAD</th><th id="totalOverhead">Rp0</th><th></th></tr></tfoot>
-</table></div></section><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bahan Baku - Familia Food</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-const OH_PREFIX="__OH__:";
-function isOH(x){return String(x||"").startsWith(OH_PREFIX);}
-function ohName(x){return String(x||"").slice(OH_PREFIX.length);}
-function ohRupiah(n){return "Rp"+Number(n||0).toLocaleString("id-ID");}
-async function loadOverhead(){
- const {data,error}=await sb.from("bahan").select("*");
- if(error){console.error("Overhead:",error);return;}
- const rows=(data||[]).filter(r=>isOH(r.nama_bahan)), tb=document.getElementById("tabelOverhead");
- if(!tb)return;
- tb.innerHTML=rows.map(r=>`<tr><td>${ohName(r.nama_bahan)}</td><td>${ohRupiah(r.harga||r.harga_bahan||r.nominal||0)}</td><td><button data-oh-del="${r.id}">Hapus</button></td></tr>`).join("");
- document.getElementById("totalOverhead").textContent=ohRupiah(rows.reduce((a,r)=>a+Number(r.harga||r.harga_bahan||r.nominal||0),0));
- tb.querySelectorAll("[data-oh-del]").forEach(b=>b.onclick=async()=>{
-  const {error}=await sb.from("bahan").delete().eq("id",b.dataset.ohDel);
-  if(error)alert("Gagal menghapus overhead: "+error.message); else loadOverhead();
- });
-}
-document.addEventListener("DOMContentLoaded",()=>{
- const b=document.getElementById("ohTambah"); if(!b)return;
- b.onclick=async()=>{
-  const n=document.getElementById("ohNama").value.trim(), v=Number(document.getElementById("ohNominal").value)||0;
-  if(!n||v<=0)return alert("Isi nama overhead dan nominal lebih dari 0.");
-  const {error}=await sb.from("bahan").insert([{nama_bahan:OH_PREFIX+n,harga:v}]);
-  if(error)return alert("Gagal menyimpan overhead: "+error.message);
-  document.getElementById("ohNama").value="";document.getElementById("ohNominal").value="";loadOverhead();
- };
- loadOverhead();
-});
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
 
   <style>
@@ -374,6 +334,30 @@ document.addEventListener("DOMContentLoaded",()=>{
           <tr><td colspan="5" class="loading">Memuat data...</td></tr>
         </tbody>
       </table>
+    </div>
+
+
+    <div class="card" style="margin-top:16px">
+      <h2 style="margin-top:0">⚙️ Overhead Produksi</h2>
+      <div class="hint" style="margin-bottom:12px">
+        Masukkan biaya overhead secara detail. Totalnya otomatis dipakai dalam perhitungan HPP.
+      </div>
+      <div style="display:grid;grid-template-columns:minmax(180px,2fr) minmax(140px,1fr) auto;gap:10px;align-items:end">
+        <label>Nama Overhead
+          <input id="ohNama" type="text" placeholder="Contoh: Gas">
+        </label>
+        <label>Nominal
+          <input id="ohNominal" type="number" min="0" step="1" placeholder="0">
+        </label>
+        <button type="button" class="btn-primary" id="ohTambah">+ Tambah Overhead</button>
+      </div>
+      <div style="overflow:auto;margin-top:14px">
+        <table>
+          <thead><tr><th>Nama Overhead</th><th>Nominal</th><th>Aksi</th></tr></thead>
+          <tbody id="tabelOverhead"><tr><td colspan="3" class="loading">Memuat data...</td></tr></tbody>
+          <tfoot><tr><th>TOTAL OVERHEAD</th><th id="totalOverhead">Rp0</th><th></th></tr></tfoot>
+        </table>
+      </div>
     </div>
 
   </main>
@@ -946,11 +930,115 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
 
 
+
+  // =========================
+  // OVERHEAD PRODUKSI
+  // =========================
+  const OVERHEAD_PREFIX = "__OVERHEAD__:";
+  function isOverheadName(nama) {
+    return String(nama || "").startsWith(OVERHEAD_PREFIX);
+  }
+  function namaOverhead(nama) {
+    return String(nama || "").slice(OVERHEAD_PREFIX.length);
+  }
+
+  async function loadOverhead() {
+    const tbody = document.getElementById("tabelOverhead");
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="3" class="loading">Memuat data...</td></tr>';
+
+    const { data, error } = await supabaseClient
+      .from("bahan_baku")
+      .select("*");
+
+    if (error) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty">Gagal mengambil data overhead.</td></tr>';
+      console.error(error);
+      return;
+    }
+
+    const rows = (data || []).filter(r => isOverheadName(r.nama_bahan));
+    tbody.innerHTML = "";
+    let total = 0;
+
+    rows.forEach(row => {
+      const nominal = Number(row.harga_beli) || 0;
+      total += nominal;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${escapeHtml(namaOverhead(row.nama_bahan))}</strong></td>
+        <td>${rupiah(nominal)}</td>
+        <td>
+          <button class="btn-edit" onclick="editOverhead(${row.id})">Edit</button>
+          <button class="btn-delete" onclick="hapusOverhead(${row.id}, '${escapeJs(namaOverhead(row.nama_bahan))}')">Hapus</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty">Belum ada overhead produksi.</td></tr>';
+    }
+    document.getElementById("totalOverhead").textContent = rupiah(total);
+  }
+
+  async function tambahOverhead() {
+    const nama = document.getElementById("ohNama").value.trim();
+    const nominal = Number(document.getElementById("ohNominal").value) || 0;
+    if (!nama) return tampilPesan("Nama overhead wajib diisi.", "error");
+    if (nominal <= 0) return tampilPesan("Nominal overhead harus lebih dari 0.", "error");
+
+    const { error } = await supabaseClient.from("bahan_baku").insert([{
+      nama_bahan: OVERHEAD_PREFIX + nama,
+      satuan: "Batch",
+      harga_beli: nominal,
+      status: "Aktif"
+    }]);
+
+    if (error) {
+      console.error(error);
+      return tampilPesan("Gagal menyimpan overhead: " + error.message, "error");
+    }
+
+    document.getElementById("ohNama").value = "";
+    document.getElementById("ohNominal").value = "";
+    tampilPesan("Overhead berhasil ditambahkan.", "success");
+    loadOverhead();
+  }
+
+  async function editOverhead(id) {
+    const { data, error } = await supabaseClient.from("bahan_baku").select("*").eq("id", id).single();
+    if (error) return tampilPesan("Gagal mengambil overhead.", "error");
+
+    const nama = prompt("Nama overhead:", namaOverhead(data.nama_bahan));
+    if (nama === null) return;
+    const nominalInput = prompt("Nominal overhead:", Number(data.harga_beli) || 0);
+    if (nominalInput === null) return;
+    const nominal = Number(nominalInput);
+    if (!nama.trim() || nominal <= 0) return tampilPesan("Nama dan nominal harus benar.", "error");
+
+    const { error: updateError } = await supabaseClient.from("bahan_baku")
+      .update({nama_bahan: OVERHEAD_PREFIX + nama.trim(), satuan:"Batch", harga_beli:nominal, status:"Aktif"})
+      .eq("id", id);
+    if (updateError) return tampilPesan("Gagal memperbarui overhead: " + updateError.message, "error");
+    tampilPesan("Overhead berhasil diperbarui.", "success");
+    loadOverhead();
+  }
+
+  async function hapusOverhead(id, nama) {
+    if (!confirm('Hapus overhead "' + nama + '"?')) return;
+    const { error } = await supabaseClient.from("bahan_baku").delete().eq("id", id);
+    if (error) return tampilPesan("Gagal menghapus overhead: " + error.message, "error");
+    tampilPesan("Overhead berhasil dihapus.", "success");
+    loadOverhead();
+  }
+
   // =========================
   // MULAI
   // =========================
 
+  document.getElementById('ohTambah').addEventListener('click', tambahOverhead);
   loadBahan();
+  loadOverhead();
 
 </script>
 
