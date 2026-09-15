@@ -6,7 +6,7 @@
   <title>Bahan Baku - Familia Food v3</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
+  <script src="supabase.js"></script><script src="app-settings.js"></script>
 
   <style>
     * {
@@ -26,7 +26,7 @@
       top: 0;
       width: 220px;
       height: 100vh;
-      background: #087443;
+      background: var(--brand-color,#087443);
       color: white;
       padding: 25px 15px;
     }
@@ -71,7 +71,7 @@
 
     h1 {
       margin: 0;
-      color: #087443;
+      color: var(--brand-color,#087443);
     }
 
     .subtitle {
@@ -88,7 +88,7 @@
     }
 
     .btn-primary {
-      background: #087443;
+      background: var(--brand-color,#087443);
       color: white;
     }
 
@@ -98,7 +98,7 @@
 
     .btn-edit {
       background: #e9f6ef;
-      color: #087443;
+      color: var(--brand-color,#087443);
       margin-right: 5px;
     }
 
@@ -120,7 +120,7 @@
     }
 
     th {
-      background: #087443;
+      background: var(--brand-color,#087443);
       color: white;
       padding: 13px;
       text-align: left;
@@ -146,7 +146,7 @@
 
     .success {
       background: #e8f7ee;
-      color: #087443;
+      color: var(--brand-color,#087443);
     }
 
     .error {
@@ -179,7 +179,7 @@
     }
 
     .modal-title {
-      color: #087443;
+      color: var(--brand-color,#087443);
       margin-top: 0;
       margin-bottom: 20px;
     }
@@ -338,7 +338,7 @@
 
     <div class="card" style="margin-top:16px">
       <h2 style="margin-top:0">⚙️ Overhead Produksi</h2>
-      <div class="hint" style="margin-bottom:12px">Overhead adalah biaya produksi harian yang dipakai bersama oleh Naget/Tempura Aci, Cireng Isi, Cireng Biasa, dan Cibay. Totalnya dibagi berdasarkan jumlah produksi PCS.</div>
+      <div class="hint" style="margin-bottom:12px">Overhead adalah biaya produksi harian yang dipakai bersama oleh Naget, Cireng Isi, Cireng Biasa, dan Cibay. Totalnya dibagi berdasarkan jumlah produksi PCS.</div>
       <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px">
         <div class="form-group"><label>Nama Overhead</label><input id="ohNama" type="text" placeholder="Contoh: Gas"></div>
         <div class="form-group"><label>Nominal Harian</label><input id="ohNominal" type="number" min="0" step="1" placeholder="50000"></div>

@@ -6,7 +6,7 @@
   <title>Produk - Familia Food</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
+  <script src="supabase.js"></script><script src="app-settings.js"></script>
 
   <style>
     * {
@@ -27,7 +27,7 @@
       top: 0;
       width: 240px;
       height: 100vh;
-      background: #126b3a;
+      background: var(--brand-color,#126b3a);
       color: white;
       padding: 25px 15px;
     }
@@ -67,7 +67,7 @@
     }
 
     .header h1 {
-      color: #126b3a;
+      color: var(--brand-color,#126b3a);
       font-size: 28px;
     }
 
@@ -78,7 +78,7 @@
 
     .btn {
       border: none;
-      background: #126b3a;
+      background: var(--brand-color,#126b3a);
       color: white;
       padding: 12px 18px;
       border-radius: 8px;
@@ -109,7 +109,7 @@
 
     .card h2 {
       margin-bottom: 18px;
-      color: #126b3a;
+      color: var(--brand-color,#126b3a);
       font-size: 20px;
     }
 
@@ -142,7 +142,7 @@
     input:focus,
     select:focus {
       outline: none;
-      border-color: #126b3a;
+      border-color: var(--brand-color,#126b3a);
     }
 
     .form-actions {
@@ -171,7 +171,7 @@
 
     th {
       background: #f0f7f3;
-      color: #126b3a;
+      color: var(--brand-color,#126b3a);
     }
 
     .status {
@@ -979,9 +979,20 @@
       sembunyikanPesan();
 
       /*
+        Hapus resep yang terkait terlebih dahulu agar tidak ada resep yatim.
+      */
+      const { error: resepError } = await supabaseClient
+        .from("resep")
+        .delete()
+        .eq("produk_id", id);
+      if (resepError) {
+        tampilkanError("Gagal menghapus resep produk: " + resepError.message);
+        return;
+      }
+
+      /*
         Hapus HPP terlebih dahulu.
       */
-
       const {
         error: hppError
       } = await supabaseClient
