@@ -983,7 +983,8 @@
   // MULAI
   // =========================
 
-  loadBahan();
+  // Muat daftar bahan dan overhead secara terpisah agar panel overhead tidak tertinggal.
+  Promise.all([loadBahan(), loadOverhead()]).catch(e => console.error("Gagal memuat bahan/overhead:", e));
 
 </script>
 
