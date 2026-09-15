@@ -65,7 +65,7 @@ async function load(){
  await seedInitialRecipes();
 }
 async function seedInitialRecipes(){
- const SEED='ff_recipe_seed_v20260915_naget_cireng_cibay_1';
+ const SEED='ff_recipe_seed_v20260915_naget_cireng_cibay_2';
  if(localStorage.getItem(SEED)==='done')return;
  const findMat=name=>materials.find(m=>norm(m.nama_bahan||m.nama)===norm(name));
  let garam=findMat('Garam');
