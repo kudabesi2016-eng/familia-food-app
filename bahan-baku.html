@@ -336,28 +336,17 @@
       </table>
     </div>
 
-
     <div class="card" style="margin-top:16px">
       <h2 style="margin-top:0">⚙️ Overhead Produksi</h2>
-      <div class="hint" style="margin-bottom:12px">
-        Masukkan biaya overhead secara detail. Totalnya otomatis dipakai dalam perhitungan HPP.
+      <div class="hint" style="margin-bottom:12px">Overhead adalah biaya produksi harian yang dipakai bersama oleh Naget/Tempura Aci, Cireng Isi, Cireng Biasa, dan Cibay. Totalnya dibagi berdasarkan jumlah produksi PCS.</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px">
+        <div class="form-group"><label>Nama Overhead</label><input id="ohNama" type="text" placeholder="Contoh: Gas"></div>
+        <div class="form-group"><label>Nominal Harian</label><input id="ohNominal" type="number" min="0" step="1" placeholder="50000"></div>
+        <button class="btn-primary" type="button" onclick="tambahOverhead()">+ Tambah Overhead</button>
       </div>
-      <div style="display:grid;grid-template-columns:minmax(180px,2fr) minmax(140px,1fr) auto;gap:10px;align-items:end">
-        <label>Nama Overhead
-          <input id="ohNama" type="text" placeholder="Contoh: Gas">
-        </label>
-        <label>Nominal
-          <input id="ohNominal" type="number" min="0" step="1" placeholder="0">
-        </label>
-        <button type="button" class="btn-primary" id="ohTambah">+ Tambah Overhead</button>
-      </div>
-      <div style="overflow:auto;margin-top:14px">
-        <table>
-          <thead><tr><th>Nama Overhead</th><th>Nominal</th><th>Aksi</th></tr></thead>
-          <tbody id="tabelOverhead"><tr><td colspan="3" class="loading">Memuat data...</td></tr></tbody>
-          <tfoot><tr><th>TOTAL OVERHEAD</th><th id="totalOverhead">Rp0</th><th></th></tr></tfoot>
-        </table>
-      </div>
+      <table><thead><tr><th>Nama Overhead</th><th>Nominal / Hari</th><th>Aksi</th></tr></thead>
+      <tbody id="tabelOverhead"><tr><td colspan="3" class="loading">Memuat overhead...</td></tr></tbody>
+      <tfoot><tr><th>TOTAL OVERHEAD HARIAN</th><th id="totalOverhead">Rp 0</th><th></th></tr></tfoot></table>
     </div>
 
   </main>
@@ -608,7 +597,8 @@
       }
 
       const namaNormal = (bahan.nama_bahan || "").toLowerCase().trim();
-      const isKemasan = namaNormal.includes("plastik") || namaNormal.includes("kemasan");
+      if (isOverheadName(bahan.nama_bahan)) return;
+      const isKemasan = namaNormal.includes("plastik") || namaNormal.includes("kemasan") || namaNormal.includes("vakum");
       const targetBody = isKemasan ? tbodyKemasan : tbody;
       if (isKemasan) jumlahKemasan++; else jumlahBahan++;
 
@@ -781,6 +771,11 @@
       }
 
 
+      if (nama.startsWith(OH_PREFIX)) {
+      tampilPesan("Nama overhead dikelola di bagian Overhead Produksi.", "error");
+      return;
+    }
+
       // Minyak tidak digunakan
 
       if (
@@ -853,6 +848,7 @@
 
 
       loadBahan();
+  loadOverhead();
 
     }
   );
@@ -903,6 +899,7 @@
 
 
     loadBahan();
+    loadOverhead();
 
   }
 
@@ -930,115 +927,63 @@
   }
 
 
-
   // =========================
   // OVERHEAD PRODUKSI
   // =========================
-  const OVERHEAD_PREFIX = "__OVERHEAD__:";
+  const OH_PREFIX = "__OH__:";
+  const OH_LEGACY_PREFIX = "__OVERHEAD__";
   function isOverheadName(nama) {
-    return String(nama || "").startsWith(OVERHEAD_PREFIX);
+    const n = String(nama || "");
+    return n.startsWith(OH_PREFIX) || n.startsWith(OH_LEGACY_PREFIX);
   }
-  function namaOverhead(nama) {
-    return String(nama || "").slice(OVERHEAD_PREFIX.length);
+  function overheadDisplayName(nama) {
+    const n=String(nama || "");
+    if(n.startsWith(OH_PREFIX)) return n.slice(OH_PREFIX.length);
+    if(n.startsWith(OH_LEGACY_PREFIX)) return n.slice(OH_LEGACY_PREFIX.length).replace(/^[:_\-]?/, "");
+    return n;
   }
-
   async function loadOverhead() {
-    const tbody = document.getElementById("tabelOverhead");
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="3" class="loading">Memuat data...</td></tr>';
-
-    const { data, error } = await supabaseClient
-      .from("bahan_baku")
-      .select("*");
-
-    if (error) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty">Gagal mengambil data overhead.</td></tr>';
-      console.error(error);
-      return;
-    }
-
-    const rows = (data || []).filter(r => isOverheadName(r.nama_bahan));
-    tbody.innerHTML = "";
-    let total = 0;
-
-    rows.forEach(row => {
-      const nominal = Number(row.harga_beli) || 0;
-      total += nominal;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><strong>${escapeHtml(namaOverhead(row.nama_bahan))}</strong></td>
-        <td>${rupiah(nominal)}</td>
-        <td>
-          <button class="btn-edit" onclick="editOverhead(${row.id})">Edit</button>
-          <button class="btn-delete" onclick="hapusOverhead(${row.id}, '${escapeJs(namaOverhead(row.nama_bahan))}')">Hapus</button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
-
-    if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty">Belum ada overhead produksi.</td></tr>';
-    }
+    const body = document.getElementById("tabelOverhead");
+    if (!body) return;
+    const { data, error } = await supabaseClient.from("bahan_baku").select("*").order("id", { ascending: true });
+    if (error) { body.innerHTML = '<tr><td colspan="3" class="empty">Gagal mengambil overhead.</td></tr>'; return; }
+    const rows = (data || []).filter(x => isOverheadName(x.nama_bahan));
+    body.innerHTML = rows.length ? rows.map(x => `
+      <tr>
+        <td><input data-oh-name="${x.id}" value="${escapeHtml(overheadDisplayName(x.nama_bahan))}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px"></td>
+        <td><input data-oh-value="${x.id}" type="number" min="0" step="1" value="${Number(x.harga_beli)||0}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px"></td>
+        <td><button class="btn-edit" type="button" onclick="simpanOverhead(${x.id})">Simpan</button> <button class="btn-delete" type="button" onclick="hapusOverhead(${x.id}, '${escapeJs(overheadDisplayName(x.nama_bahan))}')">Hapus</button></td>
+      </tr>`).join('') : '<tr><td colspan="3" class="empty">Belum ada overhead.</td></tr>';
+    const total = rows.reduce((a,x)=>a+(Number(x.harga_beli)||0),0);
     document.getElementById("totalOverhead").textContent = rupiah(total);
   }
-
-  async function tambahOverhead() {
-    const nama = document.getElementById("ohNama").value.trim();
-    const nominal = Number(document.getElementById("ohNominal").value) || 0;
-    if (!nama) return tampilPesan("Nama overhead wajib diisi.", "error");
-    if (nominal <= 0) return tampilPesan("Nominal overhead harus lebih dari 0.", "error");
-
-    const { error } = await supabaseClient.from("bahan_baku").insert([{
-      nama_bahan: OVERHEAD_PREFIX + nama,
-      satuan: "Batch",
-      harga_beli: nominal,
-      status: "Aktif"
-    }]);
-
-    if (error) {
-      console.error(error);
-      return tampilPesan("Gagal menyimpan overhead: " + error.message, "error");
-    }
-
-    document.getElementById("ohNama").value = "";
-    document.getElementById("ohNominal").value = "";
-    tampilPesan("Overhead berhasil ditambahkan.", "success");
-    loadOverhead();
+  async function tambahOverhead(){
+    const nama=document.getElementById("ohNama").value.trim(), nominal=Number(document.getElementById("ohNominal").value)||0;
+    if(!nama || nominal<=0){tampilPesan("Nama overhead dan nominal harian wajib diisi.","error");return;}
+    const r=await supabaseClient.from("bahan_baku").insert([{nama_bahan:OH_PREFIX+nama,satuan:"Harian",harga_beli:nominal,status:"Aktif"}]);
+    if(r.error){tampilPesan("Gagal menyimpan overhead: "+r.error.message,"error");return;}
+    document.getElementById("ohNama").value="";document.getElementById("ohNominal").value="";tampilPesan("Overhead berhasil ditambahkan.","success");loadOverhead();
   }
-
-  async function editOverhead(id) {
-    const { data, error } = await supabaseClient.from("bahan_baku").select("*").eq("id", id).single();
-    if (error) return tampilPesan("Gagal mengambil overhead.", "error");
-
-    const nama = prompt("Nama overhead:", namaOverhead(data.nama_bahan));
-    if (nama === null) return;
-    const nominalInput = prompt("Nominal overhead:", Number(data.harga_beli) || 0);
-    if (nominalInput === null) return;
-    const nominal = Number(nominalInput);
-    if (!nama.trim() || nominal <= 0) return tampilPesan("Nama dan nominal harus benar.", "error");
-
-    const { error: updateError } = await supabaseClient.from("bahan_baku")
-      .update({nama_bahan: OVERHEAD_PREFIX + nama.trim(), satuan:"Batch", harga_beli:nominal, status:"Aktif"})
-      .eq("id", id);
-    if (updateError) return tampilPesan("Gagal memperbarui overhead: " + updateError.message, "error");
-    tampilPesan("Overhead berhasil diperbarui.", "success");
-    loadOverhead();
+  async function simpanOverhead(id){
+    const n=document.querySelector(`[data-oh-name="${id}"]`),v=document.querySelector(`[data-oh-value="${id}"]`);
+    const nama=(n?.value||"").trim(), nominal=Number(v?.value)||0;
+    if(!nama||nominal<=0){tampilPesan("Nama overhead dan nominal harus benar.","error");return;}
+    const r=await supabaseClient.from("bahan_baku").update({nama_bahan:OH_PREFIX+nama,satuan:"Harian",harga_beli:nominal,status:"Aktif"}).eq("id",id);
+    if(r.error){tampilPesan("Gagal memperbarui overhead: "+r.error.message,"error");return;}
+    tampilPesan("Overhead berhasil diperbarui.","success");loadOverhead();
   }
-
-  async function hapusOverhead(id, nama) {
-    if (!confirm('Hapus overhead "' + nama + '"?')) return;
-    const { error } = await supabaseClient.from("bahan_baku").delete().eq("id", id);
-    if (error) return tampilPesan("Gagal menghapus overhead: " + error.message, "error");
-    tampilPesan("Overhead berhasil dihapus.", "success");
-    loadOverhead();
+  async function hapusOverhead(id,nama){
+    if(!confirm(`Hapus overhead "${nama}"?`))return;
+    const r=await supabaseClient.from("bahan_baku").delete().eq("id",id);
+    if(r.error){tampilPesan("Gagal menghapus overhead: "+r.error.message,"error");return;}
+    tampilPesan("Overhead berhasil dihapus.","success");loadOverhead();
   }
 
   // =========================
   // MULAI
   // =========================
 
-  document.getElementById('ohTambah').addEventListener('click', tambahOverhead);
   loadBahan();
-  loadOverhead();
 
 </script>
 
