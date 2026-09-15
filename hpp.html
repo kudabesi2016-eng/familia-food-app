@@ -105,14 +105,28 @@ async function save(){
  if(!current){msg('Pilih produk dasar terlebih dahulu.');return}
  const h=Number($('hasil').value)||0,oh=Number($('oh').value)||0;
  if(!recipes.length||!h){msg('Pastikan resep sudah tersimpan dan Hasil Produksi (PCS) terisi.');return}
- const total=recipes.reduce((s,r)=>s+cost(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah_pakai),0),modal=total+oh,hpp=h?modal/h:0;
- const off=Number($('offPrice').value)||0,on=Number($('onPrice').value)||0;
- const canonical=recipes[0].produk_id;
- const row={produk_id:canonical,total_bahan:total,biaya_produksi:oh,jumlah_batch:h,total_modal:modal,hpp_unit:hpp,harga_offline:off,untung_offline:off?(off-(hpp*(Number($('offQty').value)||0)+packCost(materials.find(m=>String(m.id)===String($('offPack').value))))):0,harga_online:on,untung_online:on?(on-(hpp*(Number($('onQty').value)||0)+packCost(materials.find(m=>String(m.id)===String($('onPack').value)))+packCost(materials.find(m=>String(m.id)===String($('extra').value))))):0};
- const old=await sb.from('hpp').select('id').eq('produk_id',canonical).limit(1);
- if(old.error){msg(old.error.message);return}
- let res;if(old.data?.length)res=await sb.from('hpp').update(row).eq('id',old.data[0].id);else res=await sb.from('hpp').insert(row);
- if(res.error)msg(res.error.message);else msg('HPP dasar berhasil disimpan.',true);
+ const total=recipes.reduce((s,r)=>s+cost(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah_pakai),0),modal=total+oh,hppPcs=h?modal/h:0;
+ const offPack=packCost(materials.find(m=>String(m.id)===String($('offPack').value)));
+ const onPack=packCost(materials.find(m=>String(m.id)===String($('onPack').value)));
+ const extra=packCost(materials.find(m=>String(m.id)===String($('extra').value)));
+ const targets=products.filter(p=>key(p)===$('produk').value);
+ if(!targets.length){msg('Produk dasar tidak ditemukan.');return}
+ const results=[];
+ for(const target of targets){
+   const qty=Number(target.isi_per_bungkus)||Number($('offQty').value)||10;
+   const hargaOff=Number(target.harga_offline)||Number($('offPrice').value)||0;
+   const hargaOn=Number(target.harga_online)||Number($('onPrice').value)||0;
+   const hppOffline=hppPcs*qty+offPack;
+   const hppOnline=hppPcs*qty+onPack+extra;
+   results.push({produk_id:target.id,total_bahan:total,biaya_produksi:oh,jumlah_batch:h,total_modal:modal,hpp_unit:hppOffline,harga_offline:hargaOff,untung_offline:hargaOff?(hargaOff-hppOffline):0,harga_online:hargaOn,untung_online:hargaOn?(hargaOn-hppOnline):0});
+ }
+ for(const row of results){
+   const old=await sb.from('hpp').select('id').eq('produk_id',row.produk_id).limit(1);
+   if(old.error){msg(old.error.message);return}
+   let res;if(old.data?.length)res=await sb.from('hpp').update(row).eq('id',old.data[0].id);else res=await sb.from('hpp').insert(row);
+   if(res.error){msg(res.error.message);return}
+ }
+ msg('HPP semua varian produk berhasil disimpan.',true);
 }
 function reset(){['hasil','oh','offPrice','onPrice'].forEach(id=>$(id).value='');$('offQty').value='10';$('onQty').value='10';$('offPack').value='';$('onPack').value='';$('extra').value='';calc()}
 load();

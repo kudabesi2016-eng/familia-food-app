@@ -416,8 +416,9 @@
               <th>Nama Produk</th>
               <th>Satuan</th>
               <th>Isi/Bungkus</th>
-              <th>HPP</th>
+              <th>HPP Offline</th>
               <th>Harga Offline</th>
+              <th>HPP Online</th>
               <th>Harga Online</th>
               <th>Status</th>
               <th>Aksi</th>
@@ -427,7 +428,7 @@
           <tbody id="produkTable">
 
             <tr>
-              <td colspan="8" class="empty">
+              <td colspan="9" class="empty">
                 Memuat data...
               </td>
             </tr>
@@ -534,7 +535,7 @@
 
       table.innerHTML = `
         <tr>
-          <td colspan="8" class="empty">
+          <td colspan="9" class="empty">
             Memuat data...
           </td>
         </tr>
@@ -563,7 +564,7 @@
 
         table.innerHTML = `
           <tr>
-            <td colspan="8" class="empty">
+            <td colspan="9" class="empty">
               Gagal memuat data produk.
             </td>
           </tr>
@@ -613,7 +614,7 @@
 
         table.innerHTML = `
           <tr>
-            <td colspan="8" class="empty">
+            <td colspan="9" class="empty">
               Belum ada data produk.
             </td>
           </tr>
@@ -672,6 +673,10 @@
 
           <td>
             ${formatRupiah(produk.harga_offline)}
+          </td>
+
+          <td>
+            ${formatRupiah(hpp && hpp.harga_online != null && hpp.untung_online != null ? Number(hpp.harga_online) - Number(hpp.untung_online) : null)}
           </td>
 
           <td>
