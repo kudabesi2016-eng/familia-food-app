@@ -280,13 +280,18 @@
       <div>
         <h1>🌾 Bahan Baku</h1>
         <div class="subtitle">
-          Kelola bahan baku dan harga beli Familia Food
+          Kelola bahan baku produksi dan kemasan Familia Food
         </div>
       </div>
 
-      <button class="btn-primary" onclick="bukaTambah()">
-        + Tambah Bahan
-      </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-primary" onclick="bukaTambah(false)">
+          + Tambah Bahan
+        </button>
+        <button class="btn-primary" onclick="bukaTambah(true)">
+          + Tambah Kemasan
+        </button>
+      </div>
     </div>
 
 
@@ -294,7 +299,8 @@
 
 
     <div class="card">
-
+      <h2 style="margin-top:0">🌾 Bahan Baku Produksi</h2>
+      <div class="hint" style="margin-bottom:12px">Bahan yang masuk ke resep produksi. Plastik/kemasan tidak ditampilkan di daftar ini.</div>
       <table>
         <thead>
           <tr>
@@ -305,16 +311,29 @@
             <th>Aksi</th>
           </tr>
         </thead>
-
         <tbody id="tabelBahan">
-          <tr>
-            <td colspan="5" class="loading">
-              Memuat data...
-            </td>
-          </tr>
+          <tr><td colspan="5" class="loading">Memuat data...</td></tr>
         </tbody>
       </table>
+    </div>
 
+    <div class="card" style="margin-top:16px">
+      <h2 style="margin-top:0">📦 Kemasan</h2>
+      <div class="hint" style="margin-bottom:12px">Kemasan dikelola terpisah dari bahan baku dan hanya digunakan pada perhitungan HPP paket Offline/Online.</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nama Kemasan</th>
+            <th>Satuan</th>
+            <th>Harga Beli</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tabelKemasan">
+          <tr><td colspan="5" class="loading">Memuat data...</td></tr>
+        </tbody>
+      </table>
     </div>
 
   </main>
@@ -413,6 +432,7 @@
 <script>
 
   let modeEdit = false;
+  let modeKemasan = false;
 
 
   // =========================
@@ -439,12 +459,13 @@
   // BUKA TAMBAH
   // =========================
 
-  function bukaTambah() {
+  function bukaTambah(isKemasan = false) {
 
     modeEdit = false;
+    modeKemasan = isKemasan;
 
     document.getElementById("judulModal").textContent =
-      "Tambah Bahan";
+      isKemasan ? "Tambah Kemasan" : "Tambah Bahan";
 
     document.getElementById("formBahan").reset();
 
@@ -543,7 +564,10 @@
 
 
     tbody.innerHTML = "";
-
+    const tbodyKemasan = document.getElementById("tabelKemasan");
+    tbodyKemasan.innerHTML = "";
+    let jumlahBahan = 0;
+    let jumlahKemasan = 0;
 
     data.forEach(bahan => {
 
@@ -559,6 +583,10 @@
         return;
       }
 
+      const namaNormal = (bahan.nama_bahan || "").toLowerCase().trim();
+      const isKemasan = namaNormal.includes("plastik") || namaNormal.includes("kemasan");
+      const targetBody = isKemasan ? tbodyKemasan : tbody;
+      if (isKemasan) jumlahKemasan++; else jumlahBahan++;
 
       const tr = document.createElement("tr");
 
@@ -604,9 +632,12 @@
       `;
 
 
-      tbody.appendChild(tr);
+      targetBody.appendChild(tr);
 
     });
+
+    if (!jumlahBahan) tbody.innerHTML = '<tr><td colspan="5" class="empty">Belum ada bahan baku produksi.</td></tr>';
+    if (!jumlahKemasan) tbodyKemasan.innerHTML = '<tr><td colspan="5" class="empty">Belum ada kemasan.</td></tr>';
 
   }
 
@@ -638,10 +669,11 @@
 
 
     modeEdit = true;
-
+    const namaEdit = (data.nama_bahan || "").toLowerCase();
+    modeKemasan = namaEdit.includes("plastik") || namaEdit.includes("kemasan");
 
     document.getElementById("judulModal").textContent =
-      "Edit Bahan";
+      modeKemasan ? "Edit Kemasan" : "Edit Bahan";
 
 
     document.getElementById("bahanId").value =

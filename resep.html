@@ -45,7 +45,7 @@ const sb = window.supabaseClient || window.supabase.createClient(
 let products=[],materials=[],rows=[],currentGroup=null;
 const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 const norm=s=>(s||'').toLowerCase().trim();
-const isNaget=p=>/naget|tempura\s*aci/.test(norm(p.nama_produk));
+const isNaget=p=>/naget|tempura\\s*aci/.test(norm(p.nama_produk));
 const groupKey=p=>isNaget(p)?'naget_tempura':norm(p.nama_produk);
 const groupLabel=k=>k==='naget_tempura'?'Naget / Tempura Aci':k==='cireng isi'?'Cireng isi':k==='cireng biasa'?'Cireng biasa':(products.find(p=>groupKey(p)===k)?.nama_produk||k);
 function costFor(m,q){const n=norm(m?.nama_bahan||m?.nama),h=Number(m?.harga_beli ?? m?.harga)||0,x=Number(q)||0;if(n.includes('bumbu'))return x>1?h*x/100:h*x;if(n.includes('plastik'))return h*x/240;return h*x;}
