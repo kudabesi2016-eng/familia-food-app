@@ -44,96 +44,81 @@ main{margin-left:230px;padding:28px;max-width:1250px}h1{margin:0 0 8px}.sub{colo
 </div></div>
 <div class="card"><div class="actions"><button class="primary" id="save">💾 Simpan HPP Dasar</button><button class="danger" id="reset">↺ Reset</button></div><div id="msg"></div></div>
 <script>
-const sb=window.supabaseClient;
-let products=[],materials=[],recipes=[],recipePacks=[],current=null;
+const sb = (typeof supabaseClient !== 'undefined' && supabaseClient) ? supabaseClient : window.supabaseClient;
+let products=[],materials=[],recipes=[],recipePacks=[],currentGroup=null;
 const $=id=>document.getElementById(id);
 const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 const norm=s=>(s||'').toLowerCase().trim();
-const isNaget=p=>/naget|tempura\s*aci/.test(norm(p.nama_produk));
-const key=p=>isNaget(p)?'naget_tempura':norm(p.nama_produk);
+const isNaget=p=>/naget|tempura\s*aci/.test(norm(p?.nama_produk));
+const key=p=>isNaget(p)?'naget_tempura':norm(p?.nama_produk);
 const label=k=>k==='naget_tempura'?'Naget / Tempura Aci':(products.find(p=>key(p)===k)?.nama_produk||k);
-function cost(m,q){const n=norm(m?.nama_bahan||m?.nama),h=Number(m?.harga_beli ?? m?.harga)||0,x=Number(q)||0;if(n.includes('bumbu'))return x>1?h*x/100:h*x;if(n.includes('plastik'))return h*x/240;return h*x}
-function packCost(m){return Number(m?.harga_beli ?? m?.harga)||0}
-function msg(t,ok=false){$('msg').innerHTML=t?`<div class="notice ${ok?'ok':''}">${t}</div>`:''}
-function fillQty(id){$(id).innerHTML=[10,12,20,25,30,40,50].map(x=>`<option value="${x}">${x} pcs</option>`).join('')}
+const isKemasan=m=>/plastik|kemasan|packaging|vakum|vacuum/.test(norm(m?.nama_bahan||m?.nama));
+function cost(m,q){const n=norm(m?.nama_bahan||m?.nama),h=Number(m?.harga_beli ?? m?.harga)||0,x=Number(q)||0;if(n.includes('bumbu'))return x>1?h*x/100:h*x;return h*x;}
+function packQty(id){const r=recipePacks.find(x=>String(x.bahan_id)===String(id));return r?Number(r.jumlah_pakai)||1:1;}
+function packCostById(id){const m=materials.find(x=>String(x.id)===String(id));return (Number(m?.harga_beli ?? m?.harga)||0)*packQty(id);}
+function msg(t,ok=false){$('msg').innerHTML=t?`<div class="notice ${ok?'ok':''}">${t}</div>`:'';}
+function fillQty(id){$(id).innerHTML=[10,12,20,25,30,40,50].map(x=>`<option value="${x}">${x} pcs</option>`).join('');}
 function fillPacks(id,online){
- const arr=materials.filter(m=>{const n=norm(m.nama_bahan||m.nama);return n.includes('plastik')&&(online?n.includes('vakum')||n.includes('vacuum'):!n.includes('vakum')&&!n.includes('vacuum'))});
+ const arr=materials.filter(m=>{const n=norm(m.nama_bahan||m.nama);return /plastik|kemasan|packaging|vakum|vacuum/.test(n)&&(online?/vakum|vacuum/.test(n):!/vakum|vacuum/.test(n));});
  $(id).innerHTML='<option value="">Tanpa kemasan</option>'+arr.map(m=>`<option value="${m.id}">${m.nama_bahan||m.nama}</option>`).join('');
 }
 function fillExtra(){
- const arr=materials.filter(m=>{const n=norm(m.nama_bahan||m.nama);return !n.includes('plastik')});
+ const arr=materials.filter(m=>{const n=norm(m.nama_bahan||m.nama);return !isKemasan(m);});
  $('extra').innerHTML='<option value="">Tidak ada tambahan</option>'+arr.map(m=>`<option value="${m.id}">${m.nama_bahan||m.nama}</option>`).join('');
 }
 async function load(){
  try{
-   if(!sb) throw new Error('Koneksi Supabase belum tersedia.');
-   // Hindari query yang bergantung pada nama kolom pengurutan. Data diurutkan di browser.
-   const requests=[sb.from('produk').select('*'),sb.from('bahan_baku').select('*')];
-   const result=await Promise.race([
-     Promise.all(requests),
-     new Promise((_,reject)=>setTimeout(()=>reject(new Error('Koneksi database terlalu lama. Silakan refresh dan coba lagi.')),10000))
-   ]);
-   const [p,m]=result;
-   if(p.error||m.error) throw new Error((p.error||m.error).message);
-   products=(p.data||[]).slice().sort((a,b)=>String(a.nama_produk||'').localeCompare(String(b.nama_produk||'')));
-   materials=(m.data||[]).slice().sort((a,b)=>String(a.nama_bahan||a.nama||'').localeCompare(String(b.nama_bahan||b.nama||'')));
-   const groups=[],seen=new Set();
-   products.filter(p=>norm(p.status||p.statustext||'aktif')!=='arsip').forEach(p=>{const k=key(p);if(!seen.has(k)){seen.add(k);groups.push(k)}});
-   $('produk').innerHTML='<option value="">Pilih produk dasar</option>'+groups.map(k=>`<option value="${k}">${label(k)}</option>`).join('');
-   if(!groups.length) $('produk').innerHTML='<option value="">Tidak ada produk aktif</option>';
-   fillQty('offQty');fillQty('onQty');fillPacks('offPack',false);fillPacks('onPack',true);fillExtra();
-   $('produk').onchange=()=>selectGroup($('produk').value);
-   ['hasil','oh','offQty','offPack','offPrice','onQty','onPack','extra','onPrice'].forEach(id=>$(id).addEventListener('input',calc));
-   ['offQty','offPack','extra','onQty','onPack'].forEach(id=>$(id).addEventListener('change',calc));
-   $('save').onclick=save; $('reset').onclick=reset; calc();
- }catch(e){
-   $('produk').innerHTML='<option value="">Gagal memuat produk</option>';
-   msg('HPP gagal memuat data produk: '+(e?.message||e),false);
- }
+  if(!sb) throw new Error('Koneksi Supabase belum tersedia.');
+  const result=await Promise.race([Promise.all([sb.from('produk').select('*'),sb.from('bahan_baku').select('*')]),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Koneksi database terlalu lama. Silakan refresh dan coba lagi.')),10000))]);
+  const [p,m]=result;if(p.error||m.error)throw new Error((p.error||m.error).message);
+  products=(p.data||[]).slice().sort((a,b)=>Number(a.id||0)-Number(b.id||0));
+  materials=(m.data||[]).slice().sort((a,b)=>String(a.nama_bahan||a.nama||'').localeCompare(String(b.nama_bahan||b.nama||'')));
+  const groups=[],seen=new Set();
+  products.filter(p=>norm(p.status||p.statustext||'aktif')!=='arsip' && norm(p.status||p.statustext||'aktif')!=='nonaktif').forEach(p=>{const k=key(p);if(!seen.has(k)){seen.add(k);groups.push(k);}});
+  $('produk').innerHTML='<option value="">Pilih produk dasar</option>'+groups.map(k=>`<option value="${k}">${label(k)}</option>`).join('');
+  if(!groups.length)$('produk').innerHTML='<option value="">Tidak ada produk aktif</option>';
+  fillQty('offQty');fillQty('onQty');fillPacks('offPack',false);fillPacks('onPack',true);fillExtra();
+  $('produk').onchange=()=>selectGroup($('produk').value);
+  ['hasil','oh','offQty','offPack','offPrice','onQty','onPack','extra','onPrice'].forEach(id=>$(id).addEventListener('input',calc));
+  ['offQty','offPack','extra','onQty','onPack'].forEach(id=>$(id).addEventListener('change',calc));
+  $('save').onclick=save;$('reset').onclick=reset;calc();
+ }catch(e){$('produk').innerHTML='<option value="">Gagal memuat produk</option>';msg('HPP gagal memuat data produk: '+(e?.message||e));}
 }
 async function selectGroup(k){
- current=k?products.find(p=>key(p)===k):null;
- recipes=[];recipePacks=[];$('notice').innerHTML='';
- if(!current){calc();return}
- const ids=products.filter(p=>key(p)===k).map(p=>p.id);
+ currentGroup=k||null;recipes=[];recipePacks=[];$('notice').innerHTML='';
+ if(!k){calc();return;}
+ const targets=products.filter(p=>key(p)===k), ids=targets.map(p=>p.id), canonical=targets[0]?.id;
  const r=await sb.from('resep').select('*').in('produk_id',ids);
- if(r.error){msg(r.error.message);return}
- recipes=r.data||[];
- if(!recipes.length){$('notice').innerHTML='<div class="notice">Resep belum ditemukan. Buat resep dasar di halaman Resep terlebih dahulu.</div>';calc();return}
- const canonical=recipes[0].produk_id;
- recipes=recipes.filter(x=>x.produk_id===canonical);
- recipePacks=recipes.filter(x=>{const m=materials.find(mm=>String(mm.id)===String(x.bahan_id));return /plastik|kemasan|packaging|vakum/.test(norm(m?.nama_bahan||m?.nama));});
- const packNames=recipePacks.map(x=>norm(materials.find(m=>String(m.id)===String(x.bahan_id))?.nama_bahan||materials.find(m=>String(m.id)===String(x.bahan_id))?.nama)||'');
- const offDefault=materials.find(m=>packNames.includes(norm(m.nama_bahan||m.nama)) && !/vakum|vacuum/.test(norm(m.nama_bahan||m.nama)));
- const onDefault=materials.find(m=>packNames.includes(norm(m.nama_bahan||m.nama)) && /vakum|vacuum/.test(norm(m.nama_bahan||m.nama)));
- if(offDefault)$('offPack').value=String(offDefault.id); if(onDefault)$('onPack').value=String(onDefault.id);
- const rp=products.find(p=>String(p.id)===String(canonical));
- if(rp?.hasil_produksi)$('hasil').value=rp.hasil_produksi;
- // If recipe table has no hasil field, keep user entry.
+ if(r.error){msg('Gagal membaca resep: '+r.error.message);calc();return;}
+ const all=r.data||[];recipes=all.filter(x=>String(x.produk_id)===String(canonical));
+ if(!recipes.length && all.length){const fallback=all[0].produk_id;recipes=all.filter(x=>String(x.produk_id)===String(fallback));}
+ if(!recipes.length){$('notice').innerHTML='<div class="notice">Resep belum ditemukan. Buat resep dasar di halaman Resep terlebih dahulu.</div>';calc();return;}
+ recipePacks=recipes.filter(x=>isKemasan(materials.find(mm=>String(mm.id)===String(x.bahan_id))));
+ const off=recipePacks.find(x=>{const m=materials.find(mm=>String(mm.id)===String(x.bahan_id));return !/vakum|vacuum/.test(norm(m?.nama_bahan||m?.nama));});
+ const on=recipePacks.find(x=>{const m=materials.find(mm=>String(mm.id)===String(x.bahan_id));return /vakum|vacuum/.test(norm(m?.nama_bahan||m?.nama));});
+ if(off)$('offPack').value=String(off.bahan_id); if(on)$('onPack').value=String(on.bahan_id);
+ const baseProduct=targets[0]; if(baseProduct?.hasil_produksi)$('hasil').value=baseProduct.hasil_produksi;
+ if(k==='naget_tempura')$('notice').innerHTML='<div class="notice">Naget isi 10/12 dan Tempura Aci memakai satu resep dasar. HPP setiap varian dihitung sesuai isi per bungkus.</div>';
  calc();
 }
+function baseCost(){return recipes.filter(r=>{const m=materials.find(x=>String(x.id)===String(r.bahan_id));return !isKemasan(m);}).reduce((s,r)=>s+cost(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah_pakai),0);}
 function calc(){
- let total=0;recipes.filter(r=>{const m=materials.find(x=>String(x.id)===String(r.bahan_id));return !/plastik|kemasan|packaging|vakum/.test(norm(m?.nama_bahan||m?.nama))}).forEach(r=>{const m=materials.find(x=>String(x.id)===String(r.bahan_id));total+=cost(m,r.jumlah_pakai)});
- const h=Number($('hasil').value)||0,oh=Number($('oh').value)||0,modal=total+oh,hpp=h?modal/h:0;
- $('baseCost').textContent=rupiah(total);$('ohOut').textContent=rupiah(oh);$('modal').textContent=rupiah(modal);$('hpp').textContent=rupiah(hpp);
- const oq=Number($('offQty').value)||0,op=Number($('offPrice').value)||0,opack=packCost(materials.find(m=>String(m.id)===String($('offPack').value))),om=hpp*oq+opack;
+ const total=baseCost(),h=Number($('hasil').value)||0,oh=Number($('oh').value)||0,modal=total+oh,hppPcs=h?modal/h:0;
+ $('baseCost').textContent=rupiah(total);$('ohOut').textContent=rupiah(oh);$('modal').textContent=rupiah(modal);$('hpp').textContent=rupiah(hppPcs);
+ const oq=Number($('offQty').value)||0,op=Number($('offPrice').value)||0,opack=packCostById($('offPack').value),om=hppPcs*oq+opack;
  $('offModal').textContent=rupiah(om);$('offProfit').textContent=op?rupiah(op-om):'Belum diisi';
- const nq=Number($('onQty').value)||0,np=Number($('onPrice').value)||0,npack=packCost(materials.find(m=>String(m.id)===String($('onPack').value))),extra=packCost(materials.find(m=>String(m.id)===String($('extra').value))),nm=hpp*nq+npack+extra;
+ const nq=Number($('onQty').value)||0,np=Number($('onPrice').value)||0,npack=packCostById($('onPack').value),extra=Number((materials.find(m=>String(m.id)===String($('extra').value))?.harga_beli)||0),nm=hppPcs*nq+npack+extra;
  $('onModal').textContent=rupiah(nm);$('onProfit').textContent=np?rupiah(np-nm):'Belum diisi';
 }
 async function save(){
- if(!current){msg('Pilih produk dasar terlebih dahulu.');return}
- const h=Number($('hasil').value)||0,oh=Number($('oh').value)||0;
- if(!recipes.length||!h){msg('Pastikan resep sudah tersimpan dan Hasil Produksi (PCS) terisi.');return}
- const total=recipes.filter(r=>{const m=materials.find(mm=>String(mm.id)===String(r.bahan_id));return !/plastik|kemasan|packaging|vakum/.test(norm(m?.nama_bahan||m?.nama))}).reduce((s,r)=>s+cost(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah_pakai),0),modal=total+oh,hpp=h?modal/h:0;
- const off=Number($('offPrice').value)||0,on=Number($('onPrice').value)||0;
- const canonical=recipes[0].produk_id;
- const row={produk_id:canonical,total_bahan:total,biaya_produksi:oh,jumlah_batch:h,total_modal:modal,hpp_unit:hpp,harga_offline:off,untung_offline:off?(off-(hpp*(Number($('offQty').value)||0)+packCost(materials.find(m=>String(m.id)===String($('offPack').value))))):0,harga_online:on,untung_online:on?(on-(hpp*(Number($('onQty').value)||0)+packCost(materials.find(m=>String(m.id)===String($('onPack').value)))+packCost(materials.find(m=>String(m.id)===String($('extra').value))))):0};
- const old=await sb.from('hpp').select('id').eq('produk_id',canonical).limit(1);
- if(old.error){msg(old.error.message);return}
- let res;if(old.data?.length)res=await sb.from('hpp').update(row).eq('id',old.data[0].id);else res=await sb.from('hpp').insert(row);
- if(res.error)msg(res.error.message);else msg('HPP dasar berhasil disimpan.',true);
+ if(!currentGroup){msg('Pilih produk dasar terlebih dahulu.');return;}
+ const h=Number($('hasil').value)||0,oh=Number($('oh').value)||0;if(!recipes.length||!h){msg('Pastikan resep sudah tersimpan dan Hasil Produksi (PCS) terisi.');return;}
+ const total=baseCost(),modal=total+oh,hppPcs=modal/h,targets=products.filter(p=>key(p)===currentGroup);
+ const offId=$('offPack').value,onId=$('onPack').value,extraId=$('extra').value,offPack=packCostById(offId),onPack=packCostById(onId),extra=Number(materials.find(m=>String(m.id)===String(extraId))?.harga_beli)||0;
+ const rows=targets.map(p=>{const qty=Math.max(1,Number(p.isi_per_bungkus)||1),offPrice=Number(p.harga_offline)||0,onPrice=Number(p.harga_online)||0,offModal=hppPcs*qty+offPack,onModal=hppPcs*qty+onPack+extra;return {produk_id:p.id,total_bahan:total,biaya_produksi:oh,jumlah_batch:h,total_modal:modal,hpp_unit:offModal,harga_offline:offPrice,untung_offline:offPrice-offModal,harga_online:onPrice,untung_online:onPrice-onModal};});
+ for(const row of rows){const old=await sb.from('hpp').select('id').eq('produk_id',row.produk_id).limit(1);if(old.error){msg('Gagal membaca HPP: '+old.error.message);return;}const res=old.data?.length?await sb.from('hpp').update(row).eq('id',old.data[0].id):await sb.from('hpp').insert([row]);if(res.error){msg('Gagal menyimpan HPP: '+res.error.message);return;}}
+ msg('HPP semua varian produk berhasil disimpan.',true);
 }
-function reset(){['hasil','oh','offPrice','onPrice'].forEach(id=>$(id).value='');$('offQty').value='10';$('onQty').value='10';$('offPack').value='';$('onPack').value='';$('extra').value='';calc()}
+function reset(){['hasil','oh','offPrice','onPrice'].forEach(id=>$(id).value='');$('offQty').value='10';$('onQty').value='10';$('offPack').value='';$('onPack').value='';$('extra').value='';calc();}
 load();
-</script></main></body></html>
+</script></script></main></body></html>
