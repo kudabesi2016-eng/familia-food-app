@@ -28,7 +28,7 @@ main{margin-left:230px;padding:28px;max-width:1250px}h1{margin:0 0 8px}.sub{colo
 <div class="line"><span>Overhead</span><strong id="ohOut">Rp0</strong></div>
 <div class="line"><span>Total modal produksi dasar</span><strong id="modal">Rp0</strong></div>
 <div class="total">HPP dasar / PCS: <span id="hpp">Rp0</span></div>
-<div class="hint">Bahan dihitung dari resep yang tersimpan. Plastik/kemasan tidak termasuk HPP dasar.</div></div>
+<div class="hint">Bahan produksi dihitung dari resep. Kemasan yang dicatat di Resep menjadi pilihan kemasan channel; biayanya masuk ke modal paket dan tidak dihitung dua kali.</div></div>
 
 <div class="card"><h2 class="section-title">Simulasi Penjualan</h2>
 <div class="two">
@@ -45,7 +45,7 @@ main{margin-left:230px;padding:28px;max-width:1250px}h1{margin:0 0 8px}.sub{colo
 <div class="card"><div class="actions"><button class="primary" id="save">💾 Simpan HPP Dasar</button><button class="danger" id="reset">↺ Reset</button></div><div id="msg"></div></div>
 <script>
 const sb=window.supabaseClient;
-let products=[],materials=[],recipes=[],current=null;
+let products=[],materials=[],recipes=[],recipePacks=[],current=null;
 const $=id=>document.getElementById(id);
 const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 const norm=s=>(s||'').toLowerCase().trim();
@@ -78,7 +78,7 @@ async function load(){
 }
 async function selectGroup(k){
  current=k?products.find(p=>key(p)===k):null;
- recipes=[];$('notice').innerHTML='';
+ recipes=[];recipePacks=[];$('notice').innerHTML='';
  if(!current){calc();return}
  const ids=products.filter(p=>key(p)===k).map(p=>p.id);
  const r=await sb.from('resep').select('*').in('produk_id',ids);
@@ -87,13 +87,18 @@ async function selectGroup(k){
  if(!recipes.length){$('notice').innerHTML='<div class="notice">Resep belum ditemukan. Buat resep dasar di halaman Resep terlebih dahulu.</div>';calc();return}
  const canonical=recipes[0].produk_id;
  recipes=recipes.filter(x=>x.produk_id===canonical);
+ recipePacks=recipes.filter(x=>{const m=materials.find(mm=>String(mm.id)===String(x.bahan_id));return /plastik|kemasan|packaging|vakum/.test(norm(m?.nama_bahan||m?.nama));});
+ const packNames=recipePacks.map(x=>norm(materials.find(m=>String(m.id)===String(x.bahan_id))?.nama_bahan||materials.find(m=>String(m.id)===String(x.bahan_id))?.nama)||'');
+ const offDefault=materials.find(m=>packNames.includes(norm(m.nama_bahan||m.nama)) && !/vakum|vacuum/.test(norm(m.nama_bahan||m.nama)));
+ const onDefault=materials.find(m=>packNames.includes(norm(m.nama_bahan||m.nama)) && /vakum|vacuum/.test(norm(m.nama_bahan||m.nama)));
+ if(offDefault)$('offPack').value=String(offDefault.id); if(onDefault)$('onPack').value=String(onDefault.id);
  const rp=products.find(p=>String(p.id)===String(canonical));
  if(rp?.hasil_produksi)$('hasil').value=rp.hasil_produksi;
  // If recipe table has no hasil field, keep user entry.
  calc();
 }
 function calc(){
- let total=0;recipes.forEach(r=>{const m=materials.find(x=>String(x.id)===String(r.bahan_id));total+=cost(m,r.jumlah_pakai)});
+ let total=0;recipes.filter(r=>{const m=materials.find(x=>String(x.id)===String(r.bahan_id));return !/plastik|kemasan|packaging|vakum/.test(norm(m?.nama_bahan||m?.nama))}).forEach(r=>{const m=materials.find(x=>String(x.id)===String(r.bahan_id));total+=cost(m,r.jumlah_pakai)});
  const h=Number($('hasil').value)||0,oh=Number($('oh').value)||0,modal=total+oh,hpp=h?modal/h:0;
  $('baseCost').textContent=rupiah(total);$('ohOut').textContent=rupiah(oh);$('modal').textContent=rupiah(modal);$('hpp').textContent=rupiah(hpp);
  const oq=Number($('offQty').value)||0,op=Number($('offPrice').value)||0,opack=packCost(materials.find(m=>String(m.id)===String($('offPack').value))),om=hpp*oq+opack;
@@ -105,7 +110,7 @@ async function save(){
  if(!current){msg('Pilih produk dasar terlebih dahulu.');return}
  const h=Number($('hasil').value)||0,oh=Number($('oh').value)||0;
  if(!recipes.length||!h){msg('Pastikan resep sudah tersimpan dan Hasil Produksi (PCS) terisi.');return}
- const total=recipes.reduce((s,r)=>s+cost(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah_pakai),0),modal=total+oh,hpp=h?modal/h:0;
+ const total=recipes.filter(r=>{const m=materials.find(mm=>String(mm.id)===String(r.bahan_id));return !/plastik|kemasan|packaging|vakum/.test(norm(m?.nama_bahan||m?.nama))}).reduce((s,r)=>s+cost(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah_pakai),0),modal=total+oh,hpp=h?modal/h:0;
  const off=Number($('offPrice').value)||0,on=Number($('onPrice').value)||0;
  const canonical=recipes[0].produk_id;
  const row={produk_id:canonical,total_bahan:total,biaya_produksi:oh,jumlah_batch:h,total_modal:modal,hpp_unit:hpp,harga_offline:off,untung_offline:off?(off-(hpp*(Number($('offQty').value)||0)+packCost(materials.find(m=>String(m.id)===String($('offPack').value))))):0,harga_online:on,untung_online:on?(on-(hpp*(Number($('onQty').value)||0)+packCost(materials.find(m=>String(m.id)===String($('onPack').value)))+packCost(materials.find(m=>String(m.id)===String($('extra').value))))):0};

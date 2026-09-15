@@ -31,10 +31,15 @@ button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:6
 <div class="field"><label>Hasil Produksi (PCS)</label><input id="hasil" type="number" min="1" step="1" placeholder="Contoh: 1000"><div class="hint">Jumlah PCS yang dihasilkan satu batch resep.</div></div>
 <div class="field"><label>Catatan</label><input id="catatan" placeholder="Opsional"></div>
 </div><div id="groupNotice"></div></div>
-<div class="card"><h2>Bahan yang digunakan</h2><div class="hint">Harga mengikuti Master Bahan Baku. Plastik/kemasan channel tidak dimasukkan ke resep dasar.</div>
+<div class="card"><h2>🌾 Bahan yang digunakan</h2><div class="hint">Harga mengikuti Master Bahan Baku. Pilih hanya bahan produksi di bagian ini.</div>
 <table><thead><tr><th>Bahan Baku</th><th>Jumlah</th><th>Harga Saat Ini</th><th>Biaya</th><th>Aksi</th></tr></thead><tbody id="rows"><tr><td colspan="5">Pilih produk dasar terlebih dahulu.</td></tr></tbody></table>
 <div class="actions"><button class="secondary" id="add">+ Tambah Bahan</button></div>
-<div class="total">Total biaya bahan: <span id="total">Rp0</span></div><div class="hint">Biaya bahan per PCS: <strong id="perpcs">Rp0</strong></div></div>
+<div class="total">Total biaya bahan: <span id="total">Rp0</span></div>
+<div class="card" style="margin-top:18px"><h2>📦 Kemasan Produk</h2><div class="hint">Kemasan dipisahkan dari bahan baku, tetapi tetap dicatat di resep. Jumlah kemasan adalah kebutuhan per paket/produk.</div>
+<table><thead><tr><th>Kemasan</th><th>Jumlah / Paket</th><th>Harga Saat Ini</th><th>Biaya / Paket</th><th>Aksi</th></tr></thead><tbody id="packRows"><tr><td colspan="5">Belum ada kemasan dalam resep.</td></tr></tbody></table>
+<div class="actions"><button class="secondary" id="addPack">+ Tambah Kemasan</button></div>
+<div class="total">Total kemasan / Paket: <span id="packTotal">Rp0</span></div></div>
+<div class="hint">Biaya bahan per PCS: <strong id="perpcs">Rp0</strong></div></div>
 <div class="card"><h2>Hubungan dengan HPP</h2><div class="hint">HPP mengambil total biaya resep, menambahkan overhead, lalu membaginya dengan hasil produksi PCS. Isi paket dan kemasan dihitung di HPP.</div>
 <div class="actions"><button class="primary" id="save">💾 Simpan Resep</button><button class="danger" id="reset">↺ Reset</button></div><div id="msg"></div></div>
 <script>
@@ -42,14 +47,15 @@ const sb = window.supabaseClient || window.supabase.createClient(
   "https://zaqdjyhosksbdlafhluc.supabase.co",
   "sb_publishable_v9HwG1jpZXKeo2MYrWmGdg_VO4Or8yt"
 );
-let products=[],materials=[],rows=[],currentGroup=null;
+let products=[],materials=[],rows=[],packRows=[],currentGroup=null;
 const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 const norm=s=>(s||'').toLowerCase().trim();
 const isKemasan=m=>{const n=norm(m?.nama_bahan||m?.nama);return /plastik|kemasan|packaging|vakum/.test(n)};
-const isNaget=p=>/naget|tempura\\s*aci/.test(norm(p.nama_produk));
+const isNaget=p=>/naget|tempura\s*aci/.test(norm(p.nama_produk));
 const groupKey=p=>isNaget(p)?'naget_tempura':norm(p.nama_produk);
 const groupLabel=k=>k==='naget_tempura'?'Naget / Tempura Aci':k==='cireng isi'?'Cireng isi':k==='cireng biasa'?'Cireng biasa':(products.find(p=>groupKey(p)===k)?.nama_produk||k);
 function costFor(m,q){const n=norm(m?.nama_bahan||m?.nama),h=Number(m?.harga_beli ?? m?.harga)||0,x=Number(q)||0;if(n.includes('bumbu'))return x>1?h*x/100:h*x;if(isKemasan(m))return 0;return h*x;}
+function packCostFor(m,q){const h=Number(m?.harga_beli ?? m?.harga)||0,x=Number(q)||0;return h*x;}
 function showMsg(t){document.getElementById('msg').innerHTML=t?`<div class="notice">${t}</div>`:''}
 async function load(){
  const [pr,ma]=await Promise.all([sb.from('produk').select('*').order('nama_produk'),sb.from('bahan_baku').select('*').order('nama_bahan')]);
@@ -57,41 +63,46 @@ async function load(){
  products=pr.data||[];materials=ma.data||[];const groups=[],seen=new Set();
  products.filter(p=>p.status===undefined||p.status!=='arsip').forEach(p=>{const k=groupKey(p);if(!seen.has(k)){seen.add(k);groups.push({k,label:groupLabel(k)})}});
  document.getElementById('produk').innerHTML='<option value="">Pilih produk dasar</option>'+groups.map(g=>`<option value="${g.k}">${g.label}</option>`).join('');
- document.getElementById('produk').onchange=()=>selectGroup(produk.value);document.getElementById('add').onclick=addRow;document.getElementById('save').onclick=saveRecipe;document.getElementById('reset').onclick=resetForm;
+ document.getElementById('produk').onchange=()=>selectGroup(document.getElementById('produk').value);document.getElementById('add').onclick=addRow;document.getElementById('addPack').onclick=addPackRow;document.getElementById('save').onclick=saveRecipe;document.getElementById('reset').onclick=resetForm;
 }
 async function selectGroup(k){
- currentGroup=k;rows=[];document.getElementById('hasil').value='';document.getElementById('catatan').value='';
+ currentGroup=k;rows=[];packRows=[];document.getElementById('hasil').value='';document.getElementById('catatan').value='';
  if(!k){render();return}
  const ids=products.filter(p=>groupKey(p)===k).map(p=>p.id);
  const r=await sb.from('resep').select('*').in('produk_id',ids);
  if(r.error){showMsg(r.error.message);return}
  const data=r.data||[];
  const canonical=data[0]?.produk_id;
- const chosen=canonical?data.filter(x=>x.produk_id===canonical && !isKemasan(materials.find(m=>String(m.id)===String(x.bahan_id)))):[];
- rows=chosen.map(x=>({id:x.id,bahan_id:x.bahan_id,jumlah:Number(x.jumlah_pakai)||0}));
+ const chosen=canonical?data.filter(x=>x.produk_id===canonical):[];
+ rows=chosen.filter(x=>!isKemasan(materials.find(m=>String(m.id)===String(x.bahan_id)))).map(x=>({id:x.id,bahan_id:x.bahan_id,jumlah:Number(x.jumlah_pakai)||0}));
+ packRows=chosen.filter(x=>isKemasan(materials.find(m=>String(m.id)===String(x.bahan_id)))).map(x=>({id:x.id,bahan_id:x.bahan_id,jumlah:Number(x.jumlah_pakai)||0}));
  if(k==='naget_tempura')document.getElementById('groupNotice').innerHTML='<div class="notice">Naget isi 10/12 dan Tempura Aci adalah satu produk dasar. Di sini hanya disimpan satu resep produksi; isi paket dan kemasan diatur di HPP.</div>';else document.getElementById('groupNotice').innerHTML='';
  render();
 }
 function addRow(){rows.push({id:null,bahan_id:'',jumlah:0});render()}
+function addPackRow(){packRows.push({id:null,bahan_id:'',jumlah:1});render()}
 function render(){
  const body=document.getElementById('rows');
  if(!rows.length){body.innerHTML='<tr><td colspan="5">Belum ada bahan dalam resep dasar.</td></tr>';calc();return}
  body.innerHTML=rows.map((r,i)=>{const opts='<option value="">Pilih bahan</option>'+materials.filter(m=>!isKemasan(m)).map(m=>`<option value="${m.id}" ${String(m.id)===String(r.bahan_id)?'selected':''}>${m.nama_bahan||m.nama}</option>`).join('');const m=materials.find(x=>String(x.id)===String(r.bahan_id));return `<tr><td><select data-i="${i}" data-k="bahan">${opts}</select></td><td><input data-i="${i}" data-k="jumlah" type="number" min="0" step="0.001" value="${r.jumlah??''}"></td><td>${rupiah(m?.harga_beli ?? m?.harga)}</td><td>${rupiah(costFor(m,r.jumlah))}</td><td><button class="danger" data-del="${i}">Hapus</button></td></tr>`}).join('');
  body.querySelectorAll('[data-k]').forEach(el=>el.oninput=el.onchange=()=>{const i=+el.dataset.i;if(el.dataset.k==='bahan')rows[i].bahan_id=el.value;else rows[i].jumlah=Number(el.value)||0;render()});
- body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.del,1);render()});calc();
+ body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.del,1);render()});
+ const pbody=document.getElementById('packRows');
+ if(!packRows.length){pbody.innerHTML='<tr><td colspan="5">Belum ada kemasan dalam resep.</td></tr>';}else{pbody.innerHTML=packRows.map((r,i)=>{const opts='<option value="">Pilih kemasan</option>'+materials.filter(isKemasan).map(m=>`<option value="${m.id}" ${String(m.id)===String(r.bahan_id)?'selected':''}>${m.nama_bahan||m.nama}</option>`).join('');const m=materials.find(x=>String(x.id)===String(r.bahan_id));return `<tr><td><select data-pi="${i}" data-pk="bahan">${opts}</select></td><td><input data-pi="${i}" data-pk="jumlah" type="number" min="0" step="0.001" value="${r.jumlah??''}"></td><td>${rupiah(m?.harga_beli ?? m?.harga)}</td><td>${rupiah(packCostFor(m,r.jumlah))}</td><td><button class="danger" data-pdel="${i}">Hapus</button></td></tr>`}).join('');pbody.querySelectorAll('[data-pk]').forEach(el=>el.oninput=el.onchange=()=>{const i=+el.dataset.pi;if(el.dataset.pk==='bahan')packRows[i].bahan_id=el.value;else packRows[i].jumlah=Number(el.value)||0;render()});pbody.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{packRows.splice(+b.dataset.pdel,1);render()});}
+ calc();
 }
-function calc(){let t=0;rows.forEach(r=>t+=costFor(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah));document.getElementById('total').textContent=rupiah(t);const h=Number(document.getElementById('hasil').value)||0;document.getElementById('perpcs').textContent=rupiah(h?t/h:0)}
+function calc(){let t=0;rows.forEach(r=>t+=costFor(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah));let pt=0;packRows.forEach(r=>pt+=packCostFor(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah));document.getElementById('total').textContent=rupiah(t);document.getElementById('packTotal').textContent=rupiah(pt);const h=Number(document.getElementById('hasil').value)||0;document.getElementById('perpcs').textContent=rupiah(h?t/h:0)}
 document.getElementById('hasil').oninput=calc;
 async function saveRecipe(){
  if(!currentGroup){showMsg('Pilih produk dasar.');return}const h=Number(document.getElementById('hasil').value)||0;if(!h){showMsg('Isi Hasil Produksi dalam PCS.');return}
- const valid=rows.filter(r=>r.bahan_id&&Number(r.jumlah)>0);if(!valid.length){showMsg('Tambahkan minimal satu bahan.');return}
+ const valid=rows.filter(r=>r.bahan_id&&Number(r.jumlah)>0),validP=packRows.filter(r=>r.bahan_id&&Number(r.jumlah)>0);if(!valid.length&&!validP.length){showMsg('Tambahkan minimal satu bahan atau kemasan.');return}
  const targets=products.filter(p=>groupKey(p)===currentGroup);const ids=targets.map(p=>p.id);
  const old=await sb.from('resep').select('produk_id').in('produk_id',ids);if(old.error){showMsg(old.error.message);return}
  const canonical=old.data?.[0]?.produk_id||targets[0].id;
  const del=await sb.from('resep').delete().eq('produk_id',canonical);if(del.error){showMsg(del.error.message);return}
- const ins=await sb.from('resep').insert(valid.map(r=>({produk_id:canonical,bahan_id:r.bahan_id,jumlah_pakai:Number(r.jumlah)})));
+ const ins=await sb.from('resep').insert([...valid.map(r=>({produk_id:canonical,bahan_id:r.bahan_id,jumlah_pakai:Number(r.jumlah)})),...validP.map(r=>({produk_id:canonical,bahan_id:r.bahan_id,jumlah_pakai:Number(r.jumlah)}))]);
  if(ins.error){showMsg(ins.error.message);return}showMsg('Resep dasar berhasil disimpan. HPP akan membaca resep ini.');await selectGroup(currentGroup);
 }
-function resetForm(){if(currentGroup)selectGroup(currentGroup);else{hasil.value='';rows=[];render()}}
+function resetForm(){if(currentGroup)selectGroup(currentGroup);else{hasil.value='';rows=[];packRows=[];render()}}
 load();
 </script></body></html>
