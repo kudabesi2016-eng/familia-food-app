@@ -78,21 +78,20 @@ async function insertDataLamaResolved(out,schema){
 }
 function selectedMonth(){return window.ffDataLamaMonth||''}
 function setSelectedMonth(m){toggleMonth(m)}
-function allBookMonths(){
+function allReportMonths(){
   const set=new Set();
-  const add=v=>{const m=String(v||'').match(/^(\d{4})-(\d{1,2})$/);if(m)set.add(`${m[1]}-${String(Number(m[2])).padStart(2,'0')}`)};
-  all.forEach(x=>add(x.periode));
-  salesAll.forEach(x=>add(x.periode));
-  expenseAll.forEach(x=>add(x.periode));
-  add(new Date().toISOString().slice(0,7));
-  return [...set].sort().reverse();
+  all.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
+  expenseAll.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
+  salesAll.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
+  const current=new Date(); set.add(`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}`);
+  return Array.from(set).sort().reverse();
 }
 function incomeForMonth(m){return all.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0)+salesAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0)}
 function expenseForMonth(m){return expenseAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.nominal||0),0)}
 function exactExpenseMonths(){return new Set(expenseAll.map(x=>x.periode).filter(m=>/^2026-\\d{2}$/.test(m)))}
 function renderMonthlySummary(){
   const box=$('monthlySummary');
-  const months=allBookMonths();
+  const months=allReportMonths();
   const exactMonths=exactExpenseMonths();
   const combined=expenseAll.filter(x=>!exactMonths.has(x.periode));
   let html='<div class="month-summary">';
@@ -101,7 +100,7 @@ function renderMonthlySummary(){
     html+=`<div class="month-row"><div class="month-name">📅 ${esc(monthLabel(m))}</div><div><span class="money-label">🟢 Pemasukan</span><span class="money income">${income?rupiah(income):'—'}</span></div><div><span class="money-label">🔴 Pengeluaran</span><span class="money expense">${hasExpense?rupiah(expense):'—'}</span></div><div><span class="money-label">💰 Selisih</span><span class="money balance">${hasExpense?rupiah(balance):'—'}</span></div><button class="view-btn" onclick="toggleMonth('${m}')">👁 Lihat Data</button><div id="detail-${m}" class="month-detail" style="display:none"></div></div>`;
   });
   html+='</div>';
-  if(combined.length){const total=combined.reduce((a,x)=>a+Number(x.nominal||0),0);html+=`<div class="history-note">🔴 <b>Pengeluaran periode gabungan:</b> ${rupiah(total)} belum dibagi ke bulan tertentu, jadi tidak saya masukkan ke salah satu bulan. Pengeluaran baru yang dicatat dengan periode bulan akan otomatis masuk ke bulan tersebut.</div>`}
+  if(combined.length){const total=combined.reduce((a,x)=>a+Number(x.nominal||0),0);html+=`<div class="history-note">🔴 <b>Pengeluaran tersimpan:</b> ${rupiah(total)} masih tercatat sebagai <b>periode gabungan</b> (Jan–Ags 2026), jadi tidak saya bagi ke bulan tertentu. Setelah bro input pengeluaran berdasarkan bulan, angka bulanan akan terisi otomatis.</div>`}
   html+='<div class="history-note">🟢 Pemasukan bulanan = Data Lama + transaksi terbaru dari Penjualan. Bulan tidak dikunci, jadi transaksi baru tetap menambah bulan yang sama.</div>';
   box.innerHTML=html;
 }
@@ -112,19 +111,39 @@ function detailMonth(m){
   const products={};
   rows.forEach(x=>{const p=x.produk||'Tanpa Produk';products[p]??={qty:0,omzet:0};products[p].qty+=Number(x.qty||0);products[p].omzet+=Number(x.omzet||0)});
   sales.forEach(x=>{const p=x.produk||`Produk #${x.produk_id||'-'}`;products[p]??={qty:0,omzet:0};products[p].qty+=Number(x.qty||0);products[p].omzet+=Number(x.omzet||0)});
+
+  const expenseGroups={};
+  ex.forEach(x=>{
+    const k=x.kategori||'Tanpa Kategori';
+    expenseGroups[k]??={total:0,rows:[]};
+    expenseGroups[k].total+=Number(x.nominal||0);
+    expenseGroups[k].rows.push(x);
+  });
+
+  const incomeTotal=rows.reduce((a,x)=>a+Number(x.omzet||0),0)+sales.reduce((a,x)=>a+Number(x.omzet||0),0);
+  const expenseTotal=ex.reduce((a,x)=>a+Number(x.nominal||0),0);
   let h='<div class="detail-grid">';
-  h+='<div class="mini-detail"><h4>🟢 Pemasukan</h4><table><thead><tr><th>Sumber</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>';
+
+  h+=`<div class="mini-detail"><h4>🟢 Pemasukan Lengkap · ${rupiah(incomeTotal)}</h4><table><thead><tr><th>Sumber</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>`;
   rows.forEach(x=>{h+=`<tr><td>Data Lama</td><td>${esc(x.konsumen)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td></tr>`});
   sales.forEach(x=>{const customer=saleCustomer(x.id)||'—';h+=`<tr><td>Penjualan</td><td>${esc(customer)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td></tr>`});
   if(!rows.length&&!sales.length)h+='<tr><td colspan="5">Belum ada pemasukan.</td></tr>';
   h+='</tbody></table></div>';
-  h+='<div class="mini-detail"><h4>🔴 Pengeluaran</h4><table><thead><tr><th>Kategori</th><th>Keterangan</th><th>Nominal</th></tr></thead><tbody>';
-  ex.forEach(x=>{h+=`<tr><td>${esc(x.kategori)}</td><td>${esc(x.keterangan)}</td><td>${rupiah(x.nominal)}</td></tr>`});
-  h+=ex.length?'':'<tr><td colspan="3">Belum ada pengeluaran dengan periode bulan ini.</td></tr>';
-  h+='</tbody></table></div></div>';
+
+  h+=`<div class="mini-detail"><h4>🔴 Pengeluaran Lengkap · ${ex.length?rupiah(expenseTotal):'—'}</h4>`;
+  if(ex.length){
+    Object.entries(expenseGroups).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cat,g])=>{
+      h+=`<div style="margin:0 0 14px"><div style="display:flex;justify-content:space-between;gap:10px;font-weight:800;color:#143c2b;margin-bottom:6px"><span>${esc(cat)}</span><span>${rupiah(g.total)}</span></div><table><thead><tr><th>Keterangan</th><th>Nominal</th></tr></thead><tbody>`;
+      g.rows.forEach(x=>{h+=`<tr><td>${esc(x.keterangan)}</td><td>${rupiah(x.nominal)}</td></tr>`});
+      h+='</tbody></table></div>';
+    });
+  }else h+='<div class="emptyState">Belum ada pengeluaran dengan periode bulan ini.</div>';
+  h+='</div></div>';
+
   const productRows=Object.entries(products).sort((a,b)=>b[1].qty-a[1].qty);
   h+='<div class="mini-detail" style="margin-top:14px"><h4>📦 Keluar per Produk</h4><table><thead><tr><th>Produk</th><th>Qty Keluar</th><th>Omzet</th></tr></thead><tbody>';
   productRows.forEach(([p,v])=>{h+=`<tr><td>${esc(p)}</td><td>${v.qty.toLocaleString('id-ID')}</td><td>${rupiah(v.omzet)}</td></tr>`});
+  if(!productRows.length)h+='<tr><td colspan="3">Belum ada produk keluar.</td></tr>';
   h+='</tbody></table><button class="view-btn close-detail" onclick="toggleMonth(\''+m+'\')">Tutup Data</button></div>';
   return h;
 }
@@ -147,7 +166,7 @@ async function load(){
     productMap=Object.fromEntries((pr.data||[]).map(x=>[x.id,String(x.nama_produk||`Produk #${x.id}`)]));
     const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,channel,harga,hpp,laba');
     if(sr.error)throw new Error('Gagal memuat penjualan: '+sr.error.message);
-    salesAll=(sr.data||[]).map(x=>({id:x.id,periode:saleMonth(x.tanggal),produk_id:x.produk_id,produk:productMap[x.produk_id]||`Produk #${x.produk_id||'-'}`,qty:Number(x.qty||0),channel:String(x.channel||''),harga:Math.round(Number(x.harga)||0),omzet:Math.round(Number(x.qty||0)*Number(x.harga||0))})).filter(x=>/^\d{4}-\d{2}$/.test(x.periode||''));
+    salesAll=(sr.data||[]).map(x=>({id:x.id,periode:saleMonth(x.tanggal),produk_id:x.produk_id,produk:productMap[x.produk_id]||`Produk #${x.produk_id||'-'}`,qty:Number(x.qty||0),channel:String(x.channel||''),harga:Math.round(Number(x.harga)||0),omzet:Math.round(Number(x.qty||0)*Number(x.harga||0))}));
     renderAll();
   }catch(e){$('monthlySummary').innerHTML='<div class="msg" style="color:#a22">Gagal memuat data: '+esc(e.message||e)+'</div>'}
 }
