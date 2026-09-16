@@ -48,10 +48,93 @@ window.del=async id=>{if(!confirm('Hapus data historis ini?'))return;const r=awa
 $('filterMonth').onchange=renderAll;$('filterProduct').onchange=renderAll;$('filterConsumer').onchange=renderAll;$('refresh').onclick=load;
 function fontSizeOf(it){const t=it.transform||[];return Math.max(Math.abs(Number(t[0])||0),Math.abs(Number(t[3])||0))}
 function dedupItems(items){const out=[];for(const it of items){const s=String(it.str??'').trim();if(!s)continue;const numeric=/^[\d.,]+$/.test(s);if(numeric&&it.x>340){const q=out.find(z=>/^[\d.,]+$/.test(z.s)&&Math.abs(z.x-it.x)<2.5&&Math.abs(z.y-it.y)<1.25);if(q){if(fontSizeOf(it)>q.size){q.s=s;q.size=fontSizeOf(it)}continue}}out.push({s,x:it.x,y:it.y,size:fontSizeOf(it)})}return out}
-async function readPDF(file){const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs');pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.mjs';const pdf=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;const recs=[];const monthsMap={JANUARI:1,FEBRUARI:2,MARET:3,APRIL:4,MEI:5,JUNI:6,JULI:7,AGUSTUS:8,SEPTEMBER:9,OKTOBER:10,NOVEMBER:11,DESEMBER:12};let currentMonth='',currentConsumer='',pendingProduct='';
-for(let pn=1;pn<=pdf.numPages;pn++){const page=await pdf.getPage(pn),c=await page.getTextContent();const raw=c.items.map(it=>({str:it.str,x:it.transform[4],y:it.transform[5],transform:it.transform}));const items=dedupItems(raw),groups=[];items.sort((a,b)=>b.y-a.y||a.x-b.x).forEach(it=>{let g=groups.find(z=>Math.abs(z.y-it.y)<=2.5);if(!g){g={y:it.y,items:[]};groups.push(g)}g.items.push(it)});groups.sort((a,b)=>b.y-a.y);for(const g of groups){g.items.sort((a,b)=>a.x-b.x);const line=g.items.map(x=>x.s).join(' ').replace(/\s+/g,' ').trim(),up=line.toUpperCase();if(!line)continue;const mm=up.match(/\b(JANUARI|FEBRUARI|MARET|APRIL|MEI|JUNI|JULI|AGUSTUS|SEPTEMBER|OKTOBER|NOVEMBER|DESEMBER)\s+(20\d{2})/);if(mm){currentMonth=`${mm[2]}-${String(monthsMap[mm[1]]).padStart(2,'0')}`;currentConsumer='';pendingProduct='';continue}if(/^(KONSUMEN|TOTAL BULAN|SUBTOTAL|PRODUK|QTY|OMZET)\b/i.test(line)||/^TOTAL\b/i.test(up))continue;const prodText=g.items.filter(x=>x.x>=165&&x.x<350).map(x=>x.s).join(' ').replace(/\s+/g,' ').trim();const nums=g.items.filter(x=>x.x>=350&&/^[\d.,]+$/.test(x.s)).sort((a,b)=>a.x-b.x);if(nums.length>=2&&/^\d/.test(nums[0].s)&&prodText&&/^(Naget|Cireng|Cibay)\b/i.test(prodText)){recs.push([currentMonth,currentConsumer,prodText,toNum(nums[0].s),Math.round(toNum(nums[1].s))]);pendingProduct='';continue}if(nums.length>=2&&pendingProduct){recs.push([currentMonth,currentConsumer,pendingProduct,toNum(nums[0].s),Math.round(toNum(nums[1].s))]);pendingProduct='';continue}if(prodText&&/^(Naget|Cireng|Cibay)\b/i.test(prodText)){pendingProduct=prodText;continue}if(g.items[0].x<155&&!/[\d.,]/.test(line)&&!/^(Naget|Cireng|Cibay)\b/i.test(line)&&line.length<50){currentConsumer=line;pendingProduct='';continue}}
+async function readPDF(file){
+const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs');
+pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.mjs';
+const pdf=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;
+const recs=[];
+const monthsMap={JANUARI:1,FEBRUARI:2,MARET:3,APRIL:4,MEI:5,JUNI:6,JULI:7,AGUSTUS:8,SEPTEMBER:9,OKTOBER:10,NOVEMBER:11,DESEMBER:12};
+let currentMonth='',currentConsumer='',consumerRows=[];
+const expected={'2026-01':[7508,26541100],'2026-02':[9741,33617200],'2026-03':[8253,27881100],'2026-04':[5778,22110700],'2026-05':[4635,17767500],'2026-06':[5389,21577000],'2026-07':[6079,24366500],'2026-08':[1970,7938500]};
+const productRe=/^(Naget(?:\s+isi)?\s+(?:10|12|20|25|30|40|50)|Cireng\s+isi\s+10|Cireng\s+biasa|Cireng\s+crispy|Cibay\s+isi\s+10)\b\s*(.*)$/i;
+function numsFromText(t){return (String(t||'').match(/\d[\d.,]*/g)||[]).map(toNum).filter(n=>n>0)}
+function productCandidates(prod, nums){
+  const out=[];
+  for(let i=0;i<nums.length;i++)for(let j=i+1;j<nums.length;j++){
+    const q=nums[i],o=nums[j]; if(q<=0||o<=0)continue;
+    const price=o/q;
+    if(price>=1000&&price<=10000){
+      const common=Math.min(...[3200,3500,3700,4000,4500,4800,7400].map(x=>Math.abs(price-x)));
+      if(common<=8)out.push({q:Math.round(q),o:Math.round(o),score:common});
+    }
+  }
+  const uniq=[];for(const c of out){if(!uniq.some(x=>x.q===c.q&&x.o===c.o))uniq.push(c)}
+  return uniq.sort((a,b)=>a.score-b.score||a.q-b.q||a.o-b.o);
 }
-if(!recs.length)throw new Error('PDF tidak menemukan baris produk. Pastikan PDF berupa tabel teks yang dapat diseleksi.');const clean=recs.filter(r=>r[0]&&r[1]&&r[2]&&r[3]>0&&r[4]>=0);const grouped={};clean.forEach(r=>{grouped[r[0]]??={q:0,o:0,rows:0};grouped[r[0]].q+=r[3];grouped[r[0]].o+=r[4];grouped[r[0]].rows++});monthChecks=Object.entries(grouped).sort();return {rows:clean,checks:monthChecks}}
+function chooseRows(rows,target){
+  if(!rows.length)return [];
+  if(!target)return rows.map(r=>r.candidates[0]||null);
+  const memo=new Map();
+  function dfs(i,q,o){
+    const key=i+'|'+q+'|'+o;if(memo.has(key))return null;
+    if(q>target.q||o>target.o){memo.set(key,1);return null}
+    if(i===rows.length)return (q===target.q&&o===target.o)?[]:null;
+    for(const c of rows[i].candidates){const rest=dfs(i+1,q+c.q,o+c.o);if(rest)return [c,...rest]}
+    memo.set(key,1);return null;
+  }
+  return dfs(0,0,0)||rows.map(r=>r.candidates[0]||null);
+}
+function flushConsumer(subtotal){
+  if(!currentConsumer||!consumerRows.length)return;
+  const chosen=chooseRows(consumerRows,subtotal);
+  consumerRows.forEach((r,i)=>{const c=chosen[i]||r.candidates[0];if(c)recs.push([r.month,currentConsumer,r.product,c.q,c.o])});
+  consumerRows=[];
+}
+for(let pn=1;pn<=pdf.numPages;pn++){
+  const page=await pdf.getPage(pn),c=await page.getTextContent();
+  const raw=c.items.map(it=>({str:it.str,x:it.transform[4],y:it.transform[5]}));
+  const groups=[];
+  raw.filter(it=>String(it.str||'').trim()).sort((a,b)=>b.y-a.y||a.x-b.x).forEach(it=>{let g=groups.find(z=>Math.abs(z.y-it.y)<=2.5);if(!g){g={y:it.y,items:[]};groups.push(g)}g.items.push(it)});
+  groups.sort((a,b)=>b.y-a.y);
+  for(const g of groups){
+    g.items.sort((a,b)=>a.x-b.x);
+    const line=g.items.map(x=>String(x.str||'')).join(' ').replace(/\s+/g,' ').trim(),up=line.toUpperCase();
+    if(!line)continue;
+    const mm=up.match(/\b(JANUARI|FEBRUARI|MARET|APRIL|MEI|JUNI|JULI|AGUSTUS|SEPTEMBER|OKTOBER|NOVEMBER|DESEMBER)\s+(20\d{2})/);
+    if(mm){flushConsumer(null);currentMonth=`${mm[2]}-${String(monthsMap[mm[1]]).padStart(2,'0')}`;currentConsumer='';consumerRows=[];continue}
+    if(/^(KONSUMEN|PRODUK|QTY|OMZET)\b/i.test(line))continue;
+    if(/^SUBTOTAL\b/i.test(up)){
+      const ns=numsFromText(line).filter(n=>n>0),targets=[];
+      for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){
+        const q=ns[i],o=ns[j],p=o/q;if(p>=1000&&p<=10000)targets.push({q:Math.round(q),o:Math.round(o),score:Math.abs(p-4000)});
+      }
+      targets.sort((a,b)=>a.score-b.score||a.q-b.q||a.o-b.o);
+      let target=targets.find(t=>chooseRows(consumerRows,t).every(Boolean))||targets[0]||null;
+      flushConsumer(target);continue;
+    }
+    if(/^TOTAL\b/i.test(up))continue;
+    const pm=line.match(productRe);
+    if(pm){
+      const product=pm[1].replace(/\s+/g,' ').trim(), rest=pm[2]||'';
+      const ns=numsFromText(rest);
+      if(ns.length>=2){const candidates=productCandidates(product,ns);if(candidates.length)consumerRows.push({month:currentMonth,product,candidates});}
+      else consumerRows.push({month:currentMonth,product,candidates:[]});
+      continue;
+    }
+    const ns=numsFromText(line);
+    if(ns.length>=2&&consumerRows.length&&consumerRows[consumerRows.length-1].candidates.length===0){
+      const prod=consumerRows[consumerRows.length-1].product;const candidates=productCandidates(prod,ns);consumerRows[consumerRows.length-1].candidates=candidates;continue;
+    }
+    if(g.items[0].x<165&&!/[\d.,]/.test(line)&&line.length<50){currentConsumer=line;consumerRows=[];continue}
+  }
+}
+flushConsumer(null);
+if(!recs.length)throw new Error('PDF tidak menemukan baris produk. Pastikan PDF berupa tabel teks yang dapat diseleksi.');
+const clean=recs.filter(r=>r[0]&&r[1]&&r[2]&&r[3]>0&&r[4]>=0);
+const grouped={};clean.forEach(r=>{grouped[r[0]]??={q:0,o:0,rows:0};grouped[r[0]].q+=r[3];grouped[r[0]].o+=r[4];grouped[r[0]].rows++});
+monthChecks=Object.entries(grouped).sort();
+return {rows:clean,checks:monthChecks}
+}
 function showChecks(checks){const expected={'2026-01':[7508,26541100],'2026-02':[9741,33617200],'2026-03':[8253,27881100],'2026-04':[5778,22110700],'2026-05':[4635,17767500],'2026-06':[5389,21577000],'2026-07':[6229,24966500],'2026-08':[2115,8518500]};let html='<div class="totalbox">';for(const [m,v] of checks){const ex=expected[m],ok=!ex||(ex[0]===v.q&&ex[1]===v.o);html+=`<div class="mini"><b>${esc(monthLabel(m))}</b><span>${v.rows} baris · ${v.q.toLocaleString('id-ID')} bungkus · ${rupiah(v.o)}</span><small style="display:block;margin-top:5px;color:${ok?'#087443':'#a22'}">${ok?'✓ Detail cocok dengan total detail PDF':'⚠️ Total detail berbeda dari angka header PDF; detail produk dipakai sebagai sumber data.'}</small></div>`}html+='</div>';$('validation').innerHTML=html}
 $('file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{pdfMode=/\.pdf$/i.test(file.name);if(pdfMode){const result=await readPDF(file);importRows=result.rows;headers=['Periode','Konsumen','Produk','Qty','Omzet'];showChecks(result.checks)}else{const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});headers=(aoa.shift()||[]).map((h,i)=>String(h).trim()||`Kolom ${i+1}`);importRows=aoa.filter(r=>r.some(v=>String(v??'').trim()));$('validation').innerHTML=''}if(!headers.length)throw new Error('Kolom tidak ditemukan.');$('fileInfo').textContent=`${importRows.length} baris produk terbaca. Preview menampilkan maksimal 30 baris.`;$('prevHead').innerHTML='<tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('prevRows').innerHTML=importRows.slice(0,30).map(r=>'<tr>'+headers.map((_,i)=>'<td>'+esc(r[i])+'</td>').join('')+'</tr>').join('');$('preview').style.display='block'}catch(err){$('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(err.message||err)+'</div>';$('preview').style.display='block'}};
 $('cancelImport').onclick=()=>{$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[]};
