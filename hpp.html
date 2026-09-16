@@ -1,38 +1,228 @@
-<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>HPP - Familia Food v3</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script><script src="app-settings.js"></script><style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5faf7;color:#26352d}.sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid #dce8e1;padding:20px 14px}.brand{font-size:20px;font-weight:700;color:var(--brand-color,#087443);margin:4px 8px 22px}.nav a{display:block;text-decoration:none;color:#315247;padding:11px 12px;border-radius:9px;margin:4px 0}.nav a:hover,.nav a.active{background:#eaf6ef;color:var(--brand-color,#087443);font-weight:600}main{margin-left:230px;padding:28px;max-width:1250px}h1{margin:0 0 8px}.sub{color:#6d7e76;margin-bottom:20px}.card{background:#fff;border:1px solid #dce8e1;border-radius:14px;padding:20px;margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #ccd9d2;border-radius:9px;background:#fff}.hint{font-size:12px;color:#70837a;margin-top:5px}.line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf2ef}.total{font-size:20px;font-weight:700;color:var(--brand-color,#087443);margin-top:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:700}.primary{background:var(--brand-color,#087443);color:#fff}.secondary{background:#eaf6ef;color:var(--brand-color,#087443)}.danger{background:#fff0f0;color:#b42318}.notice{margin-top:12px;padding:12px;border-radius:9px;background:#fff8df;border:1px solid #f0df9b;color:#6b5a16}.ok{background:#eaf6ef;border-color:#c8e5d3;color:#17623d}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:10px;border-bottom:1px solid #e8eeeb;text-align:left;font-size:14px}th{background:#f4f8f6}.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{padding:14px;border:1px solid #e1ebe5;border-radius:10px;background:#fafcfb}.stat b{display:block;font-size:18px;color:var(--brand-color,#087443);margin-top:5px}@media(max-width:850px){.sidebar{position:static;width:auto}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}main{margin-left:0;padding:16px}.grid,.two,.statgrid{grid-template-columns:1fr}}
-</style></head><body><aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav"><a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a class="active" href="hpp.html">🧮 HPP</a><a href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a></nav></aside><main>
-<h1>🧮 Kalkulator HPP</h1><div class="sub">HPP dasar dihitung per PCS dari Resep + alokasi Overhead Produksi. Isi PCS dalam bungkus dan kemasan dihitung setelahnya.</div>
-<div class="card"><h2 style="margin-top:0">⚙️ Overhead Produksi Harian</h2><div class="line"><span>Total overhead dari Bahan Baku</span><strong id="ohTotal">Rp0</strong></div><div class="hint">Total ini berasal dari rincian Gas, Listrik, Gaji, Lainnya, dan biaya overhead lain yang Anda masukkan di Bahan Baku. Total overhead dibagi sesuai jumlah produksi PCS.</div></div>
-<div class="card"><h2 style="margin-top:0">📊 Jumlah Produksi Harian</h2><div class="hint">Isi jumlah produksi PCS aktual per hari untuk setiap produk dasar. Angka ini dipakai untuk membagi total overhead harian secara proporsional; angka ini adalah input aktual dan bebas diubah kapan saja; tidak mengambil angka lama HPP sebagai patokan produksi harian.</div><table><thead><tr><th>Produk</th><th>Produksi Harian (PCS)</th><th>Porsi OH</th><th>Alokasi OH</th></tr></thead><tbody id="prodRows"><tr><td colspan="4">Memuat...</td></tr></tbody></table><div class="line"><span>Total Produksi</span><strong id="totalProd">0 PCS</strong></div><div class="line"><span>Total Alokasi OH</span><strong id="allocTotal">Rp0</strong></div></div>
-<div class="card"><div class="grid"><div class="field"><label>Produk Dasar</label><select id="produk"><option value="">Memuat...</option></select><div class="hint">Naget memakai satu resep dasar.</div></div><div class="field"><label>Hasil Produksi (PCS)</label><input id="hasil" type="number" min="1" step="1" placeholder="Masukkan hasil batch"><div class="hint">Jumlah PCS yang benar-benar dihasilkan oleh batch resep ini. Ini terpisah dari Produksi Harian untuk alokasi OH.</div></div><div class="field"><label>OH Produk</label><input id="ohProduk" type="text" readonly value="Rp0"><div class="hint">Otomatis dari total OH harian dan jumlah produksi.</div></div></div><div id="notice"></div></div>
-<div class="card"><h2>Ringkasan Resep</h2><div class="line"><span>Total biaya bahan dari Resep</span><strong id="baseCost">Rp0</strong></div><div class="line"><span>Overhead produk</span><strong id="ohOut">Rp0</strong></div><div class="line"><span>Total modal produksi</span><strong id="modal">Rp0</strong></div><div class="total">HPP dasar / PCS: <span id="hpp">Rp0</span></div><div class="hint">HPP/PCS adalah dasar kalkulasi. HPP paket = HPP/PCS × PCS DALAM BUNGKUS + 1 kemasan per bungkus + tambahan online. Harga kemasan mengikuti Master Bahan Baku.</div></div>
-<div class="card"><h2>🧩 Bahan Custom per Bungkus</h2><div class="hint">Dipakai untuk tambahan khusus produk tertentu, misalnya Saus pada Naget isi 25. Tidak masuk resep dasar dan tidak masuk Master Bahan Baku. Nama, jumlah, harga, dan penerapan dapat diedit kapan saja.</div><table><thead><tr><th>Nama Bahan Custom</th><th>Jumlah</th><th>Satuan</th><th>Harga Satuan</th><th>Berlaku Untuk</th><th>Biaya</th><th>Aksi</th></tr></thead><tbody id="customRows"></tbody></table><div class="actions"><button type="button" class="secondary" id="addCustom">+ Tambah Bahan Custom</button></div></div><div class="card"><h2>Simulasi Penjualan</h2><div class="two"><div><h3>Offline</h3><div class="field"><label>PCS DALAM BUNGKUS</label><select id="offQty"></select></div><div class="field" style="margin-top:10px"><label>Kemasan Offline</label><select id="offPack"></select></div><div class="field" style="margin-top:10px"><label>Harga Jual / Bungkus</label><input id="offPrice" type="number" min="0" step="1" placeholder="Rp"></div><div class="line"><span>HPP / Modal Bungkus</span><strong id="offModal">Rp0</strong></div><div class="line"><span>Untung Bungkus</span><strong id="offProfit">Belum diisi</strong></div></div><div><h3>Online</h3><div class="field"><label>PCS DALAM BUNGKUS</label><select id="onQty"></select></div><div class="field" style="margin-top:10px"><label>Kemasan Online</label><select id="onPack"></select></div><div class="field" style="margin-top:10px"><label>Tambahan Online</label><select id="extra"></select></div><div class="field" style="margin-top:10px"><label>Harga Jual / Bungkus</label><input id="onPrice" type="number" min="0" step="1" placeholder="Rp"></div><div class="line"><span>HPP / Modal Bungkus</span><strong id="onModal">Rp0</strong></div><div class="line"><span>Untung Bungkus</span><strong id="onProfit">Belum diisi</strong></div></div></div></div>
-<div class="card"><div class="actions"><button class="primary" id="save">💾 Simpan HPP Produk</button><button class="danger" id="reset">↺ Reset</button></div><div id="msg"></div></div>
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Data Lama - Familia Food</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script><script src="app-settings.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f7f5;color:#1f2937}.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand-color,#126b3a);color:#fff;padding:25px 15px;z-index:10}.brand{font-size:24px;font-weight:bold;text-align:center;margin-bottom:30px}.menu a{display:block;color:#fff;text-decoration:none;padding:12px 15px;margin-bottom:6px;border-radius:8px}.menu a:hover,.menu a.active{background:#0d542d}.main{margin-left:240px;padding:30px;max-width:1450px}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.header h1{color:var(--brand-color,#126b3a);margin:0}.card{background:#fff;padding:22px;border-radius:14px;margin-top:18px;box-shadow:0 2px 10px #0000000d}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}.btn{margin-top:15px;background:var(--brand-color,#087443);color:#fff;border:0;border-radius:8px;padding:11px 18px;cursor:pointer;font-weight:bold}.btn.secondary{background:#6b7280}.btn.danger{background:#a22}.filebox{border:2px dashed #b7d7c5;padding:18px;border-radius:12px;background:#f8fcfa}.hint{color:#6b7280;font-size:13px;line-height:1.5}.msg{margin-top:10px;padding:10px;border-radius:8px}.preview{display:none}.mapgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.mapgrid select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e8f7ed;color:#087443;font-size:12px;font-weight:bold}.filters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:end}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:900px}th{background:var(--brand-color,#087443);color:white;padding:10px;text-align:left}td{padding:10px;border-bottom:1px solid #ddd}.del{background:#fdecec;color:#a22;border:0;padding:7px;border-radius:6px;cursor:pointer}.monthblock{border:1px solid #d9e7df;border-radius:14px;margin:14px 0;overflow:hidden}.monthhead{background:#eaf6ef;padding:18px 20px;font-weight:bold;color:#087443;display:flex;justify-content:space-between;align-items:center;gap:12px}.monthtabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px}.monthtab{border:1px solid #cfe0d6;background:#fff;color:#315247;border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:bold}.monthtab:hover{background:#eef8f1}.monthtab.active{background:var(--brand-color,#087443);border-color:var(--brand-color,#087443);color:#fff}.sectiontitle{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:18px 0 10px;padding-bottom:9px;border-bottom:2px solid #e6eee9}.sectiontitle h3{margin:0;color:#087443}.consumerblock{border:1px solid #e2ebe5;border-radius:12px;overflow:hidden;margin-top:10px}.consumerhead{background:#fafcfb;padding:12px 16px;font-weight:bold;display:flex;justify-content:space-between}.consumerblock table{min-width:700px}.consumerblock th{background:#f0f5f2;color:#315247}.productblock{border:1px solid #dfe9e3;border-radius:12px;overflow:hidden;margin:10px 0;background:#fff}.producthead{background:#f5faf7;padding:13px 16px;font-weight:bold;color:#087443;display:flex;justify-content:space-between;align-items:center;gap:12px}.productsummary{display:flex;gap:10px;flex-wrap:wrap;padding:12px 16px;background:#fbfdfc}.productsummary .mini{min-width:150px}.subtotal{font-weight:bold;background:#f7faf8}.totalbox{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.totalbox .mini{border:1px solid #dfe9e3;border-radius:10px;padding:12px;background:#fbfdfc}.mini b{display:block;color:#087443;font-size:13px}.mini span{font-size:19px;font-weight:bold;display:block;margin-top:5px}
+.emptyState{padding:35px;text-align:center;color:#6b7280;background:#fbfdfc;border:1px dashed #cfe0d6;border-radius:12px}.reportHead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:4px 2px 20px}.eyebrow{font-size:11px;letter-spacing:1.3px;font-weight:800;color:#6b8b7b}.reportHead h2{margin:5px 0 3px;font-size:28px;color:#143c2b}.reportHead p{margin:0;color:#6b7280}.reportMeta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.reportMeta span{background:#f0f7f3;border:1px solid #d9e8df;border-radius:8px;padding:8px 11px;font-size:12px;color:#315247;font-weight:700}.kpiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.kpi{background:#fff;border:1px solid #dfe9e3;border-radius:12px;padding:16px;box-shadow:0 2px 8px #00000008}.kpi span{display:block;font-size:12px;color:#6b7280;font-weight:700}.kpi strong{display:block;font-size:23px;color:#087443;margin-top:7px}.kpi small{color:#8a9992}.reportGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.reportSection{background:#fff;border:1px solid #dfe9e3;border-radius:12px;overflow:hidden;margin-bottom:16px}.sectionHead{padding:15px 17px;border-bottom:1px solid #e6eee9;background:#fbfdfc}.sectionHead h3{margin:0;color:#143c2b;font-size:16px}.sectionHead p{margin:4px 0 0;color:#7a8781;font-size:12px}.cleanTable{min-width:0!important}.cleanTable th{background:#f1f6f3;color:#315247;font-size:12px;text-transform:uppercase;letter-spacing:.2px;border-bottom:1px solid #dfe9e3}.cleanTable td{font-size:13px}.cleanTable tbody tr:hover{background:#f8fbf9}.detailSection{margin-top:0}.detailSection .tablewrap{max-height:440px;overflow:auto}.detailSection thead th{position:sticky;top:0;z-index:1}.monthtabs{padding-bottom:3px;border-bottom:1px solid #e2ebe5}
+@media(max-width:900px){.sidebar{position:relative;width:100%;height:auto}.main{margin-left:0;padding:15px}.grid,.mapgrid,.filters,.totalbox,.kpiGrid,.reportGrid{grid-template-columns:1fr}.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}}
+</style>
+</head>
+<body>
+<aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="menu">
+<a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html" class="active">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
+</nav></aside>
+<main class="main">
+<div class="header"><div><h1>📁 Data Lama</h1><p>Riwayat penjualan lama tetap tersimpan per <b>bulan → konsumen → produk</b> dan dapat dibaca bersama transaksi baru oleh Rekap dan Dashboard.</p></div><span class="badge">Historis Offline</span></div>
+
+<div class="card"><h2>📥 Import Data Lama</h2><div class="filebox"><input id="file" type="file" accept=".xlsx,.xls,.csv,.pdf"><p class="hint"><b>PDF Familia Food:</b> sistem membaca tabel <b>Bulan → Konsumen → Produk → Qty → Omzet</b>. Baris Subtotal/TOTAL BULAN tidak disimpan. Angka Indonesia seperti <b>3.774.000</b> dibaca sebagai <b>Rp3.774.000</b>.</p></div>
+<div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></div>
+
+<div class="card"><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
+<div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></div>
+
+<div class="card"><h2>📚 Data Historis</h2><p class="hint">Tampilan profesional: pilih <b>bulan</b>, lalu lihat <b>Ringkasan → Konsumen → Keluar per Produk</b>. Data omzet tetap mengikuti data historis dari PDF.</p><div id="monthTabs" class="monthtabs"></div><div class="filters"><div class="field"><label>Produk</label><select id="filterProduct"><option value="">Semua Produk</option></select></div><div class="field"><label>Konsumen</label><select id="filterConsumer"><option value="">Semua Konsumen</option></select></div><div><button class="btn secondary" id="refresh" style="margin-top:0">↻ Muat Ulang</button></div></div><div id="grouped" style="margin-top:16px"><div class="hint">Memuat...</div></div></div>
+
+<div class="card"><h2>🔎 Data Detail</h2><div class="tablewrap"><table><thead><tr><th>Periode</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th><th>Aksi</th></tr></thead><tbody id="rows"><tr><td colspan="6">Memuat...</td></tr></tbody></table></div></div>
+</main>
 <script>
-const sb=(typeof supabaseClient!=='undefined'&&supabaseClient)?supabaseClient:window.supabaseClient;const $=id=>document.getElementById(id);const rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');const norm=s=>(s||'').toLowerCase().trim();const isNaget=p=>/naget/.test(norm(p?.nama_produk));const key=p=>isNaget(p)?'naget':norm(p?.nama_produk);const label=k=>k==='naget'?'Naget':(products.find(p=>key(p)===k)?.nama_produk||k);const isOH=m=>{const n=String(m?.nama_bahan||'');return n.startsWith('__OH__:')||n.startsWith('__OVERHEAD__');};const isKemasan=m=>{const n=norm(m?.nama_bahan||m?.nama);return !isOH(m)&&/plastik|kemasan|packaging|vakum|vacuum/.test(n)};function cost(m,q){const n=norm(m?.nama_bahan||m?.nama),h=Number(m?.harga_beli??m?.harga)||0,x=Number(q)||0;if(isOH(m)||isKemasan(m))return 0;if(n.includes('bumbu'))return x>1?h*x/100:h*x;return h*x}function msg(t,ok=false){$('msg').innerHTML=t?`<div class="notice ${ok?'ok':''}">${t}</div>`:''}
-let products=[],materials=[],recipes=[],recipePacks=[],currentGroup=null,overheadTotal=0,productionMap={},hppMap={};const CUSTOM_KEY='ff_hpp_custom_v1';let customRows=getCustom();
-function groups(){const a=[],seen=new Set();products.filter(p=>norm(p.status||p.statustext||'aktif')!=='arsip'&&norm(p.status||p.statustext||'aktif')!=='nonaktif').forEach(p=>{const k=key(p);if(!seen.has(k)){seen.add(k);a.push(k)}});return a}
-function fillPacks(id,online){const arr=materials.filter(m=>{const n=norm(m.nama_bahan||m.nama);return isKemasan(m)&&(online?/vakum|vacuum/.test(n):!/vakum|vacuum/.test(n))});$(id).innerHTML='<option value="">Tanpa kemasan</option>'+arr.map(m=>`<option value="${m.id}">${m.nama_bahan||m.nama}</option>`).join('')}
-function fillExtra(){$('extra').innerHTML='<option value="">Tidak ada tambahan</option>'+materials.filter(m=>!isOH(m)&&!isKemasan(m)).map(m=>`<option value="${m.id}">${m.nama_bahan||m.nama}</option>`).join('')}
-function packCost(id){const m=materials.find(x=>String(x.id)===String(id));return isKemasan(m)?(Number(m?.harga_beli)||0):0}
-function fillQtyForProduct(p){const isN=key(p)==='naget';const vals=isN?[10,12,20,25,30,40,50]:[Math.max(1,Number(p?.isi_per_bungkus)||1)];const html=vals.map(x=>`<option value="${x}">${x} PCS</option>`).join('');$('offQty').innerHTML=html;$('onQty').innerHTML=html}
-function getCustom(){try{return JSON.parse(localStorage.getItem(CUSTOM_KEY)||'[]')||[]}catch(e){return []}}
-function setCustom(){try{localStorage.setItem(CUSTOM_KEY,JSON.stringify(customRows))}catch(e){}}
-function variantOptions(){return currentGroup==='naget'?[10,12,20,25,30,40,50]:[Math.max(1,Number(products.find(p=>key(p)===currentGroup)?.isi_per_bungkus)||1)]}
-function customApplies(r,q){const scope=String(r.scope||'all');return scope==='all'||scope===String(q)}
-function customTotalForQty(q){return customRows.filter(r=>r.name&&Number(r.qty)>0&&Number(r.price)>=0&&customApplies(r,q)).reduce((s,r)=>s+Number(r.qty)*Number(r.price),0)}
-function renderCustom(){const body=$('customRows');const opts=variantOptions();if(!customRows.length){body.innerHTML='<tr><td colspan="7">Belum ada bahan custom.</td></tr>';return}body.innerHTML=customRows.map((r,i)=>{const scopeOpts='<option value="all" '+(String(r.scope||'all')==='all'?'selected':'')+'>Semua</option>'+opts.map(q=>`<option value="${q}" ${String(r.scope)===String(q)?'selected':''}>${q} PCS</option>`).join('');const biaya=(Number(r.qty)||0)*(Number(r.price)||0);return `<tr><td><input data-ci="${i}" data-ck="name" value="${String(r.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}" placeholder="Saus" style="width:140px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td><input data-ci="${i}" data-ck="qty" type="number" min="0" step="0.001" value="${r.qty??''}" style="width:90px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td><input data-ci="${i}" data-ck="unit" value="${String(r.unit||'pcs').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}" style="width:80px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td><input data-ci="${i}" data-ck="price" type="number" min="0" step="1" value="${r.price??''}" style="width:110px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td><select data-ci="${i}" data-ck="scope">${scopeOpts}</select></td><td>${rupiah(biaya)}</td><td><button type="button" class="danger" data-cdel="${i}">Hapus</button></td></tr>`}).join('');body.querySelectorAll('[data-ck]').forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{const i=+el.dataset.ci;const k=el.dataset.ck;customRows[i][k]=(k==='qty'||k==='price')?Number(el.value)||0:el.value;setCustom();const row=el.closest('tr');if(row){const c=row.children[5];if(c)c.textContent=rupiah((Number(customRows[i].qty)||0)*(Number(customRows[i].price)||0))}calc()}));body.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>{customRows.splice(+b.dataset.cdel,1);setCustom();renderCustom();calc()})}
-async function load(){try{const [p,m,h]=await Promise.all([sb.from('produk').select('*').order('id',{ascending:true}),sb.from('bahan_baku').select('*').order('id',{ascending:true}),sb.from('hpp').select('*').order('id',{ascending:true})]);if(p.error||m.error||h.error)throw new Error((p.error||m.error||h.error).message);products=(p.data||[]);materials=(m.data||[]);hppMap={};(h.data||[]).forEach(x=>hppMap[x.produk_id]=x);overheadTotal=materials.filter(isOH).reduce((a,x)=>a+(Number(x.harga_beli)||0),0);$('ohTotal').textContent=rupiah(overheadTotal);fillExtra();renderCustom();$('addCustom').onclick=()=>{customRows.push({name:'',qty:0,unit:'pcs',price:0,scope:'all'});setCustom();renderCustom()};fillPacks('offPack',false);fillPacks('onPack',true);const gs=groups();$('produk').innerHTML='<option value="">Pilih produk dasar</option>'+gs.map(k=>`<option value="${k}">${label(k)}</option>`).join('');buildProductionRows(gs);$('produk').onchange=()=>selectGroup($('produk').value);$('save').onclick=save;$('reset').onclick=reset;['hasil','offPrice','onPrice'].forEach(id=>$(id).addEventListener('input',calc));['offPack','onPack','extra'].forEach(id=>$(id).addEventListener('change',calc));$('offQty').addEventListener('change',()=>updateVariantPrices($('offQty').value));$('onQty').addEventListener('change',()=>{if(currentGroup==='naget'){$('offQty').value=$('onQty').value;updateVariantPrices($('onQty').value)}else calc()});calc()}catch(e){$('produk').innerHTML='<option value="">Gagal memuat produk</option>';msg('HPP gagal memuat data: '+e.message)}}
-const DAILY_PRODUCTION_KEY='ff_daily_production_v2';
-function getDailyProduction(){try{return JSON.parse(localStorage.getItem(DAILY_PRODUCTION_KEY)||'{}')||{}}catch(e){return {}}}
-function setDailyProduction(){try{localStorage.setItem(DAILY_PRODUCTION_KEY,JSON.stringify(productionMap))}catch(e){}}
-function buildProductionRows(gs){const tb=$('prodRows');productionMap=getDailyProduction();tb.innerHTML=gs.length?gs.map(k=>{const qty=Math.max(0,Number(productionMap[k])||0);productionMap[k]=qty;return `<tr><td>${label(k)}</td><td><input data-prod="${k}" type="number" min="0" step="1" value="${qty||''}" placeholder="Masukkan PCS" style="width:150px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td id="share-${k.replace(/[^a-z0-9_]/gi,'_')}">0%</td><td id="alloc-${k.replace(/[^a-z0-9_]/gi,'_')}">Rp0</td></tr>`}).join(''):'<tr><td colspan="4">Belum ada produk aktif.</td></tr>';setDailyProduction();tb.querySelectorAll('[data-prod]').forEach(el=>el.oninput=()=>{productionMap[el.dataset.prod]=Math.max(0,Number(el.value)||0);setDailyProduction();renderAllocation();calc()});renderAllocation()}
-function renderAllocation(){const total=Object.values(productionMap).reduce((a,b)=>a+b,0);$('totalProd').textContent=total+' PCS';let at=0;Object.entries(productionMap).forEach(([k,q])=>{const share=total?q/total:0,alloc=overheadTotal*share;at+=alloc;const id=k.replace(/[^a-z0-9_]/gi,'_');const sh=document.getElementById('share-'+id),al=document.getElementById('alloc-'+id);if(sh)sh.textContent=(share*100).toFixed(2)+'%';if(al)al.textContent=rupiah(alloc)});$('allocTotal').textContent=rupiah(at)}
-function updateVariantPrices(q){if(currentGroup!=='naget')return;const p=products.find(x=>key(x)==='naget'&&Number(x.isi_per_bungkus)===Number(q));if(p){$('offPrice').value=Number(p.harga_offline)||0;$('onPrice').value=Number(p.harga_online)||0;}calc()}
-async function selectGroup(k){currentGroup=k||null;recipes=[];recipePacks=[];$('notice').innerHTML='';if(!k){calc();return}const targets=products.filter(p=>key(p)===k),ids=targets.map(p=>p.id),canonical=targets[0]?.id;const r=await sb.from('resep').select('*').in('produk_id',ids);if(r.error){msg('Gagal membaca resep: '+r.error.message);return}const all=r.data||[];recipes=all.filter(x=>String(x.produk_id)===String(canonical));recipePacks=recipes.filter(x=>isKemasan(materials.find(m=>String(m.id)===String(x.bahan_id))));const p=targets[0];$('hasil').value=Number(hppMap[p?.id]?.jumlah_batch)||'';fillQtyForProduct(p);$('offQty').value=String(p?.isi_per_bungkus||10);$('onQty').value=String(p?.isi_per_bungkus||10);renderCustom();$('offPrice').value=Number(p?.harga_offline)||0;$('onPrice').value=Number(p?.harga_online)||0;const off=recipePacks.find(x=>{const m=materials.find(mm=>String(mm.id)===String(x.bahan_id));return m&&!/vakum|vacuum/.test(norm(m.nama_bahan))}),on=recipePacks.find(x=>{const m=materials.find(mm=>String(mm.id)===String(x.bahan_id));return m&&/vakum|vacuum/.test(norm(m.nama_bahan))});if(off)$('offPack').value=String(off.bahan_id);if(on)$('onPack').value=String(on.bahan_id);if(k==='naget')$('notice').innerHTML='<div class="notice">Semua varian Naget (10, 12, 20, 25+Saus, 30, 40, 50) memakai satu resep dasar. HPP tiap varian mengikuti isi per bungkus di Master Produk.</div>';calc()}
-function baseCost(){return recipes.reduce((s,r)=>s+cost(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah_pakai),0)}
-function selectedOH(){const total=Object.values(productionMap).reduce((a,b)=>a+b,0);return total&&currentGroup?overheadTotal*(Number(productionMap[currentGroup])||0)/total:0}
-function calc(){renderAllocation();const total=baseCost(),h=Number($('hasil').value)||0,oh=selectedOH(),modal=total+oh,hppPcs=h?modal/h:0;$('baseCost').textContent=rupiah(total);$('ohOut').textContent=rupiah(oh);$('ohProduk').value=rupiah(oh);$('modal').textContent=rupiah(modal);$('hpp').textContent=rupiah(hppPcs);const oq=Number($('offQty').value)||0,op=Number($('offPrice').value)||0,customOff=customTotalForQty(oq),om=hppPcs*oq+packCost($('offPack').value)+customOff;$('offModal').textContent=rupiah(om);$('offProfit').textContent=op?rupiah(op-om):'Belum diisi';const nq=Number($('onQty').value)||0,np=Number($('onPrice').value)||0,extra=Number(materials.find(m=>String(m.id)===String($('extra').value))?.harga_beli)||0,customOn=customTotalForQty(nq),nm=hppPcs*nq+packCost($('onPack').value)+extra+customOn;$('onModal').textContent=rupiah(nm);$('onProfit').textContent=np?rupiah(np-nm):'Belum diisi'}
-async function save(){if(!currentGroup){msg('Pilih produk dasar terlebih dahulu.');return}const h=Number($('hasil').value)||0;const daily=Number(productionMap[currentGroup])||0;const totalDaily=Object.values(productionMap).reduce((a,b)=>a+b,0);if(!recipes.length||!h){msg('Pastikan resep tersimpan dan Hasil Produksi (PCS) diisi.');return}if(overheadTotal>0&&(!daily||!totalDaily)){msg('Isi Produksi Harian (PCS) terlebih dahulu agar OH dapat dialokasikan berdasarkan produksi aktual.');return}const total=baseCost(),oh=selectedOH(),modal=total+oh,hppPcs=modal/h,targets=products.filter(p=>key(p)===currentGroup),offPack=packCost($('offPack').value),onPack=packCost($('onPack').value),extra=Number(materials.find(m=>String(m.id)===String($('extra').value))?.harga_beli)||0;for(const p of targets){const qty=Math.max(1,Number(p.isi_per_bungkus)||1),custom=customTotalForQty(qty),offModal=hppPcs*qty+offPack+custom,onModal=hppPcs*qty+onPack+extra+custom,offPrice=Number(p.harga_offline)||0,onPrice=Number(p.harga_online)||0,row={produk_id:p.id,total_bahan:total,biaya_produksi:oh,jumlah_batch:h,total_modal:modal,hpp_unit:offModal,harga_offline:offPrice,untung_offline:offPrice-offModal,harga_online:onPrice,untung_online:onPrice-onModal};const old=await sb.from('hpp').select('id').eq('produk_id',p.id).limit(1);if(old.error){msg('Gagal membaca HPP: '+old.error.message);return}const res=old.data?.length?await sb.from('hpp').update(row).eq('id',old.data[0].id):await sb.from('hpp').insert([row]);if(res.error){msg('Gagal menyimpan HPP: '+res.error.message);return}hppMap[p.id]=row}msg('HPP produk berhasil disimpan. Semua angka mengikuti input aktual yang bro masukkan; data lama bukan patokan produksi harian.',true)}
-function reset(){currentGroup=null;$('produk').value='';$('hasil').value='';$('offPrice').value='';$('onPrice').value='';$('offPack').value='';$('onPack').value='';$('extra').value='';recipes=[];recipePacks=[];calc()}load();
-</script></main></body></html>
+const $=id=>document.getElementById(id),rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID'),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+function msg(t,e=false){$('msg').innerHTML='<div class="msg" style="color:'+(e?'#a22':'var(--brand-color,#087443)')+'">'+esc(t)+'</div>'}
+function nowMonth(){return new Date().toISOString().slice(0,7)} $('periode').value=nowMonth();
+function monthLabel(v){const m=String(v||'').match(/^(\d{4})-(\d{1,2})$/);return m?months[Number(m[2])-1]+' '+m[1]:String(v||'')}
+function toNum(v){if(typeof v==='number')return v;let s=String(v??'').trim().replace(/Rp/gi,'').replace(/\s/g,'');if(!s)return 0;if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(/\.\d{3}$/.test(s))s=s.replace(/\./g,'');else if(s.includes(','))s=s.replace(/,/g,'');else if((s.match(/\./g)||[]).length>1)s=s.replace(/\./g,'');const n=Number(s);return Number.isFinite(n)?n:0}
+function normalPeriode(v){if(v instanceof Date)return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}`;const s=String(v??'').trim();let m=s.match(/(20\d{2})[-\/]([01]?\d)/);if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,'0')}`;const map=Object.fromEntries(months.map((x,i)=>[x.toLowerCase(),i+1]));m=s.toLowerCase().match(/(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s*(20\d{2})/);return m?`${m[2]}-${String(map[m[1]]).padStart(2,'0')}`:''}
+function normalizeProductName(v){let s=String(v||'').toLowerCase().replace(/\s+/g,' ').trim();s=s.replace(/^naget\s+isi\s+/,'naget ');return s}
+let all=[],importRows=[],headers=[],pdfMode=false,monthChecks=[],schemaCache=null;
+const PDF_EXPECTED={
+ '2026-01':[33,7508,26541100], '2026-02':[52,9741,33617200], '2026-03':[46,8253,27881100],
+ '2026-04':[47,5778,22110700], '2026-05':[38,4635,17767500], '2026-06':[32,5389,21577000],
+ '2026-07':[35,6079,24366500], '2026-08':[28,1970,7938500]
+};
+const DATA_LAMA_ALIASES={
+  periode:['periode','bulan','month','periode_bulan','tanggal','date','tgl'],
+  konsumen:['konsumen','customer','pelanggan','nama_konsumen','nama_pelanggan','customer_name','nama_customer','nama','keterangan','catatan'],
+  produk:['produk','product','nama_produk','nama product','item','jenis_produk','jenis'],
+  qty:['qty','jumlah','kuantitas','terjual','jumlah_terjual','quantity','qty_jual','catatan'],
+  omzet:['omzet','total','nominal','penjualan','revenue','total_penjualan','total_omzet','nilai_penjualan']
+};
+function normKey(v){return String(v||'').toLowerCase().replace(/[\s_-]+/g,'')}
+function normalPeriode(v){if(v instanceof Date)return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}`;const s=String(v??'').trim();let m=s.match(/(20\d{2})[-\\/]([01]?\\d)/);if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,'0')}`;const map=Object.fromEntries(months.map((x,i)=>[x.toLowerCase(),i+1]));m=s.toLowerCase().match(/(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s*(20\d{2})/);return m?`${m[2]}-${String(map[m[1]]).padStart(2,'0')}`:''}
+const DATA_LAMA_SCHEMA={map:{periode:'periode',konsumen:'keterangan',produk:'jenis',qty:'catatan',omzet:'nominal'},keys:['id','createdAt','periode','jenis','keterangan','nominal','catatan'],inferred:false,profile:'supabase-data-lama-v1'};
+function getDataLamaSchema(){return DATA_LAMA_SCHEMA}
+function schemaError(schema){const missing=['periode','konsumen','produk','qty','omzet'].filter(k=>!schema.map[k]);return missing.length?'Mapping tabel data_lama belum lengkap: '+missing.join(', '):''}
+function canonicalizeDataRow(x,schema){const m=schema.map;return {id:x.id,periode:normalPeriode(x[m.periode])||String(x[m.periode]??'').slice(0,7),konsumen:String(x[m.konsumen]??''),produk:String(x[m.produk]??''),qty:toNum(x[m.qty]),omzet:toNum(x[m.omzet])}}
+function rowSignature(x){return [normalPeriode(x.periode),String(x.konsumen||'').trim().toLowerCase(),String(x.produk||'').trim().toLowerCase(),Math.round(Number(x.qty)||0),Math.round(Number(x.omzet)||0)].join('|')}
+async function readExistingCanonical(schema){const r=await supabaseClient.from('data_lama').select('*');if(r.error)return {data:[],error:r.error};return {data:(r.data||[]).map(x=>canonicalizeDataRow(x,schema)),error:null}}
+function buildInsertRows(fresh,m){return fresh.map(x=>({[m.periode]:String(x.periode),[m.konsumen]:x.konsumen,[m.produk]:x.produk,[m.qty]:String(Math.round(Number(x.qty)||0)),[m.omzet]:Math.round(Number(x.omzet)||0)}))}
+async function insertDataLamaResolved(out,schema){
+  const er=await readExistingCanonical(schema);
+  if(er.error)throw new Error('Gagal membaca data_lama sebelum impor: '+er.error.message);
+  const seen=new Set(er.data.map(rowSignature));
+  const fresh=out.filter(x=>!seen.has(rowSignature(x)));
+  if(!fresh.length)return {used:schema.map,rows:[],duplicateCount:out.length};
+  const r=await supabaseClient.from('data_lama').insert(buildInsertRows(fresh,schema.map));
+  if(r.error)throw r.error;
+  return {used:schema.map,rows:fresh,duplicateCount:out.length-fresh.length};
+}
+function resetDataLamaSchema(){schemaCache=null}
+function renderFilters(){const ms=[...new Set(all.map(x=>x.periode).filter(Boolean))].sort().reverse();const ps=[...new Set(all.map(x=>x.produk).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));const cs=[...new Set(all.map(x=>x.konsumen).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));const pp=$('filterProduct').value,pc=$('filterConsumer').value;$('filterProduct').innerHTML='<option value="">Semua Produk</option>'+ps.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');$('filterConsumer').innerHTML='<option value="">Semua Konsumen</option>'+cs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');if(ps.includes(pp))$('filterProduct').value=pp;if(cs.includes(pc))$('filterConsumer').value=pc;renderMonthTabs(ms)}
+function selectedMonth(){return window.ffDataLamaMonth||''}
+function setSelectedMonth(m){window.ffDataLamaMonth=m;renderAll()}
+function renderMonthTabs(ms){const tabs=$('monthTabs');if(!tabs)return;const current=selectedMonth();let active=current&&ms.includes(current)?current:(ms[0]||'');window.ffDataLamaMonth=active;tabs.innerHTML=ms.length?('<button class="monthtab '+(!active?'active':'')+'" onclick="setSelectedMonth(\'\')">Semua</button>'+ms.map(m=>`<button class="monthtab ${m===active?'active':''}" onclick="setSelectedMonth('${esc(m)}')">${esc(monthLabel(m))}</button>`).join('')):'<span class="hint">Belum ada bulan.</span>'}
+function filteredData(){const m=selectedMonth(),p=$('filterProduct').value,c=$('filterConsumer').value;return all.filter(x=>(!m||x.periode===m)&&(!p||x.produk===p)&&(!c||x.konsumen===c))}
+function renderGrouped(){
+  const data=filteredData();
+  if(!data.length){$('grouped').innerHTML='<div class="emptyState">Belum ada Data Lama pada filter ini.</div>';return}
+  const byMonth={};data.forEach(x=>(byMonth[x.periode]??=[]).push(x));
+  let html='';
+  Object.keys(byMonth).sort().reverse().forEach(m=>{
+    const monthRows=byMonth[m];
+    const mq=monthRows.reduce((a,x)=>a+Number(x.qty||0),0);
+    const mo=monthRows.reduce((a,x)=>a+Number(x.omzet||0),0);
+    const products={}; monthRows.forEach(x=>{products[x.produk]??={qty:0,omzet:0,customers:new Set()};products[x.produk].qty+=Number(x.qty||0);products[x.produk].omzet+=Number(x.omzet||0);products[x.produk].customers.add(x.konsumen)});
+    const consumers={}; monthRows.forEach(x=>{consumers[x.konsumen]??={qty:0,omzet:0,products:new Set()};consumers[x.konsumen].qty+=Number(x.qty||0);consumers[x.konsumen].omzet+=Number(x.omzet||0);consumers[x.konsumen].products.add(x.produk)});
+    html+=`<div class="reportHead"><div><div class="eyebrow">LAPORAN PENJUALAN HISTORIS</div><h2>${esc(monthLabel(m))}</h2><p>Ringkasan penjualan offline berdasarkan data historis.</p></div><div class="reportMeta"><span>📅 ${esc(monthLabel(m))}</span><span>📄 ${monthRows.length.toLocaleString('id-ID')} transaksi produk</span></div></div>`;
+    html+=`<div class="kpiGrid"><div class="kpi"><span>Total Keluar</span><strong>${mq.toLocaleString('id-ID')}</strong><small>bungkus</small></div><div class="kpi"><span>Total Omzet</span><strong>${rupiah(mo)}</strong><small>penjualan historis</small></div><div class="kpi"><span>Produk</span><strong>${Object.keys(products).length}</strong><small>jenis produk</small></div><div class="kpi"><span>Konsumen</span><strong>${Object.keys(consumers).length}</strong><small>pelanggan</small></div></div>`;
+    html+=`<div class="reportGrid"><section class="reportSection"><div class="sectionHead"><div><h3>Ringkasan Produk</h3><p>Jumlah produk yang keluar pada ${esc(monthLabel(m))}.</p></div></div><div class="tablewrap"><table class="cleanTable"><thead><tr><th>Produk</th><th>Konsumen</th><th>Qty Keluar</th><th>Omzet</th></tr></thead><tbody>`;
+    Object.keys(products).sort((a,b)=>a.localeCompare(b,'id')).forEach(product=>{const v=products[product];html+=`<tr><td><b>${esc(product)}</b></td><td>${v.customers.size}</td><td><b>${v.qty.toLocaleString('id-ID')}</b></td><td><b>${rupiah(v.omzet)}</b></td></tr>`});
+    html+=`</tbody></table></div></section>`;
+    html+=`<section class="reportSection"><div class="sectionHead"><div><h3>Penjualan per Konsumen</h3><p>Siapa membeli dan total belanjanya.</p></div></div><div class="tablewrap"><table class="cleanTable"><thead><tr><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>`;
+    Object.keys(consumers).sort((a,b)=>a.localeCompare(b,'id')).forEach(c=>{const v=consumers[c];html+=`<tr><td><b>${esc(c)}</b></td><td>${v.products.size}</td><td>${v.qty.toLocaleString('id-ID')}</td><td><b>${rupiah(v.omzet)}</b></td></tr>`});
+    html+=`</tbody></table></div></section></div>`;
+    html+=`<section class="reportSection detailSection"><div class="sectionHead"><div><h3>Detail Transaksi Produk</h3><p>Rincian konsumen, produk, qty, dan omzet untuk bulan yang dipilih.</p></div></div><div class="tablewrap"><table class="cleanTable"><thead><tr><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>`;
+    monthRows.slice().sort((a,b)=>a.konsumen.localeCompare(b.konsumen,'id')||a.produk.localeCompare(b.produk,'id')).forEach(x=>{html+=`<tr><td>${esc(x.konsumen)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td></tr>`});
+    html+=`</tbody></table></div></section>`;
+  });
+  $('grouped').innerHTML=html;
+}
+function renderAll(){renderFilters();renderGrouped();renderDetail()}
+function renderDetail(){const data=filteredData();$('rows').innerHTML=data.length?data.map(x=>`<tr><td>${esc(monthLabel(x.periode)||x.periode)}</td><td>${esc(x.konsumen)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td><td><button class="del" onclick="del(${x.id})">Hapus</button></td></tr>`).join(''):'<tr><td colspan="6">Belum ada data.</td></tr>'}
+function renderAll(){renderFilters();renderGrouped();renderDetail()}
+async function load(){
+  try{
+    const schema=await getDataLamaSchema();
+    const er=schemaError(schema);
+    if(er){$('grouped').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';return}
+    const r=await supabaseClient.from('data_lama').select('*');
+    if(r.error){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal memuat: '+esc(r.error.message)+'</div>';return}
+    all=(r.data||[]).map(x=>canonicalizeDataRow(x,schema)).map(x=>({...x,qty:Number(x.qty||0),omzet:Math.round(Number(x.omzet||0))}));
+    renderAll();
+  }catch(e){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal membaca struktur data_lama: '+esc(e.message||e)+'</div>'}
+}
+$('save').onclick=async()=>{
+  const data={periode:$('periode').value,konsumen:$('konsumen').value.trim(),produk:$('produk').value.trim(),qty:Math.round(Number($('qty').value)||0),omzet:Math.round(Number($('omzet').value)||0)};
+  if(!data.periode||!data.konsumen||!data.produk||data.qty<=0)return msg('Periode, konsumen, produk, dan Qty wajib diisi.',true);
+  try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return msg(er,true);
+    const resolved=await insertDataLamaResolved([data],schema);if(!resolved.rows.length)return msg('Data sudah ada. Tidak dibuat duplikat.');
+    $('konsumen').value='';$('produk').value='';$('qty').value=0;$('omzet').value=0;msg('Data historis tersimpan.');load();
+  }catch(e){msg(e.message||e,true)}
+};
+window.del=async id=>{if(!confirm('Hapus data historis ini?'))return;const r=await supabaseClient.from('data_lama').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);msg('Data historis dihapus.');load()};
+$('filterProduct').onchange=renderAll;$('filterConsumer').onchange=renderAll;$('refresh').onclick=load;
+function fontSizeOf(it){const t=it.transform||[];return Math.max(Math.abs(Number(t[0])||0),Math.abs(Number(t[3])||0))}
+function cleanNumericColumn(items,minX,maxX){
+  const nums=items.filter(it=>it.x>=minX&&it.x<maxX&&/^[\d.,]+$/.test(String(it.str||'').trim()));
+  if(!nums.length)return null;
+  nums.sort((a,b)=>fontSizeOf(a)-fontSizeOf(b)||a.x-b.x);
+  return toNum(nums[0].str);
+}
+function cleanOmzet(items){
+  const nums=items.filter(it=>it.x>=450&&/^[\d.,]+$/.test(String(it.str||'').trim()));
+  if(!nums.length)return null;
+  nums.sort((a,b)=>fontSizeOf(a)-fontSizeOf(b)||a.x-b.x);
+  return toNum(nums[0].str);
+}
+async function readPDF(file){
+const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs');
+pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.mjs';
+const pdf=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;
+const recs=[];
+const monthsMap={JANUARI:1,FEBRUARI:2,MARET:3,APRIL:4,MEI:5,JUNI:6,JULI:7,AGUSTUS:8,SEPTEMBER:9,OKTOBER:10,NOVEMBER:11,DESEMBER:12};
+let currentMonth='',currentConsumer='',inAdditional=false;
+const productRe=/(Naget(?:\s+isi)?\s+(?:10|12|20|25|30|40|50)|Cireng\s+isi\s+10|Cireng\s+biasa|Cireng\s+crispy|Cibay\s+isi\s+10)/i;
+for(let pn=1;pn<=pdf.numPages;pn++){
+  const page=await pdf.getPage(pn),c=await page.getTextContent();
+  const raw=c.items.map(it=>({str:String(it.str??'').trim(),x:Number(it.transform?.[4])||0,y:Number(it.transform?.[5])||0,transform:it.transform||[]})).filter(it=>it.str);
+  const groups=[];
+  raw.sort((a,b)=>b.y-a.y||a.x-b.x).forEach(it=>{
+    // Keep correction-overlay text on a separate row. In this PDF the duplicate
+    // correction values are offset by about 0.47pt from the original row.
+    let g=groups.find(z=>Math.abs(z.y-it.y)<=0.20);
+    if(!g){g={y:it.y,items:[]};groups.push(g)}
+    g.items.push(it);
+  });
+  groups.sort((a,b)=>b.y-a.y);
+  for(const g of groups){
+    g.items.sort((a,b)=>a.x-b.x);
+    const line=g.items.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim(),up=line.toUpperCase();
+    if(!line)continue;
+    const mm=up.match(/\b(JANUARI|FEBRUARI|MARET|APRIL|MEI|JUNI|JULI|AGUSTUS|SEPTEMBER|OKTOBER|NOVEMBER|DESEMBER)\s+(20\d{2})/);
+    if(mm){currentMonth=`${mm[2]}-${String(monthsMap[mm[1]]).padStart(2,'0')}`;currentConsumer='';inAdditional=false;continue}
+    if(/\bTAMBAHAN\s+TRANSAKSI\b/i.test(up)){inAdditional=true;continue}
+    if(inAdditional)continue;
+    if(/^TOTAL\s+BULAN\b/i.test(up)||/^TOTAL\b/i.test(up)||/^SUBTOTAL\b/i.test(up))continue;
+
+    // Match the product from the complete row text. Do not remove numeric
+    // tokens first, because PDF.js may expose the variant number as a separate item.
+    const pm=line.match(productRe);
+    if(pm){
+      // Main table columns are stable: Qty around x=382 and Omzet around x=486.
+      // Additional-transaction rows use different column positions and are already
+      // excluded above by inAdditional.
+      const qitems=g.items.filter(it=>it.x>=350&&it.x<450&&/^[\d.,]+$/.test(String(it.str||'').trim()));
+      const oitems=g.items.filter(it=>it.x>=450&&/^[\d.,]+$/.test(String(it.str||'').trim()));
+      const qty=qitems.length?toNum(qitems[0].str):null;
+      const omzet=oitems.length?toNum(oitems[0].str):null;
+      if(currentMonth&&currentConsumer&&qty!=null&&omzet!=null&&qty>0&&omzet>=0){
+        recs.push([currentMonth,currentConsumer,pm[1].replace(/\s+/g,' ').trim(),Math.round(qty),Math.round(omzet)]);
+      }
+      continue;
+    }
+    if(g.items[0].x<165&&!/[\d.,]/.test(line)&&line.length<50&&!/Konsumen|Produk|Qty|Omzet/i.test(line))currentConsumer=line;
+  }
+}
+if(!recs.length)throw new Error('PDF tidak menemukan baris produk. Pastikan PDF berupa tabel teks yang dapat diseleksi.');
+const clean=recs.filter(r=>r[0]&&r[1]&&r[2]&&r[3]>0&&r[4]>=0);
+const grouped={};clean.forEach(r=>{grouped[r[0]]??={q:0,o:0,rows:0};grouped[r[0]].q+=r[3];grouped[r[0]].o+=r[4];grouped[r[0]].rows++});
+monthChecks=Object.entries(grouped).sort();
+return {rows:clean,checks:monthChecks,expected:PDF_EXPECTED};
+}
+function showChecks(checks){
+let html='<div class="totalbox">';
+for(const [m,v] of checks){
+ const ex=PDF_EXPECTED[m],ok=!!ex&&ex[0]===v.rows&&ex[1]===v.q&&ex[2]===v.o;
+ html+=`<div class="mini"><b>${esc(monthLabel(m))}</b><span>${v.rows} baris · ${v.q.toLocaleString('id-ID')} bungkus · ${rupiah(v.o)}</span><small style="display:block;margin-top:5px;color:${ok?'#087443':'#a22'}">${ok?'✓ Detail cocok dengan total koreksi PDF':'⚠️ Detail PDF belum cocok dengan total koreksi yang ditetapkan.'}</small></div>`;
+}
+html+='</div>';
+const expectedMonths=Object.keys(PDF_EXPECTED).sort();
+const actualMap=Object.fromEntries(checks);
+const strictOk=expectedMonths.length===checks.length&&expectedMonths.every(m=>actualMap[m]&&PDF_EXPECTED[m][0]===actualMap[m].rows&&PDF_EXPECTED[m][1]===actualMap[m].q&&PDF_EXPECTED[m][2]===actualMap[m].o);
+$('validation').innerHTML=html+(strictOk?'':'<div class="msg" style="color:#a22">⚠️ Import DIKUNCI. Total PDF tidak cocok dengan 8 total bulanan yang sudah diverifikasi. Data tidak akan disimpan agar tidak ada angka yang salah.</div>');
+$('importBtn').disabled=!strictOk;
+$('importBtn').style.opacity=strictOk?'1':'.55';
+$('importBtn').style.cursor=strictOk?'pointer':'not-allowed';
+}
+$('file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{pdfMode=/\.pdf$/i.test(file.name);if(pdfMode){const result=await readPDF(file);importRows=result.rows;headers=['Periode','Konsumen','Produk','Qty','Omzet'];showChecks(result.checks)}else{const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});headers=(aoa.shift()||[]).map((h,i)=>String(h).trim()||`Kolom ${i+1}`);$('importBtn').disabled=false;$('importBtn').style.opacity='1';$('importBtn').style.cursor='pointer';importRows=aoa.filter(r=>r.some(v=>String(v??'').trim()));$('validation').innerHTML=''}if(!headers.length)throw new Error('Kolom tidak ditemukan.');$('fileInfo').textContent=`${importRows.length} baris produk terbaca. Preview menampilkan maksimal 30 baris.`;$('prevHead').innerHTML='<tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('prevRows').innerHTML=importRows.slice(0,30).map(r=>'<tr>'+headers.map((_,i)=>'<td>'+esc(r[i])+'</td>').join('')+'</tr>').join('');$('preview').style.display='block'}catch(err){$('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(err.message||err)+'</div>';$('preview').style.display='block'}};
+$('cancelImport').onclick=()=>{$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[]};
+$('importBtn').onclick=async()=>{
+  if(!importRows.length)return;
+  let out=[];
+  if(pdfMode){out=importRows.map(r=>({periode:r[0],konsumen:r[1],produk:r[2],qty:Math.round(Number(r[3])||0),omzet:Math.round(Number(r[4])||0)})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
+  else{const idx={};const pick=(kind)=>{const a=(DATA_LAMA_ALIASES[kind]||[]).map(normKey);return headers.findIndex(h=>a.includes(normKey(h)))};for(const k of Object.keys(DATA_LAMA_ALIASES))idx[k]=pick(k);if(Object.values(idx).some(v=>v<0))return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Periode, Konsumen, Produk, Qty, dan Omzet wajib ada.</div>';out=importRows.map(r=>({periode:normalPeriode(r[idx.periode]),konsumen:String(r[idx.konsumen]??'').trim(),produk:String(r[idx.produk]??'').trim(),qty:Math.round(toNum(r[idx.qty])),omzet:Math.round(toNum(r[idx.omzet]))})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
+  if(!out.length)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data valid untuk disimpan.</div>';
+  try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';
+    const resolved=await insertDataLamaResolved(out,schema);
+    const used=resolved.used, rows=out.map(x=>{const row={};row[used.periode]=x.periode;row[used.konsumen]=x.konsumen;row[used.produk]=x.produk;row[used.qty]=x.qty;row[used.omzet]=x.omzet;return row});
+    if(schema.inferred){schemaCache={...schema,map:used,keys:[...new Set([...schema.keys,...Object.values(used)])],inferred:false}}
+    $('importMsg').innerHTML='<div class="msg">Berhasil menyimpan '+rows.length+' baris historis'+(resolved.duplicateCount?'. '+resolved.duplicateCount+' baris duplikat dilewati':'')+'.</div>';$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[];load();
+  }catch(e){$('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}
+};
+load();
+</script>
+</body></html>
