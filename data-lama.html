@@ -26,7 +26,7 @@
 
 
 <div class="card"><h2>📚 Data Historis</h2><p class="hint">Pilih <b>bulan</b> untuk melihat laporan dengan urutan <b>Bulan → Ringkasan → Konsumen → Keluar per Produk → Detail Transaksi</b>. Nilai omzet adalah omzet historis yang tersimpan, bukan hasil perkalian ulang dengan harga produk saat ini.</p><div id="monthTabs" class="monthtabs"></div><div class="filters"><div class="field"><label>Produk</label><select id="filterProduct"><option value="">Semua Produk</option></select></div><div class="field"><label>Konsumen</label><select id="filterConsumer"><option value="">Semua Konsumen</option></select></div><div><button class="btn secondary" id="refresh" style="margin-top:0">↻ Muat Ulang</button></div></div><div id="grouped" style="margin-top:18px"><div class="hint">Memuat...</div></div></div>
-<div class="card"><h2>💸 Pengeluaran Historis</h2><p class="hint">Pengeluaran lama disimpan terpisah dari pemasukan. Format upload: <b>Periode, Kategori, Keterangan, Nominal</b>. Data pengeluaran tidak dihitung sebagai omzet.</p><div class="filebox"><input id="expenseFile" type="file" accept=".xlsx,.xls,.csv,.pdf"><p class="hint"><b>PDF pengeluaran Familia Food:</b> sistem membaca tabel Bulan → 6 kategori → Total dari PDF sumber. Untuk PDF, data yang disimpan adalah ringkasan bulanan per kategori.</p></div><div id="expensePreview" class="preview"><h3>Preview Pengeluaran</h3><p class="hint" id="expenseFileInfo"></p><div class="tablewrap"><table><thead id="expensePrevHead"></thead><tbody id="expensePrevRows"></tbody></table></div><button class="btn" id="expenseImportBtn">+ Simpan Semua Pengeluaran</button><button class="btn secondary" id="expenseCancelBtn">Batal</button><div id="expenseImportMsg"></div></div><hr style="border:0;border-top:1px solid #e6eee9;margin:22px 0"><h3 style="margin:0 0 12px;color:#143c2b">Tambah Pengeluaran Manual</h3><div class="grid"><div class="field"><label>Periode</label><input id="expPeriode" type="month"></div><div class="field"><label>Kategori</label><select id="expKategori"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div><div class="field"><label>Keterangan</label><input id="expKeterangan" placeholder="Contoh: Aci 30 Kg"></div><div class="field"><label>Nominal (Rp)</label><input id="expNominal" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="saveExpense">+ Tambah Pengeluaran</button><div id="expenseMsg"></div></div>
+<div class="card"><h2>💸 Pengeluaran Historis</h2><p class="hint">Pengeluaran lama disimpan terpisah dari pemasukan. Format upload: <b>Periode, Kategori, Keterangan, Nominal</b>. Data pengeluaran tidak dihitung sebagai omzet.</p><div class="filebox"><input id="expenseFile" type="file" accept=".xlsx,.xls,.csv,.pdf"><p class="hint"><b>PDF pengeluaran Familia Food:</b> sistem membaca 6 kategori dan seluruh rincian keterangan + nominal dari PDF FINAL. Periode disimpan sebagai Jan–Agustus 2026 (gabungan), lalu pengeluaran berikutnya dapat masuk per bulan tanpa mengubah data lama.</p></div><div id="expensePreview" class="preview"><h3>Preview Pengeluaran</h3><p class="hint" id="expenseFileInfo"></p><div class="tablewrap"><table><thead id="expensePrevHead"></thead><tbody id="expensePrevRows"></tbody></table></div><button class="btn" id="expenseImportBtn">+ Simpan Semua Pengeluaran</button><button class="btn secondary" id="expenseCancelBtn">Batal</button><div id="expenseImportMsg"></div></div><hr style="border:0;border-top:1px solid #e6eee9;margin:22px 0"><h3 style="margin:0 0 12px;color:#143c2b">Tambah Pengeluaran Manual</h3><div class="grid"><div class="field"><label>Periode</label><input id="expPeriode" type="month"></div><div class="field"><label>Kategori</label><select id="expKategori"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lain-lain</option></select></div><div class="field"><label>Keterangan</label><input id="expKeterangan" placeholder="Contoh: Aci 30 Kg"></div><div class="field"><label>Nominal (Rp)</label><input id="expNominal" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="saveExpense">+ Tambah Pengeluaran</button><div id="expenseMsg"></div></div>
 
 </main>
 <script>
@@ -54,25 +54,28 @@ const DATA_LAMA_ALIASES={
 function normKey(v){return String(v||'').toLowerCase().replace(/[\s_-]+/g,'')}
 let expenses=[];
 const EXPENSE_PDF_EXPECTED={
- '2026-01':[15525000,4000500,3025000,2439000,831800,281000,26102300],
- '2026-02':[18760000,2561000,5160000,1975000,1007500,122500,29586000],
- '2026-03':[15797000,4118025,4461000,130000,1437300,239000,26182325],
- '2026-04':[13822800,4283500,4454000,3396500,1264700,537000,27758500],
- '2026-05':[12531500,2595000,2711500,1827500,702300,95000,20462800],
- '2026-06':[16176000,4701000,3781000,1193000,436000,230000,26517000],
- '2026-07':[16373000,6209000,4826000,3069000,596000,1924500,32997500],
- '2026-08':[4848000,949000,1645000,2089000,90700,50000,9671700]
+  period:'2026-01 s/d 2026-08',
+  categories:{
+    'Bahan Baku':112651300,
+    'Operasional':32839025,
+    'Gaji':29914500,
+    'Lain-lain':12303000,
+    'Retur':6520800,
+    'Alat & Perlengkapan':3476000
+  },
+  total:197704625,
+  rows:90
 };
-const EXPENSE_CATEGORIES=['Bahan Baku','Operasional','Gaji','Lainnya','Retur','Alat & Perlengkapan'];
+const EXPENSE_CATEGORIES=['Bahan Baku','Operasional','Gaji','Lain-lain','Retur','Alat & Perlengkapan'];
 const EXPENSE_SOURCE_LABEL='Rangkuman Pengeluaran Offline';
 let expenseImportRows=[],expenseHeaders=[],expensePdfMode=false,expensePdfChecks=[];
-function getExpenseRowKey(x){return [normalPeriode(x.periode),String(x.kategori||'').trim().toLowerCase(),String(x.keterangan||'').trim().toLowerCase(),Math.round(Number(x.nominal)||0)].join('|')}
+function getExpenseRowKey(x){return [normalizeExpensePeriod(x.periode),String(x.kategori||'').trim().toLowerCase(),String(x.keterangan||'').trim().toLowerCase(),Math.round(Number(x.nominal)||0)].join('|')}
 function expenseMsg(t,e=false){$('expenseMsg').innerHTML='<div class="msg" style="color:'+(e?'#a22':'var(--brand-color,#087443)')+'">'+esc(t)+'</div>'}
-function expenseMonthLabel(v){return monthLabel(v)||String(v||'')}
+function normalizeExpensePeriod(v){const s=String(v??'').trim();if(/^\d{4}-\d{2}$/.test(s))return s;if(/^2026-01\s*s\/d\s*2026-08$/i.test(s))return '2026-01 s/d 2026-08';return s}function expenseMonthLabel(v){const s=normalizeExpensePeriod(v);if(s==='2026-01 s/d 2026-08')return 'Januari–Agustus 2026';return monthLabel(s)||s}
 async function loadExpenses(){
   const r=await supabaseClient.from('pengeluaran').select('*').order('periode',{ascending:false}).order('kategori',{ascending:true});
   if(r.error)throw r.error;
-  expenses=(r.data||[]).map(x=>({id:x.id,periode:normalPeriode(x.periode),tanggal:x.tanggal||'',kategori:String(x.kategori||'Lainnya'),keterangan:String(x.keterangan||''),nominal:Math.round(Number(x.nominal||0)),created_at:x.created_at||''}));
+  expenses=(r.data||[]).map(x=>({id:x.id,periode:normalizeExpensePeriod(x.periode),tanggal:x.tanggal||'',kategori:String(x.kategori||'Lainnya'),keterangan:String(x.keterangan||''),nominal:Math.round(Number(x.nominal||0)),created_at:x.created_at||''}));
 }
 function renderExpenses(){
   const wrap=$('expenseMsg'); if(!wrap)return;
@@ -92,32 +95,50 @@ $('expPeriode').value=nowMonth();
 $('saveExpense').onclick=async()=>{const data={periode:$('expPeriode').value,tanggal:null,kategori:$('expKategori').value,keterangan:$('expKeterangan').value.trim(),nominal:Math.round(Number($('expNominal').value)||0)};if(!data.periode||!data.keterangan||data.nominal<=0)return expenseMsg('Periode, keterangan, dan nominal wajib diisi.',true);try{await saveExpenseRow(data);$('expKeterangan').value='';$('expNominal').value=0;expenseMsg('Pengeluaran tersimpan.');await load()}catch(e){expenseMsg('Gagal menyimpan: '+(e.message||e),true)}};
 window.delExpense=async id=>{if(!confirm('Hapus pengeluaran ini?'))return;const r=await supabaseClient.from('pengeluaran').delete().eq('id',id);if(r.error)return expenseMsg('Gagal menghapus: '+r.error.message,true);expenseMsg('Pengeluaran dihapus.');load()};
 function expensePdfMoney(s){return toNum(String(s||'').replace(/Rp/gi,''))}
-function expenseLineGroups(items){const groups=[];for(const it of items){const y=Number(it.transform?.[5]||0);let g=groups.find(x=>Math.abs(x.y-y)<=1.2);if(!g){g={y,items:[]};groups.push(g)}g.items.push({x:Number(it.transform?.[4]||0),str:String(it.str||'')})}return groups.sort((a,b)=>b.y-a.y).map(g=>g.items.sort((a,b)=>a.x-b.x).map(x=>x.str).join(' ').replace(/\s+/g,' ').trim())}
+function expenseLineGroups(items){const groups=[];for(const it of items){const y=Number(it.transform?.[5]||0);let g=groups.find(x=>Math.abs(x.y-y)<=1.2);if(!g){g={y,items:[]};groups.push(g)}g.items.push({x:Number(it.transform?.[4]||0),str:String(it.str||'')})}return groups.sort((a,b)=>b.y-a.y).map(g=>g.items.sort((a,b)=>a.x-b.x).map(x=>x.str).join(' ').replace(/\s+/g,' ').trim()).filter(Boolean)}
 async function readExpensePDF(file){
   const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs');
   pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.mjs';
   const pdf=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;
-  const monthNum=Object.fromEntries(months.map((x,i)=>[x.toLowerCase(),i+1]));
-  const out=[];
+  const categoryMap={
+    '1. BAHAN BAKU':'Bahan Baku',
+    '2. OPERASIONAL':'Operasional',
+    '3. GAJI':'Gaji',
+    '4. LAIN-LAIN':'Lain-lain',
+    '5. RETUR':'Retur',
+    '6. ALAT & PERLENGKAPAN':'Alat & Perlengkapan'
+  };
+  const out=[];let category='';
   for(let pn=1;pn<=pdf.numPages;pn++){
     const page=await pdf.getPage(pn),content=await page.getTextContent(),lines=expenseLineGroups(content.items);
     for(const line of lines){
-      const mm=line.match(/^(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+/i);if(!mm)continue;
-      const n=monthNum[mm[1].toLowerCase()];if(!n)continue;const periode=`2026-${String(n).padStart(2,'0')}`;
-      const vals=(line.match(/Rp\s*[\d.]+(?:,\d+)?/gi)||[]).map(expensePdfMoney);if(vals.length<7)continue;
-      EXPENSE_CATEGORIES.forEach((kategori,i)=>out.push({periode,tanggal:null,kategori,keterangan:EXPENSE_SOURCE_LABEL,nominal:Math.round(vals[i])}));
+      const up=line.toUpperCase().replace(/\s+/g,' ').trim();
+      if(categoryMap[up]){category=categoryMap[up];continue}
+      if(/^TOTAL\s+KESELURUHAN$/i.test(up)){category='';continue}
+      if(!category||/^KETERANGAN\s+NOMINAL$/i.test(line)||/^TOTAL$/i.test(up)||/^FINAL\b/i.test(up)||/^REKAP PENGELUARAN/i.test(up)||/^BERDASARKAN KOREKSI/i.test(up))continue;
+      const m=line.match(/^(.+?)\s+Rp\s*([\d.]+(?:,\d+)?)$/i);
+      if(!m)continue;
+      const keterangan=m[1].trim();
+      if(!keterangan||/^TOTAL$/i.test(keterangan))continue;
+      const nominal=Math.round(expensePdfMoney(m[2]));
+      if(nominal<=0)continue;
+      out.push({periode:EXPENSE_PDF_EXPECTED.period,tanggal:null,kategori:category,keterangan,nominal});
     }
   }
-  const by={};out.forEach(x=>{by[x.periode]??={rows:0,total:0};by[x.periode].rows++;by[x.periode].total+=x.nominal});
-  const checks=Object.entries(by).sort().map(([periode,v])=>({periode,rows:v.rows,total:v.total,expected:EXPENSE_PDF_EXPECTED[periode]?.[6]||0}));
-  const strict=Object.keys(EXPENSE_PDF_EXPECTED).every(m=>by[m]&&by[m].rows===6&&by[m].total===EXPENSE_PDF_EXPECTED[m][6])&&Object.keys(by).length===8;
-  if(!strict)throw new Error('PDF pengeluaran ditemukan, tetapi total bulanan tidak cocok dengan PDF sumber yang sudah diverifikasi. Import dikunci agar tidak ada angka salah.');
-  return {rows:out,checks,strict};
+  const by={};out.forEach(x=>{by[x.kategori]??=0;by[x.kategori]+=x.nominal});
+  const checks=Object.entries(EXPENSE_PDF_EXPECTED.categories).map(([kategori,expected])=>({kategori,actual:by[kategori]||0,expected,ok:(by[kategori]||0)===expected}));
+  const total=out.reduce((a,x)=>a+x.nominal,0);
+  const strict=out.length===EXPENSE_PDF_EXPECTED.rows&&checks.every(x=>x.ok)&&total===EXPENSE_PDF_EXPECTED.total;
+  if(!strict){
+    const detail=checks.map(x=>`${x.kategori}: ${rupiah(x.actual)} / ${rupiah(x.expected)}`).join('; ');
+    throw new Error(`PDF pengeluaran tidak cocok dengan sumber FINAL. Terdeteksi ${out.length} baris, total ${rupiah(total)}. ${detail}`);
+  }
+  return {rows:out,checks,total,strict,period:EXPENSE_PDF_EXPECTED.period};
 }
-function showExpenseChecks(checks){let html='';for(const c of checks){html+=`<div class="mini"><b>${esc(monthLabel(c.periode))}</b><span>${c.rows} kategori · ${rupiah(c.total)}</span><small style="display:block;margin-top:5px;color:#087443">✓ Total PDF cocok</small></div>`}return html+'<div class="msg">✓ Semua 8 bulan cocok dengan total PDF sumber.</div>'}
-$('expenseFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;expensePdfMode=/\.pdf$/i.test(file.name);try{if(expensePdfMode){const result=await readExpensePDF(file);expenseImportRows=result.rows;expensePdfChecks=result.checks;expenseHeaders=['Periode','Kategori','Keterangan','Nominal'];$('expenseFileInfo').textContent=`${expenseImportRows.length} baris kategori terbaca dari ${result.checks.length} bulan. Preview menampilkan seluruh baris.`;$('expensePrevHead').innerHTML='<tr>'+expenseHeaders.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('expensePrevRows').innerHTML=expenseImportRows.map(r=>`<tr><td>${esc(monthLabel(r.periode))}</td><td>${esc(r.kategori)}</td><td>${esc(r.keterangan)}</td><td>${rupiah(r.nominal)}</td></tr>`).join('');$('expenseImportMsg').innerHTML=showExpenseChecks(expensePdfChecks);$('expenseImportBtn').disabled=false;$('expenseImportBtn').style.opacity='1'}else{const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});expenseHeaders=(aoa.shift()||[]).map((h,i)=>String(h).trim()||`Kolom ${i+1}`);expenseImportRows=aoa.filter(r=>r.some(v=>String(v??'').trim()));$('expenseFileInfo').textContent=`${expenseImportRows.length} baris terbaca. Preview maksimal 30 baris.`;$('expensePrevHead').innerHTML='<tr>'+expenseHeaders.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('expensePrevRows').innerHTML=expenseImportRows.slice(0,30).map(r=>'<tr>'+expenseHeaders.map((_,i)=>'<td>'+esc(r[i])+'</td>').join('')+'</tr>').join('');$('expenseImportMsg').innerHTML='';$('expenseImportBtn').disabled=false;$('expenseImportBtn').style.opacity='1'}$('expensePreview').style.display='block'}catch(err){$('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(err.message||err)+'</div>';$('expensePreview').style.display='block';$('expenseImportBtn').disabled=true;$('expenseImportBtn').style.opacity='.55'}};
+function showExpenseChecks(checks,total){let html='<div class="totalbox">';for(const c of checks){html+=`<div class="mini"><b>${esc(c.kategori)}</b><span>${rupiah(c.actual)}</span><small style="display:block;margin-top:5px;color:${c.ok?'#087443':'#a22'}">${c.ok?'✓ Cocok dengan PDF':'⚠️ Tidak cocok'}</small></div>`}html+=`</div><div class="msg">✓ PDF FINAL cocok: <b>90 rincian</b> · Periode <b>Jan–Agustus 2026</b> · Total <b>${rupiah(total)}</b>. Data akan disimpan sebagai satu periode gabungan agar tidak ada pembagian bulanan yang dibuat-buat.</div>`;return html}
+$('expenseFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;expensePdfMode=/\.pdf$/i.test(file.name);try{if(expensePdfMode){const result=await readExpensePDF(file);expenseImportRows=result.rows;expensePdfChecks=result.checks;expenseHeaders=['Periode','Kategori','Keterangan','Nominal'];$('expenseFileInfo').textContent=`${expenseImportRows.length} rincian terbaca. Periode Jan–Agustus 2026 digabung sesuai PDF sumber.`;$('expensePrevHead').innerHTML='<tr>'+expenseHeaders.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('expensePrevRows').innerHTML=expenseImportRows.map(r=>`<tr><td>${esc(monthLabel(r.periode))}</td><td>${esc(r.kategori)}</td><td>${esc(r.keterangan)}</td><td>${rupiah(r.nominal)}</td></tr>`).join('');$('expenseImportMsg').innerHTML=showExpenseChecks(expensePdfChecks,result.total);$('expenseImportBtn').disabled=false;$('expenseImportBtn').style.opacity='1'}else{const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});expenseHeaders=(aoa.shift()||[]).map((h,i)=>String(h).trim()||`Kolom ${i+1}`);expenseImportRows=aoa.filter(r=>r.some(v=>String(v??'').trim()));$('expenseFileInfo').textContent=`${expenseImportRows.length} baris terbaca. Preview maksimal 30 baris.`;$('expensePrevHead').innerHTML='<tr>'+expenseHeaders.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('expensePrevRows').innerHTML=expenseImportRows.slice(0,30).map(r=>'<tr>'+expenseHeaders.map((_,i)=>'<td>'+esc(r[i])+'</td>').join('')+'</tr>').join('');$('expenseImportMsg').innerHTML='';$('expenseImportBtn').disabled=false;$('expenseImportBtn').style.opacity='1'}$('expensePreview').style.display='block'}catch(err){$('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(err.message||err)+'</div>';$('expensePreview').style.display='block';$('expenseImportBtn').disabled=true;$('expenseImportBtn').style.opacity='.55'}};
 $('expenseCancelBtn').onclick=()=>{$('expensePreview').style.display='none';$('expenseFile').value='';expenseImportRows=[];expenseHeaders=[];expensePdfMode=false;expensePdfChecks=[];$('expenseImportBtn').disabled=false;$('expenseImportBtn').style.opacity='1'};
-$('expenseImportBtn').onclick=async()=>{if(expensePdfMode){const rows=expenseImportRows.map(x=>({...x,nominal:Math.round(Number(x.nominal)||0)})).filter(x=>x.periode&&x.kategori&&x.nominal>0);try{await loadExpenses();const existing=new Set(expenses.map(getExpenseRowKey));const fresh=rows.filter(x=>!existing.has(getExpenseRowKey(x)));if(fresh.length){const r=await supabaseClient.from('pengeluaran').insert(fresh.map(x=>({periode:x.periode,tanggal:null,kategori:x.kategori,keterangan:x.keterangan,nominal:x.nominal})));if(r.error)throw r.error}$('expenseImportMsg').innerHTML='<div class="msg">Berhasil menyimpan '+fresh.length+' baris pengeluaran PDF'+(rows.length-fresh.length?'. '+(rows.length-fresh.length)+' duplikat dilewati':'')+'.</div>';await load()}catch(e){$('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}return}const aliases={periode:['periode','bulan','month'],kategori:['kategori','category','jenis'],keterangan:['keterangan','deskripsi','uraian','detail'],nominal:['nominal','pengeluaran','total','jumlah','nilai']};const idx={};for(const k of Object.keys(aliases)){idx[k]=expenseHeaders.findIndex(h=>aliases[k].map(normKey).includes(normKey(h)))}if(Object.values(idx).some(v=>v<0))return $('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Kolom Periode, Kategori, Keterangan, dan Nominal wajib ada.</div>';const rows=expenseImportRows.map(r=>({periode:normalPeriode(r[idx.periode]),kategori:String(r[idx.kategori]||'Lainnya').trim()||'Lainnya',keterangan:String(r[idx.keterangan]||'').trim(),nominal:Math.round(toNum(r[idx.nominal]))})).filter(x=>x.periode&&x.keterangan&&x.nominal>0);if(!rows.length)return $('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data pengeluaran valid.</div>';try{await loadExpenses();const existing=new Set(expenses.map(getExpenseRowKey));const fresh=rows.filter(x=>!existing.has(getExpenseRowKey(x)));if(fresh.length){const r=await supabaseClient.from('pengeluaran').insert(fresh.map(x=>({periode:x.periode,tanggal:null,kategori:x.kategori,keterangan:x.keterangan,nominal:x.nominal})));if(r.error)throw r.error}$('expenseImportMsg').innerHTML='<div class="msg">Berhasil menyimpan '+fresh.length+' pengeluaran'+(rows.length-fresh.length?'. '+(rows.length-fresh.length)+' duplikat dilewati':'')+'.</div>';await load()}catch(e){$('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}};
+$('expenseImportBtn').onclick=async()=>{if(expensePdfMode){const rows=expenseImportRows.map(x=>({...x,nominal:Math.round(Number(x.nominal)||0)})).filter(x=>x.periode&&x.kategori&&x.nominal>0);try{await loadExpenses();const existing=new Set(expenses.map(getExpenseRowKey));const fresh=rows.filter(x=>!existing.has(getExpenseRowKey(x)));if(fresh.length){const r=await supabaseClient.from('pengeluaran').insert(fresh.map(x=>({periode:x.periode,tanggal:null,kategori:x.kategori,keterangan:x.keterangan,nominal:x.nominal})));if(r.error)throw r.error}$('expenseImportMsg').innerHTML='<div class="msg">Berhasil menyimpan '+fresh.length+' rincian pengeluaran PDF'+(rows.length-fresh.length?'. '+(rows.length-fresh.length)+' duplikat dilewati':'')+'.</div>';await load()}catch(e){$('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}return}const aliases={periode:['periode','bulan','month'],kategori:['kategori','category','jenis'],keterangan:['keterangan','deskripsi','uraian','detail'],nominal:['nominal','pengeluaran','total','jumlah','nilai']};const idx={};for(const k of Object.keys(aliases)){idx[k]=expenseHeaders.findIndex(h=>aliases[k].map(normKey).includes(normKey(h)))}if(Object.values(idx).some(v=>v<0))return $('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Kolom Periode, Kategori, Keterangan, dan Nominal wajib ada.</div>';const rows=expenseImportRows.map(r=>({periode:normalPeriode(r[idx.periode]),kategori:String(r[idx.kategori]||'Lainnya').trim()||'Lainnya',keterangan:String(r[idx.keterangan]||'').trim(),nominal:Math.round(toNum(r[idx.nominal]))})).filter(x=>x.periode&&x.keterangan&&x.nominal>0);if(!rows.length)return $('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data pengeluaran valid.</div>';try{await loadExpenses();const existing=new Set(expenses.map(getExpenseRowKey));const fresh=rows.filter(x=>!existing.has(getExpenseRowKey(x)));if(fresh.length){const r=await supabaseClient.from('pengeluaran').insert(fresh.map(x=>({periode:x.periode,tanggal:null,kategori:x.kategori,keterangan:x.keterangan,nominal:x.nominal})));if(r.error)throw r.error}$('expenseImportMsg').innerHTML='<div class="msg">Berhasil menyimpan '+fresh.length+' pengeluaran'+(rows.length-fresh.length?'. '+(rows.length-fresh.length)+' duplikat dilewati':'')+'.</div>';await load()}catch(e){$('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}};
 async function load(){
   try{
     const schema=await getDataLamaSchema();const er=schemaError(schema);if(er){$('grouped').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';return}
