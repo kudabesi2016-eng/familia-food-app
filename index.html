@@ -209,8 +209,18 @@ body{
         </div>
 
         <div class="card">
-            <div class="card-title">Penjualan</div>
+            <div class="card-title">Penjualan Baru</div>
             <div class="card-number" id="totalPenjualan">-</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Data Lama</div>
+            <div class="card-number" id="totalDataLama">-</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Omzet Data Lama</div>
+            <div class="card-number" id="omzetDataLama">Rp 0</div>
         </div>
 
     </div>
@@ -291,6 +301,9 @@ async function hitungData(){
             .from("penjualan")
             .select("*",{count:"exact",head:true});
 
+        const dataLama = await supabaseClient
+            .from("data_lama")
+            .select("qty,omzet");
 
         document.getElementById("totalProduk").textContent =
             produk.count ?? 0;
@@ -303,6 +316,12 @@ async function hitungData(){
 
         document.getElementById("totalPenjualan").textContent =
             penjualan.count ?? 0;
+
+        document.getElementById("totalDataLama").textContent =
+            dataLama.error ? 0 : (dataLama.data || []).length;
+        const oldOmzet = (dataLama.data || []).reduce((a,x)=>a+Number(x.omzet||0),0);
+        document.getElementById("omzetDataLama").textContent =
+            "Rp " + Math.round(oldOmzet).toLocaleString("id-ID");
 
     }catch(error){
 
