@@ -7,9 +7,9 @@
 <script src="supabase.js"></script><script src="app-settings.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f7f5;color:#1f2937}.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand-color,#126b3a);color:#fff;padding:25px 15px;z-index:10}.brand{font-size:24px;font-weight:bold;text-align:center;margin-bottom:30px}.menu a{display:block;color:#fff;text-decoration:none;padding:12px 15px;margin-bottom:6px;border-radius:8px}.menu a:hover,.menu a.active{background:#0d542d}.main{margin-left:240px;padding:30px;max-width:1450px}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.header h1{color:var(--brand-color,#126b3a);margin:0}.card{background:#fff;padding:22px;border-radius:14px;margin-top:18px;box-shadow:0 2px 10px #0000000d}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}.btn{margin-top:15px;background:var(--brand-color,#087443);color:#fff;border:0;border-radius:8px;padding:11px 18px;cursor:pointer;font-weight:bold}.btn.secondary{background:#6b7280}.filebox{border:2px dashed #b7d7c5;padding:18px;border-radius:12px;background:#f8fcfa}.hint{color:#6b7280;font-size:13px;line-height:1.5}.msg{margin-top:10px;padding:10px;border-radius:8px}.preview{display:none}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e8f7ed;color:#087443;font-size:12px;font-weight:bold}.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th{background:var(--brand-color,#087443);color:white;padding:10px;text-align:left}td{padding:10px;border-bottom:1px solid #ddd}.del{background:#fdecec;color:#a22;border:0;padding:7px;border-radius:6px;cursor:pointer}.monthtabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px;padding-bottom:12px;border-bottom:1px solid #e2ebe5}.monthtab{border:1px solid #cfe0d6;background:#fff;color:#315247;border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:bold}.monthtab:hover{background:#eef8f1}.monthtab.active{background:var(--brand-color,#087443);border-color:var(--brand-color,#087443);color:#fff}.emptyState{padding:35px;text-align:center;color:#6b7280;background:#fbfdfc;border:1px dashed #cfe0d6;border-radius:12px}.reportHead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:5px 2px 18px}.eyebrow{font-size:11px;letter-spacing:1.3px;font-weight:800;color:#6b8b7b}.reportHead h2{margin:5px 0 3px;font-size:28px;color:#143c2b}.reportHead p{margin:0;color:#6b7280}.reportMeta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.reportMeta span{background:#f0f7f3;border:1px solid #d9e8df;border-radius:8px;padding:8px 11px;font-size:12px;color:#315247;font-weight:700}.kpiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.kpi{background:#fff;border:1px solid #dfe9e3;border-radius:12px;padding:16px;box-shadow:0 2px 8px #00000008}.kpi span{display:block;font-size:12px;color:#6b7280;font-weight:700}.kpi strong{display:block;font-size:23px;color:#087443;margin-top:7px}.kpi small{color:#8a9992}.reportSection{background:#fff;border:1px solid #dfe9e3;border-radius:12px;overflow:hidden;margin-bottom:16px}.sectionHead{padding:15px 17px;border-bottom:1px solid #e6eee9;background:#fbfdfc}.sectionHead h3{margin:0;color:#143c2b;font-size:17px}.sectionHead p{margin:4px 0 0;color:#7a8781;font-size:12px}.cleanTable{min-width:0!important}.cleanTable th{background:#f1f6f3;color:#315247;font-size:12px;text-transform:uppercase;letter-spacing:.2px;border-bottom:1px solid #dfe9e3}.cleanTable td{font-size:13px}.cleanTable tbody tr:hover{background:#f8fbf9}.detailSection .tablewrap{max-height:440px;overflow:auto}.detailSection thead th{position:sticky;top:0;z-index:1}.sectionTotal{display:flex;justify-content:flex-end;gap:18px;padding:12px 17px;background:#fbfdfc;border-top:1px solid #e6eee9;font-weight:bold;color:#315247}.sectionTotal b{color:#087443}.consumerName{font-weight:700;color:#143c2b}.productPill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef8f1;color:#087443;font-size:12px;font-weight:700}.rank{width:42px;color:#7a8781}.expenseTable{min-width:0!important}.expenseTotal{display:flex;justify-content:flex-end;gap:18px;padding:12px 17px;background:#fbfdfc;border-top:1px solid #e6eee9;font-weight:bold;color:#315247}.expenseTotal b{color:#a24b08}.reportNotice{padding:10px 12px;background:#f5faf7;border:1px solid #d9e8df;border-radius:10px;color:#315247;font-size:12px;margin-bottom:14px}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f7f5;color:#1f2937}.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand-color,#126b3a);color:#fff;padding:25px 15px;z-index:10}.brand{font-size:24px;font-weight:bold;text-align:center;margin-bottom:30px}.menu a{display:block;color:#fff;text-decoration:none;padding:12px 15px;margin-bottom:6px;border-radius:8px}.menu a:hover,.menu a.active{background:#0d542d}.main{margin-left:240px;padding:30px;max-width:1450px}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.header h1{color:var(--brand-color,#126b3a);margin:0}.card{background:#fff;padding:22px;border-radius:14px;margin-top:18px;box-shadow:0 2px 10px #0000000d}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}.btn{margin-top:15px;background:var(--brand-color,#087443);color:#fff;border:0;border-radius:8px;padding:11px 18px;cursor:pointer;font-weight:bold}.btn.secondary{background:#6b7280}.filebox{border:2px dashed #b7d7c5;padding:18px;border-radius:12px;background:#f8fcfa}.hint{color:#6b7280;font-size:13px;line-height:1.5}.msg{margin-top:10px;padding:10px;border-radius:8px}.preview{display:none}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e8f7ed;color:#087443;font-size:12px;font-weight:bold}.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th{background:var(--brand-color,#087443);color:white;padding:10px;text-align:left}td{padding:10px;border-bottom:1px solid #ddd}.del{background:#fdecec;color:#a22;border:0;padding:7px;border-radius:6px;cursor:pointer}.monthtabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px;padding-bottom:12px;border-bottom:1px solid #e2ebe5}.monthtab{border:1px solid #cfe0d6;background:#fff;color:#315247;border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:bold}.monthtab:hover{background:#eef8f1}.monthtab.active{background:var(--brand-color,#087443);border-color:var(--brand-color,#087443);color:#fff}.emptyState{padding:35px;text-align:center;color:#6b7280;background:#fbfdfc;border:1px dashed #cfe0d6;border-radius:12px}.reportHead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:5px 2px 18px}.eyebrow{font-size:11px;letter-spacing:1.3px;font-weight:800;color:#6b8b7b}.reportHead h2{margin:5px 0 3px;font-size:28px;color:#143c2b}.reportHead p{margin:0;color:#6b7280}.reportMeta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.reportMeta span{background:#f0f7f3;border:1px solid #d9e8df;border-radius:8px;padding:8px 11px;font-size:12px;color:#315247;font-weight:700}.kpiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.kpi{background:#fff;border:1px solid #dfe9e3;border-radius:12px;padding:16px;box-shadow:0 2px 8px #00000008}.kpi span{display:block;font-size:12px;color:#6b7280;font-weight:700}.kpi strong{display:block;font-size:23px;color:#087443;margin-top:7px}.kpi small{color:#8a9992}.reportSection{background:#fff;border:1px solid #dfe9e3;border-radius:12px;overflow:hidden;margin-bottom:16px}.sectionHead{padding:15px 17px;border-bottom:1px solid #e6eee9;background:#fbfdfc}.sectionHead h3{margin:0;color:#143c2b;font-size:17px}.sectionHead p{margin:4px 0 0;color:#7a8781;font-size:12px}.cleanTable{min-width:0!important}.cleanTable th{background:#f1f6f3;color:#315247;font-size:12px;text-transform:uppercase;letter-spacing:.2px;border-bottom:1px solid #dfe9e3}.cleanTable td{font-size:13px}.cleanTable tbody tr:hover{background:#f8fbf9}.detailSection .tablewrap{max-height:440px;overflow:auto}.detailSection thead th{position:sticky;top:0;z-index:1}.sectionTotal{display:flex;justify-content:flex-end;gap:18px;padding:12px 17px;background:#fbfdfc;border-top:1px solid #e6eee9;font-weight:bold;color:#315247}.sectionTotal b{color:#087443}.consumerName{font-weight:700;color:#143c2b}.productPill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef8f1;color:#087443;font-size:12px;font-weight:700}.rank{width:42px;color:#7a8781}.reportNotice{padding:10px 12px;background:#f5faf7;border:1px solid #d9e8df;border-radius:10px;color:#315247;font-size:12px;margin-bottom:14px}
 @media(max-width:900px){.sidebar{position:relative;width:100%;height:auto}.main{margin-left:0;padding:15px}.grid,.filters,.kpiGrid{grid-template-columns:1fr}.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}.reportHead{flex-direction:column}.reportMeta{justify-content:flex-start}}
-</style>
+.history-title{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.history-title h2{margin:0 0 4px}.month-summary{border:1px solid #dfe9e3;border-radius:12px;overflow:hidden}.month-row{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr auto;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid #e8eee9}.month-row:last-child{border-bottom:0}.month-name{font-weight:800;color:#143c2b}.money-label{font-size:11px;color:#7a8781;display:block;margin-bottom:3px}.money{font-weight:800}.income{color:#087443}.expense{color:#b23b3b}.balance{color:#315247}.view-btn{margin:0;background:#087443;color:#fff;border:0;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer;white-space:nowrap}.view-btn:hover{filter:brightness(.95)}.month-detail{grid-column:1/-1;background:#f8fbf9;border-top:1px solid #e8eee9;padding:16px;margin:0 -16px -15px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mini-detail{background:#fff;border:1px solid #dfe9e3;border-radius:10px;padding:14px}.mini-detail h4{margin:0 0 10px;color:#143c2b}.mini-detail table{min-width:0}.mini-detail th{font-size:11px;padding:8px}.mini-detail td{font-size:12px;padding:8px}.close-detail{margin-top:12px;background:#6b7280}.history-note{margin-top:12px;padding:9px 11px;background:#f5faf7;border-radius:8px;font-size:12px;color:#315247}@media(max-width:900px){.month-row{grid-template-columns:1fr 1fr}.month-row>div:last-of-type,.view-btn{grid-column:auto}.month-detail{grid-column:1/-1}.detail-grid{grid-template-columns:1fr}}@media(max-width:600px){.month-row{grid-template-columns:1fr}.view-btn{width:100%}.history-title{flex-direction:column}}</style>
 </head>
 <body>
 <aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="menu">
@@ -18,16 +18,13 @@
 <main class="main">
 <div class="header"><div><h1>📁 Data Lama</h1><p>Riwayat penjualan lama tetap tersimpan per <b>bulan → ringkasan → konsumen → keluar per produk → detail transaksi</b> dan tetap dapat dibaca oleh Rekap dan Dashboard.</p></div><span class="badge">Historis Offline</span></div>
 
-<div class="card"><h2>📥 Import Data Lama</h2><div class="filebox"><input id="file" type="file" accept=".xlsx,.xls,.csv,.pdf"><p class="hint"><b>PDF Familia Food:</b> sistem membaca tabel <b>Bulan → Konsumen → Produk → Qty → Omzet</b>. Baris Subtotal/TOTAL BULAN tidak disimpan. Angka Indonesia seperti <b>3.774.000</b> dibaca sebagai <b>Rp3.774.000</b>.</p></div>
-<div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></div>
+<div class="card history-card"><div class="history-title"><div><h2>📚 Data Lama per Bulan</h2><p class="hint">Tampilan ringkas: <b>Pemasukan · Pengeluaran · Selisih</b>. Detail hanya muncul saat bro menekan <b>👁 Lihat Data</b>.</p></div><span class="badge">Ringkas</span></div><div id="monthlySummary"><div class="hint">Memuat data...</div></div></div>
 
-<div class="card"><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
-<div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></div>
+<div class="card"><details><summary>📥 Import Data Lama</summary><h2>📥 Import Data Lama</h2><div class="filebox"><input id="file" type="file" accept=".xlsx,.xls,.csv,.pdf"><p class="hint"><b>PDF Familia Food:</b> sistem membaca tabel <b>Bulan → Konsumen → Produk → Qty → Omzet</b>. Baris Subtotal/TOTAL BULAN tidak disimpan. Angka Indonesia seperti <b>3.774.000</b> dibaca sebagai <b>Rp3.774.000</b>.</p></div>
+<div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></details></div>
 
-
-<div class="card"><h2>📚 Data Historis</h2><p class="hint">Pilih <b>bulan</b> untuk melihat laporan dengan urutan <b>Bulan → Ringkasan → Konsumen → Keluar per Produk → Detail Transaksi</b>. Nilai omzet adalah omzet historis yang tersimpan, bukan hasil perkalian ulang dengan harga produk saat ini.</p><div id="monthTabs" class="monthtabs"></div><div class="filters"><div class="field"><label>Produk</label><select id="filterProduct"><option value="">Semua Produk</option></select></div><div class="field"><label>Konsumen</label><select id="filterConsumer"><option value="">Semua Konsumen</option></select></div><div><button class="btn secondary" id="refresh" style="margin-top:0">↻ Muat Ulang</button></div></div><div id="grouped" style="margin-top:18px"><div class="hint">Memuat...</div></div></div>
-<div class="card"><h2>💸 Pengeluaran Historis</h2><p class="hint">Pengeluaran lama disimpan terpisah dari pemasukan. Format upload: <b>Periode, Kategori, Keterangan, Nominal</b>. Data pengeluaran tidak dihitung sebagai omzet.</p><div class="filebox"><input id="expenseFile" type="file" accept=".xlsx,.xls,.csv,.pdf"><p class="hint"><b>PDF pengeluaran Familia Food:</b> sistem membaca 6 kategori dan seluruh rincian keterangan + nominal dari PDF FINAL. Periode disimpan sebagai Jan–Agustus 2026 (gabungan), lalu pengeluaran berikutnya dapat masuk per bulan tanpa mengubah data lama.</p></div><div id="expensePreview" class="preview"><h3>Preview Pengeluaran</h3><p class="hint" id="expenseFileInfo"></p><div class="tablewrap"><table><thead id="expensePrevHead"></thead><tbody id="expensePrevRows"></tbody></table></div><button class="btn" id="expenseImportBtn">+ Simpan Semua Pengeluaran</button><button class="btn secondary" id="expenseCancelBtn">Batal</button><div id="expenseImportMsg"></div></div><hr style="border:0;border-top:1px solid #e6eee9;margin:22px 0"><h3 style="margin:0 0 12px;color:#143c2b">Tambah Pengeluaran Manual</h3><div class="grid"><div class="field"><label>Periode</label><input id="expPeriode" type="month"></div><div class="field"><label>Kategori</label><select id="expKategori"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lain-lain</option></select></div><div class="field"><label>Keterangan</label><input id="expKeterangan" placeholder="Contoh: Aci 30 Kg"></div><div class="field"><label>Nominal (Rp)</label><input id="expNominal" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="saveExpense">+ Tambah Pengeluaran</button><div id="expenseMsg"></div></div>
-
+<div class="card"><details><summary>✍️ Tambah Manual</summary><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
+<div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></details></div>
 </main>
 <script>
 const $=id=>document.getElementById(id),rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID'),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -38,7 +35,11 @@ function monthLabel(v){const m=String(v||'').match(/^(\d{4})-(\d{1,2})$/);return
 function toNum(v){if(typeof v==='number')return v;let s=String(v??'').trim().replace(/Rp/gi,'').replace(/\s/g,'');if(!s)return 0;if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(/\.\d{3}$/.test(s))s=s.replace(/\./g,'');else if(s.includes(','))s=s.replace(/,/g,'');else if((s.match(/\./g)||[]).length>1)s=s.replace(/\./g,'');const n=Number(s);return Number.isFinite(n)?n:0}
 function normalPeriode(v){if(v instanceof Date)return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}`;const s=String(v??'').trim();let m=s.match(/(20\d{2})[-\/]([01]?\d)/);if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,'0')}`;const map=Object.fromEntries(months.map((x,i)=>[x.toLowerCase(),i+1]));m=s.toLowerCase().match(/(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s*(20\d{2})/);return m?`${m[2]}-${String(map[m[1]]).padStart(2,'0')}`:''}
 function normalizeProductName(v){let s=String(v||'').toLowerCase().replace(/\s+/g,' ').trim();s=s.replace(/^naget\s+isi\s+/,'naget ');return s}
-let all=[],importRows=[],headers=[],pdfMode=false,monthChecks=[],schemaCache=null;
+let all=[],expenseAll=[],salesAll=[],importRows=[],headers=[],pdfMode=false,monthChecks=[],schemaCache=null;
+let productMap={};
+const SALE_CUSTOMERS_KEY='ff_sale_customers_v1';
+function saleCustomer(id){try{const x=JSON.parse(localStorage.getItem(SALE_CUSTOMERS_KEY)||'{}');return String(x[id]||'')}catch(e){return ''}}
+function saleMonth(v){const s=String(v||'');const m=s.match(/^(20\d{2})-(\d{1,2})/);return m?`${m[1]}-${String(Number(m[2])).padStart(2,'0')}`:''}
 const PDF_EXPECTED={
  '2026-01':[33,7508,26541100], '2026-02':[52,9741,33617200], '2026-03':[46,8253,27881100],
  '2026-04':[47,5778,22110700], '2026-05':[38,4635,17767500], '2026-06':[32,5389,21577000],
@@ -75,148 +76,80 @@ async function insertDataLamaResolved(out,schema){
   if(r.error)throw r.error;
   return {used:schema.map,rows:fresh,duplicateCount:out.length-fresh.length};
 }
-function renderFilters(){const ms=[...new Set(all.map(x=>x.periode).filter(Boolean))].sort().reverse();const ps=[...new Set(all.map(x=>x.produk).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));const cs=[...new Set(all.map(x=>x.konsumen).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));const pp=$('filterProduct').value,pc=$('filterConsumer').value;$('filterProduct').innerHTML='<option value="">Semua Produk</option>'+ps.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');$('filterConsumer').innerHTML='<option value="">Semua Konsumen</option>'+cs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');if(ps.includes(pp))$('filterProduct').value=pp;if(cs.includes(pc))$('filterConsumer').value=pc;renderMonthTabs(ms)}
 function selectedMonth(){return window.ffDataLamaMonth||''}
-function setSelectedMonth(m){window.ffDataLamaMonth=m;renderAll()}
-function renderMonthTabs(ms){const tabs=$('monthTabs');if(!tabs)return;const current=selectedMonth();let active=current&&ms.includes(current)?current:(ms[0]||'');window.ffDataLamaMonth=active;tabs.innerHTML=ms.length?ms.map(m=>`<button class="monthtab ${m===active?'active':''}" onclick="setSelectedMonth('${esc(m)}')">${esc(monthLabel(m))}</button>`).join(''):'<span class="hint">Belum ada bulan.</span>'}
-function filteredData(){const m=selectedMonth(),p=$('filterProduct').value,c=$('filterConsumer').value;return all.filter(x=>(!m||x.periode===m)&&(!p||x.produk===p)&&(!c||x.konsumen===c))}
-function renderGrouped(){
-  const data=filteredData();
-  if(!data.length){$('grouped').innerHTML='<div class="emptyState">Belum ada Data Lama pada filter ini.</div>';return}
-  const m=selectedMonth()||[...new Set(data.map(x=>x.periode))].sort().reverse()[0];
-  const monthRows=data.filter(x=>x.periode===m);
-  if(!monthRows.length){$('grouped').innerHTML='<div class="emptyState">Belum ada data untuk bulan yang dipilih.</div>';return}
-  const mq=monthRows.reduce((a,x)=>a+Number(x.qty||0),0);
-  const mo=monthRows.reduce((a,x)=>a+Number(x.omzet||0),0);
-  const products={};
-  const consumers={};
-  const consumerProduct={};
-  monthRows.forEach(x=>{
-    const p=x.produk||'Tanpa Produk', c=x.konsumen||'Tanpa Konsumen';
-    products[p]??={qty:0,omzet:0,customers:new Set()};
-    products[p].qty+=Number(x.qty||0); products[p].omzet+=Number(x.omzet||0); products[p].customers.add(c);
-    consumers[c]??={qty:0,omzet:0,products:new Set()};
-    consumers[c].qty+=Number(x.qty||0); consumers[c].omzet+=Number(x.omzet||0); consumers[c].products.add(p);
-    const key=c+'\u0000'+p;
-    consumerProduct[key]??={konsumen:c,produk:p,qty:0,omzet:0};
-    consumerProduct[key].qty+=Number(x.qty||0); consumerProduct[key].omzet+=Number(x.omzet||0);
+function setSelectedMonth(m){toggleMonth(m)}
+function allBookMonths(){
+  const set=new Set();
+  const add=v=>{const m=String(v||'').match(/^(\d{4})-(\d{1,2})$/);if(m)set.add(`${m[1]}-${String(Number(m[2])).padStart(2,'0')}`)};
+  all.forEach(x=>add(x.periode));
+  salesAll.forEach(x=>add(x.periode));
+  expenseAll.forEach(x=>add(x.periode));
+  add(new Date().toISOString().slice(0,7));
+  return [...set].sort().reverse();
+}
+function incomeForMonth(m){return all.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0)+salesAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0)}
+function expenseForMonth(m){return expenseAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.nominal||0),0)}
+function exactExpenseMonths(){return new Set(expenseAll.map(x=>x.periode).filter(m=>/^2026-\\d{2}$/.test(m)))}
+function renderMonthlySummary(){
+  const box=$('monthlySummary');
+  const months=allBookMonths();
+  const exactMonths=exactExpenseMonths();
+  const combined=expenseAll.filter(x=>!exactMonths.has(x.periode));
+  let html='<div class="month-summary">';
+  months.forEach(m=>{
+    const income=incomeForMonth(m), expense=expenseForMonth(m), hasExpense=exactMonths.has(m), balance=income-expense;
+    html+=`<div class="month-row"><div class="month-name">📅 ${esc(monthLabel(m))}</div><div><span class="money-label">🟢 Pemasukan</span><span class="money income">${income?rupiah(income):'—'}</span></div><div><span class="money-label">🔴 Pengeluaran</span><span class="money expense">${hasExpense?rupiah(expense):'—'}</span></div><div><span class="money-label">💰 Selisih</span><span class="money balance">${hasExpense?rupiah(balance):'—'}</span></div><button class="view-btn" onclick="toggleMonth('${m}')">👁 Lihat Data</button><div id="detail-${m}" class="month-detail" style="display:none"></div></div>`;
   });
-  const consumerRows=Object.values(consumerProduct).sort((a,b)=>a.konsumen.localeCompare(b.konsumen,'id')||a.produk.localeCompare(b.produk,'id'));
-  const productRows=Object.entries(products).sort((a,b)=>b[1].qty-a[1].qty||a[0].localeCompare(b[0],'id'));
-  const consumerTotals=Object.entries(consumers).sort((a,b)=>b[1].omzet-a[1].omzet||a[0].localeCompare(b[0],'id'));
-  let html=`<div class="reportHead"><div><div class="eyebrow">LAPORAN PENJUALAN HISTORIS</div><h2>${esc(monthLabel(m))}</h2><p>Data historis offline tersimpan di Familia Food.</p></div><div class="reportMeta"><span>📅 ${esc(monthLabel(m))}</span><span>📄 ${monthRows.length.toLocaleString('id-ID')} baris produk</span></div></div>`;
-  html+=`<div class="reportNotice">Angka <b>Keluar</b> dan <b>Omzet</b> di bawah berasal dari data historis. Sistem tidak mengubah omzet berdasarkan harga Master Produk terbaru.</div>`;
-  html+=`<section class="reportSection"><div class="sectionHead"><h3>📊 Ringkasan</h3><p>Gambaran total penjualan historis untuk bulan yang dipilih.</p></div><div class="kpiGrid" style="padding:16px;margin:0"><div class="kpi"><span>Total Keluar</span><strong>${mq.toLocaleString('id-ID')}</strong><small>bungkus</small></div><div class="kpi"><span>Total Omzet</span><strong>${rupiah(mo)}</strong><small>historis bulan ini</small></div><div class="kpi"><span>Jumlah Produk</span><strong>${productRows.length}</strong><small>jenis produk</small></div><div class="kpi"><span>Jumlah Konsumen</span><strong>${consumerTotals.length}</strong><small>pelanggan</small></div></div><div class="sectionTotal"><span>Total Keluar: <b>${mq.toLocaleString('id-ID')} bungkus</b></span><span>Total Omzet: <b>${rupiah(mo)}</b></span></div></section>`;
-  html+=`<section class="reportSection"><div class="sectionHead"><h3>📦 Keluar per Produk</h3><p>Total produk yang keluar dan omzetnya pada ${esc(monthLabel(m))}.</p></div><div class="tablewrap"><table class="cleanTable"><thead><tr><th class="rank">No</th><th>Produk</th><th>Jumlah Konsumen</th><th>Qty Keluar</th><th>Omzet</th></tr></thead><tbody>`;
-  productRows.forEach(([p,v],i)=>{html+=`<tr><td class="rank">${i+1}</td><td><span class="productPill">${esc(p)}</span></td><td>${v.customers.size}</td><td><b>${v.qty.toLocaleString('id-ID')}</b></td><td><b>${rupiah(v.omzet)}</b></td></tr>`});
-  html+=`</tbody></table></div><div class="sectionTotal"><span>Total Produk: <b>${productRows.length} jenis</b></span><span>Total Keluar: <b>${mq.toLocaleString('id-ID')} bungkus</b></span><span>Total Omzet: <b>${rupiah(mo)}</b></span></div></section>`;
-  html+=`<section class="reportSection detailSection"><div class="sectionHead"><h3>🔎 Detail Transaksi</h3><p>Data per baris yang menjadi sumber ringkasan bulan ini.</p></div><div class="tablewrap"><table class="cleanTable"><thead><tr><th class="rank">No</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th><th>Aksi</th></tr></thead><tbody>`;
-  monthRows.slice().sort((a,b)=>a.konsumen.localeCompare(b.konsumen,'id')||a.produk.localeCompare(b.produk,'id')).forEach((x,i)=>{html+=`<tr><td class="rank">${i+1}</td><td>${esc(x.konsumen)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td><td><button class="del" onclick="del(${x.id})">Hapus</button></td></tr>`});
-  html+=`</tbody></table></div></section>`;
-  html+=`<section class="reportSection"><div class="sectionHead"><h3>👥 Konsumen</h3><p>Rincian pembelian per konsumen dan produk pada ${esc(monthLabel(m))}.</p></div><div class="tablewrap"><table class="cleanTable"><thead><tr><th class="rank">No</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>`;
-  consumerRows.forEach((x,i)=>{html+=`<tr><td class="rank">${i+1}</td><td class="consumerName">${esc(x.konsumen)}</td><td><span class="productPill">${esc(x.produk)}</span></td><td><b>${x.qty.toLocaleString('id-ID')}</b></td><td><b>${rupiah(x.omzet)}</b></td></tr>`});
-  html+=`</tbody></table></div><div class="sectionTotal"><span>Total Konsumen: <b>${consumerTotals.length}</b></span><span>Total Keluar: <b>${mq.toLocaleString('id-ID')} bungkus</b></span><span>Total Omzet: <b>${rupiah(mo)}</b></span></div></section>`;
-  $('grouped').innerHTML=html;
+  html+='</div>';
+  if(combined.length){const total=combined.reduce((a,x)=>a+Number(x.nominal||0),0);html+=`<div class="history-note">🔴 <b>Pengeluaran periode gabungan:</b> ${rupiah(total)} belum dibagi ke bulan tertentu, jadi tidak saya masukkan ke salah satu bulan. Pengeluaran baru yang dicatat dengan periode bulan akan otomatis masuk ke bulan tersebut.</div>`}
+  html+='<div class="history-note">🟢 Pemasukan bulanan = Data Lama + transaksi terbaru dari Penjualan. Bulan tidak dikunci, jadi transaksi baru tetap menambah bulan yang sama.</div>';
+  box.innerHTML=html;
 }
-function renderDetail(){/* Detail is rendered inside the selected-month report. */}
-function renderAll(){renderFilters();renderGrouped();}
-let expenses=[];
-const EXPENSE_PDF_EXPECTED={
-  period:'2026-01 s/d 2026-08',
-  categories:{
-    'Bahan Baku':112651300,
-    'Operasional':32839025,
-    'Gaji':29914500,
-    'Lain-lain':12303000,
-    'Retur':6520800,
-    'Alat & Perlengkapan':3476000
-  },
-  total:197704625,
-  rows:90
-};
-const EXPENSE_CATEGORIES=['Bahan Baku','Operasional','Gaji','Lain-lain','Retur','Alat & Perlengkapan'];
-const EXPENSE_SOURCE_LABEL='Rangkuman Pengeluaran Offline';
-let expenseImportRows=[],expenseHeaders=[],expensePdfMode=false,expensePdfChecks=[];
-function getExpenseRowKey(x){return [normalizeExpensePeriod(x.periode),String(x.kategori||'').trim().toLowerCase(),String(x.keterangan||'').trim().toLowerCase(),Math.round(Number(x.nominal)||0)].join('|')}
-function expenseMsg(t,e=false){$('expenseMsg').innerHTML='<div class="msg" style="color:'+(e?'#a22':'var(--brand-color,#087443)')+'">'+esc(t)+'</div>'}
-function normalizeExpensePeriod(v){const s=String(v??'').trim();if(/^\d{4}-\d{2}$/.test(s))return s;if(/^2026-01\s*s\/d\s*2026-08$/i.test(s))return '2026-01 s/d 2026-08';return s}function expenseMonthLabel(v){const s=normalizeExpensePeriod(v);if(s==='2026-01 s/d 2026-08')return 'Januari–Agustus 2026';return monthLabel(s)||s}
-async function loadExpenses(){
-  const r=await supabaseClient.from('pengeluaran').select('*').order('periode',{ascending:false}).order('kategori',{ascending:true});
-  if(r.error)throw r.error;
-  expenses=(r.data||[]).map(x=>({id:x.id,periode:normalizeExpensePeriod(x.periode),tanggal:x.tanggal||'',kategori:String(x.kategori||'Lainnya'),keterangan:String(x.keterangan||''),nominal:Math.round(Number(x.nominal||0)),created_at:x.created_at||''}));
+function detailMonth(m){
+  const rows=all.filter(x=>x.periode===m);
+  const sales=salesAll.filter(x=>x.periode===m);
+  const ex=expenseAll.filter(x=>x.periode===m);
+  const products={};
+  rows.forEach(x=>{const p=x.produk||'Tanpa Produk';products[p]??={qty:0,omzet:0};products[p].qty+=Number(x.qty||0);products[p].omzet+=Number(x.omzet||0)});
+  sales.forEach(x=>{const p=x.produk||`Produk #${x.produk_id||'-'}`;products[p]??={qty:0,omzet:0};products[p].qty+=Number(x.qty||0);products[p].omzet+=Number(x.omzet||0)});
+  let h='<div class="detail-grid">';
+  h+='<div class="mini-detail"><h4>🟢 Pemasukan</h4><table><thead><tr><th>Sumber</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>';
+  rows.forEach(x=>{h+=`<tr><td>Data Lama</td><td>${esc(x.konsumen)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td></tr>`});
+  sales.forEach(x=>{const customer=saleCustomer(x.id)||'—';h+=`<tr><td>Penjualan</td><td>${esc(customer)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td></tr>`});
+  if(!rows.length&&!sales.length)h+='<tr><td colspan="5">Belum ada pemasukan.</td></tr>';
+  h+='</tbody></table></div>';
+  h+='<div class="mini-detail"><h4>🔴 Pengeluaran</h4><table><thead><tr><th>Kategori</th><th>Keterangan</th><th>Nominal</th></tr></thead><tbody>';
+  ex.forEach(x=>{h+=`<tr><td>${esc(x.kategori)}</td><td>${esc(x.keterangan)}</td><td>${rupiah(x.nominal)}</td></tr>`});
+  h+=ex.length?'':'<tr><td colspan="3">Belum ada pengeluaran dengan periode bulan ini.</td></tr>';
+  h+='</tbody></table></div></div>';
+  const productRows=Object.entries(products).sort((a,b)=>b[1].qty-a[1].qty);
+  h+='<div class="mini-detail" style="margin-top:14px"><h4>📦 Keluar per Produk</h4><table><thead><tr><th>Produk</th><th>Qty Keluar</th><th>Omzet</th></tr></thead><tbody>';
+  productRows.forEach(([p,v])=>{h+=`<tr><td>${esc(p)}</td><td>${v.qty.toLocaleString('id-ID')}</td><td>${rupiah(v.omzet)}</td></tr>`});
+  h+='</tbody></table><button class="view-btn close-detail" onclick="toggleMonth(\''+m+'\')">Tutup Data</button></div>';
+  return h;
 }
-function renderExpenses(){
-  const wrap=$('expenseMsg'); if(!wrap)return;
-  const prior=document.getElementById('expenseReport'); if(prior)prior.remove();
-  let html='<div class="reportSection" style="margin-top:18px"><div class="sectionHead"><h3>📋 Riwayat Pengeluaran</h3><p>Pengeluaran tersimpan di tabel <b>pengeluaran</b>, terpisah dari pemasukan historis.</p></div>';
-  if(!expenses.length){html+='<div class="emptyState">Belum ada pengeluaran historis.</div></div>';const tmp=document.createElement('div');tmp.id='expenseReport';tmp.innerHTML=html;wrap.parentNode.insertBefore(tmp,wrap.nextSibling);return}
-  html+='<div class="tablewrap"><table class="cleanTable expenseTable"><thead><tr><th>No</th><th>Periode</th><th>Kategori</th><th>Keterangan</th><th>Nominal</th><th>Aksi</th></tr></thead><tbody>';
-  expenses.slice().sort((a,b)=>String(b.periode).localeCompare(String(a.periode))||String(a.kategori).localeCompare(String(b.kategori))).forEach((x,i)=>{html+=`<tr><td>${i+1}</td><td>${esc(expenseMonthLabel(x.periode))}</td><td>${esc(x.kategori)}</td><td>${esc(x.keterangan)}</td><td><b>${rupiah(x.nominal)}</b></td><td><button class="del" onclick="delExpense(${x.id})">Hapus</button></td></tr>`});
-  html+='</tbody></table></div><div class="expenseTotal"><span>Total Pengeluaran: <b>'+rupiah(expenses.reduce((a,x)=>a+x.nominal,0))+'</b></span></div></div>';
-  const tmp=document.createElement('div');tmp.id='expenseReport';tmp.innerHTML=html;wrap.parentNode.insertBefore(tmp,wrap.nextSibling);
-}
-async function saveExpenseRow(data){
-  const r=await supabaseClient.from('pengeluaran').insert({periode:data.periode,tanggal:data.tanggal||null,kategori:data.kategori,keterangan:data.keterangan,nominal:Math.round(Number(data.nominal)||0)});
-  if(r.error)throw r.error;
-}
-$('expPeriode').value=nowMonth();
-$('saveExpense').onclick=async()=>{const data={periode:$('expPeriode').value,tanggal:null,kategori:$('expKategori').value,keterangan:$('expKeterangan').value.trim(),nominal:Math.round(Number($('expNominal').value)||0)};if(!data.periode||!data.keterangan||data.nominal<=0)return expenseMsg('Periode, keterangan, dan nominal wajib diisi.',true);try{await saveExpenseRow(data);$('expKeterangan').value='';$('expNominal').value=0;expenseMsg('Pengeluaran tersimpan.');await load()}catch(e){expenseMsg('Gagal menyimpan: '+(e.message||e),true)}};
-window.delExpense=async id=>{if(!confirm('Hapus pengeluaran ini?'))return;const r=await supabaseClient.from('pengeluaran').delete().eq('id',id);if(r.error)return expenseMsg('Gagal menghapus: '+r.error.message,true);expenseMsg('Pengeluaran dihapus.');load()};
-function expensePdfMoney(s){return toNum(String(s||'').replace(/Rp/gi,''))}
-function expenseLineGroups(items){const groups=[];for(const it of items){const y=Number(it.transform?.[5]||0);let g=groups.find(x=>Math.abs(x.y-y)<=1.2);if(!g){g={y,items:[]};groups.push(g)}g.items.push({x:Number(it.transform?.[4]||0),str:String(it.str||'')})}return groups.sort((a,b)=>b.y-a.y).map(g=>g.items.sort((a,b)=>a.x-b.x).map(x=>x.str).join(' ').replace(/\s+/g,' ').trim()).filter(Boolean)}
-async function readExpensePDF(file){
-  const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs');
-  pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.mjs';
-  const pdf=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;
-  const categoryMap={
-    '1. BAHAN BAKU':'Bahan Baku',
-    '2. OPERASIONAL':'Operasional',
-    '3. GAJI':'Gaji',
-    '4. LAIN-LAIN':'Lain-lain',
-    '5. RETUR':'Retur',
-    '6. ALAT & PERLENGKAPAN':'Alat & Perlengkapan'
-  };
-  const out=[];let category='';
-  for(let pn=1;pn<=pdf.numPages;pn++){
-    const page=await pdf.getPage(pn),content=await page.getTextContent(),lines=expenseLineGroups(content.items);
-    for(const line of lines){
-      const up=line.toUpperCase().replace(/\s+/g,' ').trim();
-      if(categoryMap[up]){category=categoryMap[up];continue}
-      if(/^TOTAL\s+KESELURUHAN$/i.test(up)){category='';continue}
-      if(!category||/^KETERANGAN\s+NOMINAL$/i.test(line)||/^TOTAL$/i.test(up)||/^FINAL\b/i.test(up)||/^REKAP PENGELUARAN/i.test(up)||/^BERDASARKAN KOREKSI/i.test(up))continue;
-      const m=line.match(/^(.+?)\s+Rp\s*([\d.]+(?:,\d+)?)$/i);
-      if(!m)continue;
-      const keterangan=m[1].trim();
-      if(!keterangan||/^TOTAL$/i.test(keterangan))continue;
-      const nominal=Math.round(expensePdfMoney(m[2]));
-      if(nominal<=0)continue;
-      out.push({periode:EXPENSE_PDF_EXPECTED.period,tanggal:null,kategori:category,keterangan,nominal});
-    }
-  }
-  const by={};out.forEach(x=>{by[x.kategori]??=0;by[x.kategori]+=x.nominal});
-  const checks=Object.entries(EXPENSE_PDF_EXPECTED.categories).map(([kategori,expected])=>({kategori,actual:by[kategori]||0,expected,ok:(by[kategori]||0)===expected}));
-  const total=out.reduce((a,x)=>a+x.nominal,0);
-  const strict=out.length===EXPENSE_PDF_EXPECTED.rows&&checks.every(x=>x.ok)&&total===EXPENSE_PDF_EXPECTED.total;
-  if(!strict){
-    const detail=checks.map(x=>`${x.kategori}: ${rupiah(x.actual)} / ${rupiah(x.expected)}`).join('; ');
-    throw new Error(`PDF pengeluaran tidak cocok dengan sumber FINAL. Terdeteksi ${out.length} baris, total ${rupiah(total)}. ${detail}`);
-  }
-  return {rows:out,checks,total,strict,period:EXPENSE_PDF_EXPECTED.period};
-}
-function showExpenseChecks(checks,total){let html='<div class="totalbox">';for(const c of checks){html+=`<div class="mini"><b>${esc(c.kategori)}</b><span>${rupiah(c.actual)}</span><small style="display:block;margin-top:5px;color:${c.ok?'#087443':'#a22'}">${c.ok?'✓ Cocok dengan PDF':'⚠️ Tidak cocok'}</small></div>`}html+=`</div><div class="msg">✓ PDF FINAL cocok: <b>90 rincian</b> · Periode <b>Jan–Agustus 2026</b> · Total <b>${rupiah(total)}</b>. Data akan disimpan sebagai satu periode gabungan agar tidak ada pembagian bulanan yang dibuat-buat.</div>`;return html}
-$('expenseFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;expensePdfMode=/\.pdf$/i.test(file.name);try{if(expensePdfMode){const result=await readExpensePDF(file);expenseImportRows=result.rows;expensePdfChecks=result.checks;expenseHeaders=['Periode','Kategori','Keterangan','Nominal'];$('expenseFileInfo').textContent=`${expenseImportRows.length} rincian terbaca. Periode Jan–Agustus 2026 digabung sesuai PDF sumber.`;$('expensePrevHead').innerHTML='<tr>'+expenseHeaders.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('expensePrevRows').innerHTML=expenseImportRows.map(r=>`<tr><td>${esc(monthLabel(r.periode))}</td><td>${esc(r.kategori)}</td><td>${esc(r.keterangan)}</td><td>${rupiah(r.nominal)}</td></tr>`).join('');$('expenseImportMsg').innerHTML=showExpenseChecks(expensePdfChecks,result.total);$('expenseImportBtn').disabled=false;$('expenseImportBtn').style.opacity='1'}else{const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});expenseHeaders=(aoa.shift()||[]).map((h,i)=>String(h).trim()||`Kolom ${i+1}`);expenseImportRows=aoa.filter(r=>r.some(v=>String(v??'').trim()));$('expenseFileInfo').textContent=`${expenseImportRows.length} baris terbaca. Preview maksimal 30 baris.`;$('expensePrevHead').innerHTML='<tr>'+expenseHeaders.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('expensePrevRows').innerHTML=expenseImportRows.slice(0,30).map(r=>'<tr>'+expenseHeaders.map((_,i)=>'<td>'+esc(r[i])+'</td>').join('')+'</tr>').join('');$('expenseImportMsg').innerHTML='';$('expenseImportBtn').disabled=false;$('expenseImportBtn').style.opacity='1'}$('expensePreview').style.display='block'}catch(err){$('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(err.message||err)+'</div>';$('expensePreview').style.display='block';$('expenseImportBtn').disabled=true;$('expenseImportBtn').style.opacity='.55'}};
-$('expenseCancelBtn').onclick=()=>{$('expensePreview').style.display='none';$('expenseFile').value='';expenseImportRows=[];expenseHeaders=[];expensePdfMode=false;expensePdfChecks=[];$('expenseImportBtn').disabled=false;$('expenseImportBtn').style.opacity='1'};
-$('expenseImportBtn').onclick=async()=>{if(expensePdfMode){const rows=expenseImportRows.map(x=>({...x,nominal:Math.round(Number(x.nominal)||0)})).filter(x=>x.periode&&x.kategori&&x.nominal>0);try{await loadExpenses();const existing=new Set(expenses.map(getExpenseRowKey));const fresh=rows.filter(x=>!existing.has(getExpenseRowKey(x)));if(fresh.length){const r=await supabaseClient.from('pengeluaran').insert(fresh.map(x=>({periode:x.periode,tanggal:null,kategori:x.kategori,keterangan:x.keterangan,nominal:x.nominal})));if(r.error)throw r.error}$('expenseImportMsg').innerHTML='<div class="msg">Berhasil menyimpan '+fresh.length+' rincian pengeluaran PDF'+(rows.length-fresh.length?'. '+(rows.length-fresh.length)+' duplikat dilewati':'')+'.</div>';await load()}catch(e){$('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}return}const aliases={periode:['periode','bulan','month'],kategori:['kategori','category','jenis'],keterangan:['keterangan','deskripsi','uraian','detail'],nominal:['nominal','pengeluaran','total','jumlah','nilai']};const idx={};for(const k of Object.keys(aliases)){idx[k]=expenseHeaders.findIndex(h=>aliases[k].map(normKey).includes(normKey(h)))}if(Object.values(idx).some(v=>v<0))return $('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Kolom Periode, Kategori, Keterangan, dan Nominal wajib ada.</div>';const rows=expenseImportRows.map(r=>({periode:normalPeriode(r[idx.periode]),kategori:String(r[idx.kategori]||'Lainnya').trim()||'Lainnya',keterangan:String(r[idx.keterangan]||'').trim(),nominal:Math.round(toNum(r[idx.nominal]))})).filter(x=>x.periode&&x.keterangan&&x.nominal>0);if(!rows.length)return $('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data pengeluaran valid.</div>';try{await loadExpenses();const existing=new Set(expenses.map(getExpenseRowKey));const fresh=rows.filter(x=>!existing.has(getExpenseRowKey(x)));if(fresh.length){const r=await supabaseClient.from('pengeluaran').insert(fresh.map(x=>({periode:x.periode,tanggal:null,kategori:x.kategori,keterangan:x.keterangan,nominal:x.nominal})));if(r.error)throw r.error}$('expenseImportMsg').innerHTML='<div class="msg">Berhasil menyimpan '+fresh.length+' pengeluaran'+(rows.length-fresh.length?'. '+(rows.length-fresh.length)+' duplikat dilewati':'')+'.</div>';await load()}catch(e){$('expenseImportMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}};
+window.toggleMonth=function(m){const el=$('detail-'+m);if(!el)return;if(el.style.display==='none'){el.innerHTML=detailMonth(m);el.style.display='block'}else{el.style.display='none'}};
+function renderGrouped(){renderMonthlySummary()}
+function renderAll(){renderGrouped()}
 async function load(){
   try{
-    const schema=await getDataLamaSchema();const er=schemaError(schema);if(er){$('grouped').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';return}
-    const [r,e]=await Promise.all([supabaseClient.from('data_lama').select('*'),supabaseClient.from('pengeluaran').select('*').order('periode',{ascending:false}).order('kategori',{ascending:true})]);
-    if(r.error){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal memuat data historis: '+esc(r.error.message)+'</div>';return}
-    if(e.error){$('grouped').innerHTML='<div class="msg" style="color:#a22">Data historis berhasil dimuat, tetapi pengeluaran gagal dimuat: '+esc(e.error.message)+'</div>';all=(r.data||[]).map(x=>canonicalizeDataRow(x,schema)).map(x=>({...x,qty:Number(x.qty||0),omzet:Math.round(Number(x.omzet||0))}));expenses=[];renderAll();renderExpenses();return}
+    const schema=await getDataLamaSchema();
+    const er=schemaError(schema);
+    if(er){$('monthlySummary').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';return}
+    const r=await supabaseClient.from('data_lama').select('*');
+    if(r.error){$('monthlySummary').innerHTML='<div class="msg" style="color:#a22">Gagal memuat: '+esc(r.error.message)+'</div>';return}
     all=(r.data||[]).map(x=>canonicalizeDataRow(x,schema)).map(x=>({...x,qty:Number(x.qty||0),omzet:Math.round(Number(x.omzet||0))}));
-    expenses=(e.data||[]).map(x=>({id:x.id,periode:normalPeriode(x.periode),tanggal:x.tanggal||'',kategori:String(x.kategori||'Lainnya'),keterangan:String(x.keterangan||''),nominal:Math.round(Number(x.nominal||0)),created_at:x.created_at||''}));
-    renderAll();renderExpenses();
-  }catch(e){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal memuat data: '+esc(e.message||e)+'</div>'}
+    const erx=await supabaseClient.from('pengeluaran').select('id,periode,kategori,keterangan,nominal');
+    if(erx.error)throw new Error('Gagal memuat pengeluaran: '+erx.error.message);
+    expenseAll=(erx.data||[]).map(x=>({id:x.id,periode:normalPeriode(x.periode),kategori:String(x.kategori||''),keterangan:String(x.keterangan||''),nominal:Math.round(Number(x.nominal)||0)}));
+    const pr=await supabaseClient.from('produk').select('id,nama_produk');
+    if(pr.error)throw new Error('Gagal memuat produk: '+pr.error.message);
+    productMap=Object.fromEntries((pr.data||[]).map(x=>[x.id,String(x.nama_produk||`Produk #${x.id}`)]));
+    const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,channel,harga,hpp,laba');
+    if(sr.error)throw new Error('Gagal memuat penjualan: '+sr.error.message);
+    salesAll=(sr.data||[]).map(x=>({id:x.id,periode:saleMonth(x.tanggal),produk_id:x.produk_id,produk:productMap[x.produk_id]||`Produk #${x.produk_id||'-'}`,qty:Number(x.qty||0),channel:String(x.channel||''),harga:Math.round(Number(x.harga)||0),omzet:Math.round(Number(x.qty||0)*Number(x.harga||0))})).filter(x=>/^\d{4}-\d{2}$/.test(x.periode||''));
+    renderAll();
+  }catch(e){$('monthlySummary').innerHTML='<div class="msg" style="color:#a22">Gagal memuat data: '+esc(e.message||e)+'</div>'}
 }
 $('save').onclick=async()=>{
   const data={periode:$('periode').value,konsumen:$('konsumen').value.trim(),produk:$('produk').value.trim(),qty:Math.round(Number($('qty').value)||0),omzet:Math.round(Number($('omzet').value)||0)};
@@ -227,7 +160,7 @@ $('save').onclick=async()=>{
   }catch(e){msg(e.message||e,true)}
 };
 window.del=async id=>{if(!confirm('Hapus data historis ini?'))return;const r=await supabaseClient.from('data_lama').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);msg('Data historis dihapus.');load()};
-$('filterProduct').onchange=renderAll;$('filterConsumer').onchange=renderAll;$('refresh').onclick=load;
+$('refresh')?.addEventListener('click',load);
 function fontSizeOf(it){const t=it.transform||[];return Math.max(Math.abs(Number(t[0])||0),Math.abs(Number(t[3])||0))}
 function cleanNumericColumn(items,minX,maxX){
   const nums=items.filter(it=>it.x>=minX&&it.x<maxX&&/^[\d.,]+$/.test(String(it.str||'').trim()));
