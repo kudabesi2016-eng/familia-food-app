@@ -93,14 +93,14 @@ function renderMonthlySummary(){
   const box=$('monthlySummary');
   const months=allReportMonths();
   const exactMonths=exactExpenseMonths();
-  const combined=expenseAll.filter(x=>!exactMonths.has(x.periode));
+  const combined=expenseAll.filter(x=>!/^\d{4}-\d{2}$/.test(x.periode));
   let html='<div class="month-summary">';
   months.forEach(m=>{
     const income=incomeForMonth(m), expense=expenseForMonth(m), hasExpense=exactMonths.has(m), balance=income-expense;
     html+=`<div class="month-row"><div class="month-name">📅 ${esc(monthLabel(m))}</div><div><span class="money-label">🟢 Pemasukan</span><span class="money income">${income?rupiah(income):'—'}</span></div><div><span class="money-label">🔴 Pengeluaran</span><span class="money expense">${hasExpense?rupiah(expense):'—'}</span></div><div><span class="money-label">💰 Selisih</span><span class="money balance">${hasExpense?rupiah(balance):'—'}</span></div><button class="view-btn" onclick="toggleMonth('${m}')">👁 Lihat Data</button><div id="detail-${m}" class="month-detail" style="display:none"></div></div>`;
   });
   html+='</div>';
-  if(combined.length){const total=combined.reduce((a,x)=>a+Number(x.nominal||0),0);html+=`<div class="history-note">🔴 <b>Pengeluaran tersimpan:</b> ${rupiah(total)} masih tercatat sebagai <b>periode gabungan</b> (Jan–Ags 2026), jadi tidak saya bagi ke bulan tertentu. Setelah bro input pengeluaran berdasarkan bulan, angka bulanan akan terisi otomatis.</div>`}
+  if(combined.length){const total=combined.reduce((a,x)=>a+Number(x.nominal||0),0);html+=`<div class="history-note">🔴 <b>Pengeluaran periode gabungan:</b> ${rupiah(total)} belum dibagi ke bulan tertentu. Pengeluaran yang memiliki periode bulanan ditampilkan langsung pada bulan masing-masing.</div>`}
   html+='<div class="history-note">🟢 Pemasukan bulanan = Data Lama + transaksi terbaru dari Penjualan. Bulan tidak dikunci, jadi transaksi baru tetap menambah bulan yang sama.</div>';
   box.innerHTML=html;
 }
