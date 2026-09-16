@@ -223,6 +223,16 @@ body{
             <div class="card-number" id="omzetDataLama">Rp 0</div>
         </div>
 
+        <div class="card">
+            <div class="card-title">Omzet Penjualan Baru</div>
+            <div class="card-number" id="omzetPenjualanBaru">Rp 0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Omzet Gabungan</div>
+            <div class="card-number" id="omzetGabungan">Rp 0</div>
+        </div>
+
     </div>
 
 
@@ -301,6 +311,10 @@ async function hitungData(){
             .from("penjualan")
             .select("*",{count:"exact",head:true});
 
+        const penjualanNilai = await supabaseClient
+            .from("penjualan")
+            .select("qty,harga");
+
         const dataLama = await supabaseClient
             .from("data_lama")
             .select("qty,omzet");
@@ -320,8 +334,13 @@ async function hitungData(){
         document.getElementById("totalDataLama").textContent =
             dataLama.error ? 0 : (dataLama.data || []).length;
         const oldOmzet = (dataLama.data || []).reduce((a,x)=>a+Number(x.omzet||0),0);
+        const newOmzet = penjualanNilai.error ? 0 : (penjualanNilai.data || []).reduce((a,x)=>a+Number(x.qty||0)*Number(x.harga||0),0);
         document.getElementById("omzetDataLama").textContent =
             "Rp " + Math.round(oldOmzet).toLocaleString("id-ID");
+        document.getElementById("omzetPenjualanBaru").textContent =
+            "Rp " + Math.round(newOmzet).toLocaleString("id-ID");
+        document.getElementById("omzetGabungan").textContent =
+            "Rp " + Math.round(oldOmzet + newOmzet).toLocaleString("id-ID");
 
     }catch(error){
 

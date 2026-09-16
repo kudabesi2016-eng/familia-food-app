@@ -36,14 +36,73 @@ function monthLabel(v){const m=String(v||'').match(/^(\d{4})-(\d{1,2})$/);return
 function toNum(v){if(typeof v==='number')return v;let s=String(v??'').trim().replace(/Rp/gi,'').replace(/\s/g,'');if(!s)return 0;if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(/\.\d{3}$/.test(s))s=s.replace(/\./g,'');else if(s.includes(','))s=s.replace(/,/g,'');else if((s.match(/\./g)||[]).length>1)s=s.replace(/\./g,'');const n=Number(s);return Number.isFinite(n)?n:0}
 function normalPeriode(v){if(v instanceof Date)return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}`;const s=String(v??'').trim();let m=s.match(/(20\d{2})[-\/]([01]?\d)/);if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,'0')}`;const map=Object.fromEntries(months.map((x,i)=>[x.toLowerCase(),i+1]));m=s.toLowerCase().match(/(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s*(20\d{2})/);return m?`${m[2]}-${String(map[m[1]]).padStart(2,'0')}`:''}
 function normalizeProductName(v){let s=String(v||'').toLowerCase().replace(/\s+/g,' ').trim();s=s.replace(/^naget\s+isi\s+/,'naget ');return s}
-let all=[],importRows=[],headers=[],pdfMode=false,monthChecks=[];
+let all=[],importRows=[],headers=[],pdfMode=false,monthChecks=[],schemaCache=null;
+const PDF_EXPECTED={
+ '2026-01':[33,7508,26541100], '2026-02':[52,9741,33617200], '2026-03':[46,8253,27881100],
+ '2026-04':[47,5778,22110700], '2026-05':[38,4635,17767500], '2026-06':[32,5389,21577000],
+ '2026-07':[35,6079,24366500], '2026-08':[28,1970,7938500]
+};
+const DATA_LAMA_ALIASES={
+  periode:['periode','bulan','month','tanggal','date'],
+  konsumen:['konsumen','customer','pelanggan','nama_konsumen','nama_pelanggan','customer_name','nama_customer','keterangan','catatan'],
+  produk:['produk','product','nama_produk','nama product','item','jenis_produk'],
+  qty:['qty','jumlah','kuantitas','terjual','jumlah_terjual','quantity'],
+  omzet:['omzet','total','nominal','penjualan','revenue','total_penjualan']
+};
+function normKey(v){return String(v||'').toLowerCase().replace(/[\s_-]+/g,'')}
+function chooseColumn(properties,kind){
+  const keys=Object.keys(properties||{});
+  const aliases=(DATA_LAMA_ALIASES[kind]||[]).map(normKey);
+  return keys.find(k=>aliases.includes(normKey(k)))||null;
+}
+async function getDataLamaSchema(){
+  if(schemaCache)return schemaCache;
+  const url=SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/';
+  const r=await fetch(url,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,Accept:'application/openapi+json, application/json'}});
+  if(!r.ok)throw new Error('Tidak bisa membaca struktur tabel data_lama dari Supabase ('+r.status+').');
+  const doc=await r.json();
+  const def=doc?.definitions?.data_lama||doc?.definitions?.DataLama||doc?.components?.schemas?.data_lama||doc?.components?.schemas?.DataLama;
+  if(!def?.properties)throw new Error('Struktur tabel data_lama tidak ditemukan di schema Supabase.');
+  const properties=def.properties;
+  const map={};
+  for(const k of Object.keys(DATA_LAMA_ALIASES))map[k]=chooseColumn(properties,k);
+  schemaCache={properties,map,keys:Object.keys(properties)};
+  return schemaCache;
+}
+function schemaError(schema){
+  const missing=['periode','konsumen','produk','qty','omzet'].filter(k=>!schema.map[k]);
+  if(!missing.length)return '';
+  return 'Kolom historis belum tersedia di tabel data_lama: '+missing.join(', ')+'. Kolom Supabase yang terdeteksi: '+schema.keys.join(', ');
+}
+function canonicalizeDataRow(x,schema){
+  const m=schema.map;
+  return {id:x.id,periode:x[m.periode],konsumen:x[m.konsumen],produk:x[m.produk],qty:x[m.qty],omzet:x[m.omzet]};
+}
 function renderFilters(){const ms=[...new Set(all.map(x=>x.periode).filter(Boolean))].sort().reverse();const ps=[...new Set(all.map(x=>x.produk).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));const cs=[...new Set(all.map(x=>x.konsumen).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));const pm=$('filterMonth').value,pp=$('filterProduct').value,pc=$('filterConsumer').value;$('filterMonth').innerHTML='<option value="">Semua Bulan</option>'+ms.map(x=>`<option value="${esc(x)}">${esc(monthLabel(x))}</option>`).join('');$('filterProduct').innerHTML='<option value="">Semua Produk</option>'+ps.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');$('filterConsumer').innerHTML='<option value="">Semua Konsumen</option>'+cs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');if(ms.includes(pm))$('filterMonth').value=pm;if(ps.includes(pp))$('filterProduct').value=pp;if(cs.includes(pc))$('filterConsumer').value=pc}
 function filteredData(){const m=$('filterMonth').value,p=$('filterProduct').value,c=$('filterConsumer').value;return all.filter(x=>(!m||x.periode===m)&&(!p||x.produk===p)&&(!c||x.konsumen===c))}
 function renderGrouped(){const data=filteredData();if(!data.length){$('grouped').innerHTML='<div class="hint">Belum ada Data Lama pada filter ini.</div>';return}const byMonth={};data.forEach(x=>{byMonth[x.periode]??={};byMonth[x.periode][x.produk]??=[];byMonth[x.periode][x.produk].push(x)});let html='';Object.keys(byMonth).sort().reverse().forEach(m=>{const products=byMonth[m],monthRows=Object.values(products).flat(),mq=monthRows.reduce((a,x)=>a+Number(x.qty||0),0),mo=monthRows.reduce((a,x)=>a+Number(x.omzet||0),0);html+=`<div class="monthblock"><div class="monthhead"><span>${esc(monthLabel(m))}</span><span>${mq.toLocaleString('id-ID')} bungkus · ${rupiah(mo)}</span></div>`;Object.keys(products).sort((a,b)=>a.localeCompare(b,'id')).forEach(product=>{const rows=products[product],pq=rows.reduce((a,x)=>a+Number(x.qty||0),0),po=rows.reduce((a,x)=>a+Number(x.omzet||0),0);const byConsumer={};rows.forEach(x=>{byConsumer[x.konsumen]??={q:0,o:0};byConsumer[x.konsumen].q+=Number(x.qty||0);byConsumer[x.konsumen].o+=Number(x.omzet||0)});html+=`<div class="productblock"><div class="producthead"><span>📦 ${esc(product)}</span><span>${pq.toLocaleString('id-ID')} bungkus · ${rupiah(po)}</span></div><div class="tablewrap"><table><thead><tr><th>Konsumen</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>`+Object.keys(byConsumer).sort((a,b)=>a.localeCompare(b,'id')).map(c=>`<tr><td>${esc(c)}</td><td>${byConsumer[c].q.toLocaleString('id-ID')}</td><td>${rupiah(byConsumer[c].o)}</td></tr>`).join('')+`<tr class="subtotal"><td>Subtotal ${esc(product)}</td><td>${pq.toLocaleString('id-ID')}</td><td>${rupiah(po)}</td></tr></tbody></table></div></div>`});html+='</div>'});$('grouped').innerHTML=html}
 function renderDetail(){const data=filteredData();$('rows').innerHTML=data.length?data.map(x=>`<tr><td>${esc(monthLabel(x.periode)||x.periode)}</td><td>${esc(x.konsumen)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td><td><button class="del" onclick="del(${x.id})">Hapus</button></td></tr>`).join(''):'<tr><td colspan="6">Belum ada data.</td></tr>'}
 function renderAll(){renderFilters();renderGrouped();renderDetail()}
-async function load(){const r=await supabaseClient.from('data_lama').select('*');if(r.error){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal memuat: '+esc(r.error.message)+'</div>';return}all=(r.data||[]).map(x=>({...x,qty:Number(x.qty||0),omzet:Math.round(Number(x.omzet||0))}));renderAll()}
-$('save').onclick=async()=>{const data={periode:$('periode').value,konsumen:$('konsumen').value.trim(),produk:$('produk').value.trim(),qty:Math.round(Number($('qty').value)||0),omzet:Math.round(Number($('omzet').value)||0)};if(!data.periode||!data.konsumen||!data.produk||data.qty<=0)return msg('Periode, konsumen, produk, dan Qty wajib diisi.',true);const r=await supabaseClient.from('data_lama').insert([data]);if(r.error)return msg('Gagal menyimpan: '+r.error.message,true);$('konsumen').value='';$('produk').value='';$('qty').value=0;$('omzet').value=0;msg('Data historis tersimpan.');load()};
+async function load(){
+  try{
+    const schema=await getDataLamaSchema();
+    const er=schemaError(schema);
+    if(er){$('grouped').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';return}
+    const r=await supabaseClient.from('data_lama').select('*');
+    if(r.error){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal memuat: '+esc(r.error.message)+'</div>';return}
+    all=(r.data||[]).map(x=>canonicalizeDataRow(x,schema)).map(x=>({...x,qty:Number(x.qty||0),omzet:Math.round(Number(x.omzet||0))}));
+    renderAll();
+  }catch(e){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal membaca struktur data_lama: '+esc(e.message||e)+'</div>'}
+}
+$('save').onclick=async()=>{
+  const data={periode:$('periode').value,konsumen:$('konsumen').value.trim(),produk:$('produk').value.trim(),qty:Math.round(Number($('qty').value)||0),omzet:Math.round(Number($('omzet').value)||0)};
+  if(!data.periode||!data.konsumen||!data.produk||data.qty<=0)return msg('Periode, konsumen, produk, dan Qty wajib diisi.',true);
+  try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return msg(er,true);
+    const row={};row[schema.map.periode]=data.periode;row[schema.map.konsumen]=data.konsumen;row[schema.map.produk]=data.produk;row[schema.map.qty]=data.qty;row[schema.map.omzet]=data.omzet;
+    const r=await supabaseClient.from('data_lama').insert([row]);if(r.error)return msg('Gagal menyimpan: '+r.error.message,true);
+    $('konsumen').value='';$('produk').value='';$('qty').value=0;$('omzet').value=0;msg('Data historis tersimpan.');load();
+  }catch(e){msg(e.message||e,true)}
+};
 window.del=async id=>{if(!confirm('Hapus data historis ini?'))return;const r=await supabaseClient.from('data_lama').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);msg('Data historis dihapus.');load()};
 $('filterMonth').onchange=renderAll;$('filterProduct').onchange=renderAll;$('filterConsumer').onchange=renderAll;$('refresh').onclick=load;
 function fontSizeOf(it){const t=it.transform||[];return Math.max(Math.abs(Number(t[0])||0),Math.abs(Number(t[3])||0))}
@@ -66,16 +125,6 @@ const pdf=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;
 const recs=[];
 const monthsMap={JANUARI:1,FEBRUARI:2,MARET:3,APRIL:4,MEI:5,JUNI:6,JULI:7,AGUSTUS:8,SEPTEMBER:9,OKTOBER:10,NOVEMBER:11,DESEMBER:12};
 let currentMonth='',currentConsumer='',inAdditional=false;
-const expected={
- '2026-01':[33,7508,26541100],
- '2026-02':[52,9741,33617200],
- '2026-03':[46,8253,27881100],
- '2026-04':[47,5778,22110700],
- '2026-05':[38,4635,17767500],
- '2026-06':[32,5389,21577000],
- '2026-07':[35,6079,24366500],
- '2026-08':[28,1970,7938500]
-};
 const productRe=/(Naget(?:\s+isi)?\s+(?:10|12|20|25|30|40|50)|Cireng\s+isi\s+10|Cireng\s+biasa|Cireng\s+crispy|Cibay\s+isi\s+10)/i;
 for(let pn=1;pn<=pdf.numPages;pn++){
   const page=await pdf.getPage(pn),c=await page.getTextContent();
@@ -122,30 +171,37 @@ if(!recs.length)throw new Error('PDF tidak menemukan baris produk. Pastikan PDF 
 const clean=recs.filter(r=>r[0]&&r[1]&&r[2]&&r[3]>0&&r[4]>=0);
 const grouped={};clean.forEach(r=>{grouped[r[0]]??={q:0,o:0,rows:0};grouped[r[0]].q+=r[3];grouped[r[0]].o+=r[4];grouped[r[0]].rows++});
 monthChecks=Object.entries(grouped).sort();
-return {rows:clean,checks:monthChecks,expected};
+return {rows:clean,checks:monthChecks,expected:PDF_EXPECTED};
 }
 function showChecks(checks){
-const expected={
- '2026-01':[33,7508,26541100],
- '2026-02':[52,9741,33617200],
- '2026-03':[46,8253,27881100],
- '2026-04':[47,5778,22110700],
- '2026-05':[38,4635,17767500],
- '2026-06':[32,5389,21577000],
- '2026-07':[35,6079,24366500],
- '2026-08':[28,1970,7938500]
-};
 let html='<div class="totalbox">';
 for(const [m,v] of checks){
- const ex=expected[m],ok=!!ex&&ex[0]===v.rows&&ex[1]===v.q&&ex[2]===v.o;
+ const ex=PDF_EXPECTED[m],ok=!!ex&&ex[0]===v.rows&&ex[1]===v.q&&ex[2]===v.o;
  html+=`<div class="mini"><b>${esc(monthLabel(m))}</b><span>${v.rows} baris · ${v.q.toLocaleString('id-ID')} bungkus · ${rupiah(v.o)}</span><small style="display:block;margin-top:5px;color:${ok?'#087443':'#a22'}">${ok?'✓ Detail cocok dengan total koreksi PDF':'⚠️ Detail PDF belum cocok dengan total koreksi yang ditetapkan.'}</small></div>`;
 }
 html+='</div>';
-$('validation').innerHTML=html;
+const expectedMonths=Object.keys(PDF_EXPECTED).sort();
+const actualMap=Object.fromEntries(checks);
+const strictOk=expectedMonths.length===checks.length&&expectedMonths.every(m=>actualMap[m]&&PDF_EXPECTED[m][0]===actualMap[m].rows&&PDF_EXPECTED[m][1]===actualMap[m].q&&PDF_EXPECTED[m][2]===actualMap[m].o);
+$('validation').innerHTML=html+(strictOk?'':'<div class="msg" style="color:#a22">⚠️ Import DIKUNCI. Total PDF tidak cocok dengan 8 total bulanan yang sudah diverifikasi. Data tidak akan disimpan agar tidak ada angka yang salah.</div>');
+$('importBtn').disabled=!strictOk;
+$('importBtn').style.opacity=strictOk?'1':'.55';
+$('importBtn').style.cursor=strictOk?'pointer':'not-allowed';
 }
-$('file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{pdfMode=/\.pdf$/i.test(file.name);if(pdfMode){const result=await readPDF(file);importRows=result.rows;headers=['Periode','Konsumen','Produk','Qty','Omzet'];showChecks(result.checks)}else{const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});headers=(aoa.shift()||[]).map((h,i)=>String(h).trim()||`Kolom ${i+1}`);importRows=aoa.filter(r=>r.some(v=>String(v??'').trim()));$('validation').innerHTML=''}if(!headers.length)throw new Error('Kolom tidak ditemukan.');$('fileInfo').textContent=`${importRows.length} baris produk terbaca. Preview menampilkan maksimal 30 baris.`;$('prevHead').innerHTML='<tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('prevRows').innerHTML=importRows.slice(0,30).map(r=>'<tr>'+headers.map((_,i)=>'<td>'+esc(r[i])+'</td>').join('')+'</tr>').join('');$('preview').style.display='block'}catch(err){$('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(err.message||err)+'</div>';$('preview').style.display='block'}};
+$('file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{pdfMode=/\.pdf$/i.test(file.name);if(pdfMode){const result=await readPDF(file);importRows=result.rows;headers=['Periode','Konsumen','Produk','Qty','Omzet'];showChecks(result.checks)}else{const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});headers=(aoa.shift()||[]).map((h,i)=>String(h).trim()||`Kolom ${i+1}`);$('importBtn').disabled=false;$('importBtn').style.opacity='1';$('importBtn').style.cursor='pointer';importRows=aoa.filter(r=>r.some(v=>String(v??'').trim()));$('validation').innerHTML=''}if(!headers.length)throw new Error('Kolom tidak ditemukan.');$('fileInfo').textContent=`${importRows.length} baris produk terbaca. Preview menampilkan maksimal 30 baris.`;$('prevHead').innerHTML='<tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('prevRows').innerHTML=importRows.slice(0,30).map(r=>'<tr>'+headers.map((_,i)=>'<td>'+esc(r[i])+'</td>').join('')+'</tr>').join('');$('preview').style.display='block'}catch(err){$('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(err.message||err)+'</div>';$('preview').style.display='block'}};
 $('cancelImport').onclick=()=>{$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[]};
-$('importBtn').onclick=async()=>{if(!importRows.length)return;let out=[];if(pdfMode){out=importRows.map(r=>({periode:r[0],konsumen:r[1],produk:r[2],qty:Math.round(Number(r[3])||0),omzet:Math.round(Number(r[4])||0)})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}else{const aliases={periode:['periode','bulan','month','tanggal'],konsumen:['konsumen','customer','pelanggan','nama konsumen'],produk:['produk','product','nama produk'],qty:['qty','jumlah','kuantitas','terjual'],omzet:['omzet','total','nominal','penjualan','revenue']};const pick=(kind)=>{const a=aliases[kind];return headers.findIndex(h=>a.includes(String(h).toLowerCase().trim()))};const idx={periode:pick('periode'),konsumen:pick('konsumen'),produk:pick('produk'),qty:pick('qty'),omzet:pick('omzet')};if(Object.values(idx).some(v=>v<0))return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Periode, Konsumen, Produk, Qty, dan Omzet wajib ada.</div>';out=importRows.map(r=>({periode:normalPeriode(r[idx.periode]),konsumen:String(r[idx.konsumen]??'').trim(),produk:String(r[idx.produk]??'').trim(),qty:Math.round(toNum(r[idx.qty])),omzet:Math.round(toNum(r[idx.omzet]))})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}if(!out.length)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data valid untuk disimpan.</div>';const r=await supabaseClient.from('data_lama').insert(out);if(r.error)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(r.error.message)+'</div>';$('importMsg').innerHTML='<div class="msg">Berhasil menyimpan '+out.length+' baris historis.</div>';$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[];load()};
+$('importBtn').onclick=async()=>{
+  if(!importRows.length)return;
+  let out=[];
+  if(pdfMode){out=importRows.map(r=>({periode:r[0],konsumen:r[1],produk:r[2],qty:Math.round(Number(r[3])||0),omzet:Math.round(Number(r[4])||0)})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
+  else{const idx={};const pick=(kind)=>{const a=(DATA_LAMA_ALIASES[kind]||[]).map(normKey);return headers.findIndex(h=>a.includes(normKey(h)))};for(const k of Object.keys(DATA_LAMA_ALIASES))idx[k]=pick(k);if(Object.values(idx).some(v=>v<0))return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Periode, Konsumen, Produk, Qty, dan Omzet wajib ada.</div>';out=importRows.map(r=>({periode:normalPeriode(r[idx.periode]),konsumen:String(r[idx.konsumen]??'').trim(),produk:String(r[idx.produk]??'').trim(),qty:Math.round(toNum(r[idx.qty])),omzet:Math.round(toNum(r[idx.omzet]))})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
+  if(!out.length)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data valid untuk disimpan.</div>';
+  try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';
+    const rows=out.map(x=>{const row={};row[schema.map.periode]=x.periode;row[schema.map.konsumen]=x.konsumen;row[schema.map.produk]=x.produk;row[schema.map.qty]=x.qty;row[schema.map.omzet]=x.omzet;return row});
+    const r=await supabaseClient.from('data_lama').insert(rows);if(r.error)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(r.error.message)+'</div>';
+    $('importMsg').innerHTML='<div class="msg">Berhasil menyimpan '+rows.length+' baris historis.</div>';$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[];load();
+  }catch(e){$('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal membaca struktur data_lama: '+esc(e.message||e)+'</div>'}
+};
 load();
 </script>
 </body></html>
