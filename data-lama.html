@@ -57,22 +57,31 @@ function chooseColumn(properties,kind){
 }
 async function getDataLamaSchema(){
   if(schemaCache)return schemaCache;
-  const url=SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/';
-  const r=await fetch(url,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,Accept:'application/openapi+json, application/json'}});
-  if(!r.ok)throw new Error('Tidak bisa membaca struktur tabel data_lama dari Supabase ('+r.status+').');
-  const doc=await r.json();
-  const def=doc?.definitions?.data_lama||doc?.definitions?.DataLama||doc?.components?.schemas?.data_lama||doc?.components?.schemas?.DataLama;
-  if(!def?.properties)throw new Error('Struktur tabel data_lama tidak ditemukan di schema Supabase.');
-  const properties=def.properties;
+  // Jangan pakai OpenAPI /rest/v1/ karena pada project ini endpoint tersebut
+  // dapat mengembalikan 401 walaupun Supabase JS client sudah terautentikasi.
+  // Baca langsung row dari tabel; ini memakai jalur yang sama dengan operasi data.
+  const r=await supabaseClient.from('data_lama').select('*').limit(1);
+  if(r.error)throw new Error('Tidak bisa membaca tabel data_lama: '+r.error.message);
+  const sample=(r.data&&r.data[0])||null;
+  const properties=sample?Object.fromEntries(Object.keys(sample).map(k=>[k,{}])):{};
   const map={};
   for(const k of Object.keys(DATA_LAMA_ALIASES))map[k]=chooseColumn(properties,k);
-  schemaCache={properties,map,keys:Object.keys(properties)};
+  // Jika tabel masih kosong, gunakan nama kolom yang paling umum terlebih dahulu.
+  // Tidak ada INSERT yang dilakukan di tahap ini, jadi aman untuk dicoba ulang.
+  if(!map.periode)map.periode='periode';
+  if(!map.konsumen)map.konsumen=['pelanggan','konsumen','nama_pelanggan','customer','nama_customer','keterangan','catatan'].find(k=>Object.keys(properties).includes(k))||'pelanggan';
+  if(!map.produk)map.produk='produk';
+  if(!map.qty)map.qty='qty';
+  if(!map.omzet)map.omzet='omzet';
+  schemaCache={properties,map,keys:Object.keys(properties),inferred:!sample};
   return schemaCache;
 }
+function resetDataLamaSchema(){schemaCache=null}
 function schemaError(schema){
+  if(schema.inferred)return '';
   const missing=['periode','konsumen','produk','qty','omzet'].filter(k=>!schema.map[k]);
   if(!missing.length)return '';
-  return 'Kolom historis belum tersedia di tabel data_lama: '+missing.join(', ')+'. Kolom Supabase yang terdeteksi: '+schema.keys.join(', ');
+  return 'Kolom historis belum tersedia di tabel data_lama: '+missing.join(', ')+'. Kolom yang terdeteksi: '+schema.keys.join(', ');
 }
 function canonicalizeDataRow(x,schema){
   const m=schema.map;
@@ -197,8 +206,15 @@ $('importBtn').onclick=async()=>{
   else{const idx={};const pick=(kind)=>{const a=(DATA_LAMA_ALIASES[kind]||[]).map(normKey);return headers.findIndex(h=>a.includes(normKey(h)))};for(const k of Object.keys(DATA_LAMA_ALIASES))idx[k]=pick(k);if(Object.values(idx).some(v=>v<0))return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Periode, Konsumen, Produk, Qty, dan Omzet wajib ada.</div>';out=importRows.map(r=>({periode:normalPeriode(r[idx.periode]),konsumen:String(r[idx.konsumen]??'').trim(),produk:String(r[idx.produk]??'').trim(),qty:Math.round(toNum(r[idx.qty])),omzet:Math.round(toNum(r[idx.omzet]))})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
   if(!out.length)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data valid untuk disimpan.</div>';
   try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';
-    const rows=out.map(x=>{const row={};row[schema.map.periode]=x.periode;row[schema.map.konsumen]=x.konsumen;row[schema.map.produk]=x.produk;row[schema.map.qty]=x.qty;row[schema.map.omzet]=x.omzet;return row});
-    const r=await supabaseClient.from('data_lama').insert(rows);if(r.error)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(r.error.message)+'</div>';
+    const buildRows=(m)=>out.map(x=>{const row={};row[m.periode]=x.periode;row[m.konsumen]=x.konsumen;row[m.produk]=x.produk;row[m.qty]=x.qty;row[m.omzet]=x.omzet;return row});
+    let used=schema.map, rows=buildRows(used), r=await supabaseClient.from('data_lama').insert(rows);
+    // Bila tabel kosong dan nama kolom konsumen berbeda, coba kandidat yang aman.
+    if(r.error && schema.inferred && /column|schema cache|could not find/i.test(r.error.message||'')){
+      const candidates=['pelanggan','konsumen','nama_pelanggan','customer','nama_customer','keterangan','catatan'];
+      for(const c of candidates){if(c===used.konsumen)continue;const m={...used,konsumen:c};const rr=await supabaseClient.from('data_lama').insert(buildRows(m));if(!rr.error){used=m;r=rr;break}}
+    }
+    if(r.error)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(r.error.message)+'</div>';
+    if(schema.inferred){schemaCache={...schema,map:used,keys:[...new Set([...schema.keys,...Object.values(used)])],inferred:false}}
     $('importMsg').innerHTML='<div class="msg">Berhasil menyimpan '+rows.length+' baris historis.</div>';$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[];load();
   }catch(e){$('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal membaca struktur data_lama: '+esc(e.message||e)+'</div>'}
 };
