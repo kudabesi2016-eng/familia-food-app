@@ -46,12 +46,12 @@ const DATA_LAMA_ALIASES={
   periode:['periode','bulan','month','periode_bulan','tanggal','date','tgl'],
   konsumen:['konsumen','customer','pelanggan','nama_konsumen','nama_pelanggan','customer_name','nama_customer','nama','keterangan','catatan'],
   produk:['produk','product','nama_produk','nama product','item','jenis_produk','jenis'],
-  qty:['qty','jumlah','kuantitas','terjual','jumlah_terjual','quantity','qty_jual','catatan'],
+  qty:['qty','jumlah','kuantitas','terjual','jumlah_terjual','quantity','catatan'],
   omzet:['omzet','total','nominal','penjualan','revenue','total_penjualan','total_omzet','nilai_penjualan']
 };
 function normKey(v){return String(v||'').toLowerCase().replace(/[\s_-]+/g,'')}
 function normalPeriode(v){if(v instanceof Date)return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}`;const s=String(v??'').trim();let m=s.match(/(20\d{2})[-\\/]([01]?\\d)/);if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,'0')}`;const map=Object.fromEntries(months.map((x,i)=>[x.toLowerCase(),i+1]));m=s.toLowerCase().match(/(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s*(20\d{2})/);return m?`${m[2]}-${String(map[m[1]]).padStart(2,'0')}`:''}
-const DATA_LAMA_SCHEMA={map:{periode:'periode',konsumen:'keterangan',produk:'jenis',qty:'catatan',omzet:'nominal'},keys:['id','createdAt','periode','jenis','keterangan','nominal','catatan'],inferred:false,profile:'supabase-data-lama-v1'};
+const DATA_LAMA_SCHEMA={map:{periode:'periode',konsumen:'keterangan',produk:'jenis',qty:'catatan',omzet:'nominal'},keys:['id','createdAt','periode','jenis','keterangan','nominal','catatan'],inferred:false,profile:'supabase-data-lama-fixed-v2'};
 function getDataLamaSchema(){return DATA_LAMA_SCHEMA}
 function schemaError(schema){const missing=['periode','konsumen','produk','qty','omzet'].filter(k=>!schema.map[k]);return missing.length?'Mapping tabel data_lama belum lengkap: '+missing.join(', '):''}
 function canonicalizeDataRow(x,schema){const m=schema.map;return {id:x.id,periode:normalPeriode(x[m.periode])||String(x[m.periode]??'').slice(0,7),konsumen:String(x[m.konsumen]??''),produk:String(x[m.produk]??''),qty:toNum(x[m.qty]),omzet:toNum(x[m.omzet])}}
@@ -83,7 +83,7 @@ async function load(){
     if(r.error){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal memuat: '+esc(r.error.message)+'</div>';return}
     all=(r.data||[]).map(x=>canonicalizeDataRow(x,schema)).map(x=>({...x,qty:Number(x.qty||0),omzet:Math.round(Number(x.omzet||0))}));
     renderAll();
-  }catch(e){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal membaca struktur data_lama: '+esc(e.message||e)+'</div>'}
+  }catch(e){$('grouped').innerHTML='<div class="msg" style="color:#a22">Gagal membaca data_lama: '+esc(e.message||e)+'</div>'}
 }
 $('save').onclick=async()=>{
   const data={periode:$('periode').value,konsumen:$('konsumen').value.trim(),produk:$('produk').value.trim(),qty:Math.round(Number($('qty').value)||0),omzet:Math.round(Number($('omzet').value)||0)};
@@ -188,7 +188,7 @@ $('importBtn').onclick=async()=>{
   if(!out.length)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data valid untuk disimpan.</div>';
   try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';
     const resolved=await insertDataLamaResolved(out,schema);
-    const used=resolved.used, rows=out.map(x=>{const row={};row[used.periode]=x.periode;row[used.konsumen]=x.konsumen;row[used.produk]=x.produk;row[used.qty]=x.qty;row[used.omzet]=x.omzet;return row});
+    const used=resolved.used, rows=resolved.rows;
     if(schema.inferred){schemaCache={...schema,map:used,keys:[...new Set([...schema.keys,...Object.values(used)])],inferred:false}}
     $('importMsg').innerHTML='<div class="msg">Berhasil menyimpan '+rows.length+' baris historis'+(resolved.duplicateCount?'. '+resolved.duplicateCount+' baris duplikat dilewati':'')+'.</div>';$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[];load();
   }catch(e){$('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}
