@@ -52,6 +52,74 @@ const DATA_LAMA_ALIASES={
   omzet:['omzet','total','nominal','penjualan','revenue','total_penjualan','total_omzet','nilai_penjualan']
 };
 function normKey(v){return String(v||'').toLowerCase().replace(/[\s_-]+/g,'')}
+const DATA_LAMA_SCHEMA={map:{periode:'periode',konsumen:'keterangan',produk:'jenis',qty:'catatan',omzet:'nominal'},keys:['id','created_at','periode','jenis','keterangan','nominal','catatan'],inferred:false,profile:'supabase-data-lama-v2-exact'};
+function getDataLamaSchema(){return DATA_LAMA_SCHEMA}
+function schemaError(schema){const missing=['periode','konsumen','produk','qty','omzet'].filter(k=>!schema.map[k]);return missing.length?'Mapping tabel data_lama belum lengkap: '+missing.join(', '):''}
+function canonicalizeDataRow(x,schema){const m=schema.map;return {id:x.id,periode:normalPeriode(x[m.periode])||String(x[m.periode]??'').slice(0,7),konsumen:String(x[m.konsumen]??''),produk:String(x[m.produk]??''),qty:toNum(x[m.qty]),omzet:toNum(x[m.omzet])}}
+function rowSignature(x){return [normalPeriode(x.periode),String(x.konsumen||'').trim().toLowerCase(),String(x.produk||'').trim().toLowerCase(),Math.round(Number(x.qty)||0),Math.round(Number(x.omzet)||0)].join('|')}
+async function readExistingCanonical(schema){const r=await supabaseClient.from('data_lama').select('*');if(r.error)return {data:[],error:r.error};return {data:(r.data||[]).map(x=>canonicalizeDataRow(x,schema)),error:null}}
+function buildInsertRows(fresh,m){return fresh.map(x=>({[m.periode]:String(x.periode),[m.konsumen]:x.konsumen,[m.produk]:x.produk,[m.qty]:String(Math.round(Number(x.qty)||0)),[m.omzet]:Math.round(Number(x.omzet)||0)}))}
+async function insertDataLamaResolved(out,schema){
+  const er=await readExistingCanonical(schema);
+  if(er.error)throw new Error('Gagal membaca data_lama sebelum impor: '+er.error.message);
+  const seen=new Set(er.data.map(rowSignature));
+  const fresh=out.filter(x=>!seen.has(rowSignature(x)));
+  if(!fresh.length)return {used:schema.map,rows:[],duplicateCount:out.length};
+  const r=await supabaseClient.from('data_lama').insert(fresh.map(x=>({
+    periode:String(x.periode),
+    jenis:String(x.produk),
+    keterangan:String(x.konsumen),
+    nominal:Math.round(Number(x.omzet)||0),
+    catatan:String(Math.round(Number(x.qty)||0))
+  })));
+  if(r.error)throw r.error;
+  return {used:schema.map,rows:fresh,duplicateCount:out.length-fresh.length};
+}
+function renderFilters(){const ms=[...new Set(all.map(x=>x.periode).filter(Boolean))].sort().reverse();const ps=[...new Set(all.map(x=>x.produk).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));const cs=[...new Set(all.map(x=>x.konsumen).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));const pp=$('filterProduct').value,pc=$('filterConsumer').value;$('filterProduct').innerHTML='<option value="">Semua Produk</option>'+ps.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');$('filterConsumer').innerHTML='<option value="">Semua Konsumen</option>'+cs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');if(ps.includes(pp))$('filterProduct').value=pp;if(cs.includes(pc))$('filterConsumer').value=pc;renderMonthTabs(ms)}
+function selectedMonth(){return window.ffDataLamaMonth||''}
+function setSelectedMonth(m){window.ffDataLamaMonth=m;renderAll()}
+function renderMonthTabs(ms){const tabs=$('monthTabs');if(!tabs)return;const current=selectedMonth();let active=current&&ms.includes(current)?current:(ms[0]||'');window.ffDataLamaMonth=active;tabs.innerHTML=ms.length?ms.map(m=>`<button class="monthtab ${m===active?'active':''}" onclick="setSelectedMonth('${esc(m)}')">${esc(monthLabel(m))}</button>`).join(''):'<span class="hint">Belum ada bulan.</span>'}
+function filteredData(){const m=selectedMonth(),p=$('filterProduct').value,c=$('filterConsumer').value;return all.filter(x=>(!m||x.periode===m)&&(!p||x.produk===p)&&(!c||x.konsumen===c))}
+function renderGrouped(){
+  const data=filteredData();
+  if(!data.length){$('grouped').innerHTML='<div class="emptyState">Belum ada Data Lama pada filter ini.</div>';return}
+  const m=selectedMonth()||[...new Set(data.map(x=>x.periode))].sort().reverse()[0];
+  const monthRows=data.filter(x=>x.periode===m);
+  if(!monthRows.length){$('grouped').innerHTML='<div class="emptyState">Belum ada data untuk bulan yang dipilih.</div>';return}
+  const mq=monthRows.reduce((a,x)=>a+Number(x.qty||0),0);
+  const mo=monthRows.reduce((a,x)=>a+Number(x.omzet||0),0);
+  const products={};
+  const consumers={};
+  const consumerProduct={};
+  monthRows.forEach(x=>{
+    const p=x.produk||'Tanpa Produk', c=x.konsumen||'Tanpa Konsumen';
+    products[p]??={qty:0,omzet:0,customers:new Set()};
+    products[p].qty+=Number(x.qty||0); products[p].omzet+=Number(x.omzet||0); products[p].customers.add(c);
+    consumers[c]??={qty:0,omzet:0,products:new Set()};
+    consumers[c].qty+=Number(x.qty||0); consumers[c].omzet+=Number(x.omzet||0); consumers[c].products.add(p);
+    const key=c+'\u0000'+p;
+    consumerProduct[key]??={konsumen:c,produk:p,qty:0,omzet:0};
+    consumerProduct[key].qty+=Number(x.qty||0); consumerProduct[key].omzet+=Number(x.omzet||0);
+  });
+  const consumerRows=Object.values(consumerProduct).sort((a,b)=>a.konsumen.localeCompare(b.konsumen,'id')||a.produk.localeCompare(b.produk,'id'));
+  const productRows=Object.entries(products).sort((a,b)=>b[1].qty-a[1].qty||a[0].localeCompare(b[0],'id'));
+  const consumerTotals=Object.entries(consumers).sort((a,b)=>b[1].omzet-a[1].omzet||a[0].localeCompare(b[0],'id'));
+  let html=`<div class="reportHead"><div><div class="eyebrow">LAPORAN PENJUALAN HISTORIS</div><h2>${esc(monthLabel(m))}</h2><p>Data historis offline tersimpan di Familia Food.</p></div><div class="reportMeta"><span>📅 ${esc(monthLabel(m))}</span><span>📄 ${monthRows.length.toLocaleString('id-ID')} baris produk</span></div></div>`;
+  html+=`<div class="reportNotice">Angka <b>Keluar</b> dan <b>Omzet</b> di bawah berasal dari data historis. Sistem tidak mengubah omzet berdasarkan harga Master Produk terbaru.</div>`;
+  html+=`<section class="reportSection"><div class="sectionHead"><h3>📊 Ringkasan</h3><p>Gambaran total penjualan historis untuk bulan yang dipilih.</p></div><div class="kpiGrid" style="padding:16px;margin:0"><div class="kpi"><span>Total Keluar</span><strong>${mq.toLocaleString('id-ID')}</strong><small>bungkus</small></div><div class="kpi"><span>Total Omzet</span><strong>${rupiah(mo)}</strong><small>historis bulan ini</small></div><div class="kpi"><span>Jumlah Produk</span><strong>${productRows.length}</strong><small>jenis produk</small></div><div class="kpi"><span>Jumlah Konsumen</span><strong>${consumerTotals.length}</strong><small>pelanggan</small></div></div><div class="sectionTotal"><span>Total Keluar: <b>${mq.toLocaleString('id-ID')} bungkus</b></span><span>Total Omzet: <b>${rupiah(mo)}</b></span></div></section>`;
+  html+=`<section class="reportSection"><div class="sectionHead"><h3>📦 Keluar per Produk</h3><p>Total produk yang keluar dan omzetnya pada ${esc(monthLabel(m))}.</p></div><div class="tablewrap"><table class="cleanTable"><thead><tr><th class="rank">No</th><th>Produk</th><th>Jumlah Konsumen</th><th>Qty Keluar</th><th>Omzet</th></tr></thead><tbody>`;
+  productRows.forEach(([p,v],i)=>{html+=`<tr><td class="rank">${i+1}</td><td><span class="productPill">${esc(p)}</span></td><td>${v.customers.size}</td><td><b>${v.qty.toLocaleString('id-ID')}</b></td><td><b>${rupiah(v.omzet)}</b></td></tr>`});
+  html+=`</tbody></table></div><div class="sectionTotal"><span>Total Produk: <b>${productRows.length} jenis</b></span><span>Total Keluar: <b>${mq.toLocaleString('id-ID')} bungkus</b></span><span>Total Omzet: <b>${rupiah(mo)}</b></span></div></section>`;
+  html+=`<section class="reportSection detailSection"><div class="sectionHead"><h3>🔎 Detail Transaksi</h3><p>Data per baris yang menjadi sumber ringkasan bulan ini.</p></div><div class="tablewrap"><table class="cleanTable"><thead><tr><th class="rank">No</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th><th>Aksi</th></tr></thead><tbody>`;
+  monthRows.slice().sort((a,b)=>a.konsumen.localeCompare(b.konsumen,'id')||a.produk.localeCompare(b.produk,'id')).forEach((x,i)=>{html+=`<tr><td class="rank">${i+1}</td><td>${esc(x.konsumen)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td><td><button class="del" onclick="del(${x.id})">Hapus</button></td></tr>`});
+  html+=`</tbody></table></div></section>`;
+  html+=`<section class="reportSection"><div class="sectionHead"><h3>👥 Konsumen</h3><p>Rincian pembelian per konsumen dan produk pada ${esc(monthLabel(m))}.</p></div><div class="tablewrap"><table class="cleanTable"><thead><tr><th class="rank">No</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>`;
+  consumerRows.forEach((x,i)=>{html+=`<tr><td class="rank">${i+1}</td><td class="consumerName">${esc(x.konsumen)}</td><td><span class="productPill">${esc(x.produk)}</span></td><td><b>${x.qty.toLocaleString('id-ID')}</b></td><td><b>${rupiah(x.omzet)}</b></td></tr>`});
+  html+=`</tbody></table></div><div class="sectionTotal"><span>Total Konsumen: <b>${consumerTotals.length}</b></span><span>Total Keluar: <b>${mq.toLocaleString('id-ID')} bungkus</b></span><span>Total Omzet: <b>${rupiah(mo)}</b></span></div></section>`;
+  $('grouped').innerHTML=html;
+}
+function renderDetail(){/* Detail is rendered inside the selected-month report. */}
+function renderAll(){renderFilters();renderGrouped();}
 let expenses=[];
 const EXPENSE_PDF_EXPECTED={
   period:'2026-01 s/d 2026-08',
