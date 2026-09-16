@@ -8,11 +8,11 @@
 </main></body><script>
 let all=[],oldAll=[],period='day',pickedDate='',oldSchema=null;
 const rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
-const OLD_ALIASES={periode:['periode','bulan','month','tanggal','date'],konsumen:['konsumen','customer','pelanggan','nama_konsumen','nama_pelanggan','customer_name','nama_customer','keterangan','catatan','nama'],produk:['produk','product','nama_produk','nama product','item','jenis_produk','jenis'],qty:['qty','jumlah','kuantitas','terjual','jumlah_terjual','quantity'],omzet:['omzet','total','nominal','penjualan','revenue','total_penjualan']};
+const OLD_ALIASES={periode:['periode','bulan','month','tanggal','date'],konsumen:['konsumen','customer','pelanggan','nama_konsumen','nama_pelanggan','customer_name','nama_customer','keterangan','catatan','nama'],produk:['produk','product','nama_produk','nama product','item','jenis_produk','jenis'],qty:['qty','jumlah','kuantitas','terjual','jumlah_terjual','quantity'],omzet:['omzet','total','nominal','penjualan','revenue','total_penjualan','total_omzet','nilai_penjualan']};
 const normKey=v=>String(v||'').toLowerCase().replace(/[\s_-]+/g,'');
 function chooseOldCol(keys,kind){const a=(OLD_ALIASES[kind]||[]).map(normKey);return (keys||[]).find(k=>a.includes(normKey(k)))||null}
 function schemaFromRow(row){const keys=Object.keys(row||{}),map={};Object.keys(OLD_ALIASES).forEach(k=>map[k]=chooseOldCol(keys,k));return {map,keys}}
-function canonicalOld(x){const m=oldSchema.map;return {id:x.id,periode:m.periode?x[m.periode]:null,konsumen:m.konsumen?x[m.konsumen]:'',produk:m.produk?x[m.produk]:'',qty:m.qty?x[m.qty]:0,omzet:m.omzet?x[m.omzet]:0};}
+function canonicalOld(x){const m=oldSchema.map;let p=m.periode?x[m.periode]:null;if(m.periode==='tanggal'){p=String(p||'').slice(0,7)}else{p=String(p||'').slice(0,7)}return {id:x.id,periode:p,konsumen:m.konsumen?x[m.konsumen]:'',produk:m.produk?x[m.produk]:'',qty:m.qty?x[m.qty]:0,omzet:m.omzet?x[m.omzet]:0};}
 function oldSchemaError(){if(!oldSchema)return '';const miss=['periode','konsumen','produk','qty','omzet'].filter(k=>!oldSchema.map[k]);return miss.length?'Kolom historis tidak lengkap: '+miss.join(', ')+'. Kolom terdeteksi: '+oldSchema.keys.join(', '):''}
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pad(n){return String(n).padStart(2,'0')}

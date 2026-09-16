@@ -317,7 +317,7 @@ async function hitungData(){
 
         const dataLama = await supabaseClient
             .from("data_lama")
-            .select("qty,omzet");
+            .select("*");
 
         document.getElementById("totalProduk").textContent =
             produk.count ?? 0;
@@ -333,7 +333,14 @@ async function hitungData(){
 
         document.getElementById("totalDataLama").textContent =
             dataLama.error ? 0 : (dataLama.data || []).length;
-        const oldOmzet = (dataLama.data || []).reduce((a,x)=>a+Number(x.omzet||0),0);
+        const oldRows = dataLama.error ? [] : (dataLama.data || []);
+        const oldOmzetCol = (row) => {
+            const keys=Object.keys(row||{});
+            const aliases=['omzet','total','nominal','penjualan','revenue','total_penjualan','total_omzet','nilai_penjualan'];
+            const key=keys.find(k=>aliases.includes(String(k).toLowerCase().replace(/[\s_-]+/g,''))) || (keys.includes('nominal')?'nominal':null);
+            return key ? Number(row[key]||0) : 0;
+        };
+        const oldOmzet = oldRows.reduce((a,x)=>a+oldOmzetCol(x),0);
         const newOmzet = penjualanNilai.error ? 0 : (penjualanNilai.data || []).reduce((a,x)=>a+Number(x.qty||0)*Number(x.harga||0),0);
         document.getElementById("omzetDataLama").textContent =
             "Rp " + Math.round(oldOmzet).toLocaleString("id-ID");
