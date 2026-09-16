@@ -43,86 +43,79 @@ const PDF_EXPECTED={
  '2026-07':[35,6079,24366500], '2026-08':[28,1970,7938500]
 };
 const DATA_LAMA_ALIASES={
-  periode:['periode','bulan','month','tanggal','date'],
-  konsumen:['konsumen','customer','pelanggan','nama_konsumen','nama_pelanggan','customer_name','nama_customer','keterangan','catatan'],
-  produk:['produk','product','nama_produk','nama product','item','jenis_produk'],
-  qty:['qty','jumlah','kuantitas','terjual','jumlah_terjual','quantity'],
+  periode:['periode','bulan','month','periode_bulan','tanggal','date','tgl'],
+  konsumen:['konsumen','customer','pelanggan','nama_konsumen','nama_pelanggan','customer_name','nama_customer','nama','keterangan','catatan'],
+  produk:['produk','product','nama_produk','nama product','item','jenis_produk','jenis'],
+  qty:['qty','jumlah','kuantitas','terjual','jumlah_terjual','quantity','qty_jual'],
   omzet:['omzet','total','nominal','penjualan','revenue','total_penjualan','total_omzet','nilai_penjualan']
 };
-function normKey(v){return String(v||'').toLowerCase().replace(/[\s_-]+/g,'')}
-function chooseColumn(properties,kind){
-  const keys=Object.keys(properties||{});
-  const aliases=(DATA_LAMA_ALIASES[kind]||[]).map(normKey);
-  return keys.find(k=>aliases.includes(normKey(k)))||null;
+function normKey(v){return String(v||'').toLowerCase().replace(/[\\s_-]+/g,'')}
+function candidateColumns(kind){return [...new Set(DATA_LAMA_ALIASES[kind]||[])]}
+// Jangan pernah memakai null sebagai nama properti INSERT.
+// Untuk tabel historis lama, urutan pertama mengikuti struktur legacy yang sudah pernah dipakai aplikasi.
+const LEGACY_MAP={periode:'tanggal',konsumen:'keterangan',produk:'jenis',qty:'jumlah',omzet:'nominal'};
+function makeSchema(map,keys=[],profile='legacy'){return {map:{...map},keys:[...new Set(keys)],inferred:false,profile}}
+function schemaError(schema){
+  const missing=['periode','konsumen','produk','qty','omzet'].filter(k=>!schema.map[k]);
+  return missing.length?'Kolom historis belum dapat dipetakan: '+missing.join(', ')+'. Tidak ada INSERT yang dilakukan.':'';
 }
 async function getDataLamaSchema(){
   if(schemaCache)return schemaCache;
-  // Profil legacy yang memang dipakai tabel data_lama pada versi awal aplikasi.
-  // Ini sengaja diprioritaskan agar import tidak menebak nama kolom.
-  const legacy={periode:'tanggal',konsumen:'keterangan',produk:'jenis',qty:'jumlah',omzet:'nominal'};
-  const r=await supabaseClient.from('data_lama').select('*').limit(1);
-  if(r.error)throw new Error('Tidak bisa membaca tabel data_lama: '+r.error.message);
-  const sample=(r.data&&r.data[0])||null;
-  const keys=sample?Object.keys(sample):[];
-  const hasLegacy=['tanggal','jenis','jumlah','keterangan','nominal'].every(k=>keys.includes(k));
-  if(hasLegacy){
-    schemaCache={properties:Object.fromEntries(keys.map(k=>[k,{}])),map:legacy,keys,inferred:false,profile:'legacy'};
-    return schemaCache;
-  }
-  const properties=Object.fromEntries(keys.map(k=>[k,{}]));
-  const map={};
-  for(const k of Object.keys(DATA_LAMA_ALIASES))map[k]=chooseColumn(properties,k);
-  schemaCache={properties,map,keys,inferred:!sample,profile:sample?'detected':'empty'};
+  // Jangan panggil /rest/v1/ OpenAPI dan jangan SELECT kolom kandidat satu per satu.
+  // Mulai dari struktur legacy; jika Supabase menolak satu nama kolom, insert resolver di bawah
+  // akan membaca nama kolom yang ditolak dan mengganti HANYA field tersebut.
+  schemaCache=makeSchema(LEGACY_MAP,Object.values(LEGACY_MAP),'legacy');
   return schemaCache;
 }
-function candidateColumns(kind){
-  const base=DATA_LAMA_ALIASES[kind]||[];
-  // Tambahan nama yang umum dipakai pada tabel historis lama, tanpa mengubah DB.
-  const extra={
-    periode:['bulan','month','periode_bulan','tanggal','date','tgl'],
-    konsumen:['pelanggan','nama_pelanggan','nama_konsumen','customer','customer_name','nama_customer','nama','keterangan','catatan'],
-    produk:['nama_produk','product','nama product','item','jenis_produk','jenis'],
-    qty:['jumlah','kuantitas','terjual','jumlah_terjual','quantity','qty_jual'],
-    omzet:['total','nominal','penjualan','revenue','total_penjualan','total_omzet','nilai_penjualan']
-  };
-  return [...new Set([...base,...(extra[kind]||[])])];
-}
-function missingColumnFromError(message){
-  const m=String(message||'').match(/Could not find the '([^']+)' column/i);
-  return m?m[1]:null;
-}
+function missingColumnFromError(message){const m=String(message||'').match(/Could not find the '([^']+)' column/i);return m?m[1]:null}
 function rowSignature(x){return [normalPeriode(x.periode),String(x.konsumen||'').trim().toLowerCase(),String(x.produk||'').trim().toLowerCase(),Math.round(Number(x.qty)||0),Math.round(Number(x.omzet)||0)].join('|')}
+function canonicalizeDataRow(x,schema){
+  const m=schema.map;let periode=m.periode?x[m.periode]:'';
+  if(m.periode==='tanggal'||m.periode==='date'||m.periode==='tgl')periode=normalPeriode(periode);
+  else periode=normalPeriode(periode)||String(periode||'').slice(0,7);
+  return {id:x.id,periode,konsumen:m.konsumen?x[m.konsumen]:'',produk:m.produk?x[m.produk]:'',qty:m.qty?x[m.qty]:0,omzet:m.omzet?x[m.omzet]:0};
+}
+async function readExistingCanonical(schema){
+  const r=await supabaseClient.from('data_lama').select('*');
+  if(r.error)return {data:[],error:r.error};
+  return {data:(r.data||[]).map(x=>canonicalizeDataRow(x,schema)),error:null};
+}
+function buildInsertRows(fresh,m){
+  if(!m||Object.values(m).some(v=>!v))throw new Error('Mapping kolom data_lama belum lengkap. INSERT dibatalkan.');
+  return fresh.map(x=>({[m.periode]:String(x.periode)+'-01',[m.konsumen]:x.konsumen,[m.produk]:x.produk,[m.qty]:x.qty,[m.omzet]:x.omzet}));
+}
 async function insertDataLamaResolved(out,schema){
-  // Jika schema legacy diketahui, langsung gunakan nama kolom sebenarnya.
   let used={...schema.map};
-  const tries={};
-  for(const k of Object.keys(DATA_LAMA_ALIASES)){
-    const list=candidateColumns(k); let idx=list.findIndex(x=>x===used[k]);
-    tries[k]=idx<0?0:idx;
-  }
-  const buildRows=m=>out.map(x=>{const row={};row[m.periode]=schema.profile==='legacy'?String(x.periode)+'-01':x.periode;row[m.konsumen]=x.konsumen;row[m.produk]=x.produk;row[m.qty]=x.qty;row[m.omzet]=x.omzet;if(schema.profile==='legacy'&&schema.keys.includes('catatan'))row.catatan='Data Lama PDF';return row});
-  // Ambil data yang sudah ada untuk mencegah PDF yang sama masuk dua kali.
-  let existing=[];
-  const er=await supabaseClient.from('data_lama').select('*');
-  if(!er.error)existing=er.data||[];
-  const existingCanonical=existing.map(x=>canonicalizeDataRow(x,{map:used}));
-  const seen=new Set(existingCanonical.map(rowSignature));
+  const next={};
+  Object.keys(DATA_LAMA_ALIASES).forEach(k=>{
+    const list=candidateColumns(k), current=used[k], idx=Math.max(-1,list.findIndex(x=>normKey(x)===normKey(current)));
+    next[k]=idx;
+  });
+  // Dedup hanya jika pembacaan SELECT berhasil. Jika SELECT ditolak, jangan mengarang status data.
+  const er=await readExistingCanonical(makeSchema(used,Object.values(used),'legacy'));
+  if(er.error)throw new Error('Gagal membaca data_lama sebelum impor: '+er.error.message);
+  const seen=new Set(er.data.map(rowSignature));
   const fresh=out.filter(x=>!seen.has(rowSignature(x)));
   if(!fresh.length)return {used,rows:[],duplicateCount:out.length};
-  const buildFresh=m=>fresh.map(x=>{const row={};row[m.periode]=schema.profile==='legacy'?String(x.periode)+'-01':x.periode;row[m.konsumen]=x.konsumen;row[m.produk]=x.produk;row[m.qty]=x.qty;row[m.omzet]=x.omzet;if(schema.profile==='legacy'&&schema.keys.includes('catatan'))row.catatan='Data Lama PDF';return row});
-  for(let attempt=0;attempt<40;attempt++){
-    const r=await supabaseClient.from('data_lama').insert(buildFresh(used));
+
+  for(let attempt=0;attempt<80;attempt++){
+    if(Object.values(used).some(v=>!v))throw new Error('Mapping kolom data_lama tidak lengkap. INSERT dibatalkan.');
+    const r=await supabaseClient.from('data_lama').insert(buildInsertRows(fresh,used));
     if(!r.error)return {used,rows:fresh,duplicateCount:out.length-fresh.length};
     const missing=missingColumnFromError(r.error.message);
     if(!missing)throw r.error;
-    const kind=Object.keys(used).find(k=>used[k]===missing);
+    const kind=Object.keys(used).find(k=>normKey(used[k])===normKey(missing));
     if(!kind)throw r.error;
-    const list=candidateColumns(kind); let found=-1;
-    for(let i=tries[kind]+1;i<list.length;i++){const candidate=list[i];if(Object.values(used).includes(candidate))continue;found=i;break}
-    if(found<0)throw new Error(`${r.error.message}. Kandidat kolom untuk ${kind} sudah habis: ${list.join(', ')}`);
-    tries[kind]=found;used[kind]=list[found];
+    const list=candidateColumns(kind);let found=-1;
+    for(let i=next[kind]+1;i<list.length;i++){
+      const candidate=list[i];
+      if(Object.values(used).some(v=>normKey(v)===normKey(candidate)))continue;
+      found=i;break;
+    }
+    if(found<0)throw new Error(`Kolom '${missing}' ditolak Supabase dan tidak ada kandidat nama lain yang aman untuk field ${kind}. INSERT dibatalkan.`);
+    used[kind]=list[found];next[kind]=found;
   }
-  throw new Error('Mapping kolom data_lama tidak dapat diselesaikan setelah beberapa percobaan.');
+  throw new Error('Resolver kolom data_lama berhenti setelah batas percobaan. Tidak ada INSERT tambahan.');
 }
 function resetDataLamaSchema(){schemaCache=null}
 function schemaError(schema){
@@ -158,8 +151,7 @@ $('save').onclick=async()=>{
   const data={periode:$('periode').value,konsumen:$('konsumen').value.trim(),produk:$('produk').value.trim(),qty:Math.round(Number($('qty').value)||0),omzet:Math.round(Number($('omzet').value)||0)};
   if(!data.periode||!data.konsumen||!data.produk||data.qty<=0)return msg('Periode, konsumen, produk, dan Qty wajib diisi.',true);
   try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return msg(er,true);
-    const row={};row[schema.map.periode]=data.periode;row[schema.map.konsumen]=data.konsumen;row[schema.map.produk]=data.produk;row[schema.map.qty]=data.qty;row[schema.map.omzet]=data.omzet;
-    const r=await supabaseClient.from('data_lama').insert([row]);if(r.error)return msg('Gagal menyimpan: '+r.error.message,true);
+    const resolved=await insertDataLamaResolved([data],schema);if(!resolved.rows.length)return msg('Data sudah ada. Tidak dibuat duplikat.');
     $('konsumen').value='';$('produk').value='';$('qty').value=0;$('omzet').value=0;msg('Data historis tersimpan.');load();
   }catch(e){msg(e.message||e,true)}
 };
