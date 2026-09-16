@@ -3,363 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Familia Food</title>
-
+<title>Familia Food - Dashboard</title>
 <style>
 *{box-sizing:border-box}
-
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#f5f7f6;
-    color:#333;
-}
-
-.sidebar{
-    position:fixed;
-    left:0;
-    top:0;
-    width:240px;
-    height:100vh;
-    background:var(--brand-color,#146b3a);
-    color:white;
-    padding:22px 15px;
-}
-
-.logo{
-    font-size:22px;
-    font-weight:bold;
-    padding:10px;
-    margin-bottom:25px;
-}
-
-.menu{
-    display:block;
-    color:white;
-    text-decoration:none;
-    padding:13px 15px;
-    margin:4px 0;
-    border-radius:9px;
-}
-
-.menu:hover,
-.menu.active{
-    background:#1f844b;
-}
-
-.main{
-    margin-left:240px;
-    padding:30px;
-}
-
-.header{
-    margin-bottom:25px;
-}
-
-.header h1{
-    margin:0 0 8px;
-    color:var(--brand-color,#146b3a);
-}
-
-.header p{
-    margin:0;
-    color:#777;
-}
-
-.cards{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:18px;
-}
-
-.card{
-    background:white;
-    padding:22px;
-    border-radius:14px;
-    box-shadow:0 2px 8px rgba(0,0,0,.07);
-}
-
-.card-title{
-    color:#777;
-    font-size:14px;
-}
-
-.card-number{
-    font-size:30px;
-    font-weight:bold;
-    color:var(--brand-color,#146b3a);
-    margin-top:10px;
-}
-
-.section{
-    margin-top:25px;
-}
-
-.section h2{
-    color:var(--brand-color,#146b3a);
-}
-
-.quick{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:15px;
-}
-
-.quick a{
-    text-decoration:none;
-    background:white;
-    color:var(--brand-color,#146b3a);
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,.07);
-    font-weight:bold;
-}
-
-.quick a:hover{
-    background:#eaf5ee;
-}
-
-.status{
-    margin-top:25px;
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    color:#666;
-}
-
-@media(max-width:800px){
-
-    .sidebar{
-        width:100%;
-        height:auto;
-        position:relative;
-    }
-
-    .main{
-        margin-left:0;
-        padding:20px;
-    }
-
-    .cards{
-        grid-template-columns:repeat(2,1fr);
-    }
-
-    .quick{
-        grid-template-columns:1fr;
-    }
-}
-
-@media(max-width:500px){
-
-    .cards{
-        grid-template-columns:1fr;
-    }
-}
+:root{--brand:#146b3a;--brand2:#1f844b;--bg:#f5f7f6;--muted:#777}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
+.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand);color:#fff;padding:22px 15px}
+.logo{font-size:22px;font-weight:bold;padding:10px;margin-bottom:25px}.menu{display:block;color:#fff;text-decoration:none;padding:13px 15px;margin:4px 0;border-radius:9px}.menu:hover,.menu.active{background:var(--brand2)}
+.main{margin-left:240px;padding:30px}.header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:25px}.header h1{margin:0 0 8px;color:var(--brand)}.header p{margin:0;color:var(--muted)}
+.refresh{border:0;background:var(--brand);color:#fff;padding:10px 16px;border-radius:9px;cursor:pointer;font-weight:bold}.refresh:hover{background:var(--brand2)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.card{background:#fff;padding:20px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);min-height:112px}.card-title{color:var(--muted);font-size:14px}.card-number{font-size:28px;font-weight:bold;color:var(--brand);margin-top:10px;word-break:break-word}
+.section{margin-top:25px}.section h2{color:var(--brand);margin-bottom:14px}.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.quick a{text-decoration:none;background:#fff;color:var(--brand);padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);font-weight:bold}.quick a:hover{background:#eaf5ee}
+.status{margin-top:25px;background:#fff;padding:18px 20px;border-radius:12px;color:#666}.status strong{color:var(--brand)}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.quick{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.sidebar{width:100%;height:auto;position:relative}.main{margin-left:0;padding:20px}.header{flex-direction:column}.quick{grid-template-columns:1fr}}
+@media(max-width:500px){.cards{grid-template-columns:1fr}}
 </style>
 </head>
-
 <body>
-
 <div class="sidebar">
-
-    <div class="logo">🍀 Familia Food</div>
-
-    <a class="menu active" href="index.html">🏠 Dashboard</a>
-    <a class="menu" href="produk.html">📦 Produk</a>
-    <a class="menu" href="bahan-baku.html">🥣 Bahan Baku</a>
-    <a class="menu" href="resep.html">📋 Resep</a>
-    <a class="menu" href="hpp.html">💰 HPP</a>
-    <a class="menu" href="penjualan.html">🛒 Penjualan</a>
-    <a class="menu" href="rekap.html">📊 Rekap</a>
-    <a class="menu" href="data-lama.html">📁 Data Lama</a>
-    <a class="menu" href="pengaturan.html">⚙️ Pengaturan</a>
-
+  <div class="logo">🍀 Familia Food</div>
+  <a class="menu active" href="index.html">🏠 Dashboard</a>
+  <a class="menu" href="produk.html">📦 Produk</a>
+  <a class="menu" href="bahan-baku.html">🥣 Bahan Baku</a>
+  <a class="menu" href="resep.html">📋 Resep</a>
+  <a class="menu" href="hpp.html">💰 HPP</a>
+  <a class="menu" href="penjualan.html">🛒 Penjualan</a>
+  <a class="menu" href="rekap.html">📊 Rekap</a>
+  <a class="menu" href="data-lama.html">📁 Data Lama</a>
+  <a class="menu" href="pengaturan.html">⚙️ Pengaturan</a>
 </div>
-
-
 <div class="main">
-
-    <div class="header">
-
-        <h1>Dashboard</h1>
-
-        <p>
-            Selamat datang di aplikasi pencatatan usaha
-            <b>Familia Food</b>.
-        </p>
-
-    </div>
-
-
-    <div class="cards">
-
-        <div class="card">
-            <div class="card-title">Total Produk</div>
-            <div class="card-number" id="totalProduk">-</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Bahan Baku</div>
-            <div class="card-number" id="totalBahan">-</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Resep</div>
-            <div class="card-number" id="totalResep">-</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Penjualan Baru</div>
-            <div class="card-number" id="totalPenjualan">-</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Data Lama</div>
-            <div class="card-number" id="totalDataLama">-</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Omzet Data Lama</div>
-            <div class="card-number" id="omzetDataLama">Rp 0</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Omzet Penjualan Baru</div>
-            <div class="card-number" id="omzetPenjualanBaru">Rp 0</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Omzet Gabungan</div>
-            <div class="card-number" id="omzetGabungan">Rp 0</div>
-        </div>
-
-    </div>
-
-
-    <div class="section">
-
-        <h2>Akses Cepat</h2>
-
-        <div class="quick">
-
-            <a href="produk.html">
-                📦 Kelola Produk
-            </a>
-
-            <a href="bahan-baku.html">
-                🥣 Kelola Bahan Baku
-            </a>
-
-            <a href="penjualan.html">
-                🛒 Catat Penjualan
-            </a>
-
-            <a href="hpp.html">
-                💰 Hitung HPP
-            </a>
-
-            <a href="rekap.html">
-                📊 Lihat Rekap
-            </a>
-
-            <a href="data-lama.html">
-                📁 Data Lama
-            </a>
-
-        </div>
-
-    </div>
-
-
-    <div class="status">
-
-        <b>Status Aplikasi</b>
-
-        <p>
-            Dashboard Familia Food sudah terhubung
-            dengan database Supabase.
-        </p>
-
-    </div>
-
+  <div class="header">
+    <div><h1>Dashboard</h1><p>Ringkasan usaha <b>Familia Food</b> dari data master, transaksi baru, dan data historis.</p></div>
+    <button class="refresh" id="refreshBtn" type="button">↻ Muat Ulang</button>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="card-title">Produk Aktif</div><div class="card-number" id="totalProduk">-</div></div>
+    <div class="card"><div class="card-title">Bahan Baku Aktif</div><div class="card-number" id="totalBahan">-</div></div>
+    <div class="card"><div class="card-title">Resep Produk</div><div class="card-number" id="totalResep">-</div></div>
+    <div class="card"><div class="card-title">Transaksi Baru</div><div class="card-number" id="totalPenjualan">-</div></div>
+    <div class="card"><div class="card-title">Data Lama</div><div class="card-number" id="totalDataLama">-</div></div>
+    <div class="card"><div class="card-title">Omzet Data Lama</div><div class="card-number" id="omzetDataLama">Rp 0</div></div>
+    <div class="card"><div class="card-title">Omzet Penjualan Baru</div><div class="card-number" id="omzetPenjualanBaru">Rp 0</div></div>
+    <div class="card"><div class="card-title">Omzet Gabungan</div><div class="card-number" id="omzetGabungan">Rp 0</div></div>
+  </div>
+  <div class="section"><h2>Akses Cepat</h2><div class="quick">
+    <a href="produk.html">📦 Kelola Produk</a><a href="bahan-baku.html">🥣 Kelola Bahan Baku</a><a href="resep.html">📋 Kelola Resep</a><a href="hpp.html">💰 Hitung HPP</a><a href="penjualan.html">🛒 Catat Penjualan</a><a href="rekap.html">📊 Lihat Rekap</a><a href="data-lama.html">📁 Data Lama</a>
+  </div></div>
+  <div class="status" id="statusBox"><strong>Status Aplikasi</strong><p id="statusText">Memuat data dari database...</p></div>
 </div>
-
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script><script src="app-settings.js"></script>
-
-
 <script>
-
-async function hitungData(){
-
-    try{
-
-        const produk = await supabaseClient
-            .from("produk")
-            .select("*",{count:"exact",head:true});
-
-        const bahan = await supabaseClient
-            .from("bahan_baku")
-            .select("*",{count:"exact",head:true});
-
-        const resep = await supabaseClient
-            .from("resep")
-            .select("*",{count:"exact",head:true});
-
-        const penjualan = await supabaseClient
-            .from("penjualan")
-            .select("*",{count:"exact",head:true});
-
-        const penjualanNilai = await supabaseClient
-            .from("penjualan")
-            .select("qty,harga");
-
-        const dataLama = await supabaseClient
-            .from("data_lama")
-            .select("*");
-
-        document.getElementById("totalProduk").textContent =
-            produk.count ?? 0;
-
-        document.getElementById("totalBahan").textContent =
-            bahan.count ?? 0;
-
-        document.getElementById("totalResep").textContent =
-            resep.count ?? 0;
-
-        document.getElementById("totalPenjualan").textContent =
-            penjualan.count ?? 0;
-
-        document.getElementById("totalDataLama").textContent =
-            dataLama.error ? 0 : (dataLama.data || []).length;
-        const oldRows = dataLama.error ? [] : (dataLama.data || []);
-        const oldOmzetCol = (row) => {
-            const keys=Object.keys(row||{});
-            const aliases=['omzet','total','nominal','penjualan','revenue','total_penjualan','total_omzet','nilai_penjualan'];
-            const key=keys.find(k=>aliases.includes(String(k).toLowerCase().replace(/[\s_-]+/g,''))) || (keys.includes('nominal')?'nominal':null);
-            return key ? Number(row[key]||0) : 0;
-        };
-        const oldOmzet = oldRows.reduce((a,x)=>a+oldOmzetCol(x),0);
-        const newOmzet = penjualanNilai.error ? 0 : (penjualanNilai.data || []).reduce((a,x)=>a+Number(x.qty||0)*Number(x.harga||0),0);
-        document.getElementById("omzetDataLama").textContent =
-            "Rp " + Math.round(oldOmzet).toLocaleString("id-ID");
-        document.getElementById("omzetPenjualanBaru").textContent =
-            "Rp " + Math.round(newOmzet).toLocaleString("id-ID");
-        document.getElementById("omzetGabungan").textContent =
-            "Rp " + Math.round(oldOmzet + newOmzet).toLocaleString("id-ID");
-
-    }catch(error){
-
-        console.error(error);
-
-    }
-
+const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
+const isActive=row=>String(row?.statustext ?? row?.status ?? "Aktif").toLowerCase()!=="arsip" && String(row?.statustext ?? row?.status ?? "Aktif").toLowerCase()!=="nonaktif";
+const isOverhead=row=>/^(__OH__|__OVERHEAD__)/i.test(String(row?.nama_bahan||""));
+async function fetchAll(table, select="*"){
+  const page=1000; let offset=0, all=[];
+  while(true){
+    const r=await supabaseClient.from(table).select(select).range(offset,offset+page-1);
+    if(r.error) throw r.error;
+    const rows=r.data||[]; all.push(...rows);
+    if(rows.length<page) break;
+    offset+=page;
+  }
+  return all;
 }
+async function loadDashboard(){
+  const ids={totalProduk:"-",totalBahan:"-",totalResep:"-",totalPenjualan:"-",totalDataLama:"-",omzetDataLama:"Rp 0",omzetPenjualanBaru:"Rp 0",omzetGabungan:"Rp 0"};
+  Object.entries(ids).forEach(([id,v])=>document.getElementById(id).textContent=v);
+  document.getElementById("statusText").textContent="Memuat data dari database...";
+  try{
+    const results=await Promise.allSettled([
+      fetchAll("produk"),fetchAll("bahan_baku"),fetchAll("resep"),fetchAll("penjualan"),fetchAll("data_lama")
+    ]);
+    const [rp,rb,rr,rs,rd]=results;
+    const errors=[];
+    const products=rp.status==="fulfilled"?rp.value:[]; if(rp.status!=="fulfilled") errors.push("Produk");
+    const bahan=rb.status==="fulfilled"?rb.value:[]; if(rb.status!=="fulfilled") errors.push("Bahan Baku");
+    const resep=rr.status==="fulfilled"?rr.value:[]; if(rr.status!=="fulfilled") errors.push("Resep");
+    const sales=rs.status==="fulfilled"?rs.value:[]; if(rs.status!=="fulfilled") errors.push("Penjualan");
+    const old=rd.status==="fulfilled"?rd.value:[]; if(rd.status!=="fulfilled") errors.push("Data Lama");
 
-hitungData();
+    const activeProducts=products.filter(isActive);
+    const activeMaterials=bahan.filter(x=>isActive(x)&&!isOverhead(x));
+    const recipeProducts=new Set(resep.map(x=>x.produk_id).filter(Boolean));
+    const oldOmzet=old.reduce((s,x)=>s+Number(x.nominal||0),0);
+    const newOmzet=sales.reduce((s,x)=>s+Number(x.qty||0)*Number(x.harga||0),0);
 
+    document.getElementById("totalProduk").textContent=activeProducts.length;
+    document.getElementById("totalBahan").textContent=activeMaterials.length;
+    document.getElementById("totalResep").textContent=recipeProducts.size;
+    document.getElementById("totalPenjualan").textContent=sales.length;
+    document.getElementById("totalDataLama").textContent=old.length;
+    document.getElementById("omzetDataLama").textContent=rupiah(oldOmzet);
+    document.getElementById("omzetPenjualanBaru").textContent=rupiah(newOmzet);
+    document.getElementById("omzetGabungan").textContent=rupiah(oldOmzet+newOmzet);
+    document.getElementById("statusText").textContent=errors.length?"Sebagian data gagal dimuat: "+errors.join(", ")+". Data lain tetap ditampilkan.":"Database terhubung dan seluruh data dashboard berhasil dimuat.";
+  }catch(e){console.error(e);document.getElementById("statusText").textContent="Gagal memuat dashboard. Periksa koneksi database.";}
+}
+document.getElementById("refreshBtn").addEventListener("click",loadDashboard);loadDashboard();
 </script>
-
 </body>
 </html>
