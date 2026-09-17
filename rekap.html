@@ -116,8 +116,9 @@ th{background:#f4f8f6}
 <div class="card">
 <div class="section-title">
 <div><h2 style="margin:0">💸 Pengeluaran</h2><div class="sub" style="margin:5px 0 0">Total pengeluaran yang tercatat untuk bulan terpilih.</div></div>
-<span class="badge" id="expenseBadge">Rp 0</span>
+<span class="badge" id="expenseBadge">Belum tersedia per bulan</span>
 </div>
+<div class="sub" id="expenseNote" style="margin:10px 0 0">Data pengeluaran yang tersimpan saat ini memakai periode gabungan, jadi tidak dibebankan ke satu bulan agar hasil bersih tidak salah.</div>
 <div class="actions"><button class="btn2" id="expenseDetailBtn">👁 Lihat Pengeluaran</button></div>
 </div>
 </main>
@@ -193,9 +194,22 @@ function oldFiltered(){
  const m=selectedMonth();
  return oldAll.filter(x=>String(x.periode||'').slice(0,7)===m);
 }
+const HISTORICAL_EXPENSES={
+ '2026-01':26102300,
+ '2026-02':29586000,
+ '2026-03':26182325,
+ '2026-04':27758500,
+ '2026-05':20462800,
+ '2026-06':26517000,
+ '2026-07':32997500,
+ '2026-08':9671700
+};
 function expenseFiltered(){
  const m=selectedMonth();
- return expenses.filter(x=>String(x.periode||'').slice(0,7)===m);
+ if(Object.prototype.hasOwnProperty.call(HISTORICAL_EXPENSES,m)){
+  return [{periode:m, nominal:HISTORICAL_EXPENSES[m], sumber:'Rangkuman Pengeluaran Offline Per Bulan'}];
+ }
+ return expenses.filter(x=>String(x.periode||'').slice(0,7)===m || x.periode===m);
 }
 function render(){
  const rows=newFiltered(), olds=oldFiltered(), ex=expenseFiltered();
@@ -205,16 +219,21 @@ function render(){
  const newLaba=rows.reduce((a,x)=>a+Number(x.laba||0),0);
  const oldQty=olds.reduce((a,x)=>a+Number(x.qty||0),0);
  const oldOmzet=olds.reduce((a,x)=>a+Number(x.omzet||0),0);
- const expense=ex.reduce((a,x)=>a+Number(x.nominal||0),0);
+ const exactMonthlyExpenses=ex.filter(x=>x.isMonthly);
+ const expense=exactMonthlyExpenses.reduce((a,x)=>a+Number(x.nominal||0),0);
  const totalOmzet=newOmzet+oldOmzet;
- const hasilBersih=newLaba+oldOmzet-expense;
+ const hasilBersih=expense>0 ? (newLaba+oldOmzet-expense) : null;
 
  $('totalOmzet').textContent=rupiah(totalOmzet);
  $('totalQty').textContent=(newQty+oldQty).toLocaleString('id-ID')+' bungkus';
  $('totalHpp').textContent=rupiah(newHpp);
  $('totalLaba').textContent=rupiah(newLaba);
- $('totalExpense').textContent=rupiah(expense);
- $('hasilBersih').textContent=rupiah(hasilBersih);
+ $('totalExpense').textContent=expense>0?rupiah(expense):'Belum tersedia';
+ $('hasilBersih').textContent=hasilBersih===null?'Belum dapat dihitung':rupiah(hasilBersih);
+ $('expenseBadge').textContent=expense>0?rupiah(expense):'Data gabungan';
+ $('expenseNote').textContent=expense>0
+  ? 'Pengeluaran bulan terpilih terbaca dari data yang memiliki periode bulanan.'
+  : 'Data pengeluaran yang tersimpan saat ini memakai periode gabungan (contoh: 2026-01 s/d 2026-08), jadi tidak dibebankan ke bulan ini agar hasil bersih tidak salah.';
 
  $('oldBadge').textContent=oldQty.toLocaleString('id-ID')+' bungkus · '+rupiah(oldOmzet);
  $('newQty').textContent=newQty.toLocaleString('id-ID')+' bungkus';
@@ -279,7 +298,7 @@ function expenseDetail(){
  const total=rows.reduce((a,x)=>a+Number(x.nominal||0),0);
  const table=`<div class="summaryline"><div><b>Total</b>${rupiah(total)}</div><div><b>Data</b>${rows.length} baris</div></div>
  <div class="tablewrap"><table><thead><tr><th>Periode</th><th>Kategori</th><th>Keterangan</th><th>Nominal</th></tr></thead><tbody>
- ${rows.map(x=>`<tr><td>${esc(x.periode||'-')}</td><td>${esc(x.kategori||x.jenis||'-')}</td><td>${esc(x.keterangan||x.catatan||'-')}</td><td>${rupiah(x.nominal)}</td></tr>`).join('')}
+ ${rows.map(x=>`<tr><td>${esc(x.rawPeriode||x.periode||'-')}</td><td>${esc(x.kategori||x.jenis||'-')}</td><td>${esc(x.keterangan||x.catatan||'-')}</td><td>${rupiah(x.nominal)}</td></tr>`).join('')}
  </tbody></table></div>`;
  openModal('Pengeluaran',table);
 }
@@ -326,11 +345,12 @@ $('modal').onclick=e=>{if(e.target.id==='modal')$('modal').classList.remove('sho
   if(er.error){
    console.error(er.error);
   }else{
-   expenses=(er.data||[]).map(x=>({
-    ...x,
-    periode:String(x.periode||x.tanggal||'').slice(0,7),
-    nominal:Math.round(Number(x.nominal||0))
-   }));
+   expenses=(er.data||[]).map(x=>{
+    const raw=String(x.periode||x.tanggal||'').trim();
+    const isMonthly=/^\d{4}-\d{2}$/.test(raw);
+    return {...x, rawPeriode:raw, periode:isMonthly?raw:raw.slice(0,7), isMonthly,
+      nominal:Math.round(Number(x.nominal||0))};
+   });
   }
 
   render();
