@@ -97,7 +97,21 @@ async function loadDashboard(){
 
     // Data Lama: omzet hanya dari nominal historis yang tersimpan.
     const oldOmzet=old.reduce((s,x)=>s+Number(x.nominal||0),0);
-    const oldExpense=expenseRows.reduce((s,x)=>s+Number(x.nominal||0),0);
+
+    // Pengeluaran historis di Supabase berisi dua kumpulan data historis
+    // sehingga menjumlahkan semua baris akan menggandakan biaya. Dashboard
+    // mengikuti angka Rekap bulanan yang sudah ditetapkan sebagai sumber historis.
+    const HISTORICAL_EXPENSE_TOTALS={
+      "2026-01":26102300,
+      "2026-02":29586000,
+      "2026-03":26182325,
+      "2026-04":27758500,
+      "2026-05":20462800,
+      "2026-06":26517000,
+      "2026-07":32997500,
+      "2026-08":9671700
+    };
+    const oldExpense=Object.values(HISTORICAL_EXPENSE_TOTALS).reduce((s,n)=>s+n,0);
 
     // Penjualan Baru: jangan bergantung pada kolom total karena database
     // saat ini memiliki beberapa baris dengan total = NULL.
