@@ -219,8 +219,7 @@ function render(){
  const newLaba=rows.reduce((a,x)=>a+Number(x.laba||0),0);
  const oldQty=olds.reduce((a,x)=>a+Number(x.qty||0),0);
  const oldOmzet=olds.reduce((a,x)=>a+Number(x.omzet||0),0);
- const exactMonthlyExpenses=ex.filter(x=>x.isMonthly);
- const expense=exactMonthlyExpenses.reduce((a,x)=>a+Number(x.nominal||0),0);
+ const expense=ex.reduce((a,x)=>a+Number(x.nominal||0),0);
  const totalOmzet=newOmzet+oldOmzet;
  const hasilBersih=expense>0 ? (totalOmzet-expense) : null;
 
