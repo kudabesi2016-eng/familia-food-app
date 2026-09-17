@@ -204,6 +204,33 @@ const HISTORICAL_EXPENSES={
  '2026-07':32997500,
  '2026-08':9671700
 };
+
+const HISTORICAL_EXPENSE_CATEGORIES={
+ '2026-01':{
+  'Bahan Baku':15525000,'Operasional':4000500,'Gaji':3025000,'Lain-lain':2439000,'Retur':831800,'Alat & Perlengkapan':281000
+ },
+ '2026-02':{
+  'Bahan Baku':18760000,'Operasional':2561000,'Gaji':5160000,'Lain-lain':1975000,'Retur':1007500,'Alat & Perlengkapan':122500
+ },
+ '2026-03':{
+  'Bahan Baku':15797000,'Operasional':4118025,'Gaji':4461000,'Lain-lain':130000,'Retur':1437300,'Alat & Perlengkapan':239000
+ },
+ '2026-04':{
+  'Bahan Baku':13822800,'Operasional':4283500,'Gaji':4454000,'Lain-lain':3396500,'Retur':1264700,'Alat & Perlengkapan':537000
+ },
+ '2026-05':{
+  'Bahan Baku':12531500,'Operasional':2595000,'Gaji':2711500,'Lain-lain':1827500,'Retur':702300,'Alat & Perlengkapan':95000
+ },
+ '2026-06':{
+  'Bahan Baku':16176000,'Operasional':4701000,'Gaji':3781000,'Lain-lain':1193000,'Retur':436000,'Alat & Perlengkapan':230000
+ },
+ '2026-07':{
+  'Bahan Baku':16373000,'Operasional':6209000,'Gaji':4826000,'Lain-lain':3069000,'Retur':596000,'Alat & Perlengkapan':1924500
+ },
+ '2026-08':{
+  'Bahan Baku':4848000,'Operasional':949000,'Gaji':1645000,'Lain-lain':2089000,'Retur':90700,'Alat & Perlengkapan':50000
+ }
+};
 function expenseFiltered(){
  const m=selectedMonth();
  if(Object.prototype.hasOwnProperty.call(HISTORICAL_EXPENSES,m)){
@@ -231,7 +258,7 @@ function render(){
  $('hasilBersih').textContent=hasilBersih===null?'Belum dapat dihitung':rupiah(hasilBersih);
  $('expenseBadge').textContent=expense>0?rupiah(expense):'Data gabungan';
  $('expenseNote').textContent=expense>0
-  ? 'Pengeluaran bulan terpilih diambil dari rangkuman historis per bulan. Data Lama dan Data Pengeluaran Supabase tidak diubah.'
+  ? 'Pengeluaran bulan terpilih diambil dari rangkuman historis per bulan. Tombol Lihat Pengeluaran menampilkan rincian per kategori. Data Lama dan Data Pengeluaran Supabase tidak diubah.'
   : 'Belum ada angka pengeluaran bulanan yang dapat dipakai untuk bulan ini.';
 
  $('oldBadge').textContent=oldQty.toLocaleString('id-ID')+' bungkus · '+rupiah(oldOmzet);
@@ -292,6 +319,18 @@ function productDetail(){
  openModal('Rekap Per Produk',table);
 }
 function expenseDetail(){
+ const m=selectedMonth();
+ const cats=HISTORICAL_EXPENSE_CATEGORIES[m];
+ if(cats){
+  const entries=Object.entries(cats);
+  const total=entries.reduce((a,[,v])=>a+Number(v||0),0);
+  const table=`<div class="summaryline"><div><b>Total</b>${rupiah(total)}</div><div><b>Kategori</b>${entries.length}</div><div><b>Bulan</b>${esc(monthName(m))}</div></div>
+  <div class="tablewrap"><table><thead><tr><th>Kategori</th><th>Nominal</th></tr></thead><tbody>
+  ${entries.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${rupiah(v)}</td></tr>`).join('')}
+  </tbody></table></div>`;
+  openModal('Pengeluaran',table);
+  return;
+ }
  const rows=expenseFiltered();
  if(!rows.length){openModal('Pengeluaran','<div class="empty">Tidak ada pengeluaran pada bulan ini.</div>');return}
  const total=rows.reduce((a,x)=>a+Number(x.nominal||0),0);
