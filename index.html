@@ -48,6 +48,9 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
     <div class="card"><div class="card-title">Omzet Penjualan Baru</div><div class="card-number" id="omzetPenjualanBaru">Rp 0</div></div>
     <div class="card"><div class="card-title">Omzet Gabungan</div><div class="card-number" id="omzetGabungan">Rp 0</div></div>
     <div class="card"><div class="card-title">Pengeluaran Historis</div><div class="card-number" id="pengeluaranDataLama">Rp 0</div></div>
+    <div class="card"><div class="card-title">HPP Penjualan Baru</div><div class="card-number" id="hppPenjualanBaru">Rp 0</div></div>
+    <div class="card"><div class="card-title">Laba Penjualan Baru</div><div class="card-number" id="labaPenjualanBaru">Rp 0</div></div>
+    <div class="card"><div class="card-title">Hasil Bersih Terukur</div><div class="card-number" id="hasilBersih">Rp 0</div></div>
   </div>
   <div class="section"><h2>Akses Cepat</h2><div class="quick">
     <a href="produk.html">📦 Kelola Produk</a><a href="bahan-baku.html">🥣 Kelola Bahan Baku</a><a href="resep.html">📋 Kelola Resep</a><a href="hpp.html">💰 Hitung HPP</a><a href="penjualan.html">🛒 Catat Penjualan</a><a href="rekap.html">📊 Lihat Rekap</a><a href="data-lama.html">📁 Data Lama</a>
@@ -72,7 +75,7 @@ async function fetchAll(table, select="*"){
   return all;
 }
 async function loadDashboard(){
-  const ids={totalProduk:"-",totalBahan:"-",totalResep:"-",totalPenjualan:"-",totalDataLama:"-",omzetDataLama:"Rp 0",omzetPenjualanBaru:"Rp 0",omzetGabungan:"Rp 0",pengeluaranDataLama:"Rp 0"};
+  const ids={totalProduk:"-",totalBahan:"-",totalResep:"-",totalPenjualan:"-",totalDataLama:"-",omzetDataLama:"Rp 0",omzetPenjualanBaru:"Rp 0",omzetGabungan:"Rp 0",pengeluaranDataLama:"Rp 0",hppPenjualanBaru:"Rp 0",labaPenjualanBaru:"Rp 0",hasilBersih:"Rp 0"};
   Object.entries(ids).forEach(([id,v])=>document.getElementById(id).textContent=v);
   document.getElementById("statusText").textContent="Memuat data dari database...";
   try{
@@ -91,9 +94,20 @@ async function loadDashboard(){
     const activeProducts=products.filter(isActive);
     const activeMaterials=bahan.filter(x=>isActive(x)&&!isOverhead(x));
     const recipeProducts=new Set(resep.map(x=>x.produk_id).filter(Boolean));
+
+    // Data Lama: omzet hanya dari nominal historis yang tersimpan.
     const oldOmzet=old.reduce((s,x)=>s+Number(x.nominal||0),0);
     const oldExpense=expenseRows.reduce((s,x)=>s+Number(x.nominal||0),0);
-    const newOmzet=sales.reduce((s,x)=>s+Number(x.qty||0)*Number(x.harga||0),0);
+
+    // Penjualan Baru: jangan bergantung pada kolom total karena database
+    // saat ini memiliki beberapa baris dengan total = NULL.
+    const newOmzet=sales.reduce((s,x)=>s+(Number(x.total)!=0?Number(x.total):Number(x.qty||0)*Number(x.harga||0)),0);
+    const newHpp=sales.reduce((s,x)=>s+Number(x.hpp||0),0);
+    const newLaba=sales.reduce((s,x)=>s+Number(x.laba||0),0);
+
+    // Hasil bersih terukur: untuk data historis, tidak mengarang HPP.
+    // Untuk transaksi baru, gunakan laba yang benar-benar tersimpan.
+    const hasilBersih=(oldOmzet-oldExpense)+newLaba;
 
     document.getElementById("totalProduk").textContent=activeProducts.length;
     document.getElementById("totalBahan").textContent=activeMaterials.length;
@@ -104,10 +118,20 @@ async function loadDashboard(){
     document.getElementById("omzetDataLama").textContent=rupiah(oldOmzet);
     document.getElementById("omzetPenjualanBaru").textContent=rupiah(newOmzet);
     document.getElementById("omzetGabungan").textContent=rupiah(oldOmzet+newOmzet);
-    document.getElementById("statusText").textContent=errors.length?"Sebagian data gagal dimuat: "+errors.join(", ")+". Data lain tetap ditampilkan.":"Database terhubung dan seluruh data dashboard berhasil dimuat.";
-  }catch(e){console.error(e);document.getElementById("statusText").textContent="Gagal memuat dashboard. Periksa koneksi database.";}
+    document.getElementById("hppPenjualanBaru").textContent=rupiah(newHpp);
+    document.getElementById("labaPenjualanBaru").textContent=rupiah(newLaba);
+    document.getElementById("hasilBersih").textContent=rupiah(hasilBersih);
+
+    document.getElementById("statusText").textContent=errors.length
+      ?"Sebagian data gagal dimuat: "+errors.join(", ")+". Data lain tetap ditampilkan."
+      :"Database terhubung dan seluruh data dashboard berhasil dimuat.";
+  }catch(e){
+    console.error(e);
+    document.getElementById("statusText").textContent="Gagal memuat dashboard. Periksa koneksi database.";
+  }
 }
-document.getElementById("refreshBtn").addEventListener("click",loadDashboard);loadDashboard();
+document.getElementById("refreshBtn").addEventListener("click",loadDashboard);
+loadDashboard();
 </script>
 </body>
 </html>
