@@ -222,7 +222,7 @@ function render(){
  const exactMonthlyExpenses=ex.filter(x=>x.isMonthly);
  const expense=exactMonthlyExpenses.reduce((a,x)=>a+Number(x.nominal||0),0);
  const totalOmzet=newOmzet+oldOmzet;
- const hasilBersih=expense>0 ? (newLaba+oldOmzet-expense) : null;
+ const hasilBersih=expense>0 ? (totalOmzet-expense) : null;
 
  $('totalOmzet').textContent=rupiah(totalOmzet);
  $('totalQty').textContent=(newQty+oldQty).toLocaleString('id-ID')+' bungkus';
@@ -232,14 +232,14 @@ function render(){
  $('hasilBersih').textContent=hasilBersih===null?'Belum dapat dihitung':rupiah(hasilBersih);
  $('expenseBadge').textContent=expense>0?rupiah(expense):'Data gabungan';
  $('expenseNote').textContent=expense>0
-  ? 'Pengeluaran bulan terpilih terbaca dari data yang memiliki periode bulanan.'
-  : 'Data pengeluaran yang tersimpan saat ini memakai periode gabungan (contoh: 2026-01 s/d 2026-08), jadi tidak dibebankan ke bulan ini agar hasil bersih tidak salah.';
+  ? 'Pengeluaran bulan terpilih diambil dari rangkuman historis per bulan. Data Lama dan Data Pengeluaran Supabase tidak diubah.'
+  : 'Belum ada angka pengeluaran bulanan yang dapat dipakai untuk bulan ini.';
 
  $('oldBadge').textContent=oldQty.toLocaleString('id-ID')+' bungkus · '+rupiah(oldOmzet);
  $('newQty').textContent=newQty.toLocaleString('id-ID')+' bungkus';
  $('newOmzet').textContent=rupiah(newOmzet);
  $('newLaba').textContent=rupiah(newLaba);
- $('expenseBadge').textContent=rupiah(expense);
+ // expenseBadge already reflects the monthly historical amount above.
 }
 function openModal(title,content){
  $('modalTitle').textContent=title+' — '+monthName(selectedMonth());
