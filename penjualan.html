@@ -54,56 +54,103 @@ function renderImport(){const rows=importRows;const orders=new Set(rows.map(r=>r
 $('onlineFile').onchange=async()=>{try{const f=$('onlineFile').files[0];if(!f)return;let records=[];if(/\.xlsx?$/i.test(f.name)){const buf=await f.arrayBuffer(),wb=XLSX.read(buf,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];records=XLSX.utils.sheet_to_json(ws,{defval:''});}else{const text=await f.text(),raw=parseCSV(text);const headers=raw.shift().map(x=>String(x).trim());records=raw.map(a=>Object.fromEntries(headers.map((h,i)=>[h,a[i]??''])))}importRows=buildImport(records);renderImport();$('importInfo').innerHTML=`<div class="ok">File <b>${esc(f.name)}</b> berhasil dibaca. ${importRows.length.toLocaleString('id-ID')} baris siap diperiksa.</div>`;}catch(e){$('importInfo').innerHTML=`<div class="bad">Gagal membaca file: ${esc(e.message)}</div>`;}};
 $('importCancel').onclick=()=>{importRows=[];$('onlineFile').value='';$('importPreview').classList.remove('show');$('importInfo').innerHTML='';$('importMsg').innerHTML='';};
 $('importSave').onclick=async()=>{if(!importRows.length)return;const unique=[];const seen=new Set();for(const r of importRows){if(!r.order_id||!r.product_name||!r.import_key)continue;if(!seen.has(r.import_key)){seen.add(r.import_key);unique.push(r)}}try{const keys=unique.map(x=>x.import_key).filter(Boolean);let existing=new Set();for(let i=0;i<keys.length;i+=500){const chunk=keys.slice(i,i+500);const q=await supabaseClient.from('penjualan').select('import_key').in('import_key',chunk);if(q.error)throw q.error;(q.data||[]).forEach(x=>existing.add(x.import_key));}const toInsert=unique.filter(x=>!existing.has(x.import_key)).map(r=>({tanggal:r.tanggal,produk_id:r.produk_id,qty:r.qty,channel:'Online',harga:r.harga,hpp:0,laba:0,order_id:r.order_id,product_name:r.product_name,variation:r.variation,sku_id:r.sku_id,seller_sku:r.seller_sku,quantity_return:r.quantity_return,harga_asli:r.harga_asli,omzet_produk:r.omzet_produk,order_amount:r.order_amount,biaya_platform:r.biaya_platform,uang_bersih:r.uang_bersih,modal_hpp:r.modal_hpp,profit_online:r.profit_online,source:'seller_center',purchase_channel:r.purchase_channel,order_channel:r.order_channel,created_time:r.created_time,paid_time:r.paid_time,import_key:r.import_key}));for(let i=0;i<toInsert.length;i+=200){const r=await supabaseClient.from('penjualan').insert(toInsert.slice(i,i+200));if(r.error)throw r.error;}$('importMsg').innerHTML=`<div class="ok">Berhasil menyimpan <b>${toInsert.length.toLocaleString('id-ID')}</b> baris. ${unique.length-toInsert.length} baris dilewati karena sudah pernah diimpor.</div>`;await load();}catch(e){$('importMsg').innerHTML=`<div class="bad">Gagal menyimpan: ${esc(e.message)}<br>Pastikan SQL migrasi sudah dijalankan di Supabase.</div>`;}};
+async function fetchAllPenjualan(){
+  const all=[]; const pageSize=1000;
+  for(let from=0;;from+=pageSize){
+    const r=await supabaseClient.from('penjualan').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false}).range(from,from+pageSize-1);
+    if(r.error)throw r.error;
+    const batch=r.data||[]; all.push(...batch);
+    if(batch.length<pageSize)break;
+  }
+  return all;
+}
 async function load(){
-const [sr,pr,hr]=await Promise.all([
- supabaseClient.from('penjualan').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false}),
- supabaseClient.from('produk').select('*'),
- supabaseClient.from('hpp').select('*')
-]);
-if(sr.error)throw sr.error;if(pr.error)throw pr.error;if(hr.error)throw hr.error;
-const products=pr.data||[], hppRows=hr.data||[];
-const pmap={}; products.forEach(p=>pmap[String(p.id)]=p);
-const exact=new Map(products.map(p=>[normName(p.nama_produk),p]));
-const hppMap={};
-function hppOnlineFor(p){
- if(!p)return null;
- const h=hppRows.find(x=>String(x.produk_id)===String(p.id));
- if(!h)return null;
- if(h.harga_online!=null && h.untung_online!=null) return Math.max(0,Number(h.harga_online)-Number(h.untung_online));
- if(h.hpp_online!=null) return Number(h.hpp_online);
- if(h.hpp_unit!=null) return Number(h.hpp_unit);
- return null;
+  const [allSales,pr,hr]=await Promise.all([
+    fetchAllPenjualan(),
+    supabaseClient.from('produk').select('*').order('id',{ascending:true}),
+    supabaseClient.from('hpp').select('*')
+  ]);
+  if(pr.error)throw pr.error;if(hr.error)throw hr.error;
+  products=pr.data||[];
+  const hppRows=hr.data||[];
+  const pmap={};products.forEach(p=>pmap[String(p.id)]=p);
+  const exact=new Map(products.map(p=>[normName(p.nama_produk),p]));
+  function hppOnlineFor(p){
+    if(!p)return null;
+    const h=hppRows.find(x=>String(x.produk_id)===String(p.id));
+    if(!h)return null;
+    if(h.hpp_online!=null && Number.isFinite(Number(h.hpp_online)))return Number(h.hpp_online);
+    if(h.harga_online!=null && h.untung_online!=null){
+      const v=Number(h.harga_online)-Number(h.untung_online);
+      return Number.isFinite(v)?Math.max(0,v):null;
+    }
+    if(h.hpp_unit!=null && Number.isFinite(Number(h.hpp_unit)))return Number(h.hpp_unit);
+    return null;
+  }
+  // HPP hanya boleh terhubung bila produk sudah jelas: produk_id yang tersimpan
+  // atau nama produk yang sama setelah normalisasi sederhana. Tidak ada fuzzy match.
+  function mapOnlineProduct(name){return exact.get(normName(name))||null;}
+  sales=allSales.map(s=>{
+    const p=s.produk_id?pmap[String(s.produk_id)]:mapOnlineProduct(s.product_name||'');
+    const hpp=hppOnlineFor(p);
+    const qty=Number(s.qty||0);
+    const totalModal=hpp!=null?qty*hpp:null;
+    const net=s.uang_bersih!=null?Number(s.uang_bersih):null;
+    const profit=net!=null&&totalModal!=null?net-totalModal:null;
+    return {...s,produk:p,computed_hpp:hpp,computed_modal:totalModal,computed_profit:profit};
+  });
+  const online=sales.filter(s=>s.source==='seller_center'||s.order_channel==='TikTok Shop'||s.purchase_channel==='TikTok Shop');
+  const groups={};
+  online.forEach(s=>{
+    const k=String(s.tanggal||'').slice(0,7)||'Tanpa tanggal';
+    if(!groups[k])groups[k]={orders:new Set(),qty:0,pendapatan:0,biaya:0,bersih:0,modal:0,profit:0,rows:[],hppIncomplete:false,netIncomplete:false};
+    const g=groups[k];
+    g.orders.add(String(s.order_id||s.id));
+    g.qty+=Number(s.qty||0);
+    g.pendapatan+=Number(s.omzet_produk||0);
+    if(s.biaya_platform!=null)g.biaya+=Math.abs(Number(s.biaya_platform||0));
+    if(s.uang_bersih!=null)g.bersih+=Number(s.uang_bersih||0);else g.netIncomplete=true;
+    if(s.computed_modal!=null)g.modal+=s.computed_modal;else g.hppIncomplete=true;
+    if(s.computed_profit!=null)g.profit+=s.computed_profit;
+    g.rows.push(s);
+  });
+  window.salesGroups=groups;
+  const label=k=>{if(k==='Tanpa tanggal')return k;const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'})};
+  const keys=Object.keys(groups).sort().reverse();
+  $('rows').innerHTML=keys.length?keys.map(k=>{
+    const g=groups[k];
+    const complete=!g.hppIncomplete&&!g.netIncomplete;
+    const margin=complete&&g.bersih?((g.profit/g.bersih)*100):null;
+    return `<tr><td><b>${esc(label(k))}</b></td><td>${rupiah(g.pendapatan)}</td><td>${rupiah(g.biaya)}</td><td>${rupiah(g.bersih)}</td><td>${complete?rupiah(g.profit):'—'}</td><td>${margin!=null?margin.toFixed(2)+'%':'—'}</td><td><button class="mini viewbtn" onclick="viewPeriod('${esc(k)}')">👁 Lihat Data</button></td></tr>`;
+  }).join(''):'<tr><td colspan="7">Belum ada penjualan online.</td></tr>';
+  const q=online.reduce((a,s)=>a+Number(s.qty||0),0);
+  const o=online.reduce((a,s)=>a+Number(s.omzet_produk||0),0);
+  const b=online.filter(s=>s.uang_bersih!=null).reduce((a,s)=>a+Number(s.uang_bersih||0),0);
+  const completeProfit=online.filter(s=>s.computed_profit!=null);
+  const l=completeProfit.reduce((a,s)=>a+s.computed_profit,0);
+  $('sQty').textContent=q.toLocaleString('id-ID');$('sOmzet').textContent=rupiah(o);$('sProfit').textContent=online.length&&completeProfit.length===online.length?rupiah(l):'—';if($('sNet'))$('sNet').textContent=b?rupiah(b):'Rp 0';
 }
-function mapOnlineProduct(name){
- const n=normName(name);
- if(exact.has(n))return exact.get(n);
- const rules=[
-  [/isi\s*12|12\s*pcs/,'naget 12'],[/isi\s*20|20\s*pcs/,'naget 20'],[/isi\s*25|25\s*pcs/,'naget 25'],[/isi\s*30|30\s*pcs/,'naget 30'],[/isi\s*40|40\s*pcs/,'naget 40'],[/isi\s*50|50\s*pcs/,'naget 50'],
-  [/cireng\s*isi/,'cireng isi'],[/cireng\s*biasa/,'cireng biasa'],[/cibay/,'cibay']
- ];
- for(const [rx,target] of rules){if(rx.test(n)){const p=products.find(x=>normName(x.nama_produk).includes(target));if(p)return p;}}
- return null;
-}
-sales=(sr.data||[]).map(s=>{
- let p=s.produk_id?pmap[String(s.produk_id)]:null; if(!p)p=mapOnlineProduct(s.product_name||'');
- const hpp=hppOnlineFor(p); const qty=Number(s.qty||0); const totalModal=hpp!=null?qty*hpp:null;
- const net=s.uang_bersih!=null?Number(s.uang_bersih):null;
- const profit=net!=null&&totalModal!=null?net-totalModal:null;
- return {...s,produk:p,computed_hpp:hpp,computed_modal:totalModal,computed_profit:profit};
-});
-const online=sales.filter(s=>s.source==='seller_center'||s.order_channel==='TikTok Shop'||s.purchase_channel==='TikTok Shop');
-const groups={};
-online.forEach(s=>{const k=String(s.tanggal||'').slice(0,7)||'Tanpa tanggal';if(!groups[k])groups[k]={orders:new Set(),qty:0,pendapatan:0,biaya:0,bersih:0,modal:0,profit:0,rows:[],hasHpp:true};const g=groups[k];g.orders.add(String(s.order_id||s.id));g.qty+=Number(s.qty||0);g.pendapatan+=Number(s.omzet_produk||0);if(s.biaya_platform!=null)g.biaya+=Math.abs(Number(s.biaya_platform||0));if(s.uang_bersih!=null)g.bersih+=Number(s.uang_bersih||0);if(s.computed_modal!=null)g.modal+=s.computed_modal;else g.hasHpp=false;if(s.computed_profit!=null)g.profit+=s.computed_profit;else g.hasHpp=false;g.rows.push(s)});
-window.salesGroups=groups;
-const label=k=>{if(k==='Tanpa tanggal')return k;const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'})};
-const keys=Object.keys(groups).sort().reverse();
-$('rows').innerHTML=keys.length?keys.map(k=>{const g=groups[k];const margin=g.bersih?((g.profit/g.bersih)*100):null;return `<tr><td><b>${esc(label(k))}</b></td><td>${rupiah(g.pendapatan)}</td><td>${rupiah(g.biaya)}</td><td>${rupiah(g.bersih)}</td><td>${g.hasHpp?rupiah(g.profit):'—'}</td><td>${g.hasHpp&&margin!=null?margin.toFixed(2)+'%':'—'}</td><td><button class="mini viewbtn" onclick="viewPeriod('${k}')">👁 Lihat Data</button></td></tr>`}).join(''):'<tr><td colspan="7">Belum ada penjualan online.</td></tr>';
-const q=online.reduce((a,s)=>a+Number(s.qty||0),0),o=online.reduce((a,s)=>a+Number(s.omzet_produk||0),0),b=online.reduce((a,s)=>a+Number(s.uang_bersih||0),0),l=online.reduce((a,s)=>a+(s.computed_profit!=null?s.computed_profit:0),0);$('sQty').textContent=q.toLocaleString('id-ID');$('sOmzet').textContent=rupiah(o);$('sProfit').textContent=rupiah(l);if($('sNet'))$('sNet').textContent=rupiah(b);
-}
-window.viewPeriod=k=>{const g=window.salesGroups?.[k];if(!g)return;$('detailCard').style.display='block';$('detailTitle').textContent='Detail Produk • '+(k==='Tanpa tanggal'?k:(()=>{const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'})})());
-const map={};g.rows.forEach(s=>{const key=(s.product_name||'-')+'||'+(s.variation||'-');if(!map[key])map[key]={name:s.product_name||'-',variation:s.variation||'-',qty:0,pendapatan:0,biaya:0,bersih:0,modal:0,profit:0,hpp:s.computed_hpp,hasHpp:s.computed_hpp!=null};const x=map[key];x.qty+=Number(s.qty||0);x.pendapatan+=Number(s.omzet_produk||0);if(s.biaya_platform!=null)x.biaya+=Math.abs(Number(s.biaya_platform||0));if(s.uang_bersih!=null)x.bersih+=Number(s.uang_bersih||0);if(s.computed_modal!=null)x.modal+=s.computed_modal;else x.hasHpp=false;if(s.computed_profit!=null)x.profit+=s.computed_profit;else x.hasHpp=false;});
-$('detailRows').innerHTML=Object.values(map).sort((a,b)=>b.pendapatan-a.pendapatan).map(x=>{const margin=x.bersih?x.profit/x.bersih*100:null;return `<tr><td>${esc(x.name)}</td><td>${esc(x.variation||'-')}</td><td>${x.qty.toLocaleString('id-ID')}</td><td>${rupiah(x.pendapatan)}</td><td>${rupiah(x.biaya)}</td><td>${rupiah(x.bersih)}</td><td>${x.hpp!=null?rupiah(x.hpp):'Belum ada HPP'}</td><td>${x.hasHpp?rupiah(x.modal):'—'}</td><td>${x.hasHpp?rupiah(x.profit):'—'}</td><td>${x.hasHpp&&margin!=null?margin.toFixed(2)+'%':'—'}</td></tr>`}).join('');$('detailCard').scrollIntoView({behavior:'smooth',block:'start'})};
-document.getElementById('closeDetail')?.addEventListener('click',()=>{$('detailCard').style.display='none'});
+window.viewPeriod=k=>{
+  const g=window.salesGroups?.[k];if(!g)return;
+  $('detailCard').style.display='block';
+  $('detailTitle').textContent='Detail Produk • '+(k==='Tanpa tanggal'?k:(()=>{const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'})})());
+  const map={};
+  g.rows.forEach(s=>{
+    const key=(s.product_name||'-')+'||'+(s.variation||'-');
+    if(!map[key])map[key]={name:s.product_name||'-',variation:s.variation||'-',qty:0,pendapatan:0,biaya:0,bersih:0,modal:0,profit:0,hpp:s.computed_hpp,hasHpp:s.computed_hpp!=null,hasNet:s.uang_bersih!=null};
+    const x=map[key];x.qty+=Number(s.qty||0);x.pendapatan+=Number(s.omzet_produk||0);
+    if(s.biaya_platform!=null)x.biaya+=Math.abs(Number(s.biaya_platform||0));
+    if(s.uang_bersih!=null)x.bersih+=Number(s.uang_bersih||0);else x.hasNet=false;
+    if(s.computed_modal!=null)x.modal+=s.computed_modal;else x.hasHpp=false;
+    if(s.computed_profit!=null)x.profit+=s.computed_profit;
+  });
+  $('detailRows').innerHTML=Object.values(map).sort((a,b)=>b.pendapatan-a.pendapatan).map(x=>{
+    const complete=x.hasHpp&&x.hasNet;
+    const margin=complete&&x.bersih?x.profit/x.bersih*100:null;
+    return `<tr><td>${esc(x.name)}</td><td>${esc(x.variation||'-')}</td><td>${x.qty.toLocaleString('id-ID')}</td><td>${rupiah(x.pendapatan)}</td><td>${rupiah(x.biaya)}</td><td>${rupiah(x.bersih)}</td><td>${x.hpp!=null?rupiah(x.hpp):'Belum ada HPP'}</td><td>${x.hasHpp?rupiah(x.modal):'—'}</td><td>${complete?rupiah(x.profit):'—'}</td><td>${margin!=null?margin.toFixed(2)+'%':'—'}</td></tr>`;
+  }).join('');
+  $('detailCard').scrollIntoView({behavior:'smooth',block:'start'});
+};
 window.editSale=async id=>{const s=sales.find(x=>x.id===id);if(!s)return;editId=id;$('tanggal').value=s.tanggal;$('pelanggan').value=customerMap[String(s.id)]||'';$('produk').value=s.produk_id;$('qty').value=s.qty;$('channel').value=s.channel;$('harga').value=s.harga;$('hpp').value=Math.round(Number(s.hpp||0)/(Number(s.qty)||1));$('cancel').style.display='inline-block';$('save').textContent='Simpan Perubahan';updatePreview();scrollTo(0,0);};
 window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=await supabaseClient.from('penjualan').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);delete customerMap[String(id)];localStorage.setItem('ff_sale_customers_v1',JSON.stringify(customerMap));await load();msg('Penjualan dihapus.')};
 (async()=>{try{await loadProducts();await load()}catch(e){console.error(e);msg('Gagal memuat data: '+e.message,true)}})();
