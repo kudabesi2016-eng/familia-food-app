@@ -112,9 +112,43 @@ async function readOnlineFiles(files){
   if(!sellerRecords.length&&!incomeRecords.length)throw new Error('Tidak ada data Seller Center/Income yang dikenali.');
   return {sellerRecords,incomeRecords,kinds};
 }
-function dedupeIncomeRaw(records){
+function incomeFingerprint(r){
+  return [
+    String(field(r,'ID Pesanan/Penyesuaian')).trim(),
+    String(field(r,'Jenis transaksi')).trim(),
+    String(field(r,'Waktu pemesanan')).trim(),
+    String(field(r,'Waktu pembayaran pesanan')).trim(),
+    String(field(r,'Jumlah penyelesaian pembayaran')).trim(),
+    String(field(r,'Total Pendapatan')).trim(),
+    String(field(r,'Total Biaya')).trim(),
+    String(field(r,'Sumber pesanan')).trim()
+  ].join('¦');
+}
+function dedupeIncomeTransactions(records){
   const map=new Map();
-  for(const r of records||[]){const id=String(field(r,'ID Pesanan/Penyesuaian')).trim();if(id)map.set(id,r);}
+  for(const r of records||[]){
+    const id=String(field(r,'ID Pesanan/Penyesuaian')).trim();
+    if(!id)continue;
+    const fp=incomeFingerprint(r);
+    if(!map.has(fp))map.set(fp,r);
+  }
+  return [...map.values()];
+}
+function aggregateIncomeByOrder(records){
+  const tx=dedupeIncomeTransactions(records);
+  const map=new Map();
+  for(const r of normalizeIncome(tx)){
+    const id=r.order_id;
+    if(!map.has(id)){
+      map.set(id,{...r,uang_bersih:r.uang_bersih==null?null:Number(r.uang_bersih),pendapatan_order:r.pendapatan_order==null?null:Number(r.pendapatan_order),biaya_platform:r.biaya_platform==null?null:Number(r.biaya_platform)});
+    }else{
+      const x=map.get(id);
+      x.uang_bersih=(x.uang_bersih==null||r.uang_bersih==null)?(x.uang_bersih==null?r.uang_bersih:x.uang_bersih):x.uang_bersih+Number(r.uang_bersih);
+      x.pendapatan_order=(x.pendapatan_order==null||r.pendapatan_order==null)?(x.pendapatan_order==null?r.pendapatan_order:x.pendapatan_order):x.pendapatan_order+Number(r.pendapatan_order);
+      x.biaya_platform=(x.biaya_platform==null||r.biaya_platform==null)?(x.biaya_platform==null?r.biaya_platform:x.biaya_platform):x.biaya_platform+Number(r.biaya_platform);
+      if(!x.tanggal&&r.tanggal)x.tanggal=r.tanggal;
+    }
+  }
   return [...map.values()];
 }
 async function selectedDateRange(){const from=$('saveFrom').value||'';const to=$('saveTo').value||'';if(from&&to&&from>to)throw new Error('Tanggal mulai tidak boleh lebih besar dari tanggal sampai.');return {from,to};}
@@ -125,17 +159,24 @@ async function processStagedOnline(){
   const range=await selectedDateRange();
   const sellerFiltered=filterSellerByRange(stagedSellerRecords,range);
   const sellerOrders=new Set(sellerFiltered.map(r=>String(field(r,'Order ID')).trim()).filter(Boolean));
-  let incomeFiltered=filterIncomeByRange(stagedIncomeRecords,range);
-  if(sellerFiltered.length) incomeFiltered=incomeFiltered.filter(r=>sellerOrders.has(String(field(r,'ID Pesanan/Penyesuaian')).trim()));
-  const uniqueIncome=dedupeIncomeRaw(incomeFiltered);
+  let incomeSource=stagedIncomeRecords||[];
+  let incomeTx=dedupeIncomeTransactions(incomeSource);
+  if(sellerFiltered.length){
+    // Jika Seller Center dipakai sebagai sumber detail, jangan potong Income berdasarkan tanggal.
+    // Settlement sebuah order bisa tercatat pada tanggal yang berbeda dari tanggal order.
+    incomeTx=incomeTx.filter(r=>sellerOrders.has(String(field(r,'ID Pesanan/Penyesuaian')).trim()));
+  }else{
+    incomeTx=filterIncomeByRange(incomeTx,range);
+  }
+  const uniqueIncome=aggregateIncomeByOrder(incomeTx);
   const rows=sellerFiltered.length?buildImportFromRaw(sellerFiltered,uniqueIncome):buildIncomeOnlyRows(uniqueIncome);
-  const incomeOrders=new Set(uniqueIncome.map(r=>String(field(r,'ID Pesanan/Penyesuaian')).trim()).filter(Boolean));
+  const incomeOrders=new Set(uniqueIncome.map(r=>String(r.order_id||'').trim()).filter(Boolean));
   const matchedIncome=[...incomeOrders].filter(id=>sellerOrders.has(id));
-  return {rows,kinds:[...(stagedSellerName?[stagedSellerName+' → Seller Center']:[]),...stagedIncomeNames.map(n=>n+' → Income TikTok')],sellerCount:sellerFiltered.length,incomeCount:uniqueIncome.length,sellerOrders:sellerOrders.size,incomeOrders:incomeOrders.size,matchedIncome:matchedIncome.length,unmatchedIncome:incomeOrders.size-matchedIncome.length,incomeOnly:!sellerFiltered.length&&uniqueIncome.length>0,range};
+  return {rows,kinds:[...(stagedSellerName?[stagedSellerName+' → Seller Center']:[]),...stagedIncomeNames.map(n=>n+' → Income TikTok')],sellerCount:sellerFiltered.length,incomeCount:uniqueIncome.length,incomeTransactionCount:incomeTx.length,sellerOrders:sellerOrders.size,incomeOrders:incomeOrders.size,matchedIncome:matchedIncome.length,unmatchedIncome:incomeOrders.size-matchedIncome.length,incomeOnly:!sellerFiltered.length&&uniqueIncome.length>0,range};
 }
 function updateStagedStatus(){
   $('sellerStatus').textContent=stagedSellerRecords.length?`${stagedSellerName} • ${new Set(stagedSellerRecords.map(r=>String(field(r,'Order ID')).trim()).filter(Boolean)).size.toLocaleString('id-ID')} order terbaca.`:'Belum ada file Seller Center.';
-  $('incomeStatus').textContent=stagedIncomeRecords.length?`${stagedIncomeNames.length} file Income ditambahkan • ${dedupeIncomeRaw(stagedIncomeRecords).length.toLocaleString('id-ID')} order unik.`:'Belum ada Income.';
+  $('incomeStatus').textContent=stagedIncomeRecords.length?`${stagedIncomeNames.length} file Income ditambahkan • ${aggregateIncomeByOrder(stagedIncomeRecords).length.toLocaleString('id-ID')} order unik.`:'Belum ada Income.';
   $('processOnline').disabled=!stagedSellerRecords.length&&!stagedIncomeRecords.length;
 }
 function importMonthKey(s){return String(s.tanggal||'').slice(0,7)||'Tanpa tanggal';}
@@ -148,9 +189,9 @@ function activateUploadTab(tab){const seller=tab==='seller';$('tabSeller').class
 $('tabSeller').onclick=()=>activateUploadTab('seller');
 $('tabIncome').onclick=()=>activateUploadTab('income');
 $('sellerFile').onchange=async()=>{try{const f=$('sellerFile').files[0];if(!f)return;const meta=await readOnlineFiles([f]);if(!meta.sellerRecords.length)throw new Error('File yang dipilih bukan Seller Center.');stagedSellerRecords=meta.sellerRecords;stagedSellerName=f.name;updateStagedStatus();$('importInfo').innerHTML='<div class="ok"><b>Seller Center tetap tersimpan sementara.</b><br>Tambahkan Income TikTok per periode. Jangan klik Simpan sampai semua periode selesai ditambahkan.</div>';}catch(e){$('importInfo').innerHTML=`<div class="bad">Gagal membaca Seller Center: ${esc(e.message)}</div>`;}};
-$('addIncome').onclick=async()=>{try{const files=$('incomeFiles').files;if(!files.length){$('importInfo').innerHTML='<div class="warn">Pilih file Excel Income TikTok terlebih dahulu.</div>';return;}const meta=await readOnlineFiles(files);if(!meta.incomeRecords.length)throw new Error('File yang dipilih bukan Excel Income TikTok.');stagedIncomeRecords.push(...meta.incomeRecords);for(const f of files)if(!stagedIncomeNames.includes(f.name))stagedIncomeNames.push(f.name);updateStagedStatus();$('incomeFiles').value='';const sellerOrderCount=new Set(stagedSellerRecords.map(r=>String(field(r,'Order ID')).trim()).filter(Boolean)).size;$('importInfo').innerHTML=`<div class="ok"><b>Income berhasil ditambahkan.</b><br>Seller Center tetap tersimpan: <b>${sellerOrderCount.toLocaleString('id-ID')} order</b> • Income sekarang: <b>${dedupeIncomeRaw(stagedIncomeRecords).length.toLocaleString('id-ID')} order unik</b>.<br>Silakan tambah periode berikutnya atau klik <b>Proses & Cocokkan Data</b>.</div>`;}catch(e){$('importInfo').innerHTML=`<div class="bad">Gagal membaca Income: ${esc(e.message)}</div>`;}};
+$('addIncome').onclick=async()=>{try{const files=$('incomeFiles').files;if(!files.length){$('importInfo').innerHTML='<div class="warn">Pilih file Excel Income TikTok terlebih dahulu.</div>';return;}const meta=await readOnlineFiles(files);if(!meta.incomeRecords.length)throw new Error('File yang dipilih bukan Excel Income TikTok.');stagedIncomeRecords.push(...meta.incomeRecords);for(const f of files)if(!stagedIncomeNames.includes(f.name))stagedIncomeNames.push(f.name);updateStagedStatus();$('incomeFiles').value='';const sellerOrderCount=new Set(stagedSellerRecords.map(r=>String(field(r,'Order ID')).trim()).filter(Boolean)).size;$('importInfo').innerHTML=`<div class="ok"><b>Income berhasil ditambahkan.</b><br>Seller Center tetap tersimpan: <b>${sellerOrderCount.toLocaleString('id-ID')} order</b> • Income sekarang: <b>${aggregateIncomeByOrder(stagedIncomeRecords).length.toLocaleString('id-ID')} order unik</b>.<br>Silakan tambah periode berikutnya atau klik <b>Proses & Cocokkan Data</b>.</div>`;}catch(e){$('importInfo').innerHTML=`<div class="bad">Gagal membaca Income: ${esc(e.message)}</div>`;}};
 $('clearIncome').onclick=()=>{stagedIncomeRecords=[];stagedIncomeNames=[];$('incomeFiles').value='';updateStagedStatus();$('importInfo').innerHTML='<div class="warn">Semua Income yang ditambahkan sudah dihapus dari proses sementara. Seller Center tetap dipertahankan.</div>';};
-$('processOnline').onclick=async()=>{try{$('importInfo').innerHTML='<div class="warn">Sedang memproses dan mencocokkan Order ID...</div>';const meta=await processStagedOnline();importRows=meta.rows;renderImport(meta);$('importInfo').innerHTML=`<div class="ok"><b>Proses selesai.</b><br>Seller Center: ${meta.sellerOrders.toLocaleString('id-ID')} order • Income TikTok: ${meta.incomeOrders.toLocaleString('id-ID')} order • Cocok: ${meta.matchedIncome.toLocaleString('id-ID')} order${meta.unmatchedIncome?` • Tidak cocok: ${meta.unmatchedIncome.toLocaleString('id-ID')}`:''}</div>`;}catch(e){importRows=[];$('importPreview').classList.remove('show');$('importInfo').innerHTML=`<div class="bad">Gagal memproses: ${esc(e.message)}</div>`;}};
+$('processOnline').onclick=async()=>{try{$('importInfo').innerHTML='<div class="warn">Sedang memproses dan mencocokkan Order ID...</div>';const meta=await processStagedOnline();importRows=meta.rows;renderImport(meta);$('importInfo').innerHTML=`<div class="ok"><b>Proses selesai.</b><br>Seller Center: ${meta.sellerOrders.toLocaleString('id-ID')} order • Income TikTok: ${meta.incomeOrders.toLocaleString('id-ID')} order unik (${(meta.incomeTransactionCount||0).toLocaleString('id-ID')} transaksi setelah deduplikasi) • Cocok: ${meta.matchedIncome.toLocaleString('id-ID')} order${meta.unmatchedIncome?` • Tidak cocok: ${meta.unmatchedIncome.toLocaleString('id-ID')}`:''}</div>`;}catch(e){importRows=[];$('importPreview').classList.remove('show');$('importInfo').innerHTML=`<div class="bad">Gagal memproses: ${esc(e.message)}</div>`;}};
 $('resetOnline').onclick=()=>{stagedSellerRecords=[];stagedIncomeRecords=[];stagedSellerName='';stagedIncomeNames=[];importRows=[];$('sellerFile').value='';$('incomeFiles').value='';$('saveFrom').value='';$('saveTo').value='';$('importPreview').classList.remove('show');$('importDetailCard').classList.remove('show');$('importInfo').innerHTML='';$('importMsg').innerHTML='';updateStagedStatus();activateUploadTab('seller');};
 $('closeImportDetail').onclick=()=>{$('importDetailCard').classList.remove('show');};
 $('importCancel').onclick=()=>{$('resetOnline').click();};
