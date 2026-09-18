@@ -37,3 +37,13 @@
 Belum ada klaim bahwa versi final ini sudah ter-deploy ke GitHub Pages. Setelah file diganti di repo, lakukan refresh halaman dan uji satu kali pada **Penjualan → Rekap → Dashboard**.
 
 `AUDIT-FINAL-READONLY.sql` hanya berisi SELECT dan bisa dijalankan di Supabase SQL Editor untuk audit pasca-deploy/import.
+
+## Patch v6
+- Import historis Online tidak lagi bergantung pada nama file tertentu.
+- Deteksi berdasarkan struktur header/sheet.
+- TikTok Income asli dibaca dari sheet `Detail pesanan`.
+- Seller Center asli dibaca sebagai detail produk/qty dan tidak dihitung sebagai settlement keuangan.
+- Beberapa file historis dapat dipilih sekaligus.
+- `Familia-Food-Import-Online-SIAP.xlsx` dan `Online Database (8).xlsx` tetap kompatibel.
+- Halaman Data Lama sekarang juga memuat transaksi Online historis ke ringkasan dan detail bulanan tanpa menggandakan Pemasukan dari Seller Center.
+- Tidak ada perubahan struktur/isi Supabase oleh patch ini.

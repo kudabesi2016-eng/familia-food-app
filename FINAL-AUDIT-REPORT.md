@@ -41,3 +41,13 @@ Versi file final ini belum dianggap live sampai file baru menggantikan file di G
 2. Penjualan → Online: import satu file Income satu bulan dan cek Pemasukan/Potongan/Uang Bersih.
 3. Rekap → pilih Januari dan bulan terbaru, lalu `👁 Lihat Data`.
 4. Dashboard: pastikan Offline + Online tidak double count.
+
+## Patch v6 — Import Historis Online
+- File asli TikTok Income dideteksi dari header `ID Pesanan/Penyesuaian`, `Jenis transaksi`, `Jumlah penyelesaian pembayaran`, `Total Pendapatan`, `Total Biaya`.
+- File Seller Center dideteksi dari `Order ID`, `Product Name`, `Quantity`, dan kolom harga/tanggal terkait.
+- Workbook `Online Database (8).xlsx` didukung melalui sheet `Keluar Resi` dan `Uang Masuk`.
+- Workbook `Familia-Food-Import-Online-SIAP.xlsx` didukung melalui sheet `Import Penjualan`.
+- Beberapa file dapat dipilih sekaligus; `import_key` digunakan untuk melewati duplikat sebelum penyimpanan.
+- Seller Center historis hanya menjadi detail produk/qty; sumber keuangan historis berasal dari Income/legacy finance.
+- Data Lama sekarang memuat sumber Online historis ke daftar bulan dan detail, sementara Pengeluaran tetap berasal dari tabel `pengeluaran`.
+- Tidak ada INSERT/UPDATE/DELETE Supabase yang dilakukan saat membuat paket ini.
