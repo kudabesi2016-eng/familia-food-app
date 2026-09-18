@@ -24,7 +24,7 @@
 <div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></details></div>
 
 
-<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Gunakan <b>file asli</b> TikTok Income/Seller Center, atau workbook historis lama. File masuk ke channel <b>Online</b> dan tidak menggantikan transaksi baru.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px">Bisa langsung memakai <b>file asli TikTok Income</b>, <b>Seller Center</b>, atau file historis lama. Tidak perlu diproses menjadi Excel perantara.</p></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div class="tablewrap"><table><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody id="onlineOldRows"></tbody></table></div><div class="actions"><button class="btn" id="onlineOldSave">+ Simpan Data Lama Online</button><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
+<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Masukkan <b>Income TikTok</b> dan <b>Pesanan/Seller Center</b>. Keduanya akan digabung berdasarkan <b>ID Pesanan</b>. Income dipakai untuk <b>Pemasukan + Uang Bersih</b>, sedangkan Pesanan dipakai untuk <b>Produk + Qty</b>.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>Bisa pilih beberapa file sekaligus.</b> Tidak perlu membuat Excel perantara. Setelah pilih file pertama, bro juga bisa pilih file berikutnya; file baru akan ditambahkan ke antrian, tidak menggantikan file sebelumnya.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div class="tablewrap"><table><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody id="onlineOldRows"></tbody></table></div><div class="actions"><button class="btn" id="onlineOldSave">+ Simpan Data Lama Online</button><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
 
 <div class="card"><details><summary>✍️ Tambah Manual</summary><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
 <div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></details></div>
@@ -233,7 +233,7 @@ function parseProcessedHistorical(raw){
     out.push({tanggal:d.slice(0,10),produk_id:null,qty,channel:'Online',harga:toNum(r['Harga/Bungkus']),hpp:0,laba:0,order_id:order,product_name:product,variation:String(r['Variation']??''),sku_id:String(r['SKU ID']??''),seller_sku:String(r['Seller SKU']??''),quantity_return:toNum(r['Return Qty']),harga_asli:toNum(r['SKU Unit Original Price']),omzet_produk:rev,order_amount:toNum(r['Order Amount'])||rev,biaya_platform:String(r['Biaya Platform']??'').trim()===''?null:toNum(r['Biaya Platform']),uang_bersih:netVal,modal_hpp:modal,profit_online:String(r['Profit']??'').trim()===''?null:toNum(r['Profit']),source:'online_historical_import',purchase_channel:String(r['Purchase Channel']||'TikTok Shop'),order_channel:String(r['Order Channel']||'TikTok Shop'),created_time:null,paid_time:d.slice(0,10)+'T00:00:00',import_key:key});
   });return out;
 }
-function parseSellerHistorical(raw){return raw.map(r=>{const order=String(r['Order ID']??'').trim(),product=String(r['Product Name']??'').trim();if(!order||!product)return null;const qty=toNum(r['Quantity']);const omzet=toNum(r['SKU Subtotal After Discount'])||toNum(r['Omzet Produk']);const price=toNum(r['SKU Unit Original Price'])||(qty?omzet/qty:0);const date=parseAnyDate(r['Paid Time'])||parseAnyDate(r['Created Time'])||parseAnyDate(r['Tanggal']);if(!date)return null;const variation=String(r['Variation']??'').trim(),sku=String(r['SKU ID']??'').trim(),sellerSku=String(r['Seller SKU']??'').trim();const key=['seller-old-v2',order,sku,variation,product,date.slice(0,10),qty].join('|');return {tanggal:date.slice(0,10),produk_id:null,qty,channel:'Online',harga:Math.round(price),hpp:0,laba:0,order_id:order,product_name:product,variation,sku_id:sku,seller_sku:sellerSku,quantity_return:toNum(r['Sku Quantity of return']||r['Return Qty']),harga_asli:Math.round(price),omzet_produk:omzet,order_amount:toNum(r['Order Amount'])||omzet,biaya_platform:null,uang_bersih:null,modal_hpp:null,profit_online:null,source:'seller_center',purchase_channel:'TikTok Shop',order_channel:'TikTok Shop',created_time:date+'T00:00:00',paid_time:date+'T00:00:00',import_key:key};}).filter(Boolean)}
+function parseSellerHistorical(raw){return raw.map(r=>{const order=String(r['Order ID']??r['ID Pesanan']??r['Order ID/Pesanan']??'').trim().replace(/\s+/g,'');const product=String(r['Product Name']??r['Nama Produk']??r['Produk']??'').trim();if(!order||!product)return null;const qty=toNum(r['Quantity']??r['Qty']??r['Jumlah']);const omzet=toNum(r['SKU Subtotal After Discount']??r['SKU Subtotal Setelah Diskon']??r['Subtotal Produk']??r['Omzet Produk']??r['Total Jual']);const price=toNum(r['SKU Unit Original Price']??r['Harga Jual']??r['Harga'])||(qty?omzet/qty:0);const date=parseAnyDate(r['Paid Time']??r['Waktu Pembayaran']??r['Payment Time'])||parseAnyDate(r['Created Time']??r['Waktu Dibuat'])||parseAnyDate(r['Tanggal']);if(!date)return null;const variation=String(r['Variation']??r['Variasi']??'').trim(),sku=String(r['SKU ID']??r['SKU']??r['SKU ID Produk']??'').trim(),sellerSku=String(r['Seller SKU']??r['SKU Penjual']??'').trim();const key=['seller-old-v3',order,sku,variation,product,date.slice(0,10),qty,Math.round(omzet)].join('|');return {tanggal:date.slice(0,10),produk_id:null,qty,channel:'Online',harga:Math.round(price),hpp:0,laba:0,order_id:order,product_name:product,variation,sku_id:sku,seller_sku:sellerSku,quantity_return:toNum(r['Sku Quantity of return']??r['Return Qty']??r['Jumlah Retur']),harga_asli:Math.round(price),omzet_produk:omzet,order_amount:toNum(r['Order Amount']??r['Jumlah Pesanan'])||omzet,biaya_platform:null,uang_bersih:null,modal_hpp:null,profit_online:null,source:'seller_center',purchase_channel:String(r['Purchase Channel']||'TikTok Shop'),order_channel:String(r['Order Channel']||'TikTok Shop'),created_time:date+'T00:00:00',paid_time:date+'T00:00:00',import_key:key};}).filter(Boolean)}
 function parseLegacyDatabase(wb){
   const names=wb.SheetNames.map(String), norm=s=>FFCore.norm(s), out=[];
   const hasOut=names.some(n=>norm(n)==='keluar resi'), hasCash=names.some(n=>norm(n)==='uang masuk');
@@ -249,7 +249,7 @@ function parseOnlineOldWorkbook(wb){
   const detailName=names.find(n=>norm(n)==='detail pesanan')||names.find(n=>norm(n).includes('detail pesanan'));
   if(detailName){const raw=XLSX.utils.sheet_to_json(wb.Sheets[detailName],{defval:'',raw:true});if(raw.some(looksOriginalIncome))out.push(...raw.map(normalizeIncomeHistorical).filter(x=>x.tanggal));}
   const legacy=parseLegacyDatabase(wb); if(legacy.length)out.push(...legacy);
-  for(const n of names){const raw=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:'',raw:true});if(raw.length&&raw.some(looksSeller)&&!norm(n).includes('detail pesanan')){out.push(...parseSellerHistorical(raw));break}}
+  for(const n of names){const raw=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:'',raw:true});if(raw.length&&raw.some(looksSeller)&&!norm(n).includes('detail pesanan'))out.push(...parseSellerHistorical(raw))}
   if(!out.length)throw new Error('Format Excel online historis tidak dikenali. File asli TikTok Income, Seller Center, Familia-Food-Import-Online-SIAP.xlsx, dan Online Database (8).xlsx didukung.');
   const seen=new Set(); return out.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true});
 }
@@ -268,54 +268,53 @@ function previewUnitHpp(row){
   const direct=hppMasterRows.find(x=>String(x.nama_produk||'').trim().toLowerCase()===name && Number(x.hpp_unit)>0);
   return direct?Number(direct.hpp_unit):null;
 }
+function normOrderId(v){return String(v??'').trim().replace(/\s+/g,'');}
 function makeOnlineOldPreviewRows(rows){
-  const directFinance=rows.filter(x=>x.source==='online_historical_import' && (Number(x.qty||0)>0 || String(x.product_name||'').trim() && !String(x.product_name||'').startsWith('[Income TikTok]')));
   const finance=rows.filter(x=>x.source==='online_historical_finance');
+  const directFinance=rows.filter(x=>x.source==='online_historical_import');
   const seller=rows.filter(x=>x.source==='seller_center'||x.source==='online_historical_product');
+  const cash=rows.filter(x=>x.source==='online_historical_cash');
   const out=[];
-  directFinance.forEach(x=>{
-    const unit=previewUnitHpp(x), hpp=unit!=null?Math.round(Number(x.qty||0)*unit):(x.modal_hpp==null?null:Number(x.modal_hpp));
-    const net=x.uang_bersih==null?null:Number(x.uang_bersih||0), rev=x.omzet_produk==null?null:Number(x.omzet_produk||0);
-    const profit=x.profit_online!=null?Number(x.profit_online):(net!=null&&hpp!=null?net-hpp:null);
-    out.push({source:'Import Penjualan',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:Number(x.qty||0),rev,net,hpp,profit});
-  });
   const financeByOrder={};
   finance.forEach(x=>{
-    const k=String(x.order_id||''); if(!k)return;
-    financeByOrder[k]??={rev:0,net:0,netKnown:true};
+    const k=normOrderId(x.order_id); if(!k)return;
+    financeByOrder[k]??={rev:0,net:0,netKnown:true,row:x};
     financeByOrder[k].rev+=Number(x.omzet_produk||0);
     if(x.uang_bersih==null)financeByOrder[k].netKnown=false;else financeByOrder[k].net+=Number(x.uang_bersih||0);
   });
   const sellerByOrder={};
-  seller.forEach(x=>{const k=String(x.order_id||'');sellerByOrder[k]??=[];sellerByOrder[k].push(x)});
-  const usedFinance=new Set(), grouped={};
+  seller.forEach(x=>{const k=normOrderId(x.order_id);if(!k)return;(sellerByOrder[k]??=[]).push(x)});
+  const grouped={};
   seller.forEach(x=>{
-    const key=[String(x.order_id||''),String(x.product_name||''),String(x.variation||''),String(FFCore.monthOf(x.tanggal)||'')].join('|');
-    grouped[key]??={...x,qty:0,omzet_produk:0};
-    grouped[key].qty+=Number(x.qty||0); grouped[key].omzet_produk+=Number(x.omzet_produk||0);
+    const k=[normOrderId(x.order_id),String(x.sku_id||''),String(x.seller_sku||''),String(x.variation||''),String(x.product_name||''),String(FFCore.monthOf(x.tanggal)||'')].join('|');
+    grouped[k]??={...x,qty:0,omzet_produk:0};
+    grouped[k].qty+=Number(x.qty||0);
+    grouped[k].omzet_produk+=Number(x.omzet_produk||0);
   });
+  const usedFinance=new Set();
   Object.values(grouped).forEach(x=>{
-    const f=financeByOrder[String(x.order_id||'')], lines=sellerByOrder[String(x.order_id||'')]||[];
+    const order=normOrderId(x.order_id), f=financeByOrder[order], lines=sellerByOrder[order]||[];
     const total=lines.reduce((a,r)=>a+Number(r.omzet_produk||0),0), base=Number(x.omzet_produk||0);
     const share=total>0?base/total:(lines.length===1?1:null);
     const rev=f&&share!=null?Math.round(f.rev*share):null;
     const net=f&&f.netKnown&&share!=null?Math.round(f.net*share):null;
     const unit=previewUnitHpp(x), hpp=unit!=null?Math.round(Number(x.qty||0)*unit):null;
     const profit=net!=null&&hpp!=null?net-hpp:null;
-    if(f)usedFinance.add(String(x.order_id||''));
+    if(f)usedFinance.add(order);
     out.push({source:f?'Income + Pesanan':'Pesanan',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:Number(x.qty||0),rev,net,hpp,profit});
   });
   finance.forEach(x=>{
-    const k=String(x.order_id||''); if(usedFinance.has(k))return;
-    out.push({source:'Income',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'Pesanan',qty:Number(x.qty||0),rev:Number(x.omzet_produk||0),net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null});
+    const k=normOrderId(x.order_id); if(usedFinance.has(k))return;
+    out.push({source:'Income',bulan:FFCore.monthOf(x.tanggal)||'',produk:null,qty:null,rev:Number(x.omzet_produk||0),net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null});
   });
-  rows.filter(x=>x.source==='online_historical_cash').forEach(x=>out.push({source:'Uang Masuk',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:0,rev:null,net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null}));
-  if(!out.length)rows.forEach(x=>{
+  directFinance.forEach(x=>{
     const unit=previewUnitHpp(x), hpp=unit!=null?Math.round(Number(x.qty||0)*unit):(x.modal_hpp==null?null:Number(x.modal_hpp));
-    const net=x.uang_bersih==null?null:Number(x.uang_bersih||0), rev=x.omzet_produk==null?null:Number(x.omzet_produk||0), profit=x.profit_online!=null?Number(x.profit_online):(net!=null&&hpp!=null?net-hpp:null);
-    out.push({source:x.source||'Online',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:Number(x.qty||0),rev,net,hpp,profit});
+    const net=x.uang_bersih==null?null:Number(x.uang_bersih||0), rev=x.omzet_produk==null?null:Number(x.omzet_produk||0);
+    const profit=x.profit_online!=null?Number(x.profit_online):(net!=null&&hpp!=null?net-hpp:null);
+    out.push({source:'Import Penjualan',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:Number(x.qty||0),rev,net,hpp,profit});
   });
-  out.sort((a,b)=>(a.bulan||'').localeCompare(b.bulan||'')||String(a.produk).localeCompare(String(b.produk)));
+  cash.forEach(x=>out.push({source:'Uang Masuk',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:null,rev:null,net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null}));
+  out.sort((a,b)=>(a.bulan||'').localeCompare(b.bulan||'')||String(a.produk||'').localeCompare(String(b.produk||''))||String(a.source).localeCompare(String(b.source)));
   return out;
 }
 async function ensureOnlineHppMaster(){
@@ -326,9 +325,36 @@ async function ensureOnlineHppMaster(){
     hppMasterRows=(hr.data||[]).map(h=>({...h,nama_produk:(productMasterRows.find(p=>String(p.id)===String(h.produk_id))||{}).nama_produk||''}));
   }catch(_){productMasterRows=[];hppMasterRows=[];}
 }
-$('onlineOldFile').onchange=async e=>{try{
-  const files=e.target.files;if(!files.length)return;
-  onlineOldImportRows=await parseOnlineOldFiles(files);
+let onlineOldQueuedFiles=[];
+function renderOnlineOldFileQueue(){
+  if(!$('onlineOldFiles'))return;
+  if(!onlineOldQueuedFiles.length){$('onlineOldFiles').innerHTML='Belum ada file dipilih.';return;}
+  $('onlineOldFiles').innerHTML=onlineOldQueuedFiles.map((f,i)=>`<div>📄 ${FFCore.esc(f.name)} <span style="color:#6b7280">(${f._detected||'mendeteksi...'})</span></div>`).join('');
+}
+async function addOnlineOldFiles(fileList){
+  const files=Array.from(fileList||[]); if(!files.length)return;
+  const existingNames=new Set(onlineOldQueuedFiles.map(f=>f.name+'|'+f.size+'|'+f.lastModified));
+  for(const f of files){
+    const sig=f.name+'|'+f.size+'|'+f.lastModified;
+    if(existingNames.has(sig))continue;
+    f._detected='memeriksa'; onlineOldQueuedFiles.push(f); renderOnlineOldFileQueue();
+    try{
+      const parsed=await parseOnlineOldFile(f);
+      const hasIncome=parsed.some(x=>x.source==='online_historical_finance'||x.source==='online_historical_adjustment');
+      const hasSeller=parsed.some(x=>x.source==='seller_center'||x.source==='online_historical_product');
+      const hasCash=parsed.some(x=>x.source==='online_historical_cash');
+      f._detected=hasIncome&&hasSeller?'Income + Pesanan':hasIncome?'Income':hasSeller?'Pesanan/Seller Center':hasCash?'Uang Masuk':'Online historis';
+      f._parsed=parsed;
+    }catch(err){
+      f._detected='gagal: '+String(err.message||err); f._parsed=[];
+    }
+    renderOnlineOldFileQueue();
+  }
+  onlineOldImportRows=[];
+  for(const f of onlineOldQueuedFiles)if(Array.isArray(f._parsed))onlineOldImportRows.push(...f._parsed);
+  const seen=new Set(); onlineOldImportRows=onlineOldImportRows.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true});
+}
+async function refreshOnlineOldPreview(){
   await ensureOnlineHppMaster();
   onlineOldPreviewRows=makeOnlineOldPreviewRows(onlineOldImportRows);
   const ms=[...new Set(onlineOldImportRows.map(x=>FFCore.monthOf(x.tanggal)).filter(FFCore.isMonth))];
@@ -337,11 +363,14 @@ $('onlineOldFile').onchange=async e=>{try{
   const net=fin.filter(x=>x.uang_bersih!=null).reduce((a,x)=>a+Number(x.uang_bersih||0),0);
   const cash=onlineOldImportRows.filter(x=>x.source==='online_historical_cash').reduce((a,x)=>a+Number(x.uang_bersih||0),0);
   const seller=onlineOldImportRows.filter(x=>x.source==='seller_center'||x.source==='online_historical_product').reduce((a,x)=>a+Number(x.qty||0),0);
-  $('onlineOldInfo').innerHTML='<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty produk <b>'+seller.toLocaleString('id-ID')+'</b> • Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>. Profit = Uang Bersih − Modal/HPP saat HPP tersedia.</div>';
-  $('onlineOldRows').innerHTML=onlineOldPreviewRows.slice(0,300).map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'-')+'</td><td>'+Number(x.qty||0).toLocaleString('id-ID')+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('');
+  const matched=onlineOldPreviewRows.filter(x=>x.source==='Income + Pesanan');
+  $('onlineOldInfo').innerHTML='<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty produk <b>'+seller.toLocaleString('id-ID')+'</b> • Pesanan cocok dengan Income <b>'+matched.length.toLocaleString('id-ID')+'</b> baris. '+(seller?'<b>Produk + Qty sudah digabung dari Pesanan.</b>':'<b>Qty masih 0 karena file Pesanan/Seller Center belum masuk.</b>')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>. Profit = Uang Bersih − Modal/HPP saat HPP tersedia.</div>';
+  $('onlineOldRows').innerHTML=onlineOldPreviewRows.slice(0,500).map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('');
   $('onlineOldPreview').style.display='block';
-}catch(e){$('onlineOldInfo').innerHTML='<div class="msg" style="color:#a22">'+FFCore.esc(e.message||e)+'</div>';onlineOldImportRows=[];onlineOldPreviewRows=[];$('onlineOldPreview').style.display='block'}};
-$('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML=''};
+}
+$('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files);await refreshOnlineOldPreview();e.target.value='';}catch(err){$('onlineOldInfo').innerHTML='<div class="msg" style="color:#a22">'+FFCore.esc(err.message||err)+'</div>';$('onlineOldPreview').style.display='block'}};
+$('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];renderOnlineOldFileQueue();$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
+renderOnlineOldFileQueue();
 $('onlineOldSave').onclick=async()=>{try{if(!onlineOldImportRows.length)return;const keys=onlineOldImportRows.map(x=>x.import_key),existing=new Set();for(let i=0;i<keys.length;i+=500){const r=await supabaseClient.from('penjualan').select('import_key').in('import_key',keys.slice(i,i+500));if(r.error)throw r.error;(r.data||[]).forEach(x=>existing.add(x.import_key))}const rows=onlineOldImportRows.filter(x=>!existing.has(x.import_key));for(let i=0;i<rows.length;i+=200){const r=await supabaseClient.from('penjualan').insert(rows.slice(i,i+200));if(r.error)throw r.error}$('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+rows.length.toLocaleString('id-ID')+'</b> baris Online historis. '+(onlineOldImportRows.length-rows.length)+' duplikat dilewati.</div>';onlineOldImportRows=[];await load()}catch(e){$('onlineOldMsg').innerHTML='<div class="msg" style="color:#a22">Gagal menyimpan Online historis: '+FFCore.esc(e.message||e)+'</div>'}};
 
 function fontSizeOf(it){const t=it.transform||[];return Math.max(Math.abs(Number(t[0])||0),Math.abs(Number(t[3])||0))}
