@@ -1,38 +1,1706 @@
-<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>HPP - Familia Food v3</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script><script src="app-settings.js"></script><style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5faf7;color:#26352d}.sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid #dce8e1;padding:20px 14px}.brand{font-size:20px;font-weight:700;color:var(--brand-color,#087443);margin:4px 8px 22px}.nav a{display:block;text-decoration:none;color:#315247;padding:11px 12px;border-radius:9px;margin:4px 0}.nav a:hover,.nav a.active{background:#eaf6ef;color:var(--brand-color,#087443);font-weight:600}main{margin-left:230px;padding:28px;max-width:1250px}h1{margin:0 0 8px}.sub{color:#6d7e76;margin-bottom:20px}.card{background:#fff;border:1px solid #dce8e1;border-radius:14px;padding:20px;margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #ccd9d2;border-radius:9px;background:#fff}.hint{font-size:12px;color:#70837a;margin-top:5px}.line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf2ef}.total{font-size:20px;font-weight:700;color:var(--brand-color,#087443);margin-top:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:700}.primary{background:var(--brand-color,#087443);color:#fff}.secondary{background:#eaf6ef;color:var(--brand-color,#087443)}.danger{background:#fff0f0;color:#b42318}.notice{margin-top:12px;padding:12px;border-radius:9px;background:#fff8df;border:1px solid #f0df9b;color:#6b5a16}.ok{background:#eaf6ef;border-color:#c8e5d3;color:#17623d}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:10px;border-bottom:1px solid #e8eeeb;text-align:left;font-size:14px}th{background:#f4f8f6}.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{padding:14px;border:1px solid #e1ebe5;border-radius:10px;background:#fafcfb}.stat b{display:block;font-size:18px;color:var(--brand-color,#087443);margin-top:5px}@media(max-width:850px){.sidebar{position:static;width:auto}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}main{margin-left:0;padding:16px}.grid,.two,.statgrid{grid-template-columns:1fr}}
-</style></head><body><aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav"><a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a class="active" href="hpp.html">🧮 HPP</a><a href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a></nav></aside><main>
-<h1>🧮 Kalkulator HPP</h1><div class="sub">HPP dasar dihitung per PCS dari Resep + alokasi Overhead Produksi. Isi PCS dalam bungkus dan kemasan dihitung setelahnya.</div>
-<div class="card"><h2 style="margin-top:0">⚙️ Overhead Produksi Harian</h2><div class="line"><span>Total overhead dari Bahan Baku</span><strong id="ohTotal">Rp0</strong></div><div class="hint">Total ini berasal dari rincian Gas, Listrik, Gaji, Lainnya, dan biaya overhead lain yang Anda masukkan di Bahan Baku. Total overhead dibagi sesuai jumlah produksi PCS.</div></div>
-<div class="card"><h2 style="margin-top:0">📊 Jumlah Produksi Harian</h2><div class="hint">Isi jumlah produksi PCS aktual per hari untuk setiap produk dasar. Angka ini dipakai untuk membagi total overhead harian secara proporsional; angka ini adalah input aktual dan bebas diubah kapan saja; tidak mengambil angka lama HPP sebagai patokan produksi harian.</div><table><thead><tr><th>Produk</th><th>Produksi Harian (PCS)</th><th>Porsi OH</th><th>Alokasi OH</th></tr></thead><tbody id="prodRows"><tr><td colspan="4">Memuat...</td></tr></tbody></table><div class="line"><span>Total Produksi</span><strong id="totalProd">0 PCS</strong></div><div class="line"><span>Total Alokasi OH</span><strong id="allocTotal">Rp0</strong></div></div>
-<div class="card"><div class="grid"><div class="field"><label>Produk Dasar</label><select id="produk"><option value="">Memuat...</option></select><div class="hint">Naget memakai satu resep dasar.</div></div><div class="field"><label>Hasil Produksi (PCS)</label><input id="hasil" type="number" min="1" step="1" placeholder="Masukkan hasil batch"><div class="hint">Jumlah PCS yang benar-benar dihasilkan oleh batch resep ini. Ini terpisah dari Produksi Harian untuk alokasi OH.</div></div><div class="field"><label>OH Produk</label><input id="ohProduk" type="text" readonly value="Rp0"><div class="hint">Otomatis dari total OH harian dan jumlah produksi.</div></div></div><div id="notice"></div></div>
-<div class="card"><h2>Ringkasan Resep</h2><div class="line"><span>Total biaya bahan dari Resep</span><strong id="baseCost">Rp0</strong></div><div class="line"><span>Overhead produk</span><strong id="ohOut">Rp0</strong></div><div class="line"><span>Total modal produksi</span><strong id="modal">Rp0</strong></div><div class="total">HPP dasar / PCS: <span id="hpp">Rp0</span></div><div class="hint">HPP/PCS adalah dasar kalkulasi. HPP paket = HPP/PCS × PCS DALAM BUNGKUS + 1 kemasan per bungkus + tambahan online. Harga kemasan mengikuti Master Bahan Baku.</div></div>
-<div class="card"><h2>🧩 Bahan Custom per Bungkus</h2><div class="hint">Dipakai untuk tambahan khusus produk tertentu, misalnya Saus pada Naget isi 25. Tidak masuk resep dasar dan tidak masuk Master Bahan Baku. Nama, jumlah, harga, dan penerapan dapat diedit kapan saja.</div><table><thead><tr><th>Nama Bahan Custom</th><th>Jumlah</th><th>Satuan</th><th>Harga Satuan</th><th>Berlaku Untuk</th><th>Biaya</th><th>Aksi</th></tr></thead><tbody id="customRows"></tbody></table><div class="actions"><button type="button" class="secondary" id="addCustom">+ Tambah Bahan Custom</button></div></div><div class="card"><h2>Simulasi Penjualan</h2><div class="two"><div><h3>Offline</h3><div class="field"><label>PCS DALAM BUNGKUS</label><select id="offQty"></select></div><div class="field" style="margin-top:10px"><label>Kemasan Offline</label><select id="offPack"></select></div><div class="field" style="margin-top:10px"><label>Harga Jual / Bungkus</label><input id="offPrice" type="number" min="0" step="1" placeholder="Rp"></div><div class="line"><span>HPP / Modal Bungkus</span><strong id="offModal">Rp0</strong></div><div class="line"><span>Untung Bungkus</span><strong id="offProfit">Belum diisi</strong></div></div><div><h3>Online</h3><div class="field"><label>PCS DALAM BUNGKUS</label><select id="onQty"></select></div><div class="field" style="margin-top:10px"><label>Kemasan Online</label><select id="onPack"></select></div><div class="field" style="margin-top:10px"><label>Tambahan Online</label><select id="extra"></select></div><div class="field" style="margin-top:10px"><label>Harga Jual / Bungkus</label><input id="onPrice" type="number" min="0" step="1" placeholder="Rp"></div><div class="line"><span>HPP / Modal Bungkus</span><strong id="onModal">Rp0</strong></div><div class="line"><span>Untung Bungkus</span><strong id="onProfit">Belum diisi</strong></div></div></div></div>
-<div class="card"><div class="actions"><button class="primary" id="save">💾 Simpan HPP Produk</button><button class="danger" id="reset">↺ Reset</button></div><div id="msg"></div></div>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>HPP - Familia Food</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,sans-serif;
+background:#f5faf7;
+margin:0;
+padding:0;
+color:#26352d;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+position:fixed;
+left:0;
+top:0;
+bottom:0;
+width:230px;
+background:#087443;
+color:white;
+padding:25px 15px;
+}
+
+.logo{
+font-size:23px;
+font-weight:bold;
+text-align:center;
+margin-bottom:30px;
+}
+
+.menu a{
+display:block;
+color:white;
+text-decoration:none;
+padding:12px 15px;
+border-radius:8px;
+margin-bottom:6px;
+}
+
+.menu a:hover,
+.menu a.active{
+background:rgba(255,255,255,0.15);
+}
+
+/* CONTENT */
+
+.main{
+margin-left:230px;
+padding:30px;
+}
+
+.container{
+background:white;
+padding:25px;
+border-radius:15px;
+max-width:1100px;
+margin:auto;
+box-shadow:0 5px 20px rgba(0,0,0,0.04);
+}
+
+h1{
+color:#087443;
+margin-top:0;
+}
+
+.subtitle{
+color:#68756e;
+margin-bottom:25px;
+}
+
+/* FORM */
+
+.form{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+}
+
+.box{
+border:1px solid #ddd;
+padding:15px;
+border-radius:10px;
+}
+
+label{
+display:block;
+font-weight:bold;
+margin-bottom:7px;
+}
+
+input,
+select{
+width:100%;
+padding:11px;
+border:1px solid #ccc;
+border-radius:8px;
+font-size:14px;
+background:white;
+}
+
+input[readonly]{
+background:#f4f7f5;
+}
+
+/* RECIPE */
+
+.recipe-box{
+margin-top:25px;
+border:1px solid #ddd;
+border-radius:12px;
+overflow:hidden;
+}
+
+.recipe-title{
+padding:15px;
+background:#f0f8f3;
+font-weight:bold;
+color:#087443;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,
+td{
+padding:11px;
+border-bottom:1px solid #eee;
+text-align:left;
+font-size:14px;
+}
+
+th{
+background:#fafafa;
+}
+
+.empty{
+padding:25px;
+text-align:center;
+color:#777;
+}
+
+/* RESULT */
+
+.result{
+margin-top:25px;
+padding:20px;
+background:#f0f8f3;
+border-radius:12px;
+}
+
+.result h2{
+color:#087443;
+margin-top:0;
+}
+
+.result-row{
+display:flex;
+justify-content:space-between;
+gap:20px;
+padding:10px 0;
+border-bottom:1px solid #dcebe2;
+}
+
+.result-row:last-child{
+border-bottom:0;
+}
+
+.result-row strong{
+color:#087443;
+}
+
+.big-result{
+font-size:20px;
+font-weight:bold;
+}
+
+.profit{
+color:#087443;
+font-weight:bold;
+}
+
+/* BUTTON */
+
+button{
+background:#087443;
+color:white;
+border:0;
+padding:12px 20px;
+border-radius:8px;
+cursor:pointer;
+font-size:14px;
+}
+
+button:hover{
+opacity:.9;
+}
+
+button:disabled{
+background:#aaa;
+cursor:not-allowed;
+}
+
+/* STATUS */
+
+.status{
+margin-top:15px;
+padding:12px;
+border-radius:8px;
+display:none;
+}
+
+.status.success{
+display:block;
+background:#e8f7ed;
+color:#087443;
+}
+
+.status.error{
+display:block;
+background:#ffeaea;
+color:#a00000;
+}
+
+/* MOBILE */
+
+@media(max-width:800px){
+
+.sidebar{
+position:relative;
+width:100%;
+height:auto;
+}
+
+.main{
+margin-left:0;
+padding:15px;
+}
+
+.form{
+grid-template-columns:1fr;
+}
+
+}
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+<div class="logo">
+🍀 Familia Food
+</div>
+
+<div class="menu">
+
+<a href="index.html">🏠 Dashboard</a>
+
+<a href="produk.html">📦 Produk</a>
+
+<a href="bahan-baku.html">🥣 Bahan Baku</a>
+
+<a href="resep.html">📋 Resep</a>
+
+<a href="hpp.html" class="active">🧮 HPP</a>
+
+<a href="penjualan.html">💰 Penjualan</a>
+
+<a href="rekap.html">📊 Rekap</a>
+
+<a href="data-lama.html">📁 Data Lama</a>
+
+<a href="pengaturan.html">⚙️ Pengaturan</a>
+
+</div>
+
+</div>
+
+
+<!-- MAIN -->
+
+<div class="main">
+
+<div class="container">
+
+<h1>🧮 Perhitungan HPP</h1>
+
+<div class="subtitle">
+HPP dihitung otomatis berdasarkan resep dan harga bahan baku terbaru.
+</div>
+
+
+<div class="form">
+
+<div class="box">
+
+<label>Produk</label>
+
+<select id="produkSelect">
+
+<option value="">
+Pilih Produk
+</option>
+
+</select>
+
+</div>
+
+<div class="box">
+<label>Isi per Bungkus</label>
+<select id="isiBungkusSelect">
+<option value="10">10 pcs</option>
+<option value="12">12 pcs</option>
+<option value="20">20 pcs</option>
+<option value="30">30 pcs</option>
+<option value="40">40 pcs</option>
+<option value="50">50 pcs</option>
+</select>
+</div>
+
+<div class="box">
+
+<label>Jumlah Hasil Produksi</label>
+
+<input
+type="number"
+id="jumlahProduksi"
+min="1"
+placeholder="Masukkan jumlah pcs produksi"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Total Biaya Bahan</label>
+
+<input
+type="text"
+id="totalBahan"
+readonly
+value="Rp0"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Biaya Produksi / Overhead</label>
+
+<input
+type="text"
+id="biayaProduksi"
+readonly
+value="Rp0"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Harga Jual Offline</label>
+
+<input
+type="number"
+id="hargaOffline"
+placeholder="Masukkan harga jual offline"
+>
+
+</div>
+
+
+<div class="box">
+
+<label>Harga Jual Online</label>
+
+<input
+type="number"
+id="hargaOnline"
+placeholder="Masukkan harga jual online"
+>
+
+</div>
+
+</div>
+
+
+<!-- RECIPE -->
+
+<div class="recipe-box">
+
+<div class="recipe-title">
+Bahan yang digunakan
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Bahan</th>
+
+<th>Satuan</th>
+
+<th>Harga Saat Ini</th>
+
+<th>Jumlah</th>
+
+<th>Biaya</th>
+
+</tr>
+
+</thead>
+
+<tbody id="recipeBody">
+
+<tr>
+
+<td colspan="5" class="empty">
+Pilih produk terlebih dahulu.
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+
+<!-- RESULT -->
+
+<div class="result">
+
+<h2>Hasil Perhitungan</h2>
+
+
+<div class="result-row">
+
+<span>Total Biaya Bahan</span>
+
+<strong id="hasilBahan">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>Biaya Produksi / Overhead</span>
+
+<strong id="hasilProduksi">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>Total Modal</span>
+
+<strong id="hasilModal">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row big-result">
+
+<span>HPP per Pcs</span>
+
+<strong id="hasilHpp">
+Rp0
+</strong>
+
+</div>
+
+<div class="result-row">
+<span>Isi per Bungkus</span>
+<strong id="hasilIsi">-</strong>
+</div>
+
+<div class="result-row big-result">
+<span>HPP per Bungkus</span>
+<strong id="hasilHppBungkus">Rp0</strong>
+</div>
+
+
+<div class="result-row">
+
+<span>Keuntungan Offline</span>
+
+<strong id="hasilUntungOffline" class="profit">
+Rp0
+</strong>
+
+</div>
+
+
+<div class="result-row">
+
+<span>Keuntungan Online</span>
+
+<strong id="hasilUntungOnline" class="profit">
+Rp0
+</strong>
+
+</div>
+
+</div>
+
+
+<br>
+
+<button id="btnSimpan" disabled>
+💾 Simpan HPP
+</button>
+
+
+<div id="status" class="status"></div>
+
+</div>
+
+</div>
+
+
+<!-- SUPABASE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="supabase.js"></script>
+
+
 <script>
-const sb=(typeof supabaseClient!=='undefined'&&supabaseClient)?supabaseClient:window.supabaseClient;const $=id=>document.getElementById(id);const rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');const norm=s=>(s||'').toLowerCase().trim();const isNaget=p=>/naget/.test(norm(p?.nama_produk));const key=p=>isNaget(p)?'naget':norm(p?.nama_produk);const label=k=>k==='naget'?'Naget':(products.find(p=>key(p)===k)?.nama_produk||k);const isOH=m=>{const n=String(m?.nama_bahan||'');return n.startsWith('__OH__:')||n.startsWith('__OVERHEAD__');};const isKemasan=m=>{const n=norm(m?.nama_bahan||m?.nama);return !isOH(m)&&/plastik|kemasan|packaging|vakum|vacuum/.test(n)};function cost(m,q){const n=norm(m?.nama_bahan||m?.nama),h=Number(m?.harga_beli??m?.harga)||0,x=Number(q)||0;if(isOH(m)||isKemasan(m))return 0;if(n.includes('bumbu'))return x>1?h*x/100:h*x;return h*x}function msg(t,ok=false){$('msg').innerHTML=t?`<div class="notice ${ok?'ok':''}">${t}</div>`:''}
-let products=[],materials=[],recipes=[],recipePacks=[],currentGroup=null,overheadTotal=0,productionMap={},hppMap={};const CUSTOM_KEY='ff_hpp_custom_v1';let customRows=getCustom();
-function groups(){const a=[],seen=new Set();products.filter(p=>norm(p.status||p.statustext||'aktif')!=='arsip'&&norm(p.status||p.statustext||'aktif')!=='nonaktif').forEach(p=>{const k=key(p);if(!seen.has(k)){seen.add(k);a.push(k)}});return a}
-function fillPacks(id,online){const arr=materials.filter(m=>{const n=norm(m.nama_bahan||m.nama);return isKemasan(m)&&(online?/vakum|vacuum/.test(n):!/vakum|vacuum/.test(n))});$(id).innerHTML='<option value="">Tanpa kemasan</option>'+arr.map(m=>`<option value="${m.id}">${m.nama_bahan||m.nama}</option>`).join('')}
-function fillExtra(){$('extra').innerHTML='<option value="">Tidak ada tambahan</option>'+materials.filter(m=>!isOH(m)&&!isKemasan(m)).map(m=>`<option value="${m.id}">${m.nama_bahan||m.nama}</option>`).join('')}
-function packCost(id){const m=materials.find(x=>String(x.id)===String(id));return isKemasan(m)?(Number(m?.harga_beli)||0):0}
-function fillQtyForProduct(p){const isN=key(p)==='naget';const vals=isN?[10,12,20,25,30,40,50]:[Math.max(1,Number(p?.isi_per_bungkus)||1)];const html=vals.map(x=>`<option value="${x}">${x} PCS</option>`).join('');$('offQty').innerHTML=html;$('onQty').innerHTML=html}
-function getCustom(){try{return JSON.parse(localStorage.getItem(CUSTOM_KEY)||'[]')||[]}catch(e){return []}}
-function setCustom(){try{localStorage.setItem(CUSTOM_KEY,JSON.stringify(customRows))}catch(e){}}
-function variantOptions(){return currentGroup==='naget'?[10,12,20,25,30,40,50]:[Math.max(1,Number(products.find(p=>key(p)===currentGroup)?.isi_per_bungkus)||1)]}
-function customApplies(r,q){const scope=String(r.scope||'all');return scope==='all'||scope===String(q)}
-function customTotalForQty(q){return customRows.filter(r=>r.name&&Number(r.qty)>0&&Number(r.price)>=0&&customApplies(r,q)).reduce((s,r)=>s+Number(r.qty)*Number(r.price),0)}
-function renderCustom(){const body=$('customRows');const opts=variantOptions();if(!customRows.length){body.innerHTML='<tr><td colspan="7">Belum ada bahan custom.</td></tr>';return}body.innerHTML=customRows.map((r,i)=>{const scopeOpts='<option value="all" '+(String(r.scope||'all')==='all'?'selected':'')+'>Semua</option>'+opts.map(q=>`<option value="${q}" ${String(r.scope)===String(q)?'selected':''}>${q} PCS</option>`).join('');const biaya=(Number(r.qty)||0)*(Number(r.price)||0);return `<tr><td><input data-ci="${i}" data-ck="name" value="${String(r.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}" placeholder="Saus" style="width:140px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td><input data-ci="${i}" data-ck="qty" type="number" min="0" step="0.001" value="${r.qty??''}" style="width:90px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td><input data-ci="${i}" data-ck="unit" value="${String(r.unit||'pcs').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}" style="width:80px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td><input data-ci="${i}" data-ck="price" type="number" min="0" step="1" value="${r.price??''}" style="width:110px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td><select data-ci="${i}" data-ck="scope">${scopeOpts}</select></td><td>${rupiah(biaya)}</td><td><button type="button" class="danger" data-cdel="${i}">Hapus</button></td></tr>`}).join('');body.querySelectorAll('[data-ck]').forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{const i=+el.dataset.ci;const k=el.dataset.ck;customRows[i][k]=(k==='qty'||k==='price')?Number(el.value)||0:el.value;setCustom();const row=el.closest('tr');if(row){const c=row.children[5];if(c)c.textContent=rupiah((Number(customRows[i].qty)||0)*(Number(customRows[i].price)||0))}calc()}));body.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>{customRows.splice(+b.dataset.cdel,1);setCustom();renderCustom();calc()})}
-async function load(){try{const [p,m,h]=await Promise.all([sb.from('produk').select('*').order('id',{ascending:true}),sb.from('bahan_baku').select('*').order('id',{ascending:true}),sb.from('hpp').select('*').order('id',{ascending:true})]);if(p.error||m.error||h.error)throw new Error((p.error||m.error||h.error).message);products=(p.data||[]);materials=(m.data||[]);hppMap={};(h.data||[]).forEach(x=>hppMap[x.produk_id]=x);overheadTotal=materials.filter(isOH).reduce((a,x)=>a+(Number(x.harga_beli)||0),0);$('ohTotal').textContent=rupiah(overheadTotal);fillExtra();renderCustom();$('addCustom').onclick=()=>{customRows.push({name:'',qty:0,unit:'pcs',price:0,scope:'all'});setCustom();renderCustom()};fillPacks('offPack',false);fillPacks('onPack',true);const gs=groups();$('produk').innerHTML='<option value="">Pilih produk dasar</option>'+gs.map(k=>`<option value="${k}">${label(k)}</option>`).join('');buildProductionRows(gs);$('produk').onchange=()=>selectGroup($('produk').value);$('save').onclick=save;$('reset').onclick=reset;['hasil','offPrice','onPrice'].forEach(id=>$(id).addEventListener('input',calc));['offPack','onPack','extra'].forEach(id=>$(id).addEventListener('change',calc));$('offQty').addEventListener('change',()=>updateVariantPrices($('offQty').value));$('onQty').addEventListener('change',()=>{if(currentGroup==='naget'){$('offQty').value=$('onQty').value;updateVariantPrices($('onQty').value)}else calc()});calc()}catch(e){$('produk').innerHTML='<option value="">Gagal memuat produk</option>';msg('HPP gagal memuat data: '+e.message)}}
-const DAILY_PRODUCTION_KEY='ff_daily_production_v2';
-function getDailyProduction(){try{return JSON.parse(localStorage.getItem(DAILY_PRODUCTION_KEY)||'{}')||{}}catch(e){return {}}}
-function setDailyProduction(){try{localStorage.setItem(DAILY_PRODUCTION_KEY,JSON.stringify(productionMap))}catch(e){}}
-function buildProductionRows(gs){const tb=$('prodRows');productionMap=getDailyProduction();tb.innerHTML=gs.length?gs.map(k=>{const qty=Math.max(0,Number(productionMap[k])||0);productionMap[k]=qty;return `<tr><td>${label(k)}</td><td><input data-prod="${k}" type="number" min="0" step="1" value="${qty||''}" placeholder="Masukkan PCS" style="width:150px;padding:9px;border:1px solid #ccd9d2;border-radius:8px"></td><td id="share-${k.replace(/[^a-z0-9_]/gi,'_')}">0%</td><td id="alloc-${k.replace(/[^a-z0-9_]/gi,'_')}">Rp0</td></tr>`}).join(''):'<tr><td colspan="4">Belum ada produk aktif.</td></tr>';setDailyProduction();tb.querySelectorAll('[data-prod]').forEach(el=>el.oninput=()=>{productionMap[el.dataset.prod]=Math.max(0,Number(el.value)||0);setDailyProduction();renderAllocation();calc()});renderAllocation()}
-function renderAllocation(){const total=Object.values(productionMap).reduce((a,b)=>a+b,0);$('totalProd').textContent=total+' PCS';let at=0;Object.entries(productionMap).forEach(([k,q])=>{const share=total?q/total:0,alloc=overheadTotal*share;at+=alloc;const id=k.replace(/[^a-z0-9_]/gi,'_');const sh=document.getElementById('share-'+id),al=document.getElementById('alloc-'+id);if(sh)sh.textContent=(share*100).toFixed(2)+'%';if(al)al.textContent=rupiah(alloc)});$('allocTotal').textContent=rupiah(at)}
-function updateVariantPrices(q){if(currentGroup!=='naget')return;const p=products.find(x=>key(x)==='naget'&&Number(x.isi_per_bungkus)===Number(q));if(p){$('offPrice').value=Number(p.harga_offline)||0;$('onPrice').value=Number(p.harga_online)||0;}calc()}
-async function selectGroup(k){currentGroup=k||null;recipes=[];recipePacks=[];$('notice').innerHTML='';if(!k){calc();return}const targets=products.filter(p=>key(p)===k),ids=targets.map(p=>p.id),canonical=targets[0]?.id;const r=await sb.from('resep').select('*').in('produk_id',ids);if(r.error){msg('Gagal membaca resep: '+r.error.message);return}const all=r.data||[];recipes=all.filter(x=>String(x.produk_id)===String(canonical));recipePacks=recipes.filter(x=>isKemasan(materials.find(m=>String(m.id)===String(x.bahan_id))));const p=targets[0];$('hasil').value=Number(hppMap[p?.id]?.jumlah_batch)||'';fillQtyForProduct(p);$('offQty').value=String(p?.isi_per_bungkus||10);$('onQty').value=String(p?.isi_per_bungkus||10);renderCustom();$('offPrice').value=Number(p?.harga_offline)||0;$('onPrice').value=Number(p?.harga_online)||0;const off=recipePacks.find(x=>{const m=materials.find(mm=>String(mm.id)===String(x.bahan_id));return m&&!/vakum|vacuum/.test(norm(m.nama_bahan))}),on=recipePacks.find(x=>{const m=materials.find(mm=>String(mm.id)===String(x.bahan_id));return m&&/vakum|vacuum/.test(norm(m.nama_bahan))});if(off)$('offPack').value=String(off.bahan_id);if(on)$('onPack').value=String(on.bahan_id);if(k==='naget')$('notice').innerHTML='<div class="notice">Semua varian Naget (10, 12, 20, 25+Saus, 30, 40, 50) memakai satu resep dasar. HPP tiap varian mengikuti isi per bungkus di Master Produk.</div>';calc()}
-function baseCost(){return recipes.reduce((s,r)=>s+cost(materials.find(m=>String(m.id)===String(r.bahan_id)),r.jumlah_pakai),0)}
-function selectedOH(){const total=Object.values(productionMap).reduce((a,b)=>a+b,0);return total&&currentGroup?overheadTotal*(Number(productionMap[currentGroup])||0)/total:0}
-function calc(){renderAllocation();const total=baseCost(),h=Number($('hasil').value)||0,oh=selectedOH(),modal=total+oh,hppPcs=h?modal/h:0;$('baseCost').textContent=rupiah(total);$('ohOut').textContent=rupiah(oh);$('ohProduk').value=rupiah(oh);$('modal').textContent=rupiah(modal);$('hpp').textContent=rupiah(hppPcs);const oq=Number($('offQty').value)||0,op=Number($('offPrice').value)||0,customOff=customTotalForQty(oq),om=hppPcs*oq+packCost($('offPack').value)+customOff;$('offModal').textContent=rupiah(om);$('offProfit').textContent=op?rupiah(op-om):'Belum diisi';const nq=Number($('onQty').value)||0,np=Number($('onPrice').value)||0,extra=Number(materials.find(m=>String(m.id)===String($('extra').value))?.harga_beli)||0,customOn=customTotalForQty(nq),nm=hppPcs*nq+packCost($('onPack').value)+extra+customOn;$('onModal').textContent=rupiah(nm);$('onProfit').textContent=np?rupiah(np-nm):'Belum diisi'}
-async function save(){if(!currentGroup){msg('Pilih produk dasar terlebih dahulu.');return}const h=Number($('hasil').value)||0;const daily=Number(productionMap[currentGroup])||0;const totalDaily=Object.values(productionMap).reduce((a,b)=>a+b,0);if(!recipes.length||!h){msg('Pastikan resep tersimpan dan Hasil Produksi (PCS) diisi.');return}if(overheadTotal>0&&(!daily||!totalDaily)){msg('Isi Produksi Harian (PCS) terlebih dahulu agar OH dapat dialokasikan berdasarkan produksi aktual.');return}const total=baseCost(),oh=selectedOH(),modal=total+oh,hppPcs=modal/h,targets=products.filter(p=>key(p)===currentGroup),offPack=packCost($('offPack').value),onPack=packCost($('onPack').value),extra=Number(materials.find(m=>String(m.id)===String($('extra').value))?.harga_beli)||0;for(const p of targets){const qty=Math.max(1,Number(p.isi_per_bungkus)||1),custom=customTotalForQty(qty),offModal=hppPcs*qty+offPack+custom,onModal=hppPcs*qty+onPack+extra+custom,offPrice=Number(p.harga_offline)||0,onPrice=Number(p.harga_online)||0,row={produk_id:p.id,total_bahan:total,biaya_produksi:oh,jumlah_batch:h,total_modal:modal,hpp_unit:offModal,harga_offline:offPrice,untung_offline:offPrice-offModal,harga_online:onPrice,untung_online:onPrice-onModal};const old=await sb.from('hpp').select('id').eq('produk_id',p.id).limit(1);if(old.error){msg('Gagal membaca HPP: '+old.error.message);return}const res=old.data?.length?await sb.from('hpp').update(row).eq('id',old.data[0].id):await sb.from('hpp').insert([row]);if(res.error){msg('Gagal menyimpan HPP: '+res.error.message);return}hppMap[p.id]=row}msg('HPP produk berhasil disimpan. Semua angka mengikuti input aktual yang bro masukkan; data lama bukan patokan produksi harian.',true)}
-function reset(){currentGroup=null;$('produk').value='';$('hasil').value='';$('offPrice').value='';$('onPrice').value='';$('offPack').value='';$('onPack').value='';$('extra').value='';recipes=[];recipePacks=[];calc()}load();
-</script></main></body></html>
+
+/* =========================
+   DATA
+========================= */
+
+let produkData = [];
+let bahanData = [];
+let resepData = [];
+
+let produkTerpilih = null;
+let resepProduk = [];
+
+let totalBiayaBahan = 0;
+let jumlahHasilProduksi = 0;
+
+
+/*
+  Biaya overhead per bungkus
+  mengikuti pola HPP lama Familia Food.
+
+  Nilai ini bukan harga bahan.
+  Ini adalah bagian biaya produksi yang
+  sebelumnya melekat pada HPP masing-masing produk.
+*/
+
+const overheadPerBungkus = {
+
+"Naget": 85.9,
+
+"Naget isi 10": 85.9,
+
+"Naget isi 12": 85.9,
+
+"Cireng isi": 950,
+
+"Cireng biasa": 1070,
+
+"Cibay": 820
+
+};
+
+
+/* =========================
+   FORMAT RUPIAH
+========================= */
+
+function rupiah(nilai){
+
+if(
+nilai === null ||
+nilai === undefined ||
+isNaN(nilai)
+){
+return "Rp0";
+}
+
+return "Rp" + Math.round(Number(nilai)).toLocaleString("id-ID");
+
+}
+
+
+function isiPerBungkus() {
+  const pilihan = document.getElementById("isiBungkusSelect");
+  return Number((pilihan && pilihan.value) || (produkTerpilih && produkTerpilih.isi_per_bungkus) || 1);
+}
+
+/* =========================
+   LOAD PRODUK
+========================= */
+
+async function loadProduk(){
+
+const {
+data,
+error
+} = await supabaseClient
+
+.from("produk")
+
+.select("*")
+
+.order("nama_produk");
+
+
+if(error){
+
+console.error(error);
+
+tampilkanStatus(
+"Gagal mengambil data produk: " + error.message,
+"error"
+);
+
+return;
+}
+
+
+produkData = data || [];
+
+const select =
+document.getElementById("produkSelect");
+
+
+select.innerHTML =
+'<option value="">Pilih Produk</option>';
+
+
+const namaSudahAda = new Set();
+
+// Pastikan setiap nama produk hanya muncul satu kali di pilihan HPP.
+select.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
+
+produkData.forEach(function(produk){
+
+const nama = String(produk.nama_produk || "").trim();
+
+if(!nama || namaSudahAda.has(nama.toLowerCase())) return;
+
+namaSudahAda.add(nama.toLowerCase());
+
+const option = document.createElement("option");
+option.value = produk.id;
+option.textContent = nama;
+select.appendChild(option);
+
+});
+
+// Naget isi 25 adalah produk khusus dengan tambahan saus.
+// Tampilkan di nama produk, bukan di pilihan isi per bungkus.
+const sudahAdaNaget25 = Array.from(select.options).some(function(option){
+  return option.textContent.trim().toLowerCase() === "naget isi 25";
+});
+if(!sudahAdaNaget25){
+  const nagetDasar = produkData.find(function(produk){
+    return String(produk.nama_produk || "").trim().toLowerCase() === "naget";
+  });
+  if(nagetDasar){
+    const option25 = document.createElement("option");
+    option25.value = nagetDasar.id;
+    option25.textContent = "Naget isi 25";
+    select.appendChild(option25);
+  }
+}
+
+}
+
+
+/* =========================
+   LOAD BAHAN
+========================= */
+
+async function loadBahan(){
+
+const {
+data,
+error
+} = await supabaseClient
+
+.from("bahan_baku")
+
+.select("*")
+
+.order("nama_bahan");
+
+
+if(error){
+
+console.error(error);
+
+tampilkanStatus(
+"Gagal mengambil bahan baku: " + error.message,
+"error"
+);
+
+return;
+}
+
+
+bahanData = data || [];
+
+}
+
+
+/* =========================
+   LOAD RESEP
+========================= */
+
+async function loadResep(){
+
+const {
+data,
+error
+} = await supabaseClient
+
+.from("resep")
+
+.select("*");
+
+
+if(error){
+
+console.error(error);
+
+tampilkanStatus(
+"Gagal mengambil resep: " + error.message,
+"error"
+);
+
+return;
+}
+
+
+resepData = data || [];
+
+}
+
+
+/* =========================
+   CARI PRODUK
+========================= */
+
+function cariProduk(id){
+
+return produkData.find(function(item){
+
+return String(item.id) === String(id);
+
+});
+
+}
+
+
+/* =========================
+   CARI BAHAN
+========================= */
+
+function cariBahan(id){
+
+return bahanData.find(function(item){
+
+return String(item.id) === String(id);
+
+});
+
+}
+
+
+/* =========================
+   HITUNG BIAYA RESEP
+========================= */
+
+function hitungBiayaResep(item, bahan){
+
+if(!bahan){
+
+return 0;
+
+}
+
+
+const harga =
+Number(bahan.harga_beli || 0);
+
+const jumlah =
+Number(item.jumlah_pakai || 0);
+
+const nama =
+String(bahan.nama_bahan || "")
+.toLowerCase();
+
+
+/*
+ BUMBU
+
+ Disimpan sebagai persen.
+
+ Contoh:
+ 20 = 20%
+ harga bumbu = Rp10.000
+
+ biaya = 20% × Rp10.000
+       = Rp2.000
+*/
+
+if(nama.includes("bumbu")){
+
+if(jumlah <= 1){
+
+return harga * jumlah;
+
+}
+
+return harga * jumlah / 100;
+
+}
+
+
+/*
+ PLASTIK
+
+ Harga plastik = harga per kg.
+
+ 1 kg = 240 lembar.
+
+ Contoh:
+ 10 lembar × Rp44.000 ÷ 240
+*/
+
+if(nama.includes("plastik")){
+
+return harga * jumlah / 240;
+
+}
+
+
+/*
+ BAHAN LAIN
+
+ Menggunakan harga sesuai satuannya.
+*/
+
+return harga * jumlah;
+
+}
+
+
+/* =========================
+   TENTUKAN HASIL PRODUKSI
+========================= */
+
+function tentukanJumlahProduksi(){
+
+if(!produkTerpilih){
+
+return 0;
+
+}
+
+
+/*
+ Jumlah produksi berasal dari resep.
+
+ Kita gunakan bahan yang memiliki jumlah
+ produksi paling masuk akal.
+
+ Untuk produk Familia Food saat ini:
+
+ Naget isi 10  = 264 bungkus
+ Naget isi 12  = 30 bungkus
+
+ Cireng isi    = 40 bungkus
+ Cireng biasa  = 10 bungkus
+ Cibay         = 10 bungkus
+*/
+
+
+const nama =
+produkTerpilih.nama_produk
+.toLowerCase();
+
+
+if(nama === "naget" || nama === "naget isi 10" || nama === "naget isi 12"){
+
+// Resep Naget menghasilkan total 2.500 pcs, bukan jumlah bungkus.
+return 2500;
+
+}
+
+if(nama === "cireng isi"){
+
+return 40;
+
+}
+
+if(nama === "cireng biasa"){
+
+return 10;
+
+}
+
+if(nama === "cibay"){
+
+return 10;
+
+}
+
+
+/*
+ Jika produk baru belum memiliki aturan,
+ pengguna tetap dapat melihat biaya bahan,
+ tetapi jumlah hasil produksi belum diketahui.
+*/
+
+return 0;
+
+}
+
+
+/* =========================
+   HITUNG OVERHEAD
+========================= */
+
+function hitungBiayaProduksi(){
+
+if(!produkTerpilih){
+
+return 0;
+
+}
+
+
+const nama =
+produkTerpilih.nama_produk;
+
+
+/*
+ Naget isi 12:
+
+ HPP lama Rp3.720 per bungkus.
+ Pola bahan menghasilkan bagian overhead
+ sekitar Rp1.031 per bungkus.
+
+ Nilai ini digunakan agar perubahan harga
+ bahan baku tetap mengubah HPP,
+ tanpa mengubah pola biaya produksi lama.
+*/
+
+const overhead =
+overheadPerBungkus[nama];
+
+
+if(overhead !== undefined){
+
+return overhead * jumlahHasilProduksi;
+
+}
+
+
+return 0;
+
+}
+
+
+/* =========================
+   TAMPILKAN RESEP
+========================= */
+
+function tampilkanResep(){
+
+const tbody =
+document.getElementById("recipeBody");
+
+
+tbody.innerHTML = "";
+
+
+if(resepProduk.length === 0){
+
+tbody.innerHTML = `
+
+<tr>
+
+<td colspan="5" class="empty">
+
+Belum ada resep untuk produk ini.
+
+</td>
+
+</tr>
+
+`;
+
+return;
+
+}
+
+
+totalBiayaBahan = 0;
+
+
+resepProduk.forEach(function(item){
+
+const bahan =
+cariBahan(item.bahan_id);
+
+
+if(!bahan){
+
+return;
+
+}
+
+
+const biaya =
+hitungBiayaResep(item,bahan);
+
+
+totalBiayaBahan += biaya;
+
+
+const tr =
+document.createElement("tr");
+
+
+const namaBahan =
+String(bahan.nama_bahan || "")
+.toLowerCase();
+
+
+let jumlahTampil =
+item.jumlah_pakai;
+
+
+if(namaBahan.includes("bumbu")){
+
+const persen =
+Number(item.jumlah_pakai) <= 1
+? Number(item.jumlah_pakai) * 100
+: Number(item.jumlah_pakai);
+
+jumlahTampil =
+persen + "%";
+
+}
+
+else if(namaBahan.includes("plastik")){
+
+jumlahTampil =
+item.jumlah_pakai + " lembar";
+
+}
+
+
+tr.innerHTML = `
+
+<td>
+${bahan.nama_bahan}
+</td>
+
+<td>
+${bahan.satuan || "-"}
+</td>
+
+<td>
+${rupiah(bahan.harga_beli)}
+</td>
+
+<td>
+${jumlahTampil}
+</td>
+
+<td>
+<strong>
+${rupiah(biaya)}
+</strong>
+</td>
+
+`;
+
+
+tbody.appendChild(tr);
+
+});
+
+
+document.getElementById("totalBahan").value =
+rupiah(totalBiayaBahan);
+
+document.getElementById("hasilBahan").textContent =
+rupiah(totalBiayaBahan);
+
+}
+
+
+/* =========================
+   HITUNG SEMUA
+========================= */
+
+function hitungSemua(){
+
+if(!produkTerpilih){
+
+return;
+
+}
+
+
+const inputJumlah = document.getElementById("jumlahProduksi");
+const nilaiManual = Number(inputJumlah.value);
+
+if (nilaiManual > 0) {
+  jumlahHasilProduksi = nilaiManual;
+} else {
+  jumlahHasilProduksi = tentukanJumlahProduksi();
+  inputJumlah.value = jumlahHasilProduksi || "";
+}
+
+
+const biayaProduksi =
+hitungBiayaProduksi();
+
+
+const biayaSausKhusus = (produkTerpilih && String(produkTerpilih.nama_produk).toLowerCase() === "naget isi 25") ? 1400 : 0;
+
+const totalBiayaBahanDenganSaus = totalBiayaBahan + biayaSausKhusus;
+
+const totalModal =
+totalBiayaBahanDenganSaus + biayaProduksi;
+
+
+let hppUnit = 0;
+
+
+if(jumlahHasilProduksi > 0){
+
+hppUnit =
+totalModal / jumlahHasilProduksi;
+
+}
+
+
+const hargaOffline =
+Number(
+document.getElementById("hargaOffline").value
+|| produkTerpilih.harga_offline
+|| 0
+);
+
+
+const hargaOnline =
+Number(
+document.getElementById("hargaOnline").value
+|| produkTerpilih.harga_online
+|| 0
+);
+
+
+const untungOffline =
+hargaOffline > 0
+? hargaOffline - hppUnit
+: 0;
+
+
+// Khusus Naget isi 25 online memakai plastik vakum Rp1.000 per lembar.
+const namaProdukUntukKemasanOnline = produkTerpilih ? String(produkTerpilih.nama_produk || "").toLowerCase() : "";
+// Semua varian Naget online memakai 1 lembar plastik vakum @Rp1.000.
+const biayaPlastikVakumOnline = namaProdukUntukKemasanOnline.startsWith("naget") ? 1000 : 0;
+const untungOnline =
+hargaOnline > 0
+? hargaOnline - (hppUnit + biayaPlastikVakumOnline)
+: 0;
+
+
+document.getElementById("biayaProduksi").value =
+rupiah(biayaProduksi);
+
+
+document.getElementById("hasilProduksi").textContent =
+rupiah(biayaProduksi);
+
+
+document.getElementById("hasilModal").textContent =
+rupiah(totalModal);
+
+// Untuk Naget isi 25, dua saus @Rp700 otomatis ditambahkan.
+document.getElementById("hasilBahan").textContent = rupiah(totalBiayaBahanDenganSaus);
+
+
+document.getElementById("hasilHpp").textContent = rupiah(Math.round(hppUnit));
+document.getElementById("hasilIsi").textContent = (produkTerpilih && produkTerpilih.nama_produk.toLowerCase() === "naget isi 25" ? 25 : isiPerBungkus()) + " pcs";
+const jumlahIsiTampil = (produkTerpilih && produkTerpilih.nama_produk.toLowerCase() === "naget isi 25" ? 25 : isiPerBungkus());
+document.getElementById("hasilHppBungkus").textContent = rupiah(Math.round(hppUnit * jumlahIsiTampil));
+
+
+document.getElementById("hasilUntungOffline").textContent =
+hargaOffline > 0
+? rupiah(Math.round(untungOffline))
+: "Belum diisi";
+
+
+document.getElementById("hasilUntungOnline").textContent =
+hargaOnline > 0
+? rupiah(Math.round(untungOnline))
+: "Belum diisi";
+
+
+document.getElementById("btnSimpan").disabled =
+jumlahHasilProduksi <= 0;
+
+}
+
+
+/* =========================
+   PILIH PRODUK
+========================= */
+
+document.getElementById("jumlahProduksi").addEventListener("input", function(){
+  if (produkTerpilih) hitungSemua();
+});
+
+document.getElementById("isiBungkusSelect").addEventListener("change", function(){
+  if (produkTerpilih) hitungSemua();
+});
+
+document.getElementById(
+"produkSelect"
+).addEventListener(
+"change",
+async function(){
+
+const id =
+this.value;
+const namaPilihan = this.options[this.selectedIndex] ? this.options[this.selectedIndex].textContent.trim() : "";
+
+
+if(!id){
+
+produkTerpilih = null;
+
+resepProduk = [];
+
+document.getElementById(
+"recipeBody"
+).innerHTML = `
+
+<tr>
+
+<td colspan="5" class="empty">
+
+Pilih produk terlebih dahulu.
+
+</td>
+
+</tr>
+
+`;
+
+document.getElementById(
+"jumlahProduksi"
+).value = "";
+
+document.getElementById(
+"totalBahan"
+).value = "Rp0";
+
+document.getElementById(
+"biayaProduksi"
+).value = "Rp0";
+
+document.getElementById(
+"hargaOffline"
+).value = "";
+
+document.getElementById(
+"hargaOnline"
+).value = "";
+
+document.getElementById(
+"hasilBahan"
+).textContent = "Rp0";
+
+document.getElementById(
+"hasilProduksi"
+).textContent = "Rp0";
+
+document.getElementById(
+"hasilModal"
+).textContent = "Rp0";
+
+document.getElementById(
+"hasilHpp"
+).textContent = "Rp0";
+
+document.getElementById(
+"hasilUntungOffline"
+).textContent = "Rp0";
+
+document.getElementById(
+"hasilUntungOnline"
+).textContent = "Rp0";
+
+document.getElementById(
+"btnSimpan"
+).disabled = true;
+
+return;
+
+}
+
+
+produkTerpilih =
+cariProduk(id);
+
+// Naget isi 25 adalah varian khusus: 25 pcs naget + tambahan saus.
+const nagetIsi25 = namaPilihan.toLowerCase() === "naget isi 25";
+if (nagetIsi25 && produkTerpilih) {
+  produkTerpilih = Object.assign({}, produkTerpilih, { nama_produk: "Naget isi 25", isi_per_bungkus: 25 });
+  document.getElementById("isiBungkusSelect").value = "10";
+  document.getElementById("isiBungkusSelect").disabled = true;
+} else {
+  document.getElementById("isiBungkusSelect").disabled = false;
+}
+
+
+resepProduk =
+resepData.filter(function(item){
+
+return String(item.produk_id) === String(id);
+
+});
+
+
+/*
+ Harga jual dari tabel produk
+*/
+
+document.getElementById(
+"hargaOffline"
+).value =
+produkTerpilih.harga_offline || "";
+
+
+document.getElementById(
+"hargaOnline"
+).value =
+produkTerpilih.harga_online || "";
+
+
+/*
+ Tampilkan resep berdasarkan
+ harga bahan baku TERBARU.
+*/
+
+tampilkanResep();
+
+hitungSemua();
+
+}
+);
+
+
+/* =========================
+   HARGA JUAL BERUBAH
+========================= */
+
+document.getElementById(
+"hargaOffline"
+).addEventListener(
+"input",
+hitungSemua
+);
+
+
+document.getElementById(
+"hargaOnline"
+).addEventListener(
+"input",
+hitungSemua
+);
+
+
+/* =========================
+   SIMPAN HPP
+========================= */
+
+document.getElementById(
+"btnSimpan"
+).addEventListener(
+"click",
+async function(){
+
+if(!produkTerpilih){
+
+tampilkanStatus(
+"Silakan pilih produk terlebih dahulu.",
+"error"
+);
+
+return;
+
+}
+
+
+if(jumlahHasilProduksi <= 0){
+
+tampilkanStatus(
+"Jumlah hasil produksi belum tersedia.",
+"error"
+);
+
+return;
+
+}
+
+
+const biayaProduksi =
+hitungBiayaProduksi();
+
+
+const biayaSausKhusus = (produkTerpilih && String(produkTerpilih.nama_produk).toLowerCase() === "naget isi 25") ? 1400 : 0;
+
+const totalBiayaBahanDenganSaus = totalBiayaBahan + biayaSausKhusus;
+
+const totalModal =
+totalBiayaBahanDenganSaus + biayaProduksi;
+
+
+const hppUnit =
+totalModal / jumlahHasilProduksi;
+
+
+const hargaOffline =
+Number(
+document.getElementById(
+"hargaOffline"
+).value || 0
+);
+
+
+const hargaOnline =
+Number(
+document.getElementById(
+"hargaOnline"
+).value || 0
+);
+
+
+const untungOffline =
+hargaOffline > 0
+? hargaOffline - hppUnit
+: null;
+
+
+const untungOnline =
+hargaOnline > 0
+? hargaOnline - hppUnit
+: null;
+
+
+/*
+ Cek apakah HPP produk ini sudah ada.
+*/
+
+const {
+data: hppLama,
+error: cariError
+} = await supabaseClient
+
+.from("hpp")
+
+.select("*")
+
+.eq("produk_id",produkTerpilih.id)
+
+.maybeSingle();
+
+
+if(cariError){
+
+tampilkanStatus(
+"Gagal mengecek HPP: " + cariError.message,
+"error"
+);
+
+return;
+
+}
+
+
+const dataHpp = {
+
+produk_id: produkTerpilih.id,
+
+total_bahan: totalBiayaBahan,
+
+biaya_produksi: biayaProduksi,
+
+jumlah_batch: jumlahHasilProduksi,
+
+total_modal: totalModal,
+
+hpp_unit: Math.round(hppUnit),
+
+harga_offline:
+hargaOffline > 0
+? hargaOffline
+: null,
+
+harga_online:
+hargaOnline > 0
+? hargaOnline
+: null,
+
+untung_offline:
+untungOffline !== null
+? Math.round(untungOffline)
+: null,
+
+untung_online:
+untungOnline !== null
+? Math.round(untungOnline)
+: null
+
+};
+
+
+let error;
+
+
+if(hppLama){
+
+const result =
+await supabaseClient
+
+.from("hpp")
+
+.update(dataHpp)
+
+.eq("id",hppLama.id);
+
+error = result.error;
+
+}
+
+else{
+
+const result =
+await supabaseClient
+
+.from("hpp")
+
+.insert([dataHpp]);
+
+error = result.error;
+
+}
+
+
+if(error){
+
+console.error(error);
+
+tampilkanStatus(
+"Gagal menyimpan HPP: " + error.message,
+"error"
+);
+
+return;
+
+}
+
+
+/*
+ Update harga jual produk juga
+ jika user mengisi harga baru.
+*/
+
+const updateProduk = {
+
+harga_offline:
+hargaOffline > 0
+? hargaOffline
+: produkTerpilih.harga_offline,
+
+harga_online:
+hargaOnline > 0
+? hargaOnline
+: produkTerpilih.harga_online
+
+};
+
+
+const {
+error: produkError
+} = await supabaseClient
+
+.from("produk")
+
+.update(updateProduk)
+
+.eq("id",produkTerpilih.id);
+
+
+if(produkError){
+
+console.error(produkError);
+
+}
+
+
+produkTerpilih.harga_offline =
+updateProduk.harga_offline;
+
+produkTerpilih.harga_online =
+updateProduk.harga_online;
+
+
+tampilkanStatus(
+"HPP " +
+produkTerpilih.nama_produk +
+" berhasil disimpan.",
+"success"
+);
+
+});
+
+
+/* =========================
+   STATUS
+========================= */
+
+function tampilkanStatus(pesan,tipe){
+
+const status =
+document.getElementById("status");
+
+
+status.textContent =
+pesan;
+
+
+status.className =
+"status " + tipe;
+
+}
+
+
+/* =========================
+   INIT
+========================= */
+
+async function init(){
+
+await loadProduk();
+
+await loadBahan();
+
+await loadResep();
+
+}
+
+
+init();
+
+</script>
+
+</body>
+</html>

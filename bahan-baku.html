@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bahan Baku - Familia Food v3</title>
+  <title>Bahan Baku - Familia Food</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script><script src="app-settings.js"></script>
+  <script src="supabase.js"></script>
 
   <style>
     * {
@@ -26,7 +26,7 @@
       top: 0;
       width: 220px;
       height: 100vh;
-      background: var(--brand-color,#087443);
+      background: #087443;
       color: white;
       padding: 25px 15px;
     }
@@ -71,7 +71,7 @@
 
     h1 {
       margin: 0;
-      color: var(--brand-color,#087443);
+      color: #087443;
     }
 
     .subtitle {
@@ -88,7 +88,7 @@
     }
 
     .btn-primary {
-      background: var(--brand-color,#087443);
+      background: #087443;
       color: white;
     }
 
@@ -98,7 +98,7 @@
 
     .btn-edit {
       background: #e9f6ef;
-      color: var(--brand-color,#087443);
+      color: #087443;
       margin-right: 5px;
     }
 
@@ -120,7 +120,7 @@
     }
 
     th {
-      background: var(--brand-color,#087443);
+      background: #087443;
       color: white;
       padding: 13px;
       text-align: left;
@@ -146,7 +146,7 @@
 
     .success {
       background: #e8f7ee;
-      color: var(--brand-color,#087443);
+      color: #087443;
     }
 
     .error {
@@ -179,7 +179,7 @@
     }
 
     .modal-title {
-      color: var(--brand-color,#087443);
+      color: #087443;
       margin-top: 0;
       margin-bottom: 20px;
     }
@@ -249,7 +249,7 @@
       }
 
       table {
-        min-width: 600px;
+        min-width: 750px;
       }
     }
   </style>
@@ -280,18 +280,13 @@
       <div>
         <h1>🌾 Bahan Baku</h1>
         <div class="subtitle">
-          Kelola bahan baku produksi dan kemasan Familia Food
+          Kelola bahan baku dan harga beli Familia Food
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-primary" onclick="bukaTambah(false)">
-          + Tambah Bahan
-        </button>
-        <button class="btn-primary" onclick="bukaTambah(true)">
-          + Tambah Kemasan
-        </button>
-      </div>
+      <button class="btn-primary" onclick="bukaTambah()">
+        + Tambah Bahan
+      </button>
     </div>
 
 
@@ -299,8 +294,7 @@
 
 
     <div class="card">
-      <h2 style="margin-top:0">🌾 Bahan Baku Produksi</h2>
-      <div class="hint" style="margin-bottom:12px">Bahan yang masuk ke resep produksi. Plastik/kemasan tidak ditampilkan di daftar ini.</div>
+
       <table>
         <thead>
           <tr>
@@ -311,42 +305,16 @@
             <th>Aksi</th>
           </tr>
         </thead>
+
         <tbody id="tabelBahan">
-          <tr><td colspan="5" class="loading">Memuat data...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card" style="margin-top:16px">
-      <h2 style="margin-top:0">📦 Kemasan</h2>
-      <div class="hint" style="margin-bottom:12px">Kemasan dikelola terpisah dari bahan baku dan hanya digunakan pada perhitungan HPP paket Offline/Online.</div>
-      <table>
-        <thead>
           <tr>
-            <th>Nama Kemasan</th>
-            <th>Satuan</th>
-            <th>Harga Beli</th>
-            <th>Status</th>
-            <th>Aksi</th>
+            <td colspan="6" class="loading">
+              Memuat data...
+            </td>
           </tr>
-        </thead>
-        <tbody id="tabelKemasan">
-          <tr><td colspan="5" class="loading">Memuat data...</td></tr>
         </tbody>
       </table>
-    </div>
 
-    <div class="card" style="margin-top:16px">
-      <h2 style="margin-top:0">⚙️ Overhead Produksi</h2>
-      <div class="hint" style="margin-bottom:12px">Overhead adalah biaya produksi harian yang dipakai bersama oleh Naget, Cireng Isi, Cireng Biasa, dan Cibay. Totalnya dibagi berdasarkan jumlah produksi PCS.</div>
-      <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px">
-        <div class="form-group"><label>Nama Overhead</label><input id="ohNama" type="text" placeholder="Contoh: Gas"></div>
-        <div class="form-group"><label>Nominal Harian</label><input id="ohNominal" type="number" min="0" step="1" placeholder="50000"></div>
-        <button class="btn-primary" type="button" onclick="tambahOverhead()">+ Tambah Overhead</button>
-      </div>
-      <table><thead><tr><th>Nama Overhead</th><th>Nominal / Hari</th><th>Aksi</th></tr></thead>
-      <tbody id="tabelOverhead"><tr><td colspan="3" class="loading">Memuat overhead...</td></tr></tbody>
-      <tfoot><tr><th>TOTAL OVERHEAD HARIAN</th><th id="totalOverhead">Rp 0</th><th></th></tr></tfoot></table>
     </div>
 
   </main>
@@ -368,15 +336,13 @@
 
         <div class="form-group">
           <label>Nama Bahan</label>
-
           <input
             type="text"
             id="namaBahan"
-            placeholder="Contoh: Aci"
+            placeholder="Contoh: Tepung Tapioka"
             required
           >
         </div>
-
 
         <div class="form-group">
           <label>Satuan</label>
@@ -392,7 +358,6 @@
           </select>
         </div>
 
-
         <div class="form-group">
           <label>Harga Beli</label>
 
@@ -405,7 +370,6 @@
           >
         </div>
 
-
         <div class="form-group">
           <label>Status</label>
 
@@ -414,7 +378,6 @@
             <option value="Arsip">Arsip</option>
           </select>
         </div>
-
 
         <div class="modal-actions">
 
@@ -445,7 +408,6 @@
 <script>
 
   let modeEdit = false;
-  let modeKemasan = false;
 
 
   // =========================
@@ -472,13 +434,12 @@
   // BUKA TAMBAH
   // =========================
 
-  function bukaTambah(isKemasan = false) {
+  function bukaTambah() {
 
     modeEdit = false;
-    modeKemasan = isKemasan;
 
     document.getElementById("judulModal").textContent =
-      isKemasan ? "Tambah Kemasan" : "Tambah Bahan";
+      "Tambah Bahan";
 
     document.getElementById("formBahan").reset();
 
@@ -514,7 +475,7 @@
       return "-";
     }
 
-    return "Rp " + Math.round(Number(angka)||0).toLocaleString("id-ID");
+    return "Rp " + Number(angka).toLocaleString("id-ID");
   }
 
 
@@ -528,7 +489,7 @@
 
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" class="loading">
+        <td colspan="6" class="loading">
           Memuat data...
         </td>
       </tr>
@@ -547,7 +508,7 @@
 
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" class="empty">
+          <td colspan="6" class="empty">
             Gagal mengambil data bahan baku.
           </td>
         </tr>
@@ -566,7 +527,7 @@
 
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" class="empty">
+          <td colspan="6" class="empty">
             Belum ada data bahan baku.
           </td>
         </tr>
@@ -577,10 +538,7 @@
 
 
     tbody.innerHTML = "";
-    const tbodyKemasan = document.getElementById("tabelKemasan");
-    tbodyKemasan.innerHTML = "";
-    let jumlahBahan = 0;
-    let jumlahKemasan = 0;
+
 
     data.forEach(bahan => {
 
@@ -596,11 +554,6 @@
         return;
       }
 
-      const namaNormal = (bahan.nama_bahan || "").toLowerCase().trim();
-      if (isOverheadName(bahan.nama_bahan)) return;
-      const isKemasan = namaNormal.includes("plastik") || namaNormal.includes("kemasan") || namaNormal.includes("vakum");
-      const targetBody = isKemasan ? tbodyKemasan : tbody;
-      if (isKemasan) jumlahKemasan++; else jumlahBahan++;
 
       const tr = document.createElement("tr");
 
@@ -646,12 +599,9 @@
       `;
 
 
-      targetBody.appendChild(tr);
+      tbody.appendChild(tr);
 
     });
-
-    if (!jumlahBahan) tbody.innerHTML = '<tr><td colspan="5" class="empty">Belum ada bahan baku produksi.</td></tr>';
-    if (!jumlahKemasan) tbodyKemasan.innerHTML = '<tr><td colspan="5" class="empty">Belum ada kemasan.</td></tr>';
 
   }
 
@@ -683,11 +633,10 @@
 
 
     modeEdit = true;
-    const namaEdit = (data.nama_bahan || "").toLowerCase();
-    modeKemasan = namaEdit.includes("plastik") || namaEdit.includes("kemasan");
+
 
     document.getElementById("judulModal").textContent =
-      modeKemasan ? "Edit Kemasan" : "Edit Bahan";
+      "Edit Bahan";
 
 
     document.getElementById("bahanId").value =
@@ -704,6 +653,7 @@
 
     document.getElementById("hargaBeli").value =
       data.harga_beli ?? "";
+
 
 
     document.getElementById("status").value =
@@ -742,6 +692,7 @@
         Number(document.getElementById("hargaBeli").value);
 
 
+
       const status =
         document.getElementById("status").value;
 
@@ -771,10 +722,6 @@
       }
 
 
-      if (nama.startsWith(OH_PREFIX)) {
-      tampilPesan("Nama overhead dikelola di bagian Overhead Produksi.", "error");
-      return;
-    }
 
       // Minyak tidak digunakan
 
@@ -848,7 +795,6 @@
 
 
       loadBahan();
-  loadOverhead();
 
     }
   );
@@ -899,7 +845,6 @@
 
 
     loadBahan();
-    loadOverhead();
 
   }
 
@@ -928,68 +873,10 @@
 
 
   // =========================
-  // OVERHEAD PRODUKSI
-  // =========================
-  const OH_PREFIX = "__OH__:";
-  const OH_LEGACY_PREFIX = "__OVERHEAD__";
-  function isOverheadName(nama) {
-    const n = String(nama || "");
-    return n.startsWith(OH_PREFIX) || n.startsWith(OH_LEGACY_PREFIX);
-  }
-  function overheadDisplayName(nama) {
-    const n=String(nama || "");
-    if(n.startsWith(OH_PREFIX)) return n.slice(OH_PREFIX.length);
-    if(n.startsWith(OH_LEGACY_PREFIX)) return n.slice(OH_LEGACY_PREFIX.length).replace(/^[:_\-]?/, "");
-    return n;
-  }
-  async function loadOverhead() {
-    const body = document.getElementById("tabelOverhead");
-    if (!body) return;
-    const { data, error } = await supabaseClient.from("bahan_baku").select("*").order("id", { ascending: true });
-    if (error) { body.innerHTML = '<tr><td colspan="3" class="empty">Gagal mengambil overhead.</td></tr>'; return; }
-    const rows = (data || []).filter(x => isOverheadName(x.nama_bahan) && String(x.status || x.statustext || 'Aktif').toLowerCase() !== 'arsip');
-    body.innerHTML = rows.length ? rows.map(x => {
-      const display = overheadDisplayName(x.nama_bahan);
-      const safeName = escapeHtml(display);
-      const safeJsName = escapeJs(display);
-      const nominal = Number(x.harga_beli) || 0;
-      return `<tr>
-        <td><input data-oh-name="${x.id}" aria-label="Nama overhead" value="${safeName}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px;color:#17352a;background:#fff"></td>
-        <td><input data-oh-value="${x.id}" aria-label="Nominal overhead harian" type="number" min="0" step="1" value="${nominal}" style="width:100%;padding:8px;border:1px solid #ccd9d2;border-radius:7px;color:#17352a;background:#fff"></td>
-        <td><button class="btn-edit" type="button" onclick="simpanOverhead(${x.id})">Simpan</button> <button class="btn-delete" type="button" onclick="hapusOverhead(${x.id}, '${safeJsName}')">Hapus</button></td>
-      </tr>`;
-    }).join('') : '<tr><td colspan="3" class="empty">Belum ada overhead.</td></tr>';
-    const total = rows.reduce((a,x)=>a+(Number(x.harga_beli)||0),0);
-    document.getElementById("totalOverhead").textContent = rupiah(total);
-  }
-  async function tambahOverhead(){
-    const nama=document.getElementById("ohNama").value.trim(), nominal=Number(document.getElementById("ohNominal").value)||0;
-    if(!nama || nominal<=0){tampilPesan("Nama overhead dan nominal harian wajib diisi.","error");return;}
-    const r=await supabaseClient.from("bahan_baku").insert([{nama_bahan:OH_PREFIX+nama,satuan:"Harian",harga_beli:nominal,status:"Aktif"}]);
-    if(r.error){tampilPesan("Gagal menyimpan overhead: "+r.error.message,"error");return;}
-    document.getElementById("ohNama").value="";document.getElementById("ohNominal").value="";tampilPesan("Overhead berhasil ditambahkan.","success");loadOverhead();
-  }
-  async function simpanOverhead(id){
-    const n=document.querySelector(`[data-oh-name="${id}"]`),v=document.querySelector(`[data-oh-value="${id}"]`);
-    const nama=(n?.value||"").trim(), nominal=Number(v?.value)||0;
-    if(!nama||nominal<=0){tampilPesan("Nama overhead dan nominal harus benar.","error");return;}
-    const r=await supabaseClient.from("bahan_baku").update({nama_bahan:OH_PREFIX+nama,satuan:"Harian",harga_beli:nominal,status:"Aktif"}).eq("id",id);
-    if(r.error){tampilPesan("Gagal memperbarui overhead: "+r.error.message,"error");return;}
-    tampilPesan("Overhead berhasil diperbarui.","success");loadOverhead();
-  }
-  async function hapusOverhead(id,nama){
-    if(!confirm(`Hapus overhead "${nama}"?`))return;
-    const r=await supabaseClient.from("bahan_baku").delete().eq("id",id);
-    if(r.error){tampilPesan("Gagal menghapus overhead: "+r.error.message,"error");return;}
-    tampilPesan("Overhead berhasil dihapus.","success");loadOverhead();
-  }
-
-  // =========================
   // MULAI
   // =========================
 
-  // Muat daftar bahan dan overhead secara terpisah agar panel overhead tidak tertinggal.
-  Promise.all([loadBahan(), loadOverhead()]).catch(e => console.error("Gagal memuat bahan/overhead:", e));
+  loadBahan();
 
 </script>
 

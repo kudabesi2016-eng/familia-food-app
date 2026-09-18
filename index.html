@@ -1,151 +1,23 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Familia Food - Dashboard</title>
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard POS — Familia Food</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script><script src="app-settings.js"></script>
 <style>
-*{box-sizing:border-box}
-:root{--brand:#146b3a;--brand2:#1f844b;--bg:#f5f7f6;--muted:#777}
-body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
-.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand);color:#fff;padding:22px 15px}
-.logo{font-size:22px;font-weight:bold;padding:10px;margin-bottom:25px}.menu{display:block;color:#fff;text-decoration:none;padding:13px 15px;margin:4px 0;border-radius:9px}.menu:hover,.menu.active{background:var(--brand2)}
-.main{margin-left:240px;padding:30px}.header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:25px}.header h1{margin:0 0 8px;color:var(--brand)}.header p{margin:0;color:var(--muted)}
-.refresh{border:0;background:var(--brand);color:#fff;padding:10px 16px;border-radius:9px;cursor:pointer;font-weight:bold}.refresh:hover{background:var(--brand2)}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.card{background:#fff;padding:20px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);min-height:112px}.card-title{color:var(--muted);font-size:14px}.card-number{font-size:28px;font-weight:bold;color:var(--brand);margin-top:10px;word-break:break-word}
-.section{margin-top:25px}.section h2{color:var(--brand);margin-bottom:14px}.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.quick a{text-decoration:none;background:#fff;color:var(--brand);padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);font-weight:bold}.quick a:hover{background:#eaf5ee}
-.status{margin-top:25px;background:#fff;padding:18px 20px;border-radius:12px;color:#666}.status strong{color:var(--brand)}
-@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.quick{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:800px){.sidebar{width:100%;height:auto;position:relative}.main{margin-left:0;padding:20px}.header{flex-direction:column}.quick{grid-template-columns:1fr}}
-@media(max-width:500px){.cards{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<div class="sidebar">
-  <div class="logo">🍀 Familia Food</div>
-  <a class="menu active" href="index.html">🏠 Dashboard</a>
-  <a class="menu" href="produk.html">📦 Produk</a>
-  <a class="menu" href="bahan-baku.html">🥣 Bahan Baku</a>
-  <a class="menu" href="resep.html">📋 Resep</a>
-  <a class="menu" href="hpp.html">💰 HPP</a>
-  <a class="menu" href="penjualan.html">🛒 Penjualan</a>
-  <a class="menu" href="rekap.html">📊 Rekap</a>
-  <a class="menu" href="data-lama.html">📁 Data Lama</a>
-  <a class="menu" href="pengaturan.html">⚙️ Pengaturan</a>
-</div>
-<div class="main">
-  <div class="header">
-    <div><h1>Dashboard</h1><p>Ringkasan usaha <b>Familia Food</b> dari data master, transaksi baru, dan data historis.</p></div>
-    <button class="refresh" id="refreshBtn" type="button">↻ Muat Ulang</button>
-  </div>
-  <div class="cards">
-    <div class="card"><div class="card-title">Produk Aktif</div><div class="card-number" id="totalProduk">-</div></div>
-    <div class="card"><div class="card-title">Bahan Baku Aktif</div><div class="card-number" id="totalBahan">-</div></div>
-    <div class="card"><div class="card-title">Resep Produk</div><div class="card-number" id="totalResep">-</div></div>
-    <div class="card"><div class="card-title">Transaksi Baru</div><div class="card-number" id="totalPenjualan">-</div></div>
-    <div class="card"><div class="card-title">Data Lama</div><div class="card-number" id="totalDataLama">-</div></div>
-    <div class="card"><div class="card-title">Omzet Data Lama</div><div class="card-number" id="omzetDataLama">Rp 0</div></div>
-    <div class="card"><div class="card-title">Omzet Penjualan Baru</div><div class="card-number" id="omzetPenjualanBaru">Rp 0</div></div>
-    <div class="card"><div class="card-title">Omzet Gabungan</div><div class="card-number" id="omzetGabungan">Rp 0</div></div>
-    <div class="card"><div class="card-title">Pengeluaran Historis</div><div class="card-number" id="pengeluaranDataLama">Rp 0</div></div>
-    <div class="card"><div class="card-title">HPP Penjualan Baru</div><div class="card-number" id="hppPenjualanBaru">Rp 0</div></div>
-    <div class="card"><div class="card-title">Laba Penjualan Baru</div><div class="card-number" id="labaPenjualanBaru">Rp 0</div></div>
-    <div class="card"><div class="card-title">Hasil Bersih Terukur</div><div class="card-number" id="hasilBersih">Rp 0</div></div>
-  </div>
-  <div class="section"><h2>Akses Cepat</h2><div class="quick">
-    <a href="produk.html">📦 Kelola Produk</a><a href="bahan-baku.html">🥣 Kelola Bahan Baku</a><a href="resep.html">📋 Kelola Resep</a><a href="hpp.html">💰 Hitung HPP</a><a href="penjualan.html">🛒 Catat Penjualan</a><a href="rekap.html">📊 Lihat Rekap</a><a href="data-lama.html">📁 Data Lama</a>
-  </div></div>
-  <div class="status" id="statusBox"><strong>Status Aplikasi</strong><p id="statusText">Memuat data dari database...</p></div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script><script src="app-settings.js"></script>
+:root{--brand:#087443;--soft:#eaf6ef;--bg:#f5faf7;--line:#dce8e1;--text:#26352d;--muted:#68736d;--blue:#2563eb}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}.sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid var(--line);padding:20px 14px}.brand{font-size:20px;font-weight:700;color:var(--brand);margin:4px 8px 22px}.nav a{display:block;text-decoration:none;color:#315247;padding:11px 12px;border-radius:9px;margin:4px 0}.nav a:hover,.nav a.active{background:var(--soft);color:var(--brand);font-weight:700}main{margin-left:230px;padding:28px;max-width:1500px}h1{margin:0 0 6px;color:var(--brand)}.sub{color:var(--muted)}.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:18px}.btn{border:0;border-radius:9px;padding:10px 14px;background:var(--brand);color:#fff;cursor:pointer;font-weight:700}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}.card small{display:block;color:var(--muted);margin-bottom:7px}.card strong{font-size:22px}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}.channel h2{margin-top:0;color:var(--brand)}.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.metric{background:#f7fbf8;border:1px solid #e2eee6;border-radius:10px;padding:12px}.metric b{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.quick a{text-decoration:none;padding:14px;background:#fff;border:1px solid var(--line);border-radius:10px;color:var(--brand);font-weight:700}.status{margin-top:16px;padding:13px;background:#fff;border:1px solid var(--line);border-radius:10px}.hint{font-size:12px;color:var(--muted)}
+@media(max-width:1050px){.cards{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.quick{grid-template-columns:repeat(2,1fr)}}@media(max-width:850px){.sidebar{position:static;width:auto}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}main{margin-left:0;padding:16px}.top{flex-direction:column}}@media(max-width:600px){.cards,.quick{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}}
+</style></head><body>
+<aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav"><a class="active" href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a></nav></aside>
+<main><div class="top"><div><h1>Dashboard POS</h1><div class="sub">Familia Food • <b>Offline + Online</b> • data lama dan transaksi baru tersambung per bulan.</div></div><button class="btn" id="reload">↻ Muat Ulang</button></div>
+<div class="cards"><div class="card"><small>Pemasukan Offline</small><strong id="offRev">Rp 0</strong></div><div class="card"><small>Pemasukan Online</small><strong id="onRev">Rp 0</strong></div><div class="card"><small>Pengeluaran + Potongan</small><strong id="outAll">Rp 0</strong></div><div class="card"><small>Uang Bersih</small><strong id="net">Rp 0</strong></div><div class="card"><small>Profit Terukur</small><strong id="profit">—</strong></div></div>
+<div class="two"><div class="card channel"><h2>🛍️ Offline</h2><div class="metrics"><div class="metric"><b>Data Lama</b><span id="offOld">0 baris</span></div><div class="metric"><b>Transaksi Baru</b><span id="offNew">0</span></div><div class="metric"><b>Pengeluaran</b><span id="offExp">Rp 0</span></div><div class="metric"><b>HPP / Modal</b><span id="offHpp">—</span></div><div class="metric"><b>Uang Bersih</b><span id="offNet">Rp 0</span></div><div class="metric"><b>Profit</b><span id="offProfit">—</span></div></div></div><div class="card channel"><h2>📱 Online</h2><div class="metrics"><div class="metric"><b>Baris Income</b><span id="onRows">0</span></div><div class="metric"><b>Detail Seller Center</b><span id="onSeller">0</span></div><div class="metric"><b>Potongan / Selisih</b><span id="onFee">Rp 0</span></div><div class="metric"><b>HPP / Modal</b><span id="onHpp">—</span></div><div class="metric"><b>Uang Bersih</b><span id="onNet">Rp 0</span></div><div class="metric"><b>Profit</b><span id="onProfit">—</span></div></div></div></div>
+<div class="card" style="margin-top:16px"><h2 style="margin-top:0">Akses Cepat</h2><div class="quick"><a href="penjualan.html">💰 POS / Penjualan</a><a href="rekap.html">📊 Rekap + Lihat Data</a><a href="produk.html">📦 Produk</a><a href="hpp.html">🧮 HPP</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a></div><div class="status"><b>Status:</b> <span id="status">Memuat database…</span><div class="hint" style="margin-top:5px">Data lama Offline dibaca dari <code>data_lama</code>. Data baru dan Online dibaca dari <code>penjualan</code>.</div></div></div>
+</main>
 <script>
-const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
-const isActive=row=>String(row?.statustext ?? row?.status ?? "Aktif").toLowerCase()!=="arsip" && String(row?.statustext ?? row?.status ?? "Aktif").toLowerCase()!=="nonaktif";
-const isOverhead=row=>/^(__OH__|__OVERHEAD__)/i.test(String(row?.nama_bahan||""));
-async function fetchAll(table, select="*"){
-  const page=1000; let offset=0, all=[];
-  while(true){
-    const r=await supabaseClient.from(table).select(select).range(offset,offset+page-1);
-    if(r.error) throw r.error;
-    const rows=r.data||[]; all.push(...rows);
-    if(rows.length<page) break;
-    offset+=page;
-  }
-  return all;
-}
-async function loadDashboard(){
-  const ids={totalProduk:"-",totalBahan:"-",totalResep:"-",totalPenjualan:"-",totalDataLama:"-",omzetDataLama:"Rp 0",omzetPenjualanBaru:"Rp 0",omzetGabungan:"Rp 0",pengeluaranDataLama:"Rp 0",hppPenjualanBaru:"Rp 0",labaPenjualanBaru:"Rp 0",hasilBersih:"Rp 0"};
-  Object.entries(ids).forEach(([id,v])=>document.getElementById(id).textContent=v);
-  document.getElementById("statusText").textContent="Memuat data dari database...";
-  try{
-    const results=await Promise.allSettled([
-      fetchAll("produk"),fetchAll("bahan_baku"),fetchAll("resep"),fetchAll("penjualan"),fetchAll("data_lama"),fetchAll("pengeluaran")
-    ]);
-    const [rp,rb,rr,rs,rd,re]=results;
-    const errors=[];
-    const products=rp.status==="fulfilled"?rp.value:[]; if(rp.status!=="fulfilled") errors.push("Produk");
-    const bahan=rb.status==="fulfilled"?rb.value:[]; if(rb.status!=="fulfilled") errors.push("Bahan Baku");
-    const resep=rr.status==="fulfilled"?rr.value:[]; if(rr.status!=="fulfilled") errors.push("Resep");
-    const sales=rs.status==="fulfilled"?rs.value:[]; if(rs.status!=="fulfilled") errors.push("Penjualan");
-    const old=rd.status==="fulfilled"?rd.value:[]; if(rd.status!=="fulfilled") errors.push("Data Lama");
-    const expenseRows=re.status==="fulfilled"?re.value:[]; if(re.status!=="fulfilled") errors.push("Pengeluaran");
-
-    const activeProducts=products.filter(isActive);
-    const activeMaterials=bahan.filter(x=>isActive(x)&&!isOverhead(x));
-    const recipeProducts=new Set(resep.map(x=>x.produk_id).filter(Boolean));
-
-    // Data Lama: omzet hanya dari nominal historis yang tersimpan.
-    const oldOmzet=old.reduce((s,x)=>s+Number(x.nominal||0),0);
-
-    // Pengeluaran historis di Supabase berisi dua kumpulan data historis
-    // sehingga menjumlahkan semua baris akan menggandakan biaya. Dashboard
-    // mengikuti angka Rekap bulanan yang sudah ditetapkan sebagai sumber historis.
-    const HISTORICAL_EXPENSE_TOTALS={
-      "2026-01":26102300,
-      "2026-02":29586000,
-      "2026-03":26182325,
-      "2026-04":27758500,
-      "2026-05":20462800,
-      "2026-06":26517000,
-      "2026-07":32997500,
-      "2026-08":9671700
-    };
-    const oldExpense=Object.values(HISTORICAL_EXPENSE_TOTALS).reduce((s,n)=>s+n,0);
-
-    // Penjualan Baru: jangan bergantung pada kolom total karena database
-    // saat ini memiliki beberapa baris dengan total = NULL.
-    const newOmzet=sales.reduce((s,x)=>s+(Number(x.total)!=0?Number(x.total):Number(x.qty||0)*Number(x.harga||0)),0);
-    const newHpp=sales.reduce((s,x)=>s+Number(x.hpp||0),0);
-    const newLaba=sales.reduce((s,x)=>s+Number(x.laba||0),0);
-
-    // Hasil bersih terukur: untuk data historis, tidak mengarang HPP.
-    // Untuk transaksi baru, gunakan laba yang benar-benar tersimpan.
-    const hasilBersih=(oldOmzet-oldExpense)+newLaba;
-
-    document.getElementById("totalProduk").textContent=activeProducts.length;
-    document.getElementById("totalBahan").textContent=activeMaterials.length;
-    document.getElementById("totalResep").textContent=recipeProducts.size;
-    document.getElementById("totalPenjualan").textContent=sales.length;
-    document.getElementById("totalDataLama").textContent=old.length;
-    document.getElementById("pengeluaranDataLama").textContent=rupiah(oldExpense);
-    document.getElementById("omzetDataLama").textContent=rupiah(oldOmzet);
-    document.getElementById("omzetPenjualanBaru").textContent=rupiah(newOmzet);
-    document.getElementById("omzetGabungan").textContent=rupiah(oldOmzet+newOmzet);
-    document.getElementById("hppPenjualanBaru").textContent=rupiah(newHpp);
-    document.getElementById("labaPenjualanBaru").textContent=rupiah(newLaba);
-    document.getElementById("hasilBersih").textContent=rupiah(hasilBersih);
-
-    document.getElementById("statusText").textContent=errors.length
-      ?"Sebagian data gagal dimuat: "+errors.join(", ")+". Data lain tetap ditampilkan."
-      :"Database terhubung dan seluruh data dashboard berhasil dimuat.";
-  }catch(e){
-    console.error(e);
-    document.getElementById("statusText").textContent="Gagal memuat dashboard. Periksa koneksi database.";
-  }
-}
-document.getElementById("refreshBtn").addEventListener("click",loadDashboard);
-loadDashboard();
-</script>
-</body>
-</html>
+const $=id=>document.getElementById(id),rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
+async function fetchAll(table,select='*'){let out=[],start=0;while(true){const r=await supabaseClient.from(table).select(select).range(start,start+999);if(r.error)throw r.error;const d=r.data||[];out.push(...d);if(d.length<1000)break;start+=1000}return out}
+function hppMapByProduct(products,hpps){const m=new Map();const pm=new Map((products||[]).map(p=>[String(p.id),p]));for(const h of hpps||[]){const p=pm.get(String(h.produk_id));if(p)m.set(String(p.nama_produk||'').trim().toLowerCase(),Number(h.hpp_unit||0))}return m}
+function revenueOffline(dataOld,sales){return (dataOld||[]).reduce((a,x)=>a+Number(x.nominal||0),0)+(sales||[]).filter(x=>x.channel==='Offline').reduce((a,x)=>a+Number(x.omzet_produk??(Number(x.qty||0)*Number(x.harga||0))),0)}
+function hppOffline(dataOld,sales,hppMap){let total=0,known=true;for(const x of dataOld||[]){const h=hppMap.get(String(x.jenis||'').trim().toLowerCase());if(h==null||!Number.isFinite(h)||!h){known=false;continue}total+=Number(x.catatan||0)*h}for(const x of sales.filter(x=>x.channel==='Offline')){if(x.modal_hpp==null){known=false;continue}total+=Number(x.modal_hpp||0)}return {total,known}}
+function onlineFinance(sales){const rows=sales.filter(x=>String(x.source||'').startsWith('income_tiktok'));const orders=rows.filter(x=>x.source==='income_tiktok_pesanan');const rev=orders.reduce((a,x)=>a+Number(x.omzet_produk||0),0);const net=rows.reduce((a,x)=>a+Number(x.uang_bersih||0),0);const fee=rev-net;const hrows=rows.filter(x=>x.modal_hpp!=null);const hpp=hrows.reduce((a,x)=>a+Number(x.modal_hpp||0),0);return {rows,rev,net,fee,hpp,hppKnown:hrows.length===orders.length&&orders.length>0,seller:sales.filter(x=>x.source==='seller_center').length}}
+async function load(){try{const [sales,old,expenses,products,hpps]=await Promise.all([fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran'),fetchAll('produk'),fetchAll('hpp')]);const off=sales.filter(x=>x.channel==='Offline');const exp=(expenses||[]).reduce((a,x)=>a+Number(x.nominal||0),0);const offH=hppOffline(old,off,hppMapByProduct(products,hpps));const offRev=revenueOffline(old,off);const offNet=offRev-exp;const offProfit=offH.known?offNet-offH.total:null;const on=onlineFinance(sales);const onProfit=on.hppKnown?on.net-on.hpp:null;const totalProfit=offProfit==null||onProfit==null?(offProfit!=null&&on.rows.length===0?offProfit:(onProfit!=null&&old.length===0?onProfit:null)):offProfit+onProfit;$('offRev').textContent=rupiah(offRev);$('onRev').textContent=rupiah(on.rev);$('outAll').textContent=rupiah(exp+Math.max(0,on.fee));$('net').textContent=rupiah(offNet+on.net);$('profit').textContent=totalProfit==null?'—':rupiah(totalProfit);$('offOld').textContent=(old||[]).length.toLocaleString('id-ID')+' baris';$('offNew').textContent=off.length.toLocaleString('id-ID');$('offExp').textContent=rupiah(exp);$('offHpp').textContent=offH.known?rupiah(offH.total):'—';$('offNet').textContent=rupiah(offNet);$('offProfit').textContent=offProfit==null?'—':rupiah(offProfit);$('onRows').textContent=on.rows.length.toLocaleString('id-ID');$('onSeller').textContent=on.seller.toLocaleString('id-ID');$('onFee').textContent=rupiah(Math.max(0,on.fee));$('onHpp').textContent=on.hppKnown?rupiah(on.hpp):'—';$('onNet').textContent=rupiah(on.net);$('onProfit').textContent=onProfit==null?'—':rupiah(onProfit);$('status').textContent='Database terhubung • '+new Date().toLocaleString('id-ID')}catch(e){console.error(e);$('status').textContent='Gagal memuat database: '+e.message}}
+$('reload').onclick=load;load();
+</script></body></html>
