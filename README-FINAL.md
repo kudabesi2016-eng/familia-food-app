@@ -47,3 +47,9 @@ Belum ada klaim bahwa versi final ini sudah ter-deploy ke GitHub Pages. Setelah 
 - `Familia-Food-Import-Online-SIAP.xlsx` dan `Online Database (8).xlsx` tetap kompatibel.
 - Halaman Data Lama sekarang juga memuat transaksi Online historis ke ringkasan dan detail bulanan tanpa menggandakan Pemasukan dari Seller Center.
 - Tidak ada perubahan struktur/isi Supabase oleh patch ini.
+
+
+## Patch v7 — Preview Online
+- Preview Data Lama Online sekarang menampilkan tepat: **Sumber | Bulan | Produk | Qty | Pemasukan | Uang Bersih | Modal/HPP | Profit**.
+- Bila file TikTok Income dan Seller Center/Pesanan dipilih bersama, preview menghubungkan order berdasarkan ID pesanan. Pemasukan/Uang Bersih dialokasikan ke produk berdasarkan proporsi nilai produk agar tidak menggandakan omzet pada order multi-produk.
+- Modal/HPP mengambil master HPP; Profit = Uang Bersih − Modal/HPP hanya bila HPP tersedia. Jika sumber tidak menyediakan data yang diperlukan, tampil **—**.
