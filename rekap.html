@@ -17,11 +17,53 @@
 const $=id=>document.getElementById(id),rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID'),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));let sales=[],olds=[],expenses=[],products=[],hpps=[];
 async function fetchAll(table,select='*'){let out=[],start=0;while(true){const r=await supabaseClient.from(table).select(select).range(start,start+999);if(r.error)throw r.error;const d=r.data||[];out.push(...d);if(d.length<1000)break;start+=1000}return out}
 const monthOf=x=>String(x||'').slice(0,7);
-function hppMap(){const pm=new Map(products.map(p=>[String(p.id),p]));const m=new Map();for(const h of hpps){const p=pm.get(String(h.produk_id));if(p)m.set(String(p.nama_produk||'').trim().toLowerCase(),Number(h.hpp_unit||0))}return m}
-function expenseMonth(x){return monthOf(x.periode)||monthOf(x.tanggal)||monthOf(x.created_at)}
-function oldRows(m){return olds.filter(x=>monthOf(x.periode)===m).map(x=>({channel:'Offline',source:'data_lama',tanggal:m,product_name:x.jenis,qty:Number(x.catatan||0),revenue:Number(x.nominal||0),net:Number(x.nominal||0),hpp:null,profit:null,knownHpp:false}))}
-function newOffline(m){return sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m).map(x=>({channel:'Offline',source:x.source,tanggal:x.tanggal,product_name:x.product_name||'-',qty:Number(x.qty||0),revenue:Number(x.omzet_produk??(Number(x.qty||0)*Number(x.harga||0))),net:Number(x.uang_bersih??x.omzet_produk??(Number(x.qty||0)*Number(x.harga||0))),hpp:x.modal_hpp!=null?Number(x.modal_hpp):x.hpp!=null?Number(x.hpp):null,profit:x.profit_online!=null?Number(x.profit_online):x.laba!=null?Number(x.laba):null,knownHpp:x.modal_hpp!=null||x.hpp!=null}))}
-function onlineRows(m){return sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&String(x.source||'').startsWith('income_tiktok')).map(x=>({channel:'Online',source:x.source,tanggal:x.tanggal,product_name:x.product_name||'-',qty:Number(x.qty||0),revenue:Number(x.omzet_produk||0),net:Number(x.uang_bersih||0),hpp:x.modal_hpp!=null?Number(x.modal_hpp):null,profit:x.profit_online!=null?Number(x.profit_online):null,knownHpp:x.modal_hpp!=null}))}
+function normalizeKey(v){return String(v??'').trim().toLowerCase().replace(/[()\[\],.:\/-]+/g,' ').replace(/\s+/g,' ').trim()}
+function findMasterProduct(name, id=null){
+  const byId = id!=null ? products.find(p=>String(p.id)===String(id)) : null;
+  if(byId) return byId;
+  const raw=normalizeKey(name);
+  if(!raw) return null;
+  const exact=products.find(p=>normalizeKey(p.nama_produk)===raw);
+  if(exact) return exact;
+  const aliases=[
+    [/^naget isi 10$/,/^naget 10/],
+    [/^naget isi 12$/,/^naget 12/],
+    [/^naget isi 20$/,/^naget 20/],
+    [/^naget isi 25\+ saus$/,/^naget 25/],
+    [/^naget isi 30$/,/^naget 30/],
+    [/^naget isi 40$/,/^naget 40/],
+    [/^naget isi 50$/,/^naget 50/],
+    [/^cireng isi 10$/,/^cireng isi/],
+    [/^cireng biasa$/,/^cireng biasa/],
+    [/^cibay isi 10$/,/^cibay/]
+  ];
+  for(const [a,b] of aliases){if(a.test(raw)){const hit=products.find(p=>b.test(normalizeKey(p.nama_produk)));if(hit)return hit;}}
+  const tokens=raw.split(' ').filter(Boolean);
+  let best=null,bestScore=0;
+  for(const p of products){
+    const k=normalizeKey(p.nama_produk); if(!k) continue;
+    let score=0; for(const t of tokens){ if(k.includes(t)) score+=1; }
+    if(score>bestScore && score>=Math.min(2,tokens.length)){best=p;bestScore=score;}
+  }
+  return best;
+}
+function hppMap(){
+  const m=new Map();
+  const pm=new Map(products.map(p=>[String(p.id),p]));
+  for(const h of hpps){const p=pm.get(String(h.produk_id));if(p)m.set(String(p.id),Number(h.hpp_unit||0));}
+  return m;
+}
+function resolveHppForRow(x){const p=findMasterProduct(x.product_name,x.produk_id);if(!p)return null;const h=hppMap().get(String(p.id));return Number.isFinite(h)?h:null}
+function expenseMonth(x){
+  const p=String(x.periode||'').trim();
+  if(/^\d{4}-\d{2}$/.test(p)) return p;
+  const t=monthOf(x.tanggal); if(/^\d{4}-\d{2}$/.test(t)) return t;
+  return null;
+}
+function isRangeExpense(x){const p=String(x.periode||'').trim();return p!==''&&!/^\d{4}-\d{2}$/.test(p)}
+function oldRows(m){return olds.filter(x=>monthOf(x.periode)===m).map(x=>({channel:'Offline',source:'data_lama',tanggal:m,product_id:null,product_name:(findMasterProduct(x.jenis)?.nama_produk||x.jenis||'-'),qty:Number(x.catatan||0),revenue:Number(x.nominal||0),net:Number(x.nominal||0),hpp:null,profit:null,knownHpp:false,oldName:x.jenis}))}
+function newOffline(m){return sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m).map(x=>{const p=findMasterProduct(x.product_name,x.produk_id);return {channel:'Offline',source:x.source,tanggal:x.tanggal,product_id:x.produk_id,product_name:p?.nama_produk||x.product_name||'-',qty:Number(x.qty||0),revenue:Number(x.omzet_produk??(Number(x.qty||0)*Number(x.harga||0))),net:Number(x.uang_bersih??x.omzet_produk??(Number(x.qty||0)*Number(x.harga||0))),hpp:x.modal_hpp!=null?Number(x.modal_hpp):x.hpp!=null?Number(x.hpp):null,profit:x.profit_online!=null?Number(x.profit_online):x.laba!=null?Number(x.laba):null,knownHpp:x.modal_hpp!=null||x.hpp!=null}})}
+function onlineRows(m){return sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&String(x.source||'').startsWith('income_tiktok')).map(x=>({channel:'Online',source:x.source,tanggal:x.tanggal,product_id:x.produk_id,product_name:x.product_name||'-',qty:Number(x.qty||0),revenue:Number(x.omzet_produk||0),net:Number(x.uang_bersih||0),hpp:x.modal_hpp!=null?Number(x.modal_hpp):null,profit:x.profit_online!=null?Number(x.profit_online):null,knownHpp:x.modal_hpp!=null}))}
 function onlineSellerRows(m){return sales.filter(x=>x.channel==='Online'&&x.source==='seller_center'&&monthOf(x.tanggal)===m).map(x=>({product_name:x.product_name||'-',qty:Number(x.qty||0),revenue:Number(x.omzet_produk||0),hpp:x.modal_hpp!=null?Number(x.modal_hpp):null,profit:x.profit_online!=null?Number(x.profit_online):null}))}
 function getMonths(){const set=new Set();olds.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});sales.forEach(x=>{if(/^\d{4}-\d{2}$/.test(monthOf(x.tanggal)))set.add(monthOf(x.tanggal))});expenses.forEach(x=>{const m=expenseMonth(x);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});return [...set].sort().reverse()}
 function monthLabel(m){const d=new Date(m+'-01T00:00:00');return d.toLocaleDateString('id-ID',{month:'long',year:'numeric'})}
@@ -34,8 +76,8 @@ function finance(m,c){
       rev+=r.revenue;
       net+=r.net;
       if(r.source==='data_lama'){
-        const h=hmap.get(String(r.product_name).trim().toLowerCase());
-        if(h) hpp+=r.qty*h; else hppKnown=false;
+        const h=resolveHppForRow(r);
+        if(h!=null) hpp+=r.qty*h; else hppKnown=false;
       }else if(r.knownHpp){
         hpp+=Number(r.hpp||0);
       }else{
@@ -65,13 +107,13 @@ function finance(m,c){
 function renderCards(){const m=$('month').value,c=$('channel').value||'all';if(!m)return;const f=finance(m,c);$('rev').textContent=rupiah(f.rev);$('out').textContent=rupiah(f.out);$('net').textContent=rupiah(f.net);$('hpp').textContent=f.hppKnown?rupiah(f.hpp):'—';$('profit').textContent=f.hppKnown&&f.profitKnown?rupiah(f.profit):'—'}
 function monthlyRows(){const months=getMonths();const arr=[];for(const m of months){for(const c of ['Offline','Online']){const f=finance(m,c);const has=c==='Offline'?(oldRows(m).length+newOffline(m).length+expenses.filter(x=>expenseMonth(x)===m).length)>0:onlineRows(m).length+onlineSellerRows(m).length>0;if(has)arr.push({m,c,f})}}return arr}
 function renderMonthly(){const rows=monthlyRows();const filter=$('channel').value;const shown=filter==='all'?rows:rows.filter(r=>r.c===filter);$('monthly').innerHTML=shown.length?shown.map((r,i)=>`<tr><td>${esc(monthLabel(r.m))}</td><td><span class="pill ${r.c==='Online'?'online':'offline'}">${r.c}</span></td><td>${rupiah(r.f.rev)}</td><td>${rupiah(r.f.out)}</td><td>${rupiah(r.f.net)}</td><td>${r.f.hppKnown?rupiah(r.f.hpp):'—'}</td><td>${r.f.hppKnown&&r.f.profitKnown?rupiah(r.f.profit):'—'}</td><td><button class="btn" onclick="openDetail('${r.m}','${r.c}')">👁 Lihat Data</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty">Belum ada data pada periode ini.</td></tr>'}
-function productSummary(m,c){const hmap=hppMap(),map={};if(c==='Offline'||c==='all'){for(const r of oldRows(m).concat(newOffline(m))){const k=r.product_name;map[k]??={name:k,channel:'Offline',qty:0,rev:0,hpp:0,hppKnown:true,profit:0,profitKnown:true};map[k].qty+=r.qty;map[k].rev+=r.revenue;if(r.source==='data_lama'){const h=hmap.get(String(r.product_name).trim().toLowerCase());if(h)map[k].hpp+=r.qty*h;else map[k].hppKnown=false}else if(r.knownHpp)map[k].hpp+=Number(r.hpp||0);else map[k].hppKnown=false;if(r.profit!=null)map[k].profit+=r.profit;else{const h=hmap.get(String(r.product_name).trim().toLowerCase());if(h)map[k].profit+=r.net-r.qty*h;else map[k].profitKnown=false}}}
+function productSummary(m,c){const hmap=hppMap(),map={};if(c==='Offline'||c==='all'){for(const r of oldRows(m).concat(newOffline(m))){const k=r.product_name;map[k]??={name:k,channel:'Offline',qty:0,rev:0,hpp:0,hppKnown:true,profit:0,profitKnown:true};map[k].qty+=r.qty;map[k].rev+=r.revenue;if(r.source==='data_lama'){const h=resolveHppForRow(r);if(h!=null)map[k].hpp+=r.qty*h;else map[k].hppKnown=false}else if(r.knownHpp)map[k].hpp+=Number(r.hpp||0);else map[k].hppKnown=false;if(r.profit!=null)map[k].profit+=r.profit;else{const h=resolveHppForRow(r);if(h!=null)map[k].profit+=r.net-r.qty*h;else map[k].profitKnown=false}}}
 if(c==='Online'||c==='all'){for(const r of onlineSellerRows(m)){const k=r.product_name;map[k]??={name:k,channel:'Online',qty:0,rev:0,hpp:0,hppKnown:true,profit:0,profitKnown:true};map[k].qty+=r.qty;map[k].rev+=r.revenue;if(r.hpp!=null)map[k].hpp+=r.hpp;else map[k].hppKnown=false;if(r.profit!=null)map[k].profit+=r.profit;else map[k].profitKnown=false}}
 return Object.values(map).sort((a,b)=>a.channel.localeCompare(b.channel)||a.name.localeCompare(b.name,'id'))}
 function renderProducts(){const rows=productSummary($('month').value,$('channel').value||'all');$('products').innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.name)}</td><td><span class="pill ${x.channel==='Online'?'online':'offline'}">${x.channel}</span></td><td>${x.qty.toLocaleString('id-ID')}</td><td>${rupiah(x.rev)}</td><td>${x.hppKnown?rupiah(x.hpp):'—'}</td><td>${x.hppKnown&&x.profitKnown?rupiah(x.profit):'—'}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">Belum ada produk pada periode ini.</td></tr>'}
 function renderMonthOptions(){const ms=getMonths();$('month').innerHTML=ms.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');if(ms.length===0)$('month').innerHTML='<option value="">Belum ada bulan</option>'}
 function openDetail(m,c){$('modal').classList.add('show');$('modalTitle').textContent=`${monthLabel(m)} — ${c}`;$('modalSub').textContent=c==='Offline'?'Data lama + transaksi kasir baru + pengeluaran.':'Income TikTok + detail Seller Center.';const fin=finance(m,c);const prods=productSummary(m,c);$('produkDetail').innerHTML=`<div class="summaryline"><div><b>Produk</b><span>${prods.length}</span></div><div><b>Qty Keluar</b><span>${prods.reduce((a,x)=>a+x.qty,0).toLocaleString('id-ID')}</span></div><div><b>Nilai Penjualan</b><span>${rupiah(fin.rev)}</span></div><div><b>Modal / HPP</b><span>${fin.hppKnown?rupiah(fin.hpp):'—'}</span></div></div><div class="tablewrap"><table><thead><tr><th>Produk</th><th>Qty Keluar</th><th>Omzet / Nilai</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody>${prods.length?prods.map(x=>`<tr><td>${esc(x.name)}</td><td>${x.qty.toLocaleString('id-ID')}</td><td>${rupiah(x.rev)}</td><td>${x.hppKnown?rupiah(x.hpp):'—'}</td><td>${x.hppKnown&&x.profitKnown?rupiah(x.profit):'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Belum ada detail produk.</td></tr>'}</tbody></table></div>`;
-const ex=expenses.filter(x=>expenseMonth(x)===m);const byCat={};for(const x of ex){const k=x.kategori||'Lainnya';byCat[k]??=0;byCat[k]+=Number(x.nominal||0)}$('keuanganDetail').innerHTML=`<div class="summaryline"><div><b>Pemasukan</b><span>${rupiah(fin.rev)}</span></div><div><b>Pengeluaran / Potongan</b><span>${rupiah(fin.out)}</span></div><div><b>Uang Bersih</b><span>${rupiah(fin.net)}</span></div><div><b>Profit</b><span>${fin.hppKnown&&fin.profitKnown?rupiah(fin.profit):'—'}</span></div></div><div class="notice">Untuk Online, angka keuangan berasal dari Income TikTok. Untuk Offline, uang bersih = pemasukan − pengeluaran.</div>`;if(c==='Online'){$('expenseDetail').innerHTML='<div class="notice">Online tidak memakai kategori pengeluaran Offline. Potongan TikTok ditampilkan di tab Keuangan.</div>'}else{$('expenseDetail').innerHTML=`<div class="summaryline"><div><b>Total Pengeluaran</b><span>${rupiah(ex.reduce((a,x)=>a+Number(x.nominal||0),0))}</span></div><div><b>Kategori</b><span>${Object.keys(byCat).length}</span></div><div><b>Data</b><span>${ex.length} transaksi</span></div></div>${Object.keys(byCat).sort().map(k=>`<div class="category"><h4>${esc(k)} — ${rupiah(byCat[k])}</h4><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Nominal</th><th>Catatan</th></tr></thead><tbody>${ex.filter(x=>(x.kategori||'Lainnya')===k).map(x=>`<tr><td>${esc(String(x.tanggal||'').slice(0,10))}</td><td>${esc(x.keterangan||'-')}</td><td>${rupiah(x.nominal)}</td><td>${esc(x.catatan||'-')}</td></tr>`).join('')}</tbody></table></div></div>`).join('')||'<div class="empty">Belum ada pengeluaran.</div>'}`}
+const ex=expenses.filter(x=>expenseMonth(x)===m);const rangeEx=expenses.filter(isRangeExpense);const byCat={};for(const x of ex){const k=x.kategori||'Lainnya';byCat[k]??=0;byCat[k]+=Number(x.nominal||0)}$('keuanganDetail').innerHTML=`<div class="summaryline"><div><b>Pemasukan</b><span>${rupiah(fin.rev)}</span></div><div><b>Pengeluaran / Potongan</b><span>${rupiah(fin.out)}</span></div><div><b>Uang Bersih</b><span>${rupiah(fin.net)}</span></div><div><b>Profit</b><span>${fin.hppKnown&&fin.profitKnown?rupiah(fin.profit):'—'}</span></div></div><div class="notice">Untuk Online, angka keuangan berasal dari Income TikTok. Untuk Offline, uang bersih = pemasukan − pengeluaran.</div>`;if(c==='Online'){$('expenseDetail').innerHTML='<div class="notice">Online tidak memakai kategori pengeluaran Offline. Potongan TikTok ditampilkan di tab Keuangan.</div>'}else{$('expenseDetail').innerHTML=`<div class="summaryline"><div><b>Total Pengeluaran</b><span>${rupiah(ex.reduce((a,x)=>a+Number(x.nominal||0),0))}</span></div><div><b>Kategori</b><span>${Object.keys(byCat).length}</span></div><div><b>Data</b><span>${ex.length} transaksi</span></div></div>${Object.keys(byCat).sort().map(k=>`<div class="category"><h4>${esc(k)} — ${rupiah(byCat[k])}</h4><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Nominal</th><th>Catatan</th></tr></thead><tbody>${ex.filter(x=>(x.kategori||'Lainnya')===k).map(x=>`<tr><td>${esc(String(x.tanggal||'').slice(0,10))}</td><td>${esc(x.keterangan||'-')}</td><td>${rupiah(x.nominal)}</td><td>${esc(x.catatan||'-')}</td></tr>`).join('')}</tbody></table></div></div>`).join('')||'<div class="empty">Belum ada pengeluaran yang tercatat khusus untuk bulan ini.</div>'}${rangeEx.length?`<div class="notice" style="margin-top:14px">ℹ️ Ada ${rangeEx.length} transaksi pengeluaran historis dengan periode gabungan (misalnya Jan–Agustus). Data tersebut <b>tidak dialokasikan ke satu bulan</b> agar rekap bulanan tidak salah. Rinciannya tetap bisa dilihat di <a href="data-lama.html" style="color:var(--brand);font-weight:700">Data Lama</a>.</div>`:''}`}
 }
 function render(){renderCards();renderMonthly();renderProducts()}
 $('month').onchange=render;$('channel').onchange=render;$('reload').onclick=()=>init();$('close').onclick=()=>$('modal').classList.remove('show');$('modal').addEventListener('click',e=>{if(e.target.id==='modal')$('modal').classList.remove('show')});document.querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.detailtabs button').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.detailpanel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.detail).classList.add('active')});
