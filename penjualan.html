@@ -11,9 +11,9 @@
 <div class="top"><div><h1>💰 Penjualan</h1><div class="sub">Penjualan manual + import penjualan online dari Seller Center.</div></div><span class="badge">Familia Food</span></div>
 
 <div class="card"><div class="cashhead"><div><h2 style="margin:0">📥 Import Penjualan Online</h2>
-<div class="note">Pilih CSV/XLSX Seller Center. Nama produk disimpan <b>persis</b> seperti file. Modal/HPP yang belum ada dibiarkan kosong agar bisa bro isi manual nanti.</div></div></div>
-<div class="importbox" style="margin-top:15px"><input id="onlineFile" type="file" accept=".csv,.xlsx,.xls">
-<div class="small" style="margin-top:8px">Kolom yang dibaca: Order ID, Product Name, Variation, Quantity, SKU Unit Original Price, SKU Subtotal After Discount, Order Amount, Created Time, Paid Time, Purchase Channel, Order Channel.</div>
+<div class="note">Pilih <b>file asli Seller Center + Excel Income TikTok</b> sekaligus. Aplikasi mengenali formatnya otomatis, mencocokkan Order ID, lalu memadukan detail produk dengan Uang Bersih dan Potongan TikTok. Nama produk tetap <b>persis</b> seperti Seller Center.</div></div></div>
+<div class="importbox" style="margin-top:15px"><input id="onlineFile" type="file" accept=".csv,.xlsx,.xls" multiple>
+<div class="small" style="margin-top:8px">Pilih semua file periode yang diperlukan (Januari–Agustus boleh sekaligus). Tidak perlu membuat file perantara. Untuk profit lengkap, pilih Seller Center dan Income TikTok untuk periode yang sama.</div>
 <div id="importInfo"></div></div>
 <div id="importPreview" class="import-preview"><div id="importSummary"></div>
 <div class="card import-detail" id="importDetailCard"><div class="top"><div><h3 id="importDetailTitle" style="margin:0">Detail Import</h3></div><button class="btn gray" id="closeImportDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="importDetailRows"></tbody></table></div></div>
@@ -39,6 +39,7 @@ function nagetVariant(p){const n=normName(p?.nama_produk);const m=n.match(/^nage
 function productsForChannel(){return products;}
 function renderProductOptions(keepId=''){const list=productsForChannel();$('produk').innerHTML='<option value="">Pilih Produk</option>'+list.map(p=>`<option value="${p.id}">${esc(p.nama_produk)} (${p.isi_per_bungkus||''} pcs)</option>`).join('');if(keepId)$('produk').value=String(keepId);}
 async function loadProducts(){const [r,h]=await Promise.all([supabaseClient.from('produk').select('*').order('id',{ascending:true}),supabaseClient.from('hpp').select('*')]);if(r.error)throw r.error;if(h.error)throw h.error;products=r.data||[];window.importHppRows=h.data||[];renderProductOptions();}
+function importHppFor(r){const pid=r?.produk_id;if(pid==null)return null;const h=(window.importHppRows||[]).find(x=>String(x.produk_id)===String(pid));if(!h)return null;if(h.hpp_online!=null&&Number.isFinite(Number(h.hpp_online)))return Number(h.hpp_online);if(h.harga_online!=null&&h.untung_online!=null){const v=Number(h.harga_online)-Number(h.untung_online);if(Number.isFinite(v)&&v>=0)return v;}if(h.hpp_unit!=null&&Number.isFinite(Number(h.hpp_unit)))return Number(h.hpp_unit);return null;}
 function selectedProduct(){return products.find(p=>String(p.id)===$('produk').value)}
 function updatePreview(){const qty=Math.max(0,Number($('qty').value)||0),harga=Math.round(Number($('harga').value)||0),hpp=Math.round(Number($('hpp').value)||0);$('pvHarga').textContent=rupiah(harga);$('pvOmzet').textContent=rupiah(qty*harga);$('pvHpp').textContent=rupiah(qty*hpp);$('pvProfit').textContent=rupiah(qty*(harga-hpp));}
 $('qty').addEventListener('input',updatePreview);$('harga').addEventListener('input',updatePreview);$('hpp').addEventListener('input',updatePreview);
@@ -49,122 +50,74 @@ $('save').onclick=async()=>{try{const p=selectedProduct(),tanggal=$('tanggal').v
 $('cancel').onclick=()=>{editId=null;$('cancel').style.display='none';$('save').textContent='+ Simpan Penjualan';$('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();};
 function parseCSV(text){const rows=[],row=[];let cell='',quote=false;for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'){if(quote&&next==='"'){cell+='"';i++;}else quote=!quote;}else if(ch===','&&!quote){row.push(cell);cell='';}else if((ch==='\n'||ch==='\r')&&!quote){if(ch==='\r'&&next==='\n')i++;row.push(cell);if(row.some(x=>String(x).trim()!==''))rows.push(row.slice());row.length=0;cell='';}else cell+=ch;}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
 function num(v){if(v===null||v===undefined||v==='')return null;let s=String(v).trim().replace(/\s/g,'');if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(/^[-+]?\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');return Number(s)||0;}
-function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(\d{1,2}):(\d{2}):(\d{2})/);if(m)return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}T${String(m[4]).padStart(2,'0')}:${m[5]}:${m[6]}`;const d=new Date(s);return isNaN(d)?null:d.toISOString();}
-function field(row,name){return row[name]??''}
-function buildImport(rows){
-  const existingNames=new Map(products.map(p=>[normName(p.nama_produk),p]));
-  return rows.map(r=>{
-    const productName=String(field(r,'Product Name')).trim();
-    const qty=num(field(r,'Quantity'))||0;
-    const rawOmzet=num(field(r,'SKU Subtotal After Discount'));
-    const normalizedOmzet=num(field(r,'Omzet Produk'));
-    const omzet=normalizedOmzet!==null?normalizedOmzet:(rawOmzet!==null?rawOmzet:0);
-    const unitRaw=num(field(r,'SKU Unit Original Price'));
-    const harga=qty?Math.round(omzet/qty):(unitRaw||0);
-    const orderId=String(field(r,'Order ID')).trim(),sku=String(field(r,'SKU ID')).trim(),variation=String(field(r,'Variation')).trim();
-    const p=existingNames.get(normName(productName));
-    const uang=num(field(r,'Uang Bersih'));
-    const biaya=num(field(r,'Biaya Platform'));
-    const modal=num(field(r,'Modal/HPP'));
-    let profit=num(field(r,'Profit'));
-    if(profit===null&&uang!==null&&modal!==null)profit=uang-modal;
-    const tNorm=parseDate(field(r,'Tanggal')),created=parseDate(field(r,'Created Time')),paid=parseDate(field(r,'Paid Time'));
-    const key=[orderId,sku,variation,productName].join('|');
-    return {
-      order_id:orderId,product_name:productName,variation,sku_id:sku,seller_sku:String(field(r,'Seller SKU')).trim(),
-      qty,quantity_return:num(field(r,'Sku Quantity of return'))||0,harga_asli:unitRaw||0,omzet_produk:omzet,
-      order_amount:num(field(r,'Order Amount')),tanggal:(tNorm||paid||created||today()).slice(0,10),
-      created_time:created,paid_time:paid,purchase_channel:String(field(r,'Purchase Channel')).trim(),
-      order_channel:String(field(r,'Order Channel')).trim()||'TikTok Shop',produk_id:p?.id||null,harga,hpp:0,
-      modal_hpp:modal,uang_bersih:uang,biaya_platform:biaya,profit_online:profit,laba:0,channel:'Online',
-      source:'seller_center',import_key:key
-    };
-  });
-}
-function importHppFor(r){
-  const p=r.produk_id?products.find(x=>String(x.id)===String(r.produk_id)):products.find(x=>normName(x.nama_produk)===normName(r.product_name));
-  if(!p)return null;
-  const h=(window.importHppRows||[]).find(x=>String(x.produk_id)===String(p.id));
-  if(!h)return null;
-  if(h.hpp_online!=null&&Number.isFinite(Number(h.hpp_online)))return Number(h.hpp_online);
-  if(h.harga_online!=null&&h.untung_online!=null){
-    const v=Number(h.harga_online)-Number(h.untung_online);
-    if(Number.isFinite(v)&&v>=0)return v;
-  }
-  if(h.hpp_unit!=null&&Number.isFinite(Number(h.hpp_unit)))return Number(h.hpp_unit);
+function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})(?:\s+(\d{1,2}):(\d{2}):(\d{2}))?/);if(m)return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}${m[4]?`T${String(m[4]).padStart(2,'0')}:${m[5]}:${m[6]}`:'T00:00:00'}`;m=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);if(m)return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}${m[4]?`T${String(m[4]).padStart(2,'0')}:${m[5]}:${m[6]||'00'}`:'T00:00:00'}`;const d=new Date(s);return isNaN(d)?null:d.toISOString();}
+function field(row,name){return row?.[name]??'';}
+function headerMap(records){const out={};if(!records?.length)return out;Object.keys(records[0]).forEach(k=>out[String(k).trim()]=k);return out;}
+function looksSeller(records){const h=headerMap(records);return !!(h['Order ID']&&h['Product Name']&&h['Quantity']&&(h['SKU Subtotal After Discount']||h['SKU Unit Original Price']));}
+function looksIncome(records){const h=headerMap(records);return !!(h['ID Pesanan/Penyesuaian']&&h['Jenis transaksi']&&h['Jumlah penyelesaian pembayaran']&&h['Total Pendapatan']&&h['Total Biaya']);}
+function normalizeSeller(records){return records.filter(r=>String(field(r,'Order ID')).trim()&&String(field(r,'Product Name')).trim()).map(r=>({order_id:String(field(r,'Order ID')).trim(),product_name:String(field(r,'Product Name')).trim(),variation:String(field(r,'Variation')).trim(),sku_id:String(field(r,'SKU ID')).trim(),seller_sku:String(field(r,'Seller SKU')).trim(),qty:num(field(r,'Quantity'))||0,quantity_return:num(field(r,'Sku Quantity of return'))||0,harga_asli:num(field(r,'SKU Unit Original Price'))||0,omzet_produk:num(field(r,'SKU Subtotal After Discount'))??0,order_amount:num(field(r,'Order Amount')),created_time:parseDate(field(r,'Created Time')),paid_time:parseDate(field(r,'Paid Time')),purchase_channel:String(field(r,'Purchase Channel')).trim(),order_channel:String(field(r,'Order Channel')).trim()||'TikTok Shop'}));}
+function normalizeIncome(records){return records.filter(r=>String(field(r,'Jenis transaksi')).trim()==='Pesanan'&&String(field(r,'ID Pesanan/Penyesuaian')).trim()).map(r=>({order_id:String(field(r,'ID Pesanan/Penyesuaian')).trim(),tanggal:parseDate(field(r,'Waktu pembayaran pesanan'))||parseDate(field(r,'Waktu pemesanan')),uang_bersih:num(field(r,'Jumlah penyelesaian pembayaran')),pendapatan_order:num(field(r,'Total Pendapatan')),biaya_platform:num(field(r,'Total Biaya'))==null?null:Math.abs(num(field(r,'Total Biaya'))),purchase_channel:String(field(r,'Sumber pesanan')).trim()||'TikTok Shop'}));}
+function matchMasterProduct(row){
+  const byName=new Map(products.map(p=>[normName(p.nama_produk),p]));
+  const exactName=byName.get(normName(row.product_name));if(exactName)return exactName;
+  const sku=String(row.seller_sku||row.sku_id||'').trim();
+  if(sku){for(const p of products){for(const k of ['seller_sku','sku','kode_sku','sku_id']){if(p[k]!=null&&String(p[k]).trim()===sku)return p;}}}
   return null;
 }
+function buildImportFromRaw(sellerRecords,incomeRecords){
+  const seller=normalizeSeller(sellerRecords||[]), income=normalizeIncome(incomeRecords||[]);
+  const incomeMap=new Map(income.map(x=>[x.order_id,x]));
+  const grouped={};
+  seller.forEach(r=>{
+    const k=[r.order_id,r.product_name,r.variation,r.sku_id,r.seller_sku].join('|');
+    if(!grouped[k])grouped[k]={...r};
+    else {grouped[k].qty+=r.qty;grouped[k].quantity_return+=r.quantity_return;grouped[k].omzet_produk+=r.omzet_produk;grouped[k].order_amount=(grouped[k].order_amount||0)+(r.order_amount||0);}
+  });
+  const lines=Object.values(grouped),orderTotals={};
+  lines.forEach(r=>{orderTotals[r.order_id]=(orderTotals[r.order_id]||0)+Number(r.omzet_produk||0);});
+  return lines.map(r=>{
+    const inc=incomeMap.get(r.order_id),base=orderTotals[r.order_id]||0,share=base?Number(r.omzet_produk||0)/base:0;
+    const uang=inc&&inc.uang_bersih!=null?inc.uang_bersih*share:null;
+    const biaya=inc&&inc.biaya_platform!=null?inc.biaya_platform*share:null;
+    const orderAmount=inc&&inc.pendapatan_order!=null?inc.pendapatan_order*share:r.order_amount;
+    const p=matchMasterProduct(r);
+    const tanggal=(inc?.tanggal||r.paid_time||r.created_time||today()).slice(0,10);
+    const hpp=importHppFor({produk_id:p?.id||null});
+    const modal=hpp!=null?r.qty*hpp:null;
+    const profit=uang!=null&&modal!=null?uang-modal:null;
+    return {...r,tanggal,produk_id:p?.id||null,harga:r.qty?Math.round(Number(r.omzet_produk||0)/r.qty):Number(r.harga_asli||0),order_amount:orderAmount,uang_bersih:uang,biaya_platform:biaya,modal_hpp:modal,profit_online:profit,channel:'Online',source:'seller_center',order_channel:'TikTok Shop',import_key:[r.order_id,r.sku_id,r.variation,r.product_name].join('|')};
+  }).filter(r=>r.order_id&&r.product_name);
+}
+async function readOnlineFiles(files){
+  const sellerRecords=[],incomeRecords=[];const kinds=[];
+  for(const f of Array.from(files||[])){
+    if(/\.csv$/i.test(f.name)){
+      const raw=parseCSV(await f.text());if(!raw.length)continue;const headers=raw.shift().map(x=>String(x).trim());const rec=raw.map(a=>Object.fromEntries(headers.map((h,i)=>[h,a[i]??''])));
+      if(looksSeller(rec)){sellerRecords.push(...rec);kinds.push(`${f.name} → Seller Center`);}else throw new Error(`CSV ${f.name} tidak dikenali sebagai format Seller Center.`);
+    }else if(/\.xlsx?$/i.test(f.name)){
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});let detected=false;
+      for(const sn of wb.SheetNames){const rec=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});if(!rec.length)continue;if(looksIncome(rec)){incomeRecords.push(...rec);kinds.push(`${f.name} / ${sn} → Income TikTok`);detected=true;break;}if(looksSeller(rec)){sellerRecords.push(...rec);kinds.push(`${f.name} / ${sn} → Seller Center`);detected=true;break;}}
+      if(!detected)throw new Error(`Excel ${f.name} tidak menemukan format Seller Center atau sheet Detail pesanan Income TikTok.`);
+    }
+  }
+  if(!sellerRecords.length&&!incomeRecords.length)throw new Error('Tidak ada data Seller Center/Income yang dikenali.');
+  if(!sellerRecords.length)throw new Error('Excel Income terbaca, tetapi detail produk Seller Center belum dipilih. Pilih juga file Seller Center agar Nama Produk dan Variasi dapat ditampilkan.');
+  const rows=buildImportFromRaw(sellerRecords,incomeRecords);
+  const sellerOrders=new Set(sellerRecords.map(r=>String(field(r,'Order ID')).trim()).filter(Boolean));
+  const incomeOrders=new Set(incomeRecords.map(r=>String(field(r,'ID Pesanan/Penyesuaian')).trim()).filter(Boolean));
+  const matchedIncome=[...incomeOrders].filter(id=>sellerOrders.has(id));
+  return {rows,kinds,sellerCount:sellerRecords.length,incomeCount:incomeRecords.length,sellerOrders:sellerOrders.size,incomeOrders:incomeOrders.size,matchedIncome:matchedIncome.length,unmatchedIncome:incomeOrders.size-matchedIncome.length};
+}
 function importMonthKey(s){return String(s.tanggal||'').slice(0,7)||'Tanpa tanggal';}
-function importMonthLabel(k){
-  if(k==='Tanpa tanggal')return k;
-  const [y,m]=k.split('-');
-  return new Date(+y,+m-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
-}
-function importGroups(){
-  const groups={};
-  importRows.forEach(r=>{
-    const k=importMonthKey(r);
-    if(!groups[k])groups[k]={pendapatan:0,biaya:0,bersih:0,qty:0,orders:new Set(),rows:[],hppIncomplete:false,netIncomplete:false};
-    const g=groups[k];
-    g.pendapatan+=Number(r.omzet_produk||0);
-    g.biaya+=r.biaya_platform!=null?Math.abs(Number(r.biaya_platform||0)):0;
-    if(r.uang_bersih!=null)g.bersih+=Number(r.uang_bersih||0);else g.netIncomplete=true;
-    const h=importHppFor(r);
-    r._hpp=h;
-    r._modal=h!=null?Number(r.qty||0)*h:null;
-    r._profit=r.uang_bersih!=null&&r._modal!=null?Number(r.uang_bersih)-r._modal:null;
-    if(r._modal!=null)g.modal=(g.modal||0)+r._modal;else g.hppIncomplete=true;
-    if(r._profit!=null)g.profit=(g.profit||0)+r._profit;
-    g.qty+=Number(r.qty||0);
-    if(r.order_id)g.orders.add(r.order_id);
-    g.rows.push(r);
-  });
-  return groups;
-}
-function renderImportDetails(k){
-  const groups=importGroups(),g=groups[k];if(!g)return;
-  $('importDetailCard').classList.add('show');
-  $('importDetailTitle').textContent='Detail Import • '+importMonthLabel(k);
-  const map={};
-  g.rows.forEach(r=>{
-    const key=(r.product_name||'-')+'||'+(r.variation||'-');
-    if(!map[key])map[key]={name:r.product_name||'-',variation:r.variation||'-',qty:0,pendapatan:0,biaya:0,bersih:0,modal:0,profit:0,hpp:r._hpp,hasHpp:r._hpp!=null,hasNet:r.uang_bersih!=null};
-    const x=map[key];
-    x.qty+=Number(r.qty||0);x.pendapatan+=Number(r.omzet_produk||0);
-    if(r.biaya_platform!=null)x.biaya+=Math.abs(Number(r.biaya_platform||0));
-    if(r.uang_bersih!=null)x.bersih+=Number(r.uang_bersih||0);else x.hasNet=false;
-    if(r._modal!=null)x.modal+=r._modal;else x.hasHpp=false;
-    if(r._profit!=null)x.profit+=r._profit;
-  });
-  $('importDetailRows').innerHTML=Object.values(map).sort((a,b)=>b.pendapatan-a.pendapatan).map(x=>{
-    const complete=x.hasHpp&&x.hasNet,margin=complete&&x.bersih?x.profit/x.bersih*100:null;
-    return `<tr><td>${esc(x.name)}</td><td>${esc(x.variation||'-')}</td><td>${x.qty.toLocaleString('id-ID')}</td><td>${rupiah(x.pendapatan)}</td><td>${rupiah(x.biaya)}</td><td>${rupiah(x.bersih)}</td><td>${x.hpp!=null?rupiah(x.hpp):'Belum ada HPP'}</td><td>${x.hasHpp?rupiah(x.modal):'—'}</td><td>${complete?rupiah(x.profit):'—'}</td><td>${margin!=null?margin.toFixed(2)+'%':'—'}</td></tr>`;
-  }).join('')||'<tr><td colspan="10">Tidak ada detail.</td></tr>';
-  $('importDetailCard').scrollIntoView({behavior:'smooth',block:'nearest'});
-}
+function importMonthLabel(k){if(k==='Tanpa tanggal')return k;const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});}
+function importGroups(){const groups={};importRows.forEach(r=>{const k=importMonthKey(r);if(!groups[k])groups[k]={pendapatan:0,biaya:0,bersih:0,qty:0,orders:new Set(),rows:[],hppIncomplete:false,netIncomplete:false,modal:0,profit:0};const g=groups[k];g.pendapatan+=Number(r.omzet_produk||0);g.biaya+=r.biaya_platform!=null?Math.abs(Number(r.biaya_platform||0)):0;if(r.uang_bersih!=null)g.bersih+=Number(r.uang_bersih||0);else g.netIncomplete=true;const h=importHppFor(r);r._hpp=h;r._modal=h!=null?Number(r.qty||0)*h:null;r._profit=r.uang_bersih!=null&&r._modal!=null?Number(r.uang_bersih)-r._modal:null;if(r._modal!=null)g.modal+=r._modal;else g.hppIncomplete=true;if(r._profit!=null)g.profit+=r._profit;g.qty+=Number(r.qty||0);if(r.order_id)g.orders.add(r.order_id);g.rows.push(r);});return groups;}
+function renderImportDetails(k){const groups=importGroups(),g=groups[k];if(!g)return;$('importDetailCard').classList.add('show');$('importDetailTitle').textContent='Detail Import • '+importMonthLabel(k);const map={};g.rows.forEach(r=>{const key=(r.product_name||'-')+'||'+(r.variation||'-');if(!map[key])map[key]={name:r.product_name||'-',variation:r.variation||'-',qty:0,pendapatan:0,biaya:0,bersih:0,modal:0,profit:0,hpp:r._hpp,hasHpp:r._hpp!=null,hasNet:r.uang_bersih!=null};const x=map[key];x.qty+=Number(r.qty||0);x.pendapatan+=Number(r.omzet_produk||0);if(r.biaya_platform!=null)x.biaya+=Math.abs(Number(r.biaya_platform||0));if(r.uang_bersih!=null)x.bersih+=Number(r.uang_bersih||0);else x.hasNet=false;if(r._modal!=null)x.modal+=r._modal;else x.hasHpp=false;if(r._profit!=null)x.profit+=r._profit;});$('importDetailRows').innerHTML=Object.values(map).sort((a,b)=>b.pendapatan-a.pendapatan).map(x=>{const complete=x.hasHpp&&x.hasNet,margin=complete&&x.bersih?x.profit/x.bersih*100:null;return `<tr><td>${esc(x.name)}</td><td>${esc(x.variation||'-')}</td><td>${x.qty.toLocaleString('id-ID')}</td><td>${rupiah(x.pendapatan)}</td><td>${rupiah(x.biaya)}</td><td>${rupiah(x.bersih)}</td><td>${x.hpp!=null?rupiah(x.hpp):'Belum ada HPP'}</td><td>${x.hasHpp?rupiah(x.modal):'—'}</td><td>${complete?rupiah(x.profit):'—'}</td><td>${margin!=null?margin.toFixed(2)+'%':'—'}</td></tr>`;}).join('')||'<tr><td colspan="10">Tidak ada detail.</td></tr>';$('importDetailCard').scrollIntoView({behavior:'smooth',block:'nearest'});}
 window.viewImportPeriod=renderImportDetails;
-function renderImport(){
-  const rows=importRows,orders=new Set(rows.map(r=>r.order_id).filter(Boolean));
-  const qty=rows.reduce((a,r)=>a+Number(r.qty||0),0),omzet=rows.reduce((a,r)=>a+Number(r.omzet_produk||0),0);
-  const netKnown=rows.filter(r=>r.uang_bersih!=null).reduce((a,r)=>a+Number(r.uang_bersih||0),0);
-  const feeKnown=rows.filter(r=>r.biaya_platform!=null).reduce((a,r)=>a+Math.abs(Number(r.biaya_platform||0)),0);
-  const hppRows=rows.map(importHppFor).filter(v=>v!=null);
-  const matched=rows.filter(r=>r.produk_id!=null).length;
-  const hasSettlement=rows.some(r=>r.uang_bersih!=null||r.biaya_platform!=null);
-  $('importSummary').innerHTML=`<div class="import-compact"><div class="warn"><b>${rows.length.toLocaleString('id-ID')} baris</b> siap disimpan • ${orders.size.toLocaleString('id-ID')} order • ${qty.toLocaleString('id-ID')} qty</div><div class="import-stats"><div><small>Omzet Produk</small><b>${rupiah(omzet)}</b></div><div><small>Produk cocok master</small><b>${matched.toLocaleString('id-ID')} / ${rows.length.toLocaleString('id-ID')}</b></div><div><small>Uang Bersih</small><b>${hasSettlement?rupiah(netKnown):'—'}</b></div><div><small>Potongan TikTok</small><b>${hasSettlement?rupiah(feeKnown):'—'}</b></div><div><small>HPP Online terhubung</small><b>${hppRows.length.toLocaleString('id-ID')} baris</b></div><div><small>Profit terukur</small><b>akan dihitung dari Uang Bersih − Modal</b></div></div><div class="note">Rekap bulanan di bawah dihitung dari file ini sebelum disimpan. HPP hanya dari master aplikasi; tidak ada tebakan.</div></div>`;
-  const groups=importGroups(),keys=Object.keys(groups).sort().reverse();
-  $('rows').innerHTML=keys.length?keys.map(k=>{
-    const g=groups[k],complete=!g.hppIncomplete&&!g.netIncomplete;
-    const margin=complete&&g.bersih?g.profit/g.bersih*100:null;
-    return `<tr><td><b>${esc(importMonthLabel(k))}</b></td><td>${rupiah(g.pendapatan)}</td><td>${rupiah(g.biaya)}</td><td>${rupiah(g.bersih)}</td><td>${complete?rupiah(g.profit):'—'}</td><td>${margin!=null?margin.toFixed(2)+'%':'—'}</td><td><button class="mini viewbtn" onclick="viewImportPeriod('${esc(k)}')">👁 Lihat Data</button></td></tr>`;
-  }).join(''):'<tr><td colspan="7">Tidak ada tanggal yang bisa direkap.</td></tr>';
-  $('importPreview').classList.add('show');
-  $('importDetailCard').classList.remove('show');
-}
-$('onlineFile').onchange=async()=>{try{const f=$('onlineFile').files[0];if(!f)return;let records=[];if(/\.xlsx?$/i.test(f.name)){const buf=await f.arrayBuffer(),wb=XLSX.read(buf,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];records=XLSX.utils.sheet_to_json(ws,{defval:''});}else{const text=await f.text(),raw=parseCSV(text);const headers=raw.shift().map(x=>String(x).trim());records=raw.map(a=>Object.fromEntries(headers.map((h,i)=>[h,a[i]??''])))}importRows=buildImport(records);renderImport();$('importInfo').innerHTML=`<div class="ok">File <b>${esc(f.name)}</b> berhasil dibaca. ${importRows.length.toLocaleString('id-ID')} baris siap diperiksa.</div>`;}catch(e){$('importInfo').innerHTML=`<div class="bad">Gagal membaca file: ${esc(e.message)}</div>`;}};
+function renderImport(meta){const rows=importRows,orders=new Set(rows.map(r=>r.order_id).filter(Boolean));const qty=rows.reduce((a,r)=>a+Number(r.qty||0),0),omzet=rows.reduce((a,r)=>a+Number(r.omzet_produk||0),0);const netKnown=rows.filter(r=>r.uang_bersih!=null).reduce((a,r)=>a+Number(r.uang_bersih||0),0),feeKnown=rows.filter(r=>r.biaya_platform!=null).reduce((a,r)=>a+Math.abs(Number(r.biaya_platform||0)),0),hppRows=rows.map(importHppFor).filter(v=>v!=null),matched=rows.filter(r=>r.produk_id!=null).length,groups=importGroups(),keys=Object.keys(groups).sort().reverse();$('importSummary').innerHTML=`<div class="import-compact"><div class="warn"><b>${rows.length.toLocaleString('id-ID')} baris produk</b> siap disimpan • ${orders.size.toLocaleString('id-ID')} order • ${qty.toLocaleString('id-ID')} qty</div><div class="import-stats"><div><small>Omzet Produk</small><b>${rupiah(omzet)}</b></div><div><small>Produk cocok master</small><b>${matched.toLocaleString('id-ID')} / ${rows.length.toLocaleString('id-ID')}</b></div><div><small>Uang Bersih</small><b>${netKnown?rupiah(netKnown):'—'}</b></div><div><small>Potongan TikTok</small><b>${feeKnown?rupiah(feeKnown):'—'}</b></div><div><small>HPP Online terhubung</small><b>${hppRows.length.toLocaleString('id-ID')} baris</b></div><div><small>Periode</small><b>${keys.length?keys.map(importMonthLabel).join(', '):'—'}</b></div></div><div class="note">${esc(meta?.kinds?.join(' • ')||'Format otomatis dikenali.')}<br>Income dialokasikan ke detail produk berdasarkan porsi omzet produk dalam order. Ini hanya metode rekonsiliasi; tidak mengarang settlement per SKU.</div></div>`;$('rows').innerHTML=keys.length?keys.map(k=>{const g=groups[k],complete=!g.hppIncomplete&&!g.netIncomplete,margin=complete&&g.bersih?g.profit/g.bersih*100:null;return `<tr><td><b>${esc(importMonthLabel(k))}</b></td><td>${rupiah(g.pendapatan)}</td><td>${rupiah(g.biaya)}</td><td>${rupiah(g.bersih)}</td><td>${complete?rupiah(g.profit):'—'}</td><td>${margin!=null?margin.toFixed(2)+'%':'—'}</td><td><button class="mini viewbtn" onclick="viewImportPeriod('${esc(k)}')">👁 Lihat Data</button></td></tr>`;}).join(''):'<tr><td colspan="7">Tidak ada tanggal yang bisa direkap.</td></tr>';$('importPreview').classList.add('show');$('importDetailCard').classList.remove('show');}
+$('onlineFile').onchange=async()=>{try{const files=$('onlineFile').files;if(!files.length)return;$('importInfo').innerHTML='<div class="warn">Sedang membaca file dan mencocokkan Order ID...</div>';const meta=await readOnlineFiles(files);importRows=meta.rows;renderImport(meta);$('importInfo').innerHTML=`<div class="ok"><b>Format otomatis dikenali.</b><br>${esc(meta.kinds.join(' • '))}<br>Seller Center: ${meta.sellerOrders.toLocaleString('id-ID')} order • Income TikTok: ${meta.incomeOrders.toLocaleString('id-ID')} order • Cocok: ${meta.matchedIncome.toLocaleString('id-ID')} order${meta.unmatchedIncome?` • Tidak cocok: ${meta.unmatchedIncome.toLocaleString('id-ID')}`:''}</div>`;}catch(e){importRows=[];$('importPreview').classList.remove('show');$('importInfo').innerHTML=`<div class="bad">Gagal membaca: ${esc(e.message)}</div>`;}};
 $('closeImportDetail').onclick=()=>{$('importDetailCard').classList.remove('show');};
 $('importCancel').onclick=()=>{importRows=[];$('onlineFile').value='';$('importPreview').classList.remove('show');$('importInfo').innerHTML='';$('importMsg').innerHTML='';};
-$('importSave').onclick=async()=>{if(!importRows.length)return;const unique=[];const seen=new Set();for(const r of importRows){if(!r.order_id||!r.product_name||!r.import_key)continue;if(!seen.has(r.import_key)){seen.add(r.import_key);unique.push(r)}}try{const keys=unique.map(x=>x.import_key).filter(Boolean);let existing=new Set();for(let i=0;i<keys.length;i+=500){const chunk=keys.slice(i,i+500);const q=await supabaseClient.from('penjualan').select('import_key').in('import_key',chunk);if(q.error)throw q.error;(q.data||[]).forEach(x=>existing.add(x.import_key));}const toInsert=unique.filter(x=>!existing.has(x.import_key)).map(r=>({tanggal:r.tanggal,produk_id:r.produk_id,qty:r.qty,channel:'Online',harga:r.harga,hpp:0,laba:0,order_id:r.order_id,product_name:r.product_name,variation:r.variation,sku_id:r.sku_id,seller_sku:r.seller_sku,quantity_return:r.quantity_return,harga_asli:r.harga_asli,omzet_produk:r.omzet_produk,order_amount:r.order_amount,biaya_platform:r.biaya_platform,uang_bersih:r.uang_bersih,modal_hpp:r.modal_hpp,profit_online:r.profit_online,source:'seller_center',purchase_channel:r.purchase_channel,order_channel:r.order_channel,created_time:r.created_time,paid_time:r.paid_time,import_key:r.import_key}));for(let i=0;i<toInsert.length;i+=200){const r=await supabaseClient.from('penjualan').insert(toInsert.slice(i,i+200));if(r.error)throw r.error;}$('importMsg').innerHTML=`<div class="ok">Berhasil menyimpan <b>${toInsert.length.toLocaleString('id-ID')}</b> baris. ${unique.length-toInsert.length} baris dilewati karena sudah pernah diimpor.</div>`;importRows=[];$('onlineFile').value='';$('importPreview').classList.remove('show');$('importDetailCard').classList.remove('show');await load();}catch(e){$('importMsg').innerHTML=`<div class="bad">Gagal menyimpan: ${esc(e.message)}<br>Pastikan SQL migrasi sudah dijalankan di Supabase.</div>`;}};
+$('importSave').onclick=async()=>{if(!importRows.length)return;const unique=[];const seen=new Set();for(const r of importRows){if(!r.order_id||!r.product_name||!r.import_key)continue;if(!seen.has(r.import_key)){seen.add(r.import_key);unique.push(r)}}try{const keys=unique.map(x=>x.import_key).filter(Boolean);let existing=new Set();for(let i=0;i<keys.length;i+=500){const chunk=keys.slice(i,i+500);const q=await supabaseClient.from('penjualan').select('import_key').in('import_key',chunk);if(q.error)throw q.error;(q.data||[]).forEach(x=>existing.add(x.import_key));}const toInsert=unique.filter(x=>!existing.has(x.import_key)).map(r=>({tanggal:r.tanggal,produk_id:r.produk_id,qty:r.qty,channel:'Online',harga:r.harga,hpp:r.modal_hpp||0,laba:r.profit_online||0,order_id:r.order_id,product_name:r.product_name,variation:r.variation,sku_id:r.sku_id,seller_sku:r.seller_sku,quantity_return:r.quantity_return,harga_asli:r.harga_asli,omzet_produk:r.omzet_produk,order_amount:r.order_amount,biaya_platform:r.biaya_platform,uang_bersih:r.uang_bersih,modal_hpp:r.modal_hpp,profit_online:r.profit_online,source:'seller_center',purchase_channel:r.purchase_channel,order_channel:r.order_channel,created_time:r.created_time,paid_time:r.paid_time,import_key:r.import_key}));for(let i=0;i<toInsert.length;i+=200){const r=await supabaseClient.from('penjualan').insert(toInsert.slice(i,i+200));if(r.error)throw r.error;}$('importMsg').innerHTML=`<div class="ok">Berhasil menyimpan <b>${toInsert.length.toLocaleString('id-ID')}</b> baris. ${unique.length-toInsert.length} baris dilewati karena sudah pernah diimpor.</div>`;importRows=[];$('onlineFile').value='';$('importPreview').classList.remove('show');$('importDetailCard').classList.remove('show');await load();}catch(e){$('importMsg').innerHTML=`<div class="bad">Gagal menyimpan: ${esc(e.message)}<br>Pastikan SQL migrasi sudah dijalankan di Supabase.</div>`;}};
 async function fetchAllPenjualan(){
   const all=[]; const pageSize=1000;
   for(let from=0;;from+=pageSize){
