@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Data Lama - Familia Food</title><!-- v10: Online preview uses master HPP Online (harga_online - untung_online) and explicit product aliases. -->
+<title>Data Lama - Familia Food</title><!-- v11: STANDARD REKAP_ONLINE Modal/HPP is source of truth, including modal produk lain. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script><script src="app-settings.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="ff-core.js"></script>
@@ -471,20 +471,26 @@ function calculateStandardHppByMonth(standardFinance,standardProduct){
   const byMonth={};
   standardFinance.forEach(x=>{
     const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
-    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
+    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,modalFromStandard:false,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
     const g=byMonth[bulan];
     g.rev+=Number(x.omzet_produk||0);
     g.pot+=Number(x.biaya_platform||0);
     if(x.uang_bersih!=null){g.net+=Number(x.uang_bersih||0);g.netKnown=true;}
+    // STANDARD REKAP_ONLINE is the source of truth for the combined Modal/HPP.
+    // This may include HPP Familia Food + modal beli produk lain.
+    if(x.modal_hpp!=null && String(x.modal_hpp).trim()!==''){
+      g.modal=Number(x.modal_hpp)||0;
+      g.modalFromStandard=true;
+    }
   });
   standardProduct.forEach(x=>{
     const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
-    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
+    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,modalFromStandard:false,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
     const g=byMonth[bulan];
     const qty=Number(x.qty||0);
     const unit=standardHppUnitForRow(x);
     if(unit!=null){
-      g.modal+=qty*Math.trunc(Number(unit)||0);
+      if(!g.modalFromStandard) g.modal+=qty*Math.trunc(Number(unit)||0);
       g.mappedQty+=qty;
       g.hasMapped=true;
     }else if(standardIsFamiliaProduct(x)){
@@ -494,17 +500,17 @@ function calculateStandardHppByMonth(standardFinance,standardProduct){
     }
   });
   Object.values(byMonth).forEach(g=>{
-    if(g.hasMapped){
+    if(g.hasMapped || g.modalFromStandard){
       g.profit=g.netKnown?g.net-g.modal:null;
       g.margin=g.netKnown&&g.net!==0&&g.profit!=null?(g.profit/g.net)*100:null;
     }else{
       g.modal=null;g.profit=null;g.margin=null;
     }
   });
-  // Push calculated values back into the finance rows so the saved Data Lama rows carry Modal/Profit.
+  // Push the FINAL combined Modal/Profit back into finance rows.
   standardFinance.forEach(x=>{
     const m=byMonth[FFCore.monthOf(x.tanggal)||''];
-    if(m && m.hasMapped){
+    if(m && (m.hasMapped || m.modalFromStandard)){
       x.modal_hpp=Math.trunc(Number(m.modal)||0);
       x.profit_online=m.profit==null?null:Math.trunc(Number(m.profit)||0);
       x.hpp=Math.trunc(Number(m.modal)||0);
