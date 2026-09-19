@@ -688,41 +688,69 @@ $('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files
 $('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
 renderOnlineOldFileQueue();
 async function saveOnlineHistoricalRows(rows){
-  // Gunakan batch kecil agar URL query .in() tidak terlalu panjang dan POST tidak rapuh.
+  // STANDARD historis yang sudah tersimpan tidak dianggap "duplikat"
+  // jika nilai Modal/Profit berubah. Baris finance STANDARD akan diperbarui,
+  // sedangkan detail produk yang identik tetap dilewati.
   const QUERY_BATCH=75;
   const INSERT_BATCH=50;
+  const financeRows=rows.filter(x=>x.source==='online_standard_finance');
+  const detailRows=rows.filter(x=>x.source!=='online_standard_finance');
+  const existingByOrder=new Map();
+  const existingByKey=new Map();
+
+  const allOrders=[...new Set(rows.map(x=>String(x.order_id||'')).filter(Boolean))];
+  const allKeys=[...new Set(rows.map(x=>String(x.import_key||'')).filter(Boolean))];
+
+  for(let i=0;i<allOrders.length;i+=QUERY_BATCH){
+    const part=allOrders.slice(i,i+QUERY_BATCH);
+    const r=await supabaseClient.from('penjualan').select('id,import_key,order_id,source').in('order_id',part);
+    if(r.error)throw r.error;
+    (r.data||[]).forEach(x=>{
+      if(x.order_id)existingByOrder.set(String(x.order_id),x);
+      if(x.import_key)existingByKey.set(String(x.import_key),x);
+    });
+  }
+
+  for(let i=0;i<allKeys.length;i+=QUERY_BATCH){
+    const part=allKeys.slice(i,i+QUERY_BATCH);
+    const r=await supabaseClient.from('penjualan').select('id,import_key,order_id,source').in('import_key',part);
+    if(r.error)throw r.error;
+    (r.data||[]).forEach(x=>{
+      if(x.order_id)existingByOrder.set(String(x.order_id),x);
+      if(x.import_key)existingByKey.set(String(x.import_key),x);
+    });
+  }
+
+  let updated=0;
+  for(const row of financeRows){
+    const hit=existingByOrder.get(String(row.order_id||'')) || existingByKey.get(String(row.import_key||''));
+    if(hit?.id){
+      const {id,...payload}=row;
+      const r=await supabaseClient.from('penjualan').update(payload).eq('id',hit.id);
+      if(r.error)throw r.error;
+      updated++;
+    }
+  }
+
   const existing=new Set();
   const existingOrders=new Set();
-  const keys=[...new Set(rows.map(x=>String(x.import_key||'')).filter(Boolean))];
-  const orders=[...new Set(rows.map(x=>String(x.order_id||'')).filter(Boolean))];
+  [...existingByKey.keys()].forEach(k=>existing.add(k));
+  [...existingByOrder.keys()].forEach(k=>existingOrders.add(k));
 
-  for(let i=0;i<keys.length;i+=QUERY_BATCH){
-    const part=keys.slice(i,i+QUERY_BATCH);
-    const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('import_key',part);
-    if(r.error)throw r.error;
-    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key));if(x.order_id)existingOrders.add(String(x.order_id))});
-  }
-  for(let i=0;i<orders.length;i+=QUERY_BATCH){
-    const part=orders.slice(i,i+QUERY_BATCH);
-    const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('order_id',part);
-    if(r.error)throw r.error;
-    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key));if(x.order_id)existingOrders.add(String(x.order_id))});
-  }
-
-  const rowsToSave=rows.filter(x=>!existing.has(String(x.import_key||'')) && !(x.order_id && existingOrders.has(String(x.order_id))));
+  const rowsToSave=detailRows.filter(x=>!existing.has(String(x.import_key||'')) && !(x.order_id && existingOrders.has(String(x.order_id))));
   for(let i=0;i<rowsToSave.length;i+=INSERT_BATCH){
     const batch=rowsToSave.slice(i,i+INSERT_BATCH);
     const r=await supabaseClient.from('penjualan').insert(batch);
     if(r.error)throw r.error;
   }
-  return {saved:rowsToSave.length,duplicates:rows.length-rowsToSave.length};
+  return {saved:rowsToSave.length,duplicates:detailRows.length-rowsToSave.length,updated};
 }
 
 $('onlineOldSave').onclick=async()=>{
   try{
     if(!onlineOldImportRows.length)return;
     const result=await saveOnlineHistoricalRows(onlineOldImportRows);
-    $('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+result.saved.toLocaleString('id-ID')+'</b> baris Online historis. '+result.duplicates.toLocaleString('id-ID')+' duplikat dilewati.</div>';
+    $('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+result.saved.toLocaleString('id-ID')+'</b> baris Online historis. Memperbarui <b>'+result.updated.toLocaleString('id-ID')+'</b> baris ringkasan Modal/Profit. '+result.duplicates.toLocaleString('id-ID')+' detail duplikat dilewati.</div>';
     onlineOldImportRows=[];
     await load();
   }catch(e){
