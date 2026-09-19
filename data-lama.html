@@ -391,11 +391,49 @@ function previewOnlineHpp(row){
 }
 function normOrderId(v){let s=String(v??'').trim().replace(/[\s\u00A0]+/g,'').replace(/^['"]+|['"]+$/g,'');if(/^\d+\.0+$/.test(s))s=s.replace(/\.0+$/,'');return s;}
 function makeOnlineOldPreviewRows(rows){
+  // STANDARD Familia Food: satu baris REKAP_ONLINE per bulan + baris PRODUK_ONLINE.
+  // Data STANDARD tidak perlu dipasangkan berdasarkan order_id.
+  const standardFinance=rows.filter(x=>x.source==='online_standard_finance');
+  const standardProduct=rows.filter(x=>x.source==='online_standard_product');
   const finance=rows.filter(x=>x.source==='online_historical_finance');
   const directFinance=rows.filter(x=>x.source==='online_historical_import');
   const seller=rows.filter(x=>x.source==='seller_center'||x.source==='online_historical_product');
   const cash=rows.filter(x=>x.source==='online_historical_cash');
   const out=[];
+
+  standardFinance.forEach(x=>{
+    const net=x.uang_bersih==null?null:Number(x.uang_bersih||0);
+    const hpp=x.modal_hpp==null?null:Number(x.modal_hpp||0);
+    const profit=x.profit_online!=null?Number(x.profit_online):(net!=null&&x.modal_hpp!=null?net-hpp:null);
+    out.push({
+      source:'STANDARD Rekap Online',
+      bulan:FFCore.monthOf(x.tanggal)||'',
+      produk:'[REKAP_ONLINE] Total Bulanan',
+      qty:null,
+      rev:x.omzet_produk==null?null:Number(x.omzet_produk||0),
+      net,
+      hpp,
+      profit,
+      _standard:true
+    });
+  });
+
+  standardProduct.forEach(x=>{
+    const unit=previewOnlineHpp(x);
+    const qty=Number(x.qty||0);
+    const hpp=unit!=null?Math.round(qty*unit):null;
+    out.push({
+      source:'STANDARD Produk Online',
+      bulan:FFCore.monthOf(x.tanggal)||'',
+      produk:x.product_name||'-',
+      qty,
+      rev:null,
+      net:null,
+      hpp,
+      profit:null,
+      _standard:true
+    });
+  });
   const financeByOrder={};
   finance.forEach(x=>{
     const k=normOrderId(x.order_id); if(!k)return;
@@ -435,7 +473,7 @@ function makeOnlineOldPreviewRows(rows){
     out.push({source:'Import Penjualan',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:Number(x.qty||0),rev,net,hpp,profit});
   });
   cash.forEach(x=>out.push({source:'Uang Masuk',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:null,rev:null,net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null}));
-  out.sort((a,b)=>{const ra=a.source==='Income + Pesanan'?0:a.source==='Income'?1:a.source==='Import Penjualan'?2:a.source==='Pesanan'?3:4;const rb=b.source==='Income + Pesanan'?0:b.source==='Income'?1:b.source==='Import Penjualan'?2:b.source==='Pesanan'?3:4;return ra-rb||(a.bulan||'').localeCompare(b.bulan||'')||String(a.produk||'').localeCompare(String(b.produk||''))});
+  out.sort((a,b)=>{const rank={"STANDARD Rekap Online":0,"STANDARD Produk Online":1,"Income + Pesanan":2,"Income":3,"Import Penjualan":4,"Pesanan":5,"Uang Masuk":6};const ra=rank[a.source]??9,rb=rank[b.source]??9;return ra-rb||(a.bulan||'').localeCompare(b.bulan||'')||String(a.produk||'').localeCompare(String(b.produk||''))});
   return out;
 }
 async function ensureOnlineHppMaster(){
@@ -529,7 +567,7 @@ async function refreshOnlineOldPreview(){
   const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
   const net=fin.filter(x=>x.uang_bersih!=null).reduce((a,x)=>a+Number(x.uang_bersih||0),0);
   const cash=onlineOldImportRows.filter(x=>x.source==='online_historical_cash').reduce((a,x)=>a+Number(x.uang_bersih||0),0);
-  const seller=onlineOldImportRows.filter(x=>x.source==='seller_center'||x.source==='online_historical_product').reduce((a,x)=>a+Number(x.qty||0),0);
+  const seller=onlineOldImportRows.filter(x=>x.source==='online_standard_product'||x.source==='seller_center'||x.source==='online_historical_product').reduce((a,x)=>a+Number(x.qty||0),0);
   const matchedRows=onlineOldPreviewRows.filter(x=>x.source==='Income + Pesanan');
   const matchedOrders=new Set(matchedRows.map(x=>x._order_id||'' ).filter(Boolean)).size;
   const hppKnown=onlineOldPreviewRows.filter(x=>x.hpp!=null).length;
