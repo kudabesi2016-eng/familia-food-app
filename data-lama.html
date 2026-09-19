@@ -669,7 +669,50 @@ async function refreshOnlineOldPreview(){
 $('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files);await refreshOnlineOldPreview();e.target.value='';}catch(err){$('onlineOldInfo').innerHTML='<div class="msg" style="color:#a22">'+FFCore.esc(err.message||err)+'</div>';$('onlineOldPreview').style.display='block'}};
 $('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
 renderOnlineOldFileQueue();
-$('onlineOldSave').onclick=async()=>{try{if(!onlineOldImportRows.length)return;const keys=onlineOldImportRows.map(x=>x.import_key),orders=onlineOldImportRows.map(x=>x.order_id).filter(Boolean),existing=new Set(),existingOrders=new Set();for(let i=0;i<keys.length;i+=500){const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('import_key',keys.slice(i,i+500));if(r.error)throw r.error;(r.data||[]).forEach(x=>{if(x.import_key)existing.add(x.import_key);if(x.order_id)existingOrders.add(String(x.order_id))})}for(let i=0;i<orders.length;i+=500){const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('order_id',orders.slice(i,i+500));if(r.error)throw r.error;(r.data||[]).forEach(x=>{if(x.import_key)existing.add(x.import_key);if(x.order_id)existingOrders.add(String(x.order_id))})}const rows=onlineOldImportRows.filter(x=>!existing.has(x.import_key)&&!existingOrders.has(String(x.order_id||'')));for(let i=0;i<rows.length;i+=200){const r=await supabaseClient.from('penjualan').insert(rows.slice(i,i+200));if(r.error)throw r.error}$('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+rows.length.toLocaleString('id-ID')+'</b> baris Online historis. '+(onlineOldImportRows.length-rows.length)+' duplikat dilewati.</div>';onlineOldImportRows=[];await load()}catch(e){$('onlineOldMsg').innerHTML='<div class="msg" style="color:#a22">Gagal menyimpan Online historis: '+FFCore.esc(e.message||e)+'</div>'}};
+async function saveOnlineHistoricalRows(rows){
+  // Gunakan batch kecil agar URL query .in() tidak terlalu panjang dan POST tidak rapuh.
+  const QUERY_BATCH=75;
+  const INSERT_BATCH=50;
+  const existing=new Set();
+  const existingOrders=new Set();
+  const keys=[...new Set(rows.map(x=>String(x.import_key||'')).filter(Boolean))];
+  const orders=[...new Set(rows.map(x=>String(x.order_id||'')).filter(Boolean))];
+
+  for(let i=0;i<keys.length;i+=QUERY_BATCH){
+    const part=keys.slice(i,i+QUERY_BATCH);
+    const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('import_key',part);
+    if(r.error)throw r.error;
+    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key));if(x.order_id)existingOrders.add(String(x.order_id))});
+  }
+  for(let i=0;i<orders.length;i+=QUERY_BATCH){
+    const part=orders.slice(i,i+QUERY_BATCH);
+    const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('order_id',part);
+    if(r.error)throw r.error;
+    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key));if(x.order_id)existingOrders.add(String(x.order_id))});
+  }
+
+  const rowsToSave=rows.filter(x=>!existing.has(String(x.import_key||'')) && !(x.order_id && existingOrders.has(String(x.order_id))));
+  for(let i=0;i<rowsToSave.length;i+=INSERT_BATCH){
+    const batch=rowsToSave.slice(i,i+INSERT_BATCH);
+    const r=await supabaseClient.from('penjualan').insert(batch);
+    if(r.error)throw r.error;
+  }
+  return {saved:rowsToSave.length,duplicates:rows.length-rowsToSave.length};
+}
+
+$('onlineOldSave').onclick=async()=>{
+  try{
+    if(!onlineOldImportRows.length)return;
+    const result=await saveOnlineHistoricalRows(onlineOldImportRows);
+    $('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+result.saved.toLocaleString('id-ID')+'</b> baris Online historis. '+result.duplicates.toLocaleString('id-ID')+' duplikat dilewati.</div>';
+    onlineOldImportRows=[];
+    await load();
+  }catch(e){
+    const msg=String(e?.message||e||'Gagal menyimpan');
+    $('onlineOldMsg').innerHTML='<div class="msg" style="color:#a22">Gagal menyimpan Online historis: '+FFCore.esc(msg)+'</div>';
+    console.error('saveOnlineHistoricalRows',e);
+  }
+};
 
 function fontSizeOf(it){const t=it.transform||[];return Math.max(Math.abs(Number(t[0])||0),Math.abs(Number(t[3])||0))}
 function cleanNumericColumn(items,minX,maxX){
