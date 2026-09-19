@@ -255,8 +255,9 @@ function parseOnlineOldWorkbook(wb){
 }
 async function parseFamiliaStandardWorkbook(wb){
   const names=wb.SheetNames.map(String), norm=s=>FFCore.norm(s), out=[];
-  const rekName=names.find(n=>norm(n)==='rekap online');
-  const prodName=names.find(n=>norm(n)==='produk online');
+  const sheetKey=s=>String(norm(s)||'').replace(/[\s_-]+/g,'').toLowerCase();
+  const rekName=names.find(n=>sheetKey(n)==='rekaponline');
+  const prodName=names.find(n=>sheetKey(n)==='produkonline');
   if(!rekName&&!prodName)return null;
   const readRows=name=>name?XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:'',raw:false}):[];
   for(const r of readRows(rekName)){
@@ -460,6 +461,7 @@ async function addOnlineOldFiles(fileList){
     f._detected='memeriksa'; onlineOldQueuedFiles.push(f); renderOnlineOldFileQueue();
     try{
       const parsed=await parseOnlineOldFile(f);
+      if(!Array.isArray(parsed)) throw new Error('Sheet STANDARD tidak ditemukan. Pastikan nama sheet: REKAP_ONLINE dan/atau PRODUK_ONLINE.');
       const hasStandardFinance=parsed.some(x=>x.source==='online_standard_finance');
       const hasStandardProduct=parsed.some(x=>x.source==='online_standard_product');
       const hasIncome=parsed.some(x=>x.source==='online_historical_finance'||x.source==='online_historical_adjustment');
