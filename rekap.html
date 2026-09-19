@@ -625,9 +625,28 @@ function ffNormOfflineName(v){
   return String(v??'').toLowerCase().trim().replace(/\s+/g,' ');
 }
 
+/* =====================================================
+   HPP OFFLINE RESMI
+   Semua nominal Rupiah bulat. Fallback ini dipakai untuk
+   Data Lama Offline agar tetap bisa dihitung meskipun nama
+   produk historis berbeda dari nama produk master.
+===================================================== */
+const FF_OFFLINE_HPP_FALLBACK={
+  'naget 10':3593,
+  'naget 12':4312,
+  'naget 20':7187,
+  'naget 25+saus':8984,
+  'naget 30':10780,
+  'naget 40':14374,
+  'naget 50':17968,
+  'cireng isi':2946,
+  'cireng biasa':2473,
+  'cibay':2900
+};
+
 function ffOfflineMasterTarget(name){
   const n=ffNormOfflineName(name);
-  if(/\bnaget\b/.test(n)){
+  if(/\b(?:naget|tempura aci)\b/.test(n)){
     const m=n.match(/(?:isi\s*)?(10|12|20|25|30|40|50)(?:\s*pcs?)?/);
     if(m){
       const size=Number(m[1]);
@@ -643,9 +662,19 @@ function ffOfflineMasterTarget(name){
 function ffOfflineHppUnit(name){
   const target=ffOfflineMasterTarget(name);
   if(!target)return null;
+
+  /* Fallback resmi lebih dulu untuk menjaga Data Lama konsisten
+     dengan HPP Offline yang sudah dikunci. */
+  if(FF_OFFLINE_HPP_FALLBACK[target]!=null){
+    return FF_OFFLINE_HPP_FALLBACK[target];
+  }
+
   let p=(products||[]).find(x=>ffNormOfflineName(x.nama_produk)===target);
   if(!p){
-    p=(products||[]).find(x=>ffNormOfflineName(x.nama_produk).includes(target) || target.includes(ffNormOfflineName(x.nama_produk)));
+    p=(products||[]).find(x=>{
+      const n=ffNormOfflineName(x.nama_produk);
+      return n.includes(target) || target.includes(n);
+    });
   }
   if(!p)return null;
   const h=(hpps||[]).find(x=>String(x.produk_id)===String(p.id));
@@ -657,15 +686,27 @@ function ffOfflineHppUnit(name){
 
 function offlineHpp(m){
   try{
-    // Data Baru Offline: gunakan productSummary yang sudah memakai master HPP.
-    const freshRows=FFCore.productSummary(m,'Offline',{sales,olds:[],expenses,products,hpps})||[];
     let total=0;
+    let unknown=false;
+
+    // Data Baru Offline: tetap gunakan productSummary yang sudah
+    // memakai master HPP aplikasi.
+    const freshRows=FFCore.productSummary(m,'Offline',{sales,olds:[],expenses,products,hpps})||[];
     for(const x of freshRows){
-      if(x.hppKnown===false || x.hpp==null)return {known:false,total:0};
-      total+=Math.trunc(Number(x.hpp)||0);
+      if(x.hppKnown!==false && x.hpp!=null){
+        total+=Math.trunc(Number(x.hpp)||0);
+        continue;
+      }
+      const unit=ffOfflineHppUnit(x.produk||x.nama_produk||'');
+      const qty=Math.round(Number(x.qty)||0);
+      if(unit!=null && qty>0){
+        total+=qty*unit;
+      }else if(qty>0){
+        unknown=true;
+      }
     }
 
-    // Data Lama Offline: hitung langsung dari Produk x Qty menggunakan master HPP Offline.
+    // Data Lama Offline: Produk x Qty x HPP Offline resmi.
     const oldRows=(olds||[]).filter(x=>{
       const p=FFCore.monthOf(x.periode||x.tanggal||x.date||'') || String(x.periode||'').slice(0,7);
       return p===m;
@@ -674,11 +715,14 @@ function offlineHpp(m){
       const qty=Math.round(Number(x.qty)||0);
       if(qty<=0)continue;
       const unit=ffOfflineHppUnit(x.produk);
-      if(unit==null)return {known:false,total:0};
+      if(unit==null){
+        unknown=true;
+        continue;
+      }
       total += qty*unit;
     }
 
-    return {known:true,total:Math.trunc(total)};
+    return {known:!unknown,total:Math.trunc(total)};
   }catch(e){
     return {known:false,total:0};
   }
