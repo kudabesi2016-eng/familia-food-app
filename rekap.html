@@ -530,6 +530,50 @@ function onlineFinance(m){
    HPP / MODAL ONLINE
 ===================================================== */
 
+function ffNormOnline(v){
+  return String(v??'').toLowerCase().trim().replace(/\s+/g,' ');
+}
+function ffDetectPackSize(row){
+  const product=ffNormOnline(row?.product_name), variation=ffNormOnline(row?.variation);
+  const n=ffNormOnline([row?.product_name,row?.variation,row?.seller_sku].filter(Boolean).join(' | '));
+  const exactSku=String(row?.sku_id??'').trim();
+  if(exactSku==='1733751720824702091')return 12;
+  if(variation==='default' && /tempura aci naget/.test(product) && /bulat/.test(product) && !/(?:isi|pcs|bungkus)\s*(?:10|12|20|25|30|40|50)/.test(product))return 12;
+  let z=n.match(/\b(\d+)\s*bungkus\s*(?:isi|is)\s*(\d+)\s*pcs?\b/);
+  if(z){const packs=Number(z[1]),pcs=Number(z[2]),per=pcs/packs;if([10,12,20,25,30,40,50].includes(per))return per;}
+  z=n.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/); if(z)return Number(z[1]);
+  z=n.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/); if(z)return Number(z[1]);
+  z=n.match(/\bisi\s*(10|12|20|25|30|40|50)\b/); if(z)return Number(z[1]);
+  return null;
+}
+function ffIsFamiliaOnline(row){
+  const n=ffNormOnline([row?.product_name,row?.variation].filter(Boolean).join(' | '));
+  if(/saus bantal|saos bakso/.test(n))return false;
+  return /\btempura aci\b|\bnaget\b/.test(n);
+}
+function ffMasterNameForSize(size){
+  const n=Number(size);
+  if(n===25)return 'naget 25+saus';
+  if([10,12,20,30,40,50].includes(n))return 'naget '+n;
+  return '';
+}
+function ffOnlineHppUnit(row){
+  if(!ffIsFamiliaOnline(row))return null;
+  const size=ffDetectPackSize(row);
+  const target=ffMasterNameForSize(size);
+  if(!target)return null;
+  const product=products.find(x=>ffNormOnline(x.nama_produk)===target);
+  if(!product)return null;
+  const h=hpps.find(x=>String(x.produk_id)===String(product.id));
+  if(!h)return null;
+  const price=Number(h.harga_online!=null?h.harga_online:(product.harga_online||0));
+  const untung=Number(h.untung_online||0);
+  if(price>0 && untung>=0 && price-untung>0)return Math.trunc(price-untung);
+  if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Math.trunc(Number(h.hpp_online));
+  if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
+  return null;
+}
+
 function onlineHpp(m){
   try{
     // Historis Online STANDARD: Modal sudah dihitung dari PRODUK_ONLINE
@@ -539,6 +583,17 @@ function onlineHpp(m){
       String(x.source||'')==='online_standard_finance' &&
       monthOfSaleRow(x)===m
     );
+    const standardProducts=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_product' && monthOfSaleRow(x)===m);
+    if(standardProducts.length){
+      const familiaRows=standardProducts.filter(ffIsFamiliaOnline);
+      let total=0;
+      for(const x of familiaRows){
+        const unit=ffOnlineHppUnit(x);
+        if(unit==null)return {known:false,total:0};
+        total+=Math.trunc(Number(x.qty||0))*unit;
+      }
+      if(familiaRows.length)return {known:true,total:Math.trunc(total)};
+    }
     if(standard.length){
       const missing=standard.some(x=>x.modal_hpp==null);
       if(missing)return {known:false,total:0};
