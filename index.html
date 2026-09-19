@@ -46,8 +46,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
     <div class="card"><div class="card-title">Total Pemasukan</div><div class="card-number" id="totalRevenue">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Pengeluaran / Potongan</div><div class="card-number" id="totalOut">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Uang Bersih</div><div class="card-number" id="totalNet">Rp 0</div></div>
-    <div class="card"><div class="card-title">Total HPP / Modal + Packing Online</div><div class="card-number" id="totalHpp">Rp 0</div></div>
-    <div class="card"><div class="card-title">Sisa Online Setelah Semua Biaya</div><div class="card-number" id="finalOnlineSisa">Rp 17.227.872</div></div>
+    <div class="card"><div class="card-title">Total HPP / Modal</div><div class="card-number" id="totalHpp">Rp 0</div></div>
     <div class="card"><div class="card-title">Profit Terukur</div><div class="card-number" id="totalProfit">Rp 0</div></div>
     <div class="card"><div class="card-title">Margin Terukur</div><div class="card-number" id="totalMargin">0.00%</div></div>
     <div class="card"><div class="card-title">Produk Aktif</div><div class="card-number" id="totalProduk">-</div></div>
@@ -94,9 +93,6 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
 <script>
 const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
 const num=n=>Number(n)||0;
-const FF_ADS_TOTAL=15776655;
-const FF_PACKING_TOTAL=3271000;
-const FF_FINAL_ONLINE_SISA=17227872;
 const colorValue=(el,v,formatted=rupiah(v))=>{el.textContent=formatted;el.classList.toggle('negative',v<0)};
 const pct=(v)=>{const t=(Number(v)||0).toFixed(2)+'%';return t};
 async function fetchAll(table, select='*'){
@@ -165,7 +161,7 @@ async function loadDashboard(){
     const onNewFee=Math.max(0,onNewRevenue-onNewNet);
     const onNewHpp=onlineNew.reduce((s,x)=>s+Math.round(num(x.hpp)),0);
     const onRevenue=onOldRevenue+onNewRevenue;
-    const onFee=onOldFee+onNewFee+FF_ADS_TOTAL;
+    const onFee=onOldFee+onNewFee;
     const onNet=onOldNet+onNewNet;
     const onHpp=onOldHpp+onNewHpp;
     const onProfit=onNet-onHpp;
@@ -196,7 +192,6 @@ async function loadDashboard(){
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
     setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet); setNumber('onHpp',onHpp); setNumber('onProfit',onProfit);
-    setNumber('finalOnlineSisa',FF_FINAL_ONLINE_SISA);
     document.getElementById('onQty').textContent=onQty.toLocaleString('id-ID');
 
     const status=errors.length?('Sebagian data gagal dimuat: '+errors.join(', ')+'.'):('Database terhubung • Dashboard Offline + Online berhasil dimuat.');
