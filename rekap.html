@@ -322,6 +322,11 @@ td{
       <strong id="profit">—</strong>
     </div>
 
+    <div class="stat" id="finalOnlineCard" style="display:none">
+      <small>Sisa Online Setelah Semua Biaya</small>
+      <strong id="finalOnline">Rp 0</strong>
+    </div>
+
   </div>
 
 
@@ -544,16 +549,30 @@ function offlineFinance(m){
   return [rev,0,rev];
 }
 
+const ONLINE_ADS_BY_MONTH = {
+  '2026-01':0,
+  '2026-02':0,
+  '2026-03':156728,
+  '2026-04':1520830,
+  '2026-05':2359332,
+  '2026-06':3770101,
+  '2026-07':3650244,
+  '2026-08':4319420
+};
+const ONLINE_ADS_TOTAL = Object.values(ONLINE_ADS_BY_MONTH).reduce((a,b)=>a+b,0);
+
 function onlineFinance(m){
   const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===m);
   const standard=rows.filter(x=>String(x.source||'')==='online_standard_finance');
 
   if(standard.length){
-    return [
-      standard.reduce((a,x)=>a+Number(x.omzet_produk||0),0),
-      standard.reduce((a,x)=>a+Number(x.biaya_platform||0),0),
-      standard.reduce((a,x)=>a+Number(x.uang_bersih||0),0)
-    ];
+    const revenue = standard.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+    const tiktokFee = standard.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
+    const ads = Number(ONLINE_ADS_BY_MONTH[m]||0);
+    const net = standard.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+    // Iklan dimasukkan ke kolom Potongan per bulan sesuai keputusan final.
+    // Uang Bersih tetap mengikuti settlement STANDARD agar tidak menghitung retur/settlement dua kali.
+    return [revenue, tiktokFee + ads, net];
   }
 
   const fresh=rows.filter(x=>![
@@ -780,8 +799,8 @@ function updateChannelUI(){
   const offline=$('channel').value==='Offline';
   $('pageTitle').textContent=offline?'📊 Rekap Offline':'📊 Rekap Online';
   $('pageSub').textContent=offline?'Rekap penjualan Offline Familia Food per bulan.':'Rekap penjualan Online Shop Familia Food per bulan.';
-  $('outLabel').textContent=offline?'Pengeluaran':'Potongan Online Shop';
-  $('monthlyOutHead').textContent=offline?'Pengeluaran':'Potongan Online Shop';
+  $('outLabel').textContent=offline?'Pengeluaran':'Potongan Online Shop + Iklan';
+  $('monthlyOutHead').textContent=offline?'Pengeluaran':'Potongan Online Shop + Iklan';
   $('monthlyNetHead').style.display=offline?'none':'';
   $('monthlyHppHead').style.display=offline?'none':'';
   $('monthlyActionHead').style.display=offline?'':'none';
@@ -822,7 +841,7 @@ function renderCards(){
   const offline=$('channel').value==='Offline';
   const v=finance(m);
 
-  $('outLabel').textContent=offline?'Pengeluaran':'Potongan Online Shop';
+  $('outLabel').textContent=offline?'Pengeluaran':'Potongan Online Shop + Iklan';
 
   if(offline){
     const income=Number(v?.[0])||0;
@@ -834,6 +853,7 @@ function renderCards(){
     $('net').textContent='';
     $('hpp').textContent='';
     $('profit').innerHTML=`${moneyColor(profit)}<br><span class="hint">Margin ${percentColor(margin)}</span>`;
+    if($('finalOnlineCard')) $('finalOnlineCard').style.display='none';
     return;
   }
 
@@ -847,6 +867,9 @@ function renderCards(){
     const margin=Number(v?.[2]) ? (profit/Number(v[2]))*100 : 0;
     $('hpp').innerHTML=moneyColor(h.total);
     $('profit').innerHTML=`${moneyColor(profit)}<br><span class="hint">Margin ${percentColor(margin)}</span>`;
+    const finalOnline = 17227872;
+    $('finalOnlineCard').style.display='';
+    $('finalOnline').innerHTML=moneyColor(finalOnline);
   }else{
     $('hpp').textContent='—';
     $('profit').innerHTML='<span class="hint">Modal belum tersedia</span>';
