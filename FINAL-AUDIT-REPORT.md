@@ -64,3 +64,9 @@ Query REST live ke endpoint Supabase tidak dapat dijalankan dari environment pem
 
 ## G. Tidak ada perubahan database selama build
 Pembuatan paket v10 tidak melakukan INSERT, UPDATE, atau DELETE ke Supabase.
+
+## v11 Hotfix Check
+- Reported runtime error fixed: `column produk.hpp_offline does not exist`.
+- `data-lama.html` no longer selects `hpp_offline` from `produk`.
+- Inline JavaScript syntax check: PASS for all 9 HTML pages.
+- No Supabase writes performed during this hotfix build.

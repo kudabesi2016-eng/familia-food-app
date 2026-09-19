@@ -14,3 +14,10 @@ Perbaikan Data Lama Online setelah pemeriksaan menyeluruh v9:
 - Kolom preview tetap persis: **Sumber | Bulan | Produk | Qty | Pemasukan | Uang Bersih | Modal/HPP | Profit**.
 
 Tidak ada perubahan pada struktur Offline, pola HPP yang sudah disepakati, atau sumber data keuangan Income TikTok.
+
+
+## v11 hotfix — 2026-09-19
+- Fixed Data Lama Online Supabase master query: removed nonexistent `produk.hpp_offline` column.
+- Master Produk now reads only `id,nama_produk,harga_online`.
+- Master HPP continues to read `produk_id,hpp_unit,untung_online,harga_online`.
+- No changes to HPP calculation pattern or historical data.

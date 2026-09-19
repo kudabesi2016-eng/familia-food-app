@@ -354,7 +354,7 @@ function makeOnlineOldPreviewRows(rows){
 }
 async function ensureOnlineHppMaster(){
   try{
-    const pr=await supabaseClient.from('produk').select('id,nama_produk,harga_online,hpp_offline'); if(pr.error)throw pr.error;
+    const pr=await supabaseClient.from('produk').select('id,nama_produk,harga_online'); if(pr.error)throw pr.error;
     productMasterRows=pr.data||[];
     const hr=await supabaseClient.from('hpp').select('produk_id,hpp_unit,untung_online,harga_online'); if(hr.error)throw hr.error;
     hppMasterRows=(hr.data||[]).map(h=>({...h,nama_produk:(productMasterRows.find(p=>String(p.id)===String(h.produk_id))||{}).nama_produk||''}));
