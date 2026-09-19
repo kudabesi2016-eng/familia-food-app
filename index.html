@@ -49,6 +49,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
     <div class="card"><div class="card-title">Total HPP / Modal</div><div class="card-number" id="totalHpp">Rp 0</div></div>
     <div class="card"><div class="card-title">Profit Terukur</div><div class="card-number" id="totalProfit">Rp 0</div></div>
     <div class="card"><div class="card-title">Margin Terukur</div><div class="card-number" id="totalMargin">0.00%</div></div>
+    <div class="card"><div class="card-title">Sisa Online Setelah Semua Biaya</div><div class="card-number" id="finalOnlineCash">Rp 0</div></div>
     <div class="card"><div class="card-title">Produk Aktif</div><div class="card-number" id="totalProduk">-</div></div>
     <div class="card"><div class="card-title">Transaksi Baru</div><div class="card-number" id="totalPenjualan">-</div></div>
   </div>
@@ -180,6 +181,9 @@ async function loadDashboard(){
     setNumber('totalNet',totalNet);
     setNumber('totalHpp',totalHpp);
     setNumber('totalProfit',totalProfit);
+    // Angka final Online Jan-Agustus 2026 yang sudah dikunci:
+    // Uang Bersih 96.167.983 - Potongan TikTok 39.704.351 - Iklan 15.776.655 - HPP+Packing 23.459.105 = 17.227.872
+    setNumber('finalOnlineCash',17227872);
     const tm=document.getElementById('totalMargin');tm.textContent=pct(totalMargin);tm.classList.toggle('negative',totalMargin<0);
     document.getElementById('totalProduk').textContent=activeProducts.toLocaleString('id-ID');
     document.getElementById('totalPenjualan').textContent=sales.filter(x=>!isHistoricalSource(x.source)).length.toLocaleString('id-ID');
