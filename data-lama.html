@@ -193,6 +193,7 @@ window.del=async id=>{if(!confirm('Hapus data historis ini?'))return;const r=awa
 $('refresh')?.addEventListener('click',load);
 
 let onlineOldImportRows=[], productMasterRows=[], hppMasterRows=[], onlineOldPreviewRows=[];
+let onlineOldQueuedFiles=[];
 function parseAnyDate(v){
   if(v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
   const s=String(v??'').trim(); if(!s)return '';
@@ -260,14 +261,16 @@ async function parseFamiliaStandardWorkbook(wb){
   const prodName=names.find(n=>sheetKey(n)==='produkonline');
   if(!rekName&&!prodName)return null;
   const readRows=name=>name?XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:'',raw:false}):[];
+  const fieldMap=rec=>Object.fromEntries(Object.entries(rec||{}).map(([k,v])=>[String(norm(k)).toLowerCase(),v]));
+  const getField=(rec,...keys)=>{const m=fieldMap(rec);for(const k of keys){const nk=String(norm(k)).toLowerCase();if(Object.prototype.hasOwnProperty.call(m,nk))return m[nk];}return '';};
   for(const r of readRows(rekName)){
-    const bulan=normalPeriode(r['Bulan']??r['Periode']); if(!bulan)continue;
-    const rev=toNum(r['Pemasukan']), pot=toNum(r['Potongan Online Shop']);
-    const netRaw=String(r['Uang Bersih yang Diterima']??r['Uang Bersih']??'').trim();
+    const bulan=normalPeriode(getField(r,'Bulan','Periode')); if(!bulan)continue;
+    const rev=toNum(getField(r,'Pemasukan')), pot=toNum(getField(r,'Potongan Online Shop'));
+    const netRaw=String(getField(r,'Uang Bersih yang Diterima','Uang Bersih')).trim();
     const net=netRaw===''?Math.max(0,rev-pot):toNum(netRaw);
-    const modalRaw=String(r['Modal/HPP']??r['Modal']??'').trim();
+    const modalRaw=String(getField(r,'Modal/HPP','Modal')).trim();
     const modal=modalRaw===''?null:toNum(modalRaw);
-    const profitRaw=String(r['Profit/Margin']??r['Profit']??'').trim();
+    const profitRaw=String(getField(r,'Profit/Margin','Profit')).trim();
     out.push({tanggal:bulan+'-01',produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:0,
       order_id:'FF-STANDARD-'+bulan,product_name:'[STANDARD] Rekap Online',variation:'',sku_id:'',seller_sku:'',
       quantity_return:0,harga_asli:0,omzet_produk:rev,order_amount:rev,biaya_platform:pot,uang_bersih:net,
@@ -276,13 +279,13 @@ async function parseFamiliaStandardWorkbook(wb){
       paid_time:bulan+'-01T00:00:00',import_key:['familia-standard-finance-v1',bulan,rev,pot,net,modal,profitRaw].join('|')});
   }
   for(const r of readRows(prodName)){
-    const bulan=normalPeriode(r['Bulan']??r['Periode']);
-    const product=String(r['Nama Produk']??r['Produk']??'').trim();
-    const variation=String(r['Variasi']??r['Variation']??'').trim();
+    const bulan=normalPeriode(getField(r,'Bulan','Periode'));
+    const product=String(getField(r,'Nama Produk','Produk')).trim();
+    const variation=String(getField(r,'Variasi','Variation')).trim();
     if(!bulan||!product)continue;
-    const qty=toNum(r['Bungkus']??r['Qty']??r['Quantity']); if(qty<=0)continue;
-    const isi=String(r['Isi (pcs)']??r['Isi']??'').trim();
-    const rows=toNum(r['Jumlah Baris']??r['Rows']);
+    const qty=toNum(getField(r,'Bungkus','Qty','Quantity')); if(qty<=0)continue;
+    const isi=String(getField(r,'Isi (pcs)','Isi')).trim();
+    const rows=toNum(getField(r,'Jumlah Baris','Rows'));
     out.push({tanggal:bulan+'-01',produk_id:null,qty:Math.round(qty),channel:'Online',harga:0,hpp:0,laba:0,
       order_id:'FF-STANDARD-PRODUCT-'+bulan+'-'+String(out.length+1),product_name:product,variation,sku_id:'',seller_sku:'',
       quantity_return:0,harga_asli:0,omzet_produk:0,order_amount:0,biaya_platform:null,uang_bersih:null,
@@ -306,6 +309,28 @@ async function parseOnlineOldFile(file){
   return parseOnlineOldWorkbook(wb);
 }
 async function parseOnlineOldFiles(files){let out=[];for(const f of Array.from(files||[])){out.push(...await parseOnlineOldFile(f))}const seen=new Set();return out.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true})}
+function renderOnlineOldFileQueue(){
+  const host=$('onlineOldFiles');
+  if(!host)return;
+  if(!onlineOldQueuedFiles.length){host.innerHTML='';return;}
+  host.innerHTML='<div><b>Antrian file:</b></div>'+onlineOldQueuedFiles.map((f,i)=>'<div style="margin-top:4px">📄 '+FFCore.esc(f.name||('File '+(i+1)))+'</div>').join('');
+}
+async function addOnlineOldFiles(fileList){
+  const files=Array.from(fileList||[]);
+  if(!files.length)return;
+  // File baru ditambahkan ke antrian; file sebelumnya tidak diganti.
+  for(const f of files){
+    const duplicate=onlineOldQueuedFiles.some(x=>x.name===f.name&&x.size===f.size&&x.lastModified===f.lastModified);
+    if(duplicate)continue;
+    onlineOldQueuedFiles.push(f);
+    const rows=await parseOnlineOldFile(f);
+    onlineOldImportRows.push(...rows);
+  }
+  // Deduplicate seluruh antrian berdasarkan import_key.
+  const seen=new Set();
+  onlineOldImportRows=onlineOldImportRows.filter(x=>{const k=String(x.import_key||'');if(seen.has(k))return false;seen.add(k);return true;});
+  renderOnlineOldFileQueue();
+}
 function previewMoney(v){return v==null?'—':FFCore.rupiah(v)}
 function normOnlineName(v){return String(v??'').toLowerCase().trim().replace(/\s+/g,' ')}
 function onlineMatchText(row){return [row?.product_name,row?.variation,row?.seller_sku].map(normOnlineName).filter(Boolean).join(' | ')}
