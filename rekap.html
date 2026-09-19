@@ -340,6 +340,26 @@ td{
   </div>
 
 
+  <!-- PENGELUARAN USAHA -->
+  <div class="card">
+    <h2 style="margin-top:0">💸 Pengeluaran Usaha</h2>
+    <div class="notice" id="expenseNotice">
+      Pengeluaran usaha dibaca dari tabel <b>pengeluaran</b> dan ditampilkan terpisah dari Modal/HPP agar tidak dihitung dua kali.
+    </div>
+    <div class="stat" style="margin:14px 0">
+      <small>Pengeluaran Bulan Terpilih</small>
+      <strong id="expenseSelected">Rp 0</strong>
+    </div>
+    <div class="tablewrap">
+      <table style="min-width:500px">
+        <thead><tr><th>Bulan</th><th>Pengeluaran</th></tr></thead>
+        <tbody id="expenseMonthly"><tr><td colspan="2" class="empty">Memuat...</td></tr></tbody>
+      </table>
+    </div>
+    <div id="expenseDetail" style="margin-top:14px"></div>
+  </div>
+
+
   <!-- REKAP BULANAN -->
   <div class="card">
 
@@ -745,7 +765,7 @@ function updateChannelUI(){
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Potongan untuk Offline tidak ada sehingga nilainya Rp 0.<br>Uang Bersih sama dengan Pemasukan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.'
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Potongan untuk Offline tidak ada sehingga nilainya Rp 0.<br>Uang Bersih sama dengan Pemasukan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.<br>Pengeluaran usaha ditampilkan terpisah pada bagian Pengeluaran Usaha.'
     : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br>Modal menggunakan HPP Online apabila sudah tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.';
 }
 
@@ -1021,9 +1041,46 @@ function render(){
   renderCards();
 
   renderMonthly();
+  renderExpenseSection();
 
 }
 
+
+/* =====================================================
+   PENGELUARAN USAHA
+===================================================== */
+function expenseForMonth(m){
+  return (expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m)
+    .reduce((a,x)=>a+Math.round(Number(x.nominal)||0),0);
+}
+
+function renderExpenseSection(){
+  const selected=$('month').value||'';
+  const selectedNode=$('expenseSelected');
+  if(selectedNode) selectedNode.textContent=money(expenseForMonth(selected));
+
+  const body=$('expenseMonthly');
+  if(!body)return;
+  const ms=months();
+  body.innerHTML=ms.length ? ms.map(m=>`<tr><td><b>${label(m)}</b></td><td><b>${money(expenseForMonth(m))}</b></td></tr>`).join('') : '<tr><td colspan="2" class="empty">Belum ada data pengeluaran.</td></tr>';
+
+  const detail=$('expenseDetail');
+  if(!detail)return;
+  const rows=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===selected);
+  if(!rows.length){ detail.innerHTML='<div class="hint">Tidak ada pengeluaran pada bulan terpilih.</div>'; return; }
+
+  const groups={};
+  rows.forEach(x=>{ const k=String(x.kategori||'Tanpa Kategori'); (groups[k]??=[]).push(x); });
+  let h='<div class="card" style="margin:0;background:#fbfdfb"><h3 style="margin-top:0">👁 Pengeluaran '+label(selected)+'</h3>';
+  for(const [k,rs] of Object.entries(groups)){
+    const total=rs.reduce((a,x)=>a+Math.round(Number(x.nominal)||0),0);
+    h+=`<div style="margin:0 0 14px"><div style="display:flex;justify-content:space-between;gap:10px;font-weight:800"><span>${FFCore.esc(k)}</span><span>${money(total)}</span></div><div class="tablewrap"><table style="min-width:500px"><thead><tr><th>Keterangan</th><th>Nominal</th></tr></thead><tbody>`;
+    rs.forEach(x=>{ h+=`<tr><td>${FFCore.esc(x.keterangan||'—')}</td><td>${money(x.nominal)}</td></tr>`; });
+    h+='</tbody></table></div></div>';
+  }
+  h+='</div>';
+  detail.innerHTML=h;
+}
 
 /* =====================================================
    EVENT
