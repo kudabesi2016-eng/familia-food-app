@@ -194,6 +194,7 @@ $('refresh')?.addEventListener('click',load);
 
 let onlineOldImportRows=[], productMasterRows=[], hppMasterRows=[], onlineOldPreviewRows=[];
 let onlineOldQueuedFiles=[];
+let onlineOldActiveMonth='';
 function parseAnyDate(v){
   if(v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
   const s=String(v??'').trim(); if(!s)return '';
