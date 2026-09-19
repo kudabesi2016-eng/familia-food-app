@@ -11,7 +11,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
 .sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand);color:#fff;padding:22px 15px}
 .logo{font-size:22px;font-weight:bold;padding:10px;margin-bottom:25px}.menu{display:block;color:#fff;text-decoration:none;padding:13px 15px;margin:4px 0;border-radius:9px}.menu:hover,.menu.active{background:var(--brand2)}
 .main{margin-left:240px;padding:30px}.header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:25px}.header h1{margin:0 0 8px;color:var(--brand)}.header p{margin:0;color:var(--muted)}
-.refresh{border:0;background:var(--brand);color:#fff;padding:10px 16px;border-radius:9px;cursor:pointer;font-weight:bold}.refresh:hover{background:var(--brand2)}
+.refresh{position:relative;z-index:10;pointer-events:auto;border:0;background:var(--brand);color:#fff;padding:10px 16px;border-radius:9px;cursor:pointer;font-weight:bold}.refresh:hover{background:var(--brand2)}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.card{background:#fff;padding:20px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);min-height:112px}.card-title{color:var(--muted);font-size:14px}.card-number{font-size:28px;font-weight:bold;color:var(--brand);margin-top:10px;word-break:break-word}.negative{color:var(--danger)!important}
 .section{margin-top:25px}.section h2{color:var(--brand);margin-bottom:14px}.channel{margin-top:22px}.channel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px}.channel-head h2{margin:0}.badge{background:#eaf5ee;color:var(--brand);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:bold}
 .channel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.mini{background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}.mini small{display:block;color:var(--muted);margin-bottom:6px}.mini b{font-size:20px;color:var(--brand)}
@@ -201,7 +201,26 @@ async function loadDashboard(){
     document.getElementById('statusText').textContent='Gagal memuat dashboard. Periksa koneksi database.';
   }
 }
-document.getElementById('refreshBtn').addEventListener('click',loadDashboard);
+const refreshBtn=document.getElementById('refreshBtn');
+let refreshing=false;
+async function handleRefresh(){
+  if(refreshing) return;
+  refreshing=true;
+  refreshBtn.disabled=true;
+  refreshBtn.style.pointerEvents='auto';
+  refreshBtn.style.opacity='0.7';
+  refreshBtn.textContent='⏳ Memuat...';
+  try{ await loadDashboard(); }
+  finally{
+    refreshing=false;
+    refreshBtn.disabled=false;
+    refreshBtn.style.pointerEvents='auto';
+    refreshBtn.style.opacity='1';
+    refreshBtn.textContent='↻ Muat Ulang';
+  }
+}
+refreshBtn.onclick=handleRefresh;
+refreshBtn.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();handleRefresh();}});
 loadDashboard();
 </script>
 </body>
