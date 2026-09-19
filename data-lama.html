@@ -24,7 +24,7 @@
 <div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></details></div>
 
 
-<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Masukkan <b>Income TikTok</b> dan <b>Pesanan/Seller Center</b>. Keduanya akan digabung berdasarkan <b>ID Pesanan</b>. Income dipakai untuk <b>Pemasukan + Uang Bersih</b>, sedangkan Pesanan dipakai untuk <b>Produk + Qty</b>.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>Bisa pilih beberapa file sekaligus.</b> Tidak perlu membuat Excel perantara. Setelah pilih file pertama, bro juga bisa pilih file berikutnya; file baru akan ditambahkan ke antrian, tidak menggantikan file sebelumnya.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button class="btn" id="onlineOldSave">+ Simpan Data Lama Online</button><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
+<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Upload <b>Excel STANDARD Familia Food</b> hasil pengolahan file TikTok. Aplikasi membaca sheet <b>REKAP_ONLINE</b> untuk Pemasukan/Potongan/Uang Bersih dan <b>PRODUK_ONLINE</b> untuk Produk + <b>Bungkus</b>. File TikTok asli tidak diurai oleh aplikasi.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>Gunakan hanya Excel STANDARD Familia Food.</b> Beberapa file periode berbeda boleh dipilih; file baru ditambahkan ke antrian dan tidak menggantikan file sebelumnya.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button class="btn" id="onlineOldSave">+ Simpan Data Lama Online</button><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
 
 <div class="card"><details><summary>✍️ Tambah Manual</summary><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
 <div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></details></div>
@@ -253,9 +253,56 @@ function parseOnlineOldWorkbook(wb){
   if(!out.length)throw new Error('Format Excel online historis tidak dikenali. File asli TikTok Income, Seller Center, Familia-Food-Import-Online-SIAP.xlsx, dan Online Database (8).xlsx didukung.');
   const seen=new Set(); return out.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true});
 }
+async function parseFamiliaStandardWorkbook(wb){
+  const names=wb.SheetNames.map(String), norm=s=>FFCore.norm(s), out=[];
+  const rekName=names.find(n=>norm(n)==='rekap online');
+  const prodName=names.find(n=>norm(n)==='produk online');
+  if(!rekName&&!prodName)return null;
+  const readRows=name=>name?XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:'',raw:false}):[];
+  for(const r of readRows(rekName)){
+    const bulan=normalPeriode(r['Bulan']??r['Periode']); if(!bulan)continue;
+    const rev=toNum(r['Pemasukan']), pot=toNum(r['Potongan Online Shop']);
+    const netRaw=String(r['Uang Bersih yang Diterima']??r['Uang Bersih']??'').trim();
+    const net=netRaw===''?Math.max(0,rev-pot):toNum(netRaw);
+    const modalRaw=String(r['Modal/HPP']??r['Modal']??'').trim();
+    const modal=modalRaw===''?null:toNum(modalRaw);
+    const profitRaw=String(r['Profit/Margin']??r['Profit']??'').trim();
+    out.push({tanggal:bulan+'-01',produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:0,
+      order_id:'FF-STANDARD-'+bulan,product_name:'[STANDARD] Rekap Online',variation:'',sku_id:'',seller_sku:'',
+      quantity_return:0,harga_asli:0,omzet_produk:rev,order_amount:rev,biaya_platform:pot,uang_bersih:net,
+      modal_hpp:modal,profit_online:profitRaw===''?null:toNum(profitRaw),source:'online_standard_finance',
+      purchase_channel:'TikTok Shop',order_channel:'TikTok Shop',created_time:null,
+      paid_time:bulan+'-01T00:00:00',import_key:['familia-standard-finance-v1',bulan,rev,pot,net,modal,profitRaw].join('|')});
+  }
+  for(const r of readRows(prodName)){
+    const bulan=normalPeriode(r['Bulan']??r['Periode']);
+    const product=String(r['Nama Produk']??r['Produk']??'').trim();
+    const variation=String(r['Variasi']??r['Variation']??'').trim();
+    if(!bulan||!product)continue;
+    const qty=toNum(r['Bungkus']??r['Qty']??r['Quantity']); if(qty<=0)continue;
+    const isi=String(r['Isi (pcs)']??r['Isi']??'').trim();
+    const rows=toNum(r['Jumlah Baris']??r['Rows']);
+    out.push({tanggal:bulan+'-01',produk_id:null,qty:Math.round(qty),channel:'Online',harga:0,hpp:0,laba:0,
+      order_id:'FF-STANDARD-PRODUCT-'+bulan+'-'+String(out.length+1),product_name:product,variation,sku_id:'',seller_sku:'',
+      quantity_return:0,harga_asli:0,omzet_produk:0,order_amount:0,biaya_platform:null,uang_bersih:null,
+      modal_hpp:null,profit_online:null,source:'online_standard_product',purchase_channel:'TikTok Shop',
+      order_channel:'TikTok Shop',created_time:null,paid_time:bulan+'-01T00:00:00',
+      import_key:['familia-standard-product-v1',bulan,product,variation,isi,qty,rows].join('|')});
+  }
+  if(!out.length)throw new Error('File STANDARD Familia Food tidak memiliki data valid.');
+  return out;
+}
 async function parseOnlineOldFile(file){
-  const name=String(file.name||'');if(/\.csv$/i.test(name)){const raw=readCSVText(await file.text());if(raw.some(looksSeller))return parseSellerHistorical(raw);throw new Error(`CSV ${name} tidak dikenali sebagai Seller Center.`)}
-  const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});return parseOnlineOldWorkbook(wb);
+  const name=String(file.name||'');
+  if(/\\.csv$/i.test(name)){
+    const raw=readCSVText(await file.text());
+    if(raw.some(looksSeller))return parseSellerHistorical(raw);
+    throw new Error(`CSV ${name} hanya untuk data TikTok asli; untuk aplikasi gunakan Excel STANDARD Familia Food.`);
+  }
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+  const standard=parseFamiliaStandardWorkbook(wb);
+  if(standard)return standard;
+  return parseOnlineOldWorkbook(wb);
 }
 async function parseOnlineOldFiles(files){let out=[];for(const f of Array.from(files||[])){out.push(...await parseOnlineOldFile(f))}const seen=new Set();return out.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true})}
 function previewMoney(v){return v==null?'—':FFCore.rupiah(v)}
@@ -413,10 +460,12 @@ async function addOnlineOldFiles(fileList){
     f._detected='memeriksa'; onlineOldQueuedFiles.push(f); renderOnlineOldFileQueue();
     try{
       const parsed=await parseOnlineOldFile(f);
+      const hasStandardFinance=parsed.some(x=>x.source==='online_standard_finance');
+      const hasStandardProduct=parsed.some(x=>x.source==='online_standard_product');
       const hasIncome=parsed.some(x=>x.source==='online_historical_finance'||x.source==='online_historical_adjustment');
       const hasSeller=parsed.some(x=>x.source==='seller_center'||x.source==='online_historical_product');
       const hasCash=parsed.some(x=>x.source==='online_historical_cash');
-      f._detected=hasIncome&&hasSeller?'Income + Pesanan':hasIncome?'Income':hasSeller?'Pesanan/Seller Center':hasCash?'Uang Masuk':'Online historis';
+      f._detected=hasStandardFinance||hasStandardProduct?'STANDARD Familia Food':hasIncome&&hasSeller?'Income + Pesanan':hasIncome?'Income':hasSeller?'Pesanan/Seller Center':hasCash?'Uang Masuk':'Online historis';
       f._parsed=parsed;
     }catch(err){
       f._detected='gagal: '+String(err.message||err); f._parsed=[];
@@ -474,7 +523,7 @@ async function refreshOnlineOldPreview(){
   await ensureOnlineHppMaster();
   onlineOldPreviewRows=makeOnlineOldPreviewRows(onlineOldImportRows);
   const ms=[...new Set(onlineOldImportRows.map(x=>FFCore.monthOf(x.tanggal)).filter(FFCore.isMonth))].sort((a,b)=>String(a).localeCompare(String(b)));
-  const fin=onlineOldImportRows.filter(x=>x.source==='online_historical_finance'||x.source==='online_historical_import');
+  const fin=onlineOldImportRows.filter(x=>x.source==='online_standard_finance'||x.source==='online_historical_finance'||x.source==='online_historical_import');
   const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
   const net=fin.filter(x=>x.uang_bersih!=null).reduce((a,x)=>a+Number(x.uang_bersih||0),0);
   const cash=onlineOldImportRows.filter(x=>x.source==='online_historical_cash').reduce((a,x)=>a+Number(x.uang_bersih||0),0);
