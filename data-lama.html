@@ -24,7 +24,7 @@
 <div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></details></div>
 
 
-<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Masukkan <b>Income TikTok</b> dan <b>Pesanan/Seller Center</b>. Keduanya akan digabung berdasarkan <b>ID Pesanan</b>. Income dipakai untuk <b>Pemasukan + Uang Bersih</b>, sedangkan Pesanan dipakai untuk <b>Produk + Qty</b>.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>Bisa pilih beberapa file sekaligus.</b> Tidak perlu membuat Excel perantara. Setelah pilih file pertama, bro juga bisa pilih file berikutnya; file baru akan ditambahkan ke antrian, tidak menggantikan file sebelumnya.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div class="tablewrap"><table><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody id="onlineOldRows"></tbody></table></div><div class="actions"><button class="btn" id="onlineOldSave">+ Simpan Data Lama Online</button><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
+<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Masukkan <b>Income TikTok</b> dan <b>Pesanan/Seller Center</b>. Keduanya akan digabung berdasarkan <b>ID Pesanan</b>. Income dipakai untuk <b>Pemasukan + Uang Bersih</b>, sedangkan Pesanan dipakai untuk <b>Produk + Qty</b>.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>Bisa pilih beberapa file sekaligus.</b> Tidak perlu membuat Excel perantara. Setelah pilih file pertama, bro juga bisa pilih file berikutnya; file baru akan ditambahkan ke antrian, tidak menggantikan file sebelumnya.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button class="btn" id="onlineOldSave">+ Simpan Data Lama Online</button><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
 
 <div class="card"><details><summary>✍️ Tambah Manual</summary><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
 <div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></details></div>
@@ -416,10 +416,29 @@ async function addOnlineOldFiles(fileList){
   for(const f of onlineOldQueuedFiles)if(Array.isArray(f._parsed))onlineOldImportRows.push(...f._parsed);
   const seen=new Set(); onlineOldImportRows=onlineOldImportRows.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true});
 }
+let onlineOldActiveMonth='';
+function renderOnlineOldMonthTabs(months){
+  const tabs=$('onlineOldMonthTabs');
+  if(!tabs)return;
+  const sorted=[...months].sort((a,b)=>String(a).localeCompare(String(b)));
+  if(!sorted.length){tabs.innerHTML='';$('onlineOldMonthTables').innerHTML='<div class="emptyState">Belum ada data bulan yang terbaca.</div>';return;}
+  if(!sorted.includes(onlineOldActiveMonth))onlineOldActiveMonth=sorted.includes('2026-01')?'2026-01':sorted[0];
+  tabs.innerHTML=sorted.map(m=>`<button type="button" class="monthtab ${m===onlineOldActiveMonth?'active':''}" data-month="${FFCore.esc(m)}">📅 ${FFCore.esc(monthLabel(m))}</button>`).join('');
+  tabs.querySelectorAll('.monthtab').forEach(btn=>btn.onclick=()=>{onlineOldActiveMonth=btn.dataset.month;renderOnlineOldMonthTabs(sorted);renderOnlineOldMonthTable(onlineOldActiveMonth);});
+}
+function renderOnlineOldMonthTable(month){
+  const host=$('onlineOldMonthTables');
+  if(!host)return;
+  const rows=onlineOldPreviewRows.filter(x=>String(x.bulan||'')===String(month||''));
+  if(!rows.length){host.innerHTML='<div class="emptyState">Tidak ada data untuk bulan '+FFCore.esc(monthLabel(month))+'.</div>';return;}
+  const shown=rows.slice(0,500);
+  const more=rows.length>shown.length?`<div class="reportNotice">Menampilkan <b>${shown.length.toLocaleString('id-ID')}</b> dari <b>${rows.length.toLocaleString('id-ID')}</b> baris untuk ${FFCore.esc(monthLabel(month))}. Semua data tetap tersimpan untuk proses simpan.</div>`:'';
+  host.innerHTML=`<section class="reportSection detailSection"><div class="sectionHead"><h3>📅 ${FFCore.esc(monthLabel(month))}</h3><p>Data bulan ini berdiri sendiri — tidak digabung dengan Januari, Februari, Maret, dan bulan lainnya.</p></div>${more}<div class="tablewrap"><table class="cleanTable"><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody>${shown.map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('')}</tbody></table></div></section>`;
+}
 async function refreshOnlineOldPreview(){
   await ensureOnlineHppMaster();
   onlineOldPreviewRows=makeOnlineOldPreviewRows(onlineOldImportRows);
-  const ms=[...new Set(onlineOldImportRows.map(x=>FFCore.monthOf(x.tanggal)).filter(FFCore.isMonth))];
+  const ms=[...new Set(onlineOldImportRows.map(x=>FFCore.monthOf(x.tanggal)).filter(FFCore.isMonth))].sort((a,b)=>String(a).localeCompare(String(b)));
   const fin=onlineOldImportRows.filter(x=>x.source==='online_historical_finance'||x.source==='online_historical_import');
   const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
   const net=fin.filter(x=>x.uang_bersih!=null).reduce((a,x)=>a+Number(x.uang_bersih||0),0);
@@ -429,11 +448,12 @@ async function refreshOnlineOldPreview(){
   const matchedOrders=new Set(matchedRows.map(x=>x._order_id||'' ).filter(Boolean)).size;
   const hppKnown=onlineOldPreviewRows.filter(x=>x.hpp!=null).length;
   $('onlineOldInfo').innerHTML='<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty produk <b>'+seller.toLocaleString('id-ID')+'</b> • Order cocok <b>'+matchedOrders.toLocaleString('id-ID')+'</b> • Baris produk cocok <b>'+matchedRows.length.toLocaleString('id-ID')+'</b> • HPP Online terukur <b>'+hppKnown.toLocaleString('id-ID')+'</b> baris. '+(seller?'<b>Produk + Qty sudah digabung dari Pesanan.</b>':'<b>Qty masih 0 karena file Pesanan/Seller Center belum masuk.</b>')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>. Profit = Uang Bersih − Modal/HPP saat HPP tersedia.</div>';
-  $('onlineOldRows').innerHTML=onlineOldPreviewRows.slice(0,500).map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('');
+  renderOnlineOldMonthTabs(ms);
+  renderOnlineOldMonthTable(onlineOldActiveMonth);
   $('onlineOldPreview').style.display='block';
 }
 $('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files);await refreshOnlineOldPreview();e.target.value='';}catch(err){$('onlineOldInfo').innerHTML='<div class="msg" style="color:#a22">'+FFCore.esc(err.message||err)+'</div>';$('onlineOldPreview').style.display='block'}};
-$('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];renderOnlineOldFileQueue();$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
+$('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
 renderOnlineOldFileQueue();
 $('onlineOldSave').onclick=async()=>{try{if(!onlineOldImportRows.length)return;const keys=onlineOldImportRows.map(x=>x.import_key),existing=new Set();for(let i=0;i<keys.length;i+=500){const r=await supabaseClient.from('penjualan').select('import_key').in('import_key',keys.slice(i,i+500));if(r.error)throw r.error;(r.data||[]).forEach(x=>existing.add(x.import_key))}const rows=onlineOldImportRows.filter(x=>!existing.has(x.import_key));for(let i=0;i<rows.length;i+=200){const r=await supabaseClient.from('penjualan').insert(rows.slice(i,i+200));if(r.error)throw r.error}$('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+rows.length.toLocaleString('id-ID')+'</b> baris Online historis. '+(onlineOldImportRows.length-rows.length)+' duplikat dilewati.</div>';onlineOldImportRows=[];await load()}catch(e){$('onlineOldMsg').innerHTML='<div class="msg" style="color:#a22">Gagal menyimpan Online historis: '+FFCore.esc(e.message||e)+'</div>'}};
 
