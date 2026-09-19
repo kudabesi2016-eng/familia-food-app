@@ -328,9 +328,9 @@ td{
 
       🔵 <b>Rekap Online</b><br>
 
-      Pemasukan berasal dari data Income Online Shop.<br>
+      Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>
 
-      Potongan Online Shop menampilkan potongan platform.<br>
+      Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>
 
       Uang Bersih adalah nilai yang diterima setelah potongan.<br>
 
@@ -408,31 +408,6 @@ let products = [];
 let hpps = [];
 
 
-/* =====================================================
-   DATA ONLINE HISTORIS YANG SUDAH ADA
-   Format:
-   "bulan" : [pemasukan, potongan, uang_bersih]
-===================================================== */
-
-const ONLINE_EXCEL = {
-
-  "2026-01":[11124521,2535271,8591800],
-
-  "2026-02":[13296810,4093008,9203702],
-
-  "2026-03":[5576907,1003020,4633951],
-
-  "2026-04":[17178005,3857057,10536209],
-
-  "2026-05":[15458288,5218757,8822520],
-
-  "2026-06":[27641301,10265771,13280413],
-
-  "2026-07":[19677304,6404933,10144813],
-
-  "2026-08":[25919198,6329084,15063647]
-
-};
 
 
 /* =====================================================
@@ -519,26 +494,35 @@ const label = m => {
 
 /* =====================================================
    KEUANGAN ONLINE
+   Historis resmi dibaca dari Data Lama Online STANDARD.
 ===================================================== */
 
+function monthOfSaleRow(x){
+  return FFCore.monthOf(x.tanggal||x.paid_time||x.created_time||'') || String(x.periode||'').slice(0,7);
+}
+
 function onlineFinance(m){
+  const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===m);
+  const standard=rows.filter(x=>String(x.source||'')==='online_standard_finance');
 
-  const v = ONLINE_EXCEL[m];
-
-  if(!v){
-    return null;
+  if(standard.length){
+    return {
+      rev:standard.reduce((a,x)=>a+Number(x.omzet_produk||0),0),
+      out:standard.reduce((a,x)=>a+Number(x.biaya_platform||0),0),
+      net:standard.reduce((a,x)=>a+Number(x.uang_bersih||0),0)
+    };
   }
 
-  return {
+  const fresh=rows.filter(x=>![
+    'online_standard_finance','online_historical_finance','online_historical_import',
+    'online_historical_product','seller_center','online_standard_product','online_historical_cash'
+  ].includes(String(x.source||'')));
 
-    rev: Number(v[0]) || 0,
-
-    out: Number(v[1]) || 0,
-
-    net: Number(v[2]) || 0
-
-  };
-
+  if(!fresh.length)return null;
+  const rev=fresh.reduce((a,x)=>a+Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0)),0),0);
+  const netKnown=fresh.some(x=>x.uang_bersih!=null);
+  const net=netKnown?fresh.reduce((a,x)=>a+Number(x.uang_bersih||0),0):rev;
+  return {rev,out:Math.max(0,rev-net),net};
 }
 
 
@@ -597,22 +581,13 @@ function onlineHpp(m){
 ===================================================== */
 
 function months(){
-
-  const set =
-    new Set(
-      Object.keys(ONLINE_EXCEL)
-    );
-
-  try{
-
-    FFCore
-      .monthsOfData(data())
-      .forEach(m => set.add(m));
-
-  }catch(e){}
-
+  const set=new Set();
+  (sales||[]).forEach(x=>{
+    const m=monthOfSaleRow(x);
+    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
+  });
+  try{FFCore.monthsOfData(data()).forEach(m=>set.add(m));}catch(e){}
   return [...set].sort();
-
 }
 
 
