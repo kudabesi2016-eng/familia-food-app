@@ -299,17 +299,17 @@ td{
       <strong id="rev">Rp 0</strong>
     </div>
 
-    <div class="stat">
+    <div class="stat" id="cardOut">
       <small id="outLabel">Potongan Online Shop</small>
       <strong id="out">Rp 0</strong>
     </div>
 
-    <div class="stat">
+    <div class="stat" id="cardNet">
       <small>Uang Bersih yang Diterima</small>
       <strong id="net">Rp 0</strong>
     </div>
 
-    <div class="stat">
+    <div class="stat" id="cardHpp">
       <small>Modal</small>
       <strong id="hpp">—</strong>
     </div>
@@ -373,13 +373,14 @@ td{
 
         <thead>
 
-          <tr>
+          <tr id="monthlyHeaderRow">
             <th>Bulan</th>
             <th>Pemasukan</th>
             <th id="monthlyOutHead">Potongan Online Shop</th>
-            <th>Uang Bersih yang Diterima</th>
-            <th>Modal</th>
-            <th>Profit / Margin</th>
+            <th id="monthlyNetHead">Uang Bersih yang Diterima</th>
+            <th id="monthlyHppHead">Modal</th>
+            <th id="monthlyProfitHead">Profit / Margin</th>
+            <th id="monthlyActionHead" style="display:none">Aksi</th>
           </tr>
 
         </thead>
@@ -760,12 +761,17 @@ function updateChannelUI(){
   const offline=$('channel').value==='Offline';
   $('pageTitle').textContent=offline?'📊 Rekap Offline':'📊 Rekap Online';
   $('pageSub').textContent=offline?'Rekap penjualan Offline Familia Food per bulan.':'Rekap penjualan Online Shop Familia Food per bulan.';
-  $('outLabel').textContent=offline?'Potongan':'Potongan Online Shop';
-  $('monthlyOutHead').textContent=offline?'Potongan':'Potongan Online Shop';
+  $('outLabel').textContent=offline?'Pengeluaran':'Potongan Online Shop';
+  $('monthlyOutHead').textContent=offline?'Pengeluaran':'Potongan Online Shop';
+  $('monthlyNetHead').style.display=offline?'none':'';
+  $('monthlyHppHead').style.display=offline?'none':'';
+  $('monthlyActionHead').style.display=offline?'':'none';
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
+  $('cardNet').style.display=offline?'none':'';
+  $('cardHpp').style.display=offline?'none':'';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran usaha ditampilkan ringkas per bulan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.<br>Detail pengeluaran hanya muncul saat menekan 👁 Lihat Data.'
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran berasal dari Data Lama Offline dan ditampilkan ringkas per bulan.<br>Profit = Pemasukan − Pengeluaran.<br>Margin = Profit ÷ Pemasukan × 100%.<br>Detail pengeluaran hanya muncul saat menekan 👁 Lihat Data.'
     : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br>Modal menggunakan HPP Online apabila sudah tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.';
 }
 
@@ -793,158 +799,88 @@ function months(){
 ===================================================== */
 
 function renderCards(){
+  const m=$('month').value;
+  const offline=$('channel').value==='Offline';
+  const v=finance(m);
 
-  const m =
-    $('month').value;
+  $('outLabel').textContent=offline?'Pengeluaran':'Potongan Online Shop';
 
-  const v =
-    finance(m);
-
-  if(!v){
-
-    $('rev').textContent = 'Rp 0';
-    $('out').textContent = 'Rp 0';
-    $('net').textContent = 'Rp 0';
-    $('hpp').textContent = '—';
-    $('profit').textContent = '—';
-
+  if(offline){
+    const income=Number(v?.[0])||0;
+    const expense=expenseForMonth(m);
+    const profit=income-expense;
+    const margin=income>0 ? (profit/income)*100 : 0;
+    $('rev').textContent=money(income);
+    $('out').textContent=money(expense);
+    $('net').textContent='';
+    $('hpp').textContent='';
+    $('profit').innerHTML=`${money(profit)}<br><span class="hint">Margin ${margin.toFixed(2)}%</span>`;
     return;
-
   }
 
-
-  const h =
-    hppForChannel(m);
-
-
-  $('rev').textContent =
-    money(v[0]);
-
-  $('out').textContent =
-    money(v[1]);
-
-  $('net').textContent =
-    money(v[2]);
-
+  const h=hppForChannel(m);
+  $('rev').textContent=money(v?.[0]);
+  $('out').textContent=money(v?.[1]);
+  $('net').textContent=money(v?.[2]);
 
   if(h.known){
-
-    const profit =
-      v[2] - h.total;
-
-    const margin =
-      v[2]
-        ? (profit / v[2]) * 100
-        : 0;
-
-
-    $('hpp').textContent =
-      money(h.total);
-
-
-    $('profit').innerHTML =
-
-      `${money(profit)}
-       <br>
-       <span class="hint">
-         Margin ${margin.toFixed(2)}%
-       </span>`;
-
+    const profit=(Number(v?.[2])||0)-Math.round(Number(h.total)||0);
+    const margin=Number(v?.[2]) ? (profit/Number(v[2]))*100 : 0;
+    $('hpp').textContent=money(h.total);
+    $('profit').innerHTML=`${money(profit)}<br><span class="hint">Margin ${margin.toFixed(2)}%</span>`;
   }else{
-
-    $('hpp').textContent =
-      '—';
-
-    $('profit').innerHTML =
-
-      `<span class="hint">
-        Modal belum tersedia
-       </span>`;
-
+    $('hpp').textContent='—';
+    $('profit').innerHTML='<span class="hint">Modal belum tersedia</span>';
   }
-
 }
-
 
 /* =====================================================
    RENDER TABEL
 ===================================================== */
 
 function renderMonthly(){
-
-  const ms = months();
-
+  const ms=months();
+  const offline=$('channel').value==='Offline';
   if(!ms.length){
-    $('monthly').innerHTML = `
-      <tr><td colspan="6" class="empty">Belum ada data ${$('channel').value}.</td></tr>
-    `;
+    $('monthly').innerHTML=`<tr><td colspan="${offline?5:6}" class="empty">Belum ada data ${$('channel').value}.</td></tr>`;
     return;
   }
 
-  const offline = $('channel').value === 'Offline';
-
   if(offline){
-    $('monthly').innerHTML = ms.map(m => {
-      const v = offlineFinance(m);
-      const h = offlineHpp(m);
-      const income = Number(v[0]) || 0;
-      const expense = expenseForMonth(m);
-      const modal = h && h.known ? Math.round(Number(h.total) || 0) : null;
-      const net = Number(v[2]) || 0;
-      const profit = modal !== null ? Math.round(net - modal) : null;
-      const margin = profit !== null && net > 0 ? (profit / net) * 100 : 0;
-
-      return `
-        <tr>
-          <td><b>${label(m)}</b></td>
-          <td>${money(income)}</td>
-          <td>${money(expense)}</td>
-          <td>
-            ${profit !== null
-              ? `<b>${money(profit)}</b><br><span class="hint">Margin ${margin.toFixed(2)}%</span>`
-              : `<span class="hint">Modal belum tersedia</span>`}
-          </td>
-          <td>
-            <button class="view-btn" type="button" onclick="toggleOfflineDetail('${m}')">👁 Lihat Data</button>
-          </td>
-        </tr>
-        <tr id="offline-detail-row-${m}" style="display:none">
-          <td colspan="5" style="padding:0;border:0">
-            <div id="offline-detail-${m}" class="card" style="margin:10px 0;background:#fbfdfb;display:none"></div>
-          </td>
-        </tr>
-      `;
+    $('monthly').innerHTML=ms.map(m=>{
+      const v=offlineFinance(m);
+      const income=Number(v?.[0])||0;
+      const expense=expenseForMonth(m);
+      const profit=income-expense;
+      const margin=income>0 ? (profit/income)*100 : 0;
+      return `<tr>
+        <td><b>${label(m)}</b></td>
+        <td>${money(income)}</td>
+        <td>${money(expense)}</td>
+        <td><b>${money(profit)}</b><br><span class="hint">Margin ${margin.toFixed(2)}%</span></td>
+        <td><button class="view-btn" type="button" onclick="toggleOfflineDetail('${m}')">👁 Lihat Data</button></td>
+      </tr>
+      <tr id="offline-detail-row-${m}" style="display:none"><td colspan="5" style="padding:0;border:0"><div id="offline-detail-${m}" class="card" style="margin:10px 0;background:#fbfdfb;display:none"></div></td></tr>`;
     }).join('');
     return;
   }
 
-  // ONLINE: pertahankan format yang sudah dikunci.
-  $('monthly').innerHTML = ms.map(m => {
-    const v = onlineFinance(m);
-    const h = onlineHpp(m);
-    const modal = h.known ? h.total : null;
-    const profit = modal !== null ? v[2] - modal : null;
-    const margin = profit !== null && Number(v[2]) > 0
-      ? (profit / Number(v[2])) * 100
-      : 0;
-
-    return `
-      <tr>
-        <td><b>${label(m)}</b></td>
-        <td>${money(v[0])}</td>
-        <td>${money(v[1])}</td>
-        <td><b>${money(v[2])}</b></td>
-        <td>${modal !== null ? money(modal) : '—'}</td>
-        <td>
-          ${profit !== null
-            ? `<b>${money(profit)}</b><br><span class="hint">Margin ${margin.toFixed(2)}%</span>`
-            : `<span class="hint">Modal belum tersedia</span>`}
-        </td>
-      </tr>
-    `;
+  $('monthly').innerHTML=ms.map(m=>{
+    const v=onlineFinance(m);
+    const h=onlineHpp(m);
+    const modal=h.known?h.total:null;
+    const profit=modal!==null ? v[2]-modal : null;
+    const margin=profit!==null && Number(v[2])>0 ? (profit/Number(v[2]))*100 : 0;
+    return `<tr>
+      <td><b>${label(m)}</b></td>
+      <td>${money(v[0])}</td>
+      <td>${money(v[1])}</td>
+      <td><b>${money(v[2])}</b></td>
+      <td>${modal!==null?money(modal):'—'}</td>
+      <td>${profit!==null?`<b>${money(profit)}</b><br><span class="hint">Margin ${margin.toFixed(2)}%</span>`:'<span class="hint">Modal belum tersedia</span>'}</td>
+    </tr>`;
   }).join('');
 }
-
 function toggleOfflineDetail(m){
   const row = $('offline-detail-row-' + m);
   const box = $('offline-detail-' + m);
@@ -1056,8 +992,24 @@ function render(){
 
 /* =====================================================
    PENGELUARAN USAHA
+   Ringkasan historis Offline Jan-Sep 2026 mengikuti
+   angka bulanan yang sudah terkunci di Data Lama.
+   Bulan setelah periode historis tetap membaca tabel pengeluaran.
 ===================================================== */
+const HIST_OFFLINE_EXPENSE = {
+  '2026-01': 26102300,
+  '2026-02': 29586000,
+  '2026-03': 26182325,
+  '2026-04': 27758500,
+  '2026-05': 20462800,
+  '2026-06': 26517000,
+  '2026-07': 32997500,
+  '2026-08': 9671700,
+  '2026-09': 0
+};
+
 function expenseForMonth(m){
+  if(Object.prototype.hasOwnProperty.call(HIST_OFFLINE_EXPENSE,m)) return HIST_OFFLINE_EXPENSE[m];
   return (expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m)
     .reduce((a,x)=>a+Math.round(Number(x.nominal)||0),0);
 }
