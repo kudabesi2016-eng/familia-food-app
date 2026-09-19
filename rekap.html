@@ -621,15 +621,63 @@ function onlineHpp(m){
 }
 
 
+function ffNormOfflineName(v){
+  return String(v??'').toLowerCase().trim().replace(/\s+/g,' ');
+}
+
+function ffOfflineMasterTarget(name){
+  const n=ffNormOfflineName(name);
+  if(/\bnaget\b/.test(n)){
+    const m=n.match(/(?:isi\s*)?(10|12|20|25|30|40|50)(?:\s*pcs?)?/);
+    if(m){
+      const size=Number(m[1]);
+      return size===25?'naget 25+saus':'naget '+size;
+    }
+  }
+  if(/cireng\s+isi/.test(n))return 'cireng isi';
+  if(/cireng\s+biasa/.test(n))return 'cireng biasa';
+  if(/\bcibay\b/.test(n))return 'cibay';
+  return n;
+}
+
+function ffOfflineHppUnit(name){
+  const target=ffOfflineMasterTarget(name);
+  if(!target)return null;
+  let p=(products||[]).find(x=>ffNormOfflineName(x.nama_produk)===target);
+  if(!p){
+    p=(products||[]).find(x=>ffNormOfflineName(x.nama_produk).includes(target) || target.includes(ffNormOfflineName(x.nama_produk)));
+  }
+  if(!p)return null;
+  const h=(hpps||[]).find(x=>String(x.produk_id)===String(p.id));
+  if(!h)return null;
+  if(h.hpp_offline!=null && Number(h.hpp_offline)>0)return Math.trunc(Number(h.hpp_offline));
+  if(h.hpp_unit!=null && Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
+  return null;
+}
+
 function offlineHpp(m){
   try{
-    const rows=FFCore.productSummary(m,'Offline',data())||[];
+    // Data Baru Offline: gunakan productSummary yang sudah memakai master HPP.
+    const freshRows=FFCore.productSummary(m,'Offline',{sales,olds:[],expenses,products,hpps})||[];
     let total=0;
-    for(const x of rows){
-      if(x.hppKnown===false)return {known:false,total:0};
-      if(x.hpp==null)return {known:false,total:0};
+    for(const x of freshRows){
+      if(x.hppKnown===false || x.hpp==null)return {known:false,total:0};
       total+=Math.trunc(Number(x.hpp)||0);
     }
+
+    // Data Lama Offline: hitung langsung dari Produk x Qty menggunakan master HPP Offline.
+    const oldRows=(olds||[]).filter(x=>{
+      const p=FFCore.monthOf(x.periode||x.tanggal||x.date||'') || String(x.periode||'').slice(0,7);
+      return p===m;
+    });
+    for(const x of oldRows){
+      const qty=Math.round(Number(x.qty)||0);
+      if(qty<=0)continue;
+      const unit=ffOfflineHppUnit(x.produk);
+      if(unit==null)return {known:false,total:0};
+      total += qty*unit;
+    }
+
     return {known:true,total:Math.trunc(total)};
   }catch(e){
     return {known:false,total:0};
