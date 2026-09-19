@@ -414,6 +414,20 @@ function previewOnlineHpp(row){
   }catch(_){}
   return null;
 }
+async function ensureOnlineHppMaster(){
+  try{
+    const pr=await supabaseClient.from('produk').select('id,nama_produk,harga_online');
+    if(pr.error)throw pr.error;
+    productMasterRows=pr.data||[];
+    const hr=await supabaseClient.from('hpp').select('produk_id,hpp_unit,untung_online,harga_online');
+    if(hr.error)throw hr.error;
+    hppMasterRows=(hr.data||[]).map(h=>({...h,nama_produk:(productMasterRows.find(p=>String(p.id)===String(h.produk_id))||{}).nama_produk||''}));
+  }catch(e){
+    productMasterRows=[];
+    hppMasterRows=[];
+    throw new Error('Gagal membaca master Produk/HPP dari Supabase: '+(e.message||e));
+  }
+}
 function normOrderId(v){let s=String(v??'').trim().replace(/[\s\u00A0]+/g,'').replace(/^['"]+|['"]+$/g,'');if(/^\d+\.0+$/.test(s))s=s.replace(/\.0+$/,'');return s;}
 function makeOnlineOldPreviewRows(rows){
   // STANDARD Familia Food: tampilkan HASIL RANGKUMAN per bulan.
@@ -546,10 +560,16 @@ function renderOnlineOldMonthTable(month){
     <div class="tablewrap"><table class="cleanTable"><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody>${shown.map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('')}</tbody></table></div></section>`;
 }
 async function refreshOnlineOldPreview(){
-  await ensureOnlineHppMaster();
+  const isStandard=onlineOldImportRows.some(x=>x.source==='online_standard_finance'||x.source==='online_standard_product');
+  if(!isStandard){
+    await ensureOnlineHppMaster();
+  }else{
+    // STANDARD sudah membawa Modal/Profit hasil rangkuman; preview tidak perlu bergantung pada master HPP.
+    productMasterRows=[];
+    hppMasterRows=[];
+  }
   onlineOldPreviewRows=makeOnlineOldPreviewRows(onlineOldImportRows);
   const ms=[...new Set(onlineOldImportRows.map(x=>FFCore.monthOf(x.tanggal)).filter(FFCore.isMonth))].sort((a,b)=>String(a).localeCompare(String(b)));
-  const isStandard=onlineOldImportRows.some(x=>x.source==='online_standard_finance'||x.source==='online_standard_product');
   const fin=onlineOldImportRows.filter(x=>x.source==='online_standard_finance'||x.source==='online_historical_finance'||x.source==='online_historical_import');
   const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
   const net=fin.filter(x=>x.uang_bersih!=null).reduce((a,x)=>a+Number(x.uang_bersih||0),0);
