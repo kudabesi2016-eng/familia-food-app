@@ -332,14 +332,14 @@ async function addOnlineOldFiles(fileList){
   onlineOldImportRows=onlineOldImportRows.filter(x=>{const k=String(x.import_key||'');if(seen.has(k))return false;seen.add(k);return true;});
   renderOnlineOldFileQueue();
 }
-function previewMoney(v){return v==null?'—':FFCore.rupiah(v)}
+function previewMoney(v){return v==null?'—':FFCore.rupiah(Math.trunc(Number(v)||0))}
 function normOnlineName(v){return String(v??'').toLowerCase().trim().replace(/\s+/g,' ')}
 function onlineMatchText(row){return [row?.product_name,row?.variation,row?.seller_sku].map(normOnlineName).filter(Boolean).join(' | ')}
 function detectOnlinePackSize(row){
   const n=onlineMatchText(row);
   // Ukuran diprioritaskan dari VARIATION/SKU lalu nama produk.
   // Pola seperti “2 bungkus isi 24 pcs” dibaca 24 / 2 = 12 pcs per bungkus.
-  let m=n.match(/\b(\d+)\s*bungkus\s*isi\s*(\d+)\s*pcs?\b/);
+  let m=n.match(/\b(\d+)\s*bungkus\s*(?:isi|is)\s*(\d+)\s*pcs?\b/);
   if(m){
     const packs=Number(m[1]), pcs=Number(m[2]);
     if(packs>0 && pcs>0){
@@ -398,19 +398,19 @@ function previewOnlineHpp(row){
     if(!h && aliases.length) h=hppMasterRows.find(x=>aliases.includes(normOnlineName(x.nama_produk)))||null;
     if(h){
       // HPP unit adalah modal produksi per bungkus yang tersimpan di master HPP.
-      if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Number(h.hpp_unit);
+      if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
       // Fallback sesuai pola HPP Online Familia Food: Harga Online - Untung Online.
       if(h.untung_online!=null&&(h.harga_online!=null||(p&&p.harga_online!=null))){
         const onlinePrice=Number(h.harga_online!=null?h.harga_online:p.harga_online);
         const online=onlinePrice-Number(h.untung_online);
-        if(Number.isFinite(online)&&online>0)return online;
+        if(Number.isFinite(online)&&online>0)return Math.trunc(online);
       }
-      if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Number(h.hpp_online);
+      if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Math.trunc(Number(h.hpp_online));
     }
     // Last explicit fallback: resolve alias directly to the matching HPP row by name.
     for(const alias of aliases){
       const hit=hppMasterRows.find(x=>normOnlineName(x.nama_produk)===alias);
-      if(hit && hit.hpp_unit!=null && Number(hit.hpp_unit)>0) return Number(hit.hpp_unit);
+      if(hit && hit.hpp_unit!=null && Number(hit.hpp_unit)>0) return Math.trunc(Number(hit.hpp_unit));
     }
   }catch(_){}
   return null;
@@ -429,10 +429,84 @@ async function ensureOnlineHppMaster(){
     throw new Error('Gagal membaca master Produk/HPP dari Supabase: '+(e.message||e));
   }
 }
+function standardIsFamiliaProduct(row){
+  const n=onlineMatchText(row);
+  if(/saus bantal|saos bakso/.test(n))return false;
+  return /\btempura aci\b|\bnaget\b/.test(n);
+}
+function masterProductNameForSize(size){
+  const n=Number(size);
+  if(n===25)return 'naget 25+saus';
+  if([10,12,20,30,40,50].includes(n))return 'naget '+n;
+  return '';
+}
+function standardHppUnitForRow(row){
+  try{
+    if(!standardIsFamiliaProduct(row))return null;
+    const size=detectOnlinePackSize(row);
+    if(!size)return null;
+    const target=masterProductNameForSize(size);
+    if(!target)return null;
+    const p=productMasterRows.find(x=>normOnlineName(x.nama_produk)===target);
+    if(!p)return null;
+    const h=hppMasterRows.find(x=>String(x.produk_id)===String(p.id));
+    if(!h)return null;
+    if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
+    const onlinePrice=Number(h.harga_online!=null?h.harga_online:(p.harga_online||0));
+    const profitOnline=Number(h.untung_online||0);
+    if(onlinePrice>0 && profitOnline>=0 && onlinePrice-profitOnline>0)return Math.trunc(onlinePrice-profitOnline);
+  }catch(_){ }
+  return null;
+}
+function calculateStandardHppByMonth(standardFinance,standardProduct){
+  const byMonth={};
+  standardFinance.forEach(x=>{
+    const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
+    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,mappedQty:0,unmappedQty:0,hasMapped:false};
+    const g=byMonth[bulan];
+    g.rev+=Number(x.omzet_produk||0);
+    g.pot+=Number(x.biaya_platform||0);
+    if(x.uang_bersih!=null){g.net+=Number(x.uang_bersih||0);g.netKnown=true;}
+  });
+  standardProduct.forEach(x=>{
+    const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
+    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,mappedQty:0,unmappedQty:0,hasMapped:false};
+    const g=byMonth[bulan];
+    const qty=Number(x.qty||0);
+    const unit=standardHppUnitForRow(x);
+    if(unit!=null){
+      g.modal+=qty*Math.trunc(Number(unit)||0);
+      g.mappedQty+=qty;
+      g.hasMapped=true;
+    }else if(standardIsFamiliaProduct(x)){
+      g.unmappedQty+=qty;
+    }
+  });
+  Object.values(byMonth).forEach(g=>{
+    if(g.hasMapped){
+      g.profit=g.netKnown?g.net-g.modal:null;
+      g.margin=g.netKnown&&g.net!==0&&g.profit!=null?(g.profit/g.net)*100:null;
+    }else{
+      g.modal=null;g.profit=null;g.margin=null;
+    }
+  });
+  // Push calculated values back into the finance rows so the saved Data Lama rows carry Modal/Profit.
+  standardFinance.forEach(x=>{
+    const m=byMonth[FFCore.monthOf(x.tanggal)||''];
+    if(m && m.hasMapped){
+      x.modal_hpp=Math.trunc(Number(m.modal)||0);
+      x.profit_online=m.profit==null?null:Math.trunc(Number(m.profit)||0);
+      x.hpp=Math.trunc(Number(m.modal)||0);
+      x.laba=m.profit==null?0:Math.trunc(Number(m.profit)||0);
+    }
+  });
+  return byMonth;
+}
 function normOrderId(v){let s=String(v??'').trim().replace(/[\s\u00A0]+/g,'').replace(/^['"]+|['"]+$/g,'');if(/^\d+\.0+$/.test(s))s=s.replace(/\.0+$/,'');return s;}
 function makeOnlineOldPreviewRows(rows){
   // STANDARD Familia Food: tampilkan HASIL RANGKUMAN per bulan.
-  // Jangan menampilkan ratusan listing/detail PRODUK_ONLINE sebagai preview utama.
+  // Modal/HPP dihitung dari PRODUK_ONLINE hanya untuk listing Tempura Aci/Naget yang
+  // memiliki ukuran isi yang bisa dipetakan ke master Naget aplikasi.
   const standardFinance=rows.filter(x=>x.source==='online_standard_finance');
   const standardProduct=rows.filter(x=>x.source==='online_standard_product');
   const finance=rows.filter(x=>x.source==='online_historical_finance');
@@ -442,28 +516,21 @@ function makeOnlineOldPreviewRows(rows){
   const out=[];
 
   if(standardFinance.length || standardProduct.length){
-    const byMonth={};
-    standardFinance.forEach(x=>{
-      const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
-      const g=byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:null,profit:null,qty:0};
-      g.rev+=Number(x.omzet_produk||0);
-      g.pot+=Number(x.biaya_platform||0);
-      if(x.uang_bersih!=null){g.net+=Number(x.uang_bersih||0);g.netKnown=true;}
-      if(x.modal_hpp!=null)g.modal=(g.modal||0)+Number(x.modal_hpp||0);
-      if(x.profit_online!=null)g.profit=(g.profit||0)+Number(x.profit_online||0);
-    });
+    const byMonth=calculateStandardHppByMonth(standardFinance,standardProduct);
     standardProduct.forEach(x=>{
       const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
-      const g=byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:null,profit:null,qty:0};
-      g.qty+=Number(x.qty||0);
+      const g=byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:null,mappedQty:0,unmappedQty:0,hasMapped:false};
+      g.qty=(g.qty||0)+Number(x.qty||0);
     });
     Object.keys(byMonth).sort().forEach(bulan=>{
       const g=byMonth[bulan];
       out.push({
         source:'STANDARD — HASIL RANGKUMAN', bulan:g.bulan,
-        produk:'Total Online Bulanan', qty:g.qty,
+        produk:'Total Online Bulanan', qty:Number(g.qty||0),
         rev:g.rev, pot:g.pot, net:g.netKnown?g.net:null,
-        hpp:g.modal, profit:g.profit, _standardSummary:true
+        hpp:g.hasMapped?g.modal:null, profit:g.profit, margin:g.margin,
+        mappedQty:g.mappedQty, unmappedQty:g.unmappedQty,
+        _standardSummary:true
       });
     });
     return out;
@@ -488,7 +555,7 @@ function makeOnlineOldPreviewRows(rows){
   });
   const usedFinance=new Set();
   Object.values(grouped).forEach(x=>{
-    const order=normOrderId(x.order_id), f=financeByOrder[order], lines=sellerByOrder[order]||[];
+    const order=normOrderId(x.order_id), f=financeByOrder[order];
     if(f){usedFinance.add(order)}
     const net=f&&f.netKnown?f.net:null;
     const rev=f?f.rev:Number(x.omzet_produk||0);
@@ -544,7 +611,10 @@ function renderOnlineOldMonthTable(month){
         <div class="kpi"><span>📦 Modal</span><strong>${previewMoney(r.hpp)}</strong><small>hasil rangkuman</small></div>
         <div class="kpi"><span>📈 Profit</span><strong>${previewMoney(r.profit)}</strong><small>hasil rangkuman</small></div>
       </div>
-      <div class="sectionTotal"><span>Total Produk</span><b>${Number(r.qty||0).toLocaleString('id-ID')} bungkus</b></div>
+      <div class="sectionTotal"><span>Total Bungkus Terbaca</span><b>${Number(r.qty||0).toLocaleString('id-ID')} bungkus</b></div>
+      <div class="sectionTotal"><span>Bungkus Familia Food terpetakan ke HPP</span><b>${Number(r.mappedQty||0).toLocaleString('id-ID')} bungkus</b></div>
+      ${Number(r.unmappedQty||0)>0?`<div class="reportNotice">⚠️ ${Number(r.unmappedQty).toLocaleString('id-ID')} bungkus listing Tempura Aci/Naget belum dihitung ke Modal karena ukuran isi pada listing tidak dapat dipastikan.</div>`:''}
+      ${r.margin!=null?`<div class="sectionTotal"><span>Margin</span><b>${Number(r.margin).toFixed(2)}%</b></div>`:''}
     </section>`;
     return;
   }
@@ -562,13 +632,8 @@ function renderOnlineOldMonthTable(month){
 }
 async function refreshOnlineOldPreview(){
   const isStandard=onlineOldImportRows.some(x=>x.source==='online_standard_finance'||x.source==='online_standard_product');
-  if(!isStandard){
-    await ensureOnlineHppMaster();
-  }else{
-    // STANDARD sudah membawa Modal/Profit hasil rangkuman; preview tidak perlu bergantung pada master HPP.
-    productMasterRows=[];
-    hppMasterRows=[];
-  }
+  // STANDARD tetap membaca master Produk/HPP aplikasi agar Modal/Profit dihitung dari HPP resmi.
+  await ensureOnlineHppMaster();
   onlineOldPreviewRows=makeOnlineOldPreviewRows(onlineOldImportRows);
   const ms=[...new Set(onlineOldImportRows.map(x=>FFCore.monthOf(x.tanggal)).filter(FFCore.isMonth))].sort((a,b)=>String(a).localeCompare(String(b)));
   const fin=onlineOldImportRows.filter(x=>x.source==='online_standard_finance'||x.source==='online_historical_finance'||x.source==='online_historical_import');
@@ -576,10 +641,15 @@ async function refreshOnlineOldPreview(){
   const net=fin.filter(x=>x.uang_bersih!=null).reduce((a,x)=>a+Number(x.uang_bersih||0),0);
   const cash=onlineOldImportRows.filter(x=>x.source==='online_historical_cash').reduce((a,x)=>a+Number(x.uang_bersih||0),0);
   const seller=onlineOldImportRows.filter(x=>x.source==='online_standard_product'||x.source==='seller_center'||x.source==='online_historical_product').reduce((a,x)=>a+Number(x.qty||0),0);
+  const standardSummaries=onlineOldPreviewRows.filter(x=>x._standardSummary);
+  const totalMapped=standardSummaries.reduce((a,x)=>a+Number(x.mappedQty||0),0);
+  const totalUnmapped=standardSummaries.reduce((a,x)=>a+Number(x.unmappedQty||0),0);
+  const totalModal=standardSummaries.reduce((a,x)=>a+(x.hpp==null?0:Number(x.hpp||0)),0);
+  const totalProfit=standardSummaries.reduce((a,x)=>a+(x.profit==null?0:Number(x.profit||0)),0);
   const matchedRows=onlineOldPreviewRows.filter(x=>x.source==='Income + Pesanan');
   const matchedOrders=new Set(matchedRows.map(x=>x._order_id||'' ).filter(Boolean)).size;
   const hppKnown=onlineOldPreviewRows.filter(x=>x.hpp!=null).length;
-  $('onlineOldInfo').innerHTML='<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty produk <b>'+seller.toLocaleString('id-ID')+'</b> • '+(isStandard?'<b>Preview memakai HASIL RANGKUMAN REKAP_ONLINE, bukan detail listing.</b>':'Order cocok <b>'+matchedOrders.toLocaleString('id-ID')+'</b> • Baris produk cocok <b>'+matchedRows.length.toLocaleString('id-ID')+'</b> • HPP Online terukur <b>'+hppKnown.toLocaleString('id-ID')+'</b> baris.')+' '+(isStandard?'Modal/Profit mengikuti rangkuman bila tersedia.':'Produk + Qty mengikuti data historis yang diimpor.')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>.</div>';
+  $('onlineOldInfo').innerHTML='<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty produk <b>'+seller.toLocaleString('id-ID')+'</b> • '+(isStandard?'<b>Preview memakai HASIL RANGKUMAN REKAP_ONLINE, bukan detail listing.</b> Modal/HPP dihitung dari mapping Tempura Aci/Naget → master Naget berdasarkan ISI. Modal terukur <b>'+FFCore.rupiah(totalModal)+'</b> • Profit terukur <b>'+FFCore.rupiah(totalProfit)+'</b> • Bungkus terpetakan <b>'+totalMapped.toLocaleString('id-ID')+'</b> • Bungkus belum terpetakan <b>'+totalUnmapped.toLocaleString('id-ID')+'</b>.':'Order cocok <b>'+matchedOrders.toLocaleString('id-ID')+'</b> • Baris produk cocok <b>'+matchedRows.length.toLocaleString('id-ID')+'</b> • HPP Online terukur <b>'+hppKnown.toLocaleString('id-ID')+'</b> baris. Produk + Qty mengikuti data historis yang diimpor.')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>.</div>';
   renderOnlineOldMonthTabs(ms);
   renderOnlineOldMonthTable(onlineOldActiveMonth);
   $('onlineOldPreview').style.display='block';
@@ -587,7 +657,7 @@ async function refreshOnlineOldPreview(){
 $('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files);await refreshOnlineOldPreview();e.target.value='';}catch(err){$('onlineOldInfo').innerHTML='<div class="msg" style="color:#a22">'+FFCore.esc(err.message||err)+'</div>';$('onlineOldPreview').style.display='block'}};
 $('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
 renderOnlineOldFileQueue();
-$('onlineOldSave').onclick=async()=>{try{if(!onlineOldImportRows.length)return;const keys=onlineOldImportRows.map(x=>x.import_key),existing=new Set();for(let i=0;i<keys.length;i+=500){const r=await supabaseClient.from('penjualan').select('import_key').in('import_key',keys.slice(i,i+500));if(r.error)throw r.error;(r.data||[]).forEach(x=>existing.add(x.import_key))}const rows=onlineOldImportRows.filter(x=>!existing.has(x.import_key));for(let i=0;i<rows.length;i+=200){const r=await supabaseClient.from('penjualan').insert(rows.slice(i,i+200));if(r.error)throw r.error}$('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+rows.length.toLocaleString('id-ID')+'</b> baris Online historis. '+(onlineOldImportRows.length-rows.length)+' duplikat dilewati.</div>';onlineOldImportRows=[];await load()}catch(e){$('onlineOldMsg').innerHTML='<div class="msg" style="color:#a22">Gagal menyimpan Online historis: '+FFCore.esc(e.message||e)+'</div>'}};
+$('onlineOldSave').onclick=async()=>{try{if(!onlineOldImportRows.length)return;const keys=onlineOldImportRows.map(x=>x.import_key),orders=onlineOldImportRows.map(x=>x.order_id).filter(Boolean),existing=new Set(),existingOrders=new Set();for(let i=0;i<keys.length;i+=500){const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('import_key',keys.slice(i,i+500));if(r.error)throw r.error;(r.data||[]).forEach(x=>{if(x.import_key)existing.add(x.import_key);if(x.order_id)existingOrders.add(String(x.order_id))})}for(let i=0;i<orders.length;i+=500){const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('order_id',orders.slice(i,i+500));if(r.error)throw r.error;(r.data||[]).forEach(x=>{if(x.import_key)existing.add(x.import_key);if(x.order_id)existingOrders.add(String(x.order_id))})}const rows=onlineOldImportRows.filter(x=>!existing.has(x.import_key)&&!existingOrders.has(String(x.order_id||'')));for(let i=0;i<rows.length;i+=200){const r=await supabaseClient.from('penjualan').insert(rows.slice(i,i+200));if(r.error)throw r.error}$('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+rows.length.toLocaleString('id-ID')+'</b> baris Online historis. '+(onlineOldImportRows.length-rows.length)+' duplikat dilewati.</div>';onlineOldImportRows=[];await load()}catch(e){$('onlineOldMsg').innerHTML='<div class="msg" style="color:#a22">Gagal menyimpan Online historis: '+FFCore.esc(e.message||e)+'</div>'}};
 
 function fontSizeOf(it){const t=it.transform||[];return Math.max(Math.abs(Number(t[0])||0),Math.abs(Number(t[3])||0))}
 function cleanNumericColumn(items,minX,maxX){
