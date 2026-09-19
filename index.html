@@ -141,7 +141,10 @@ async function loadDashboard(){
     const offOldRevenue=offOld.reduce((s,x)=>s+Math.round(num(x.nominal ?? x.omzet ?? x.total)),0);
     const offNewRevenue=offNew.reduce((s,x)=>s+Math.round(num(x.omzet_produk ?? (num(x.qty)*num(x.harga)))),0);
     const offRevenue=offOldRevenue+offNewRevenue;
-    const offExpense=expenseRows.reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    // Pengeluaran Offline: hanya baris pengeluaran dengan periode YYYY-MM yang valid,
+    // sama seperti Rekap/Data Lama. Baris tanpa periode valid tidak boleh masuk total.
+    const validExpenseRows=expenseRows.filter(x=>/^20\d{2}-\d{2}$/.test(String(x.periode||'').trim()));
+    const offExpense=validExpenseRows.reduce((s,x)=>s+Math.round(num(x.nominal)),0);
     const offNet=offRevenue-offExpense;
     const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
 
