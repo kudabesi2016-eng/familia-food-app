@@ -260,13 +260,39 @@ async function parseOnlineOldFile(file){
 async function parseOnlineOldFiles(files){let out=[];for(const f of Array.from(files||[])){out.push(...await parseOnlineOldFile(f))}const seen=new Set();return out.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true})}
 function previewMoney(v){return v==null?'—':FFCore.rupiah(v)}
 function normOnlineName(v){return String(v??'').toLowerCase().trim().replace(/\s+/g,' ')}
-function explicitOnlineProductCandidates(name){
-  const n=normOnlineName(name);
+function onlineMatchText(row){return [row?.product_name,row?.variation,row?.seller_sku].map(normOnlineName).filter(Boolean).join(' | ')}
+function detectOnlinePackSize(row){
+  const n=onlineMatchText(row);
+  // Ukuran diprioritaskan dari VARIATION/SKU lalu nama produk.
+  // Pola seperti “2 bungkus isi 24 pcs” dibaca 24 / 2 = 12 pcs per bungkus.
+  let m=n.match(/\b(\d+)\s*bungkus\s*isi\s*(\d+)\s*pcs?\b/);
+  if(m){
+    const packs=Number(m[1]), pcs=Number(m[2]);
+    if(packs>0 && pcs>0){
+      const perPack=pcs/packs;
+      if([10,12,20,25,30,40,50].includes(perPack))return perPack;
+    }
+  }
+  m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/);
+  if(m)return Number(m[1]);
+  m=n.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/);
+  if(m)return Number(m[1]);
+  m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\b/);
+  if(m)return Number(m[1]);
+  return null;
+}
+function explicitOnlineProductCandidates(row){
+  const n=onlineMatchText(row);
   const out=[];
+  const size=detectOnlinePackSize(row);
   if(/\b(naget|tempura aci)\b/.test(n)){
-    const m=n.match(/isi\s*(10|12|20|25|30|40|50)/); if(m)out.push('naget isi '+m[1]);
-    if(/tempura aci.*(isi\s*12|eskrim|kotak|stik|bulat|lidah|mie|opal)/.test(n))out.push('naget isi 12');
-    if(/tempura aci.*25\s*pcs|isi\s*25/.test(n))out.push('naget isi 25');
+    if(size)out.push('naget isi '+size);
+    // Listing TEMPURA ACI isi 12 kadang memiliki Variation=Default.
+    if(/tempura aci.*isi\s*12/.test(n)&&!size)out.push('naget isi 12');
+    // Listing bentuk Eskrim/Kotak/Stik/Bulat/Lidah/Mie/Opal memakai variasi isi 12.
+    // Hanya dipakai saat ukuran memang tidak tersirat sebagai 20/25/30/40/50.
+    if(!size && /tempura aci.*(?:eskrim|kotak|stik|bulat|lidah|mie|opal)/.test(n))out.push('naget isi 12');
+    if(/\btempura aci\b.*\b25\s*pcs\b/.test(n)&&!size)out.push('naget isi 25');
   }
   if(/\bcireng\s+isi\b/.test(n))out.push('cireng isi');
   if(/\bcireng\s+biasa\b/.test(n))out.push('cireng biasa');
@@ -276,11 +302,12 @@ function explicitOnlineProductCandidates(name){
 function findOnlineMasterProduct(row){
   const pid=String(row?.produk_id||'');
   if(pid){const p=productMasterRows.find(x=>String(x.id)===pid);if(p)return p;}
-  const n=normOnlineName(row?.product_name);
+  const n=onlineMatchText(row);
   if(!n)return null;
-  const exact=productMasterRows.find(p=>normOnlineName(p.nama_produk)===n);
+  const exactName=normOnlineName(row?.product_name);
+  const exact=productMasterRows.find(p=>normOnlineName(p.nama_produk)===exactName);
   if(exact)return exact;
-  const aliases=explicitOnlineProductCandidates(n);
+  const aliases=explicitOnlineProductCandidates(row);
   for(const alias of aliases){
     const p=productMasterRows.find(x=>normOnlineName(x.nama_produk)===alias);
     if(p)return p;

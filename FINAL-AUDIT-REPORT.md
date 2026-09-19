@@ -70,3 +70,9 @@ Pembuatan paket v10 tidak melakukan INSERT, UPDATE, atau DELETE ke Supabase.
 - `data-lama.html` no longer selects `hpp_offline` from `produk`.
 - Inline JavaScript syntax check: PASS for all 9 HTML pages.
 - No Supabase writes performed during this hotfix build.
+
+
+## v12 regression focus
+- Data Lama Online: ukuran paket dibaca dari Product Name + Variation + Seller SKU.
+- Tidak ada perubahan pada formula HPP yang telah dikunci.
+- Target uji: listing Tempura Aci `1 Bungkus isi 12 pcs`, `2 Bungkus isi 24 pcs`, `ISI 20 PCS`, `ISI 30 PCS`, `ISI 40 PCS`, `ISI 50 PCS`, serta listing `isi 12 ... (Bentuk)` dengan Variation=Default.
