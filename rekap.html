@@ -134,6 +134,9 @@ h1{
 .profit{
   background:#eef7f1;
 }
+.negative{
+  color:#dc2626 !important;
+}
 
 .btn{
   border:0;
@@ -488,6 +491,18 @@ const money = n => {
 
 };
 
+const moneyColor = n => {
+  const v = Number(n) || 0;
+  const txt = money(v);
+  return v < 0 ? `<span class="negative">${txt}</span>` : txt;
+};
+
+const percentColor = p => {
+  const v = Number(p) || 0;
+  const txt = `${v.toFixed(2)}%`;
+  return v < 0 ? `<span class="negative">${txt}</span>` : txt;
+};
+
 
 /* =====================================================
    LABEL BULAN
@@ -810,24 +825,24 @@ function renderCards(){
     const expense=expenseForMonth(m);
     const profit=income-expense;
     const margin=income>0 ? (profit/income)*100 : 0;
-    $('rev').textContent=money(income);
-    $('out').textContent=money(expense);
+    $('rev').innerHTML=moneyColor(income);
+    $('out').innerHTML=moneyColor(expense);
     $('net').textContent='';
     $('hpp').textContent='';
-    $('profit').innerHTML=`${money(profit)}<br><span class="hint">Margin ${margin.toFixed(2)}%</span>`;
+    $('profit').innerHTML=`${moneyColor(profit)}<br><span class="hint">Margin ${percentColor(margin)}</span>`;
     return;
   }
 
   const h=hppForChannel(m);
-  $('rev').textContent=money(v?.[0]);
-  $('out').textContent=money(v?.[1]);
-  $('net').textContent=money(v?.[2]);
+  $('rev').innerHTML=moneyColor(v?.[0]);
+  $('out').innerHTML=moneyColor(v?.[1]);
+  $('net').innerHTML=moneyColor(v?.[2]);
 
   if(h.known){
     const profit=(Number(v?.[2])||0)-Math.round(Number(h.total)||0);
     const margin=Number(v?.[2]) ? (profit/Number(v[2]))*100 : 0;
-    $('hpp').textContent=money(h.total);
-    $('profit').innerHTML=`${money(profit)}<br><span class="hint">Margin ${margin.toFixed(2)}%</span>`;
+    $('hpp').innerHTML=moneyColor(h.total);
+    $('profit').innerHTML=`${moneyColor(profit)}<br><span class="hint">Margin ${percentColor(margin)}</span>`;
   }else{
     $('hpp').textContent='—';
     $('profit').innerHTML='<span class="hint">Modal belum tersedia</span>';
@@ -855,9 +870,9 @@ function renderMonthly(){
       const margin=income>0 ? (profit/income)*100 : 0;
       return `<tr>
         <td><b>${label(m)}</b></td>
-        <td>${money(income)}</td>
-        <td>${money(expense)}</td>
-        <td><b>${money(profit)}</b><br><span class="hint">Margin ${margin.toFixed(2)}%</span></td>
+        <td>${moneyColor(income)}</td>
+        <td>${moneyColor(expense)}</td>
+        <td><b>${moneyColor(profit)}</b><br><span class="hint">Margin ${percentColor(margin)}</span></td>
         <td><button class="view-btn" type="button" onclick="toggleOfflineDetail('${m}')">👁 Lihat Data</button></td>
       </tr>
       <tr id="offline-detail-row-${m}" style="display:none"><td colspan="5" style="padding:0;border:0"><div id="offline-detail-${m}" class="card" style="margin:10px 0;background:#fbfdfb;display:none"></div></td></tr>`;
@@ -873,11 +888,11 @@ function renderMonthly(){
     const margin=profit!==null && Number(v[2])>0 ? (profit/Number(v[2]))*100 : 0;
     return `<tr>
       <td><b>${label(m)}</b></td>
-      <td>${money(v[0])}</td>
-      <td>${money(v[1])}</td>
-      <td><b>${money(v[2])}</b></td>
-      <td>${modal!==null?money(modal):'—'}</td>
-      <td>${profit!==null?`<b>${money(profit)}</b><br><span class="hint">Margin ${margin.toFixed(2)}%</span>`:'<span class="hint">Modal belum tersedia</span>'}</td>
+      <td>${moneyColor(v[0])}</td>
+      <td>${moneyColor(v[1])}</td>
+      <td><b>${moneyColor(v[2])}</b></td>
+      <td>${modal!==null?moneyColor(modal):'—'}</td>
+      <td>${profit!==null?`<b>${moneyColor(profit)}</b><br><span class="hint">Margin ${percentColor(margin)}</span>`:'<span class="hint">Modal belum tersedia</span>'}</td>
     </tr>`;
   }).join('');
 }
