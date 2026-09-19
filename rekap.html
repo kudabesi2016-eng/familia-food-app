@@ -257,10 +257,10 @@ td{
 
 <main>
 
-  <h1>📊 Rekap Online</h1>
+  <h1 id="pageTitle">📊 Rekap Penjualan</h1>
 
-  <div class="sub">
-    Rekap penjualan Online Shop Familia Food per bulan.
+  <div class="sub" id="pageSub">
+    Rekap penjualan Familia Food per bulan.
   </div>
 
 
@@ -277,6 +277,7 @@ td{
       <div class="field">
         <label>Channel</label>
         <select id="channel">
+          <option value="Offline">Offline</option>
           <option value="Online">Online</option>
         </select>
       </div>
@@ -299,7 +300,7 @@ td{
     </div>
 
     <div class="stat">
-      <small>Potongan Online Shop</small>
+      <small id="outLabel">Potongan Online Shop</small>
       <strong id="out">Rp 0</strong>
     </div>
 
@@ -326,19 +327,13 @@ td{
 
     <div class="notice">
 
-      🔵 <b>Rekap Online</b><br>
-
-      Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>
-
+      <span id="noticeChannel">🔵 <b>Rekap Online</b></span><br>
+      <span id="noticeText">Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>
       Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>
-
       Uang Bersih adalah nilai yang diterima setelah potongan.<br>
-
       Modal menggunakan HPP Online apabila sudah tersedia.<br>
-
       Profit = Uang Bersih − Modal.<br>
-
-      Margin = Profit ÷ Uang Bersih × 100%.
+      Margin = Profit ÷ Uang Bersih × 100%.</span>
 
     </div>
 
@@ -349,7 +344,7 @@ td{
   <div class="card">
 
     <h2 style="margin-top:0">
-      📅 Rekap Online Bulanan
+      📅 <span id="monthlyTitle">Rekap Online Bulanan</span>
     </h2>
 
     <div class="tablewrap">
@@ -361,7 +356,7 @@ td{
           <tr>
             <th>Bulan</th>
             <th>Pemasukan</th>
-            <th>Potongan Online Shop</th>
+            <th id="monthlyOutHead">Potongan Online Shop</th>
             <th>Uang Bersih yang Diterima</th>
             <th>Modal</th>
             <th>Profit / Margin</th>
@@ -501,6 +496,15 @@ function monthOfSaleRow(x){
   return FFCore.monthOf(x.tanggal||x.paid_time||x.created_time||'') || String(x.periode||'').slice(0,7);
 }
 
+function offlineFinance(m){
+  const oldRows=(olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m);
+  const newRows=(sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m);
+  const oldRev=oldRows.reduce((a,x)=>a+Math.round(Number(x.omzet||0)),0);
+  const newRev=newRows.reduce((a,x)=>a+Math.round(Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0))),0),0);
+  const rev=oldRev+newRev;
+  return [rev,0,rev];
+}
+
 function onlineFinance(m){
   const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===m);
   const standard=rows.filter(x=>String(x.source||'')==='online_standard_finance');
@@ -614,6 +618,42 @@ function onlineHpp(m){
 }
 
 
+function offlineHpp(m){
+  try{
+    const rows=FFCore.productSummary(m,'Offline',data())||[];
+    let total=0;
+    for(const x of rows){
+      if(x.hppKnown===false)return {known:false,total:0};
+      if(x.hpp==null)return {known:false,total:0};
+      total+=Math.trunc(Number(x.hpp)||0);
+    }
+    return {known:true,total:Math.trunc(total)};
+  }catch(e){
+    return {known:false,total:0};
+  }
+}
+
+function finance(m){
+  return $('channel').value==='Offline' ? offlineFinance(m) : onlineFinance(m);
+}
+
+function hppForChannel(m){
+  return $('channel').value==='Offline' ? offlineHpp(m) : onlineHpp(m);
+}
+
+function updateChannelUI(){
+  const offline=$('channel').value==='Offline';
+  $('pageTitle').textContent=offline?'📊 Rekap Offline':'📊 Rekap Online';
+  $('pageSub').textContent=offline?'Rekap penjualan Offline Familia Food per bulan.':'Rekap penjualan Online Shop Familia Food per bulan.';
+  $('outLabel').textContent=offline?'Potongan':'Potongan Online Shop';
+  $('monthlyOutHead').textContent=offline?'Potongan':'Potongan Online Shop';
+  $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
+  $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
+  $('noticeText').innerHTML=offline
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Potongan untuk Offline tidak ada sehingga nilainya Rp 0.<br>Uang Bersih sama dengan Pemasukan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.'
+    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br>Modal menggunakan HPP Online apabila sudah tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.';
+}
+
 /* =====================================================
    BULAN
 ===================================================== */
@@ -622,6 +662,10 @@ function months(){
   const set=new Set();
   (sales||[]).forEach(x=>{
     const m=monthOfSaleRow(x);
+    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
+  });
+  (olds||[]).forEach(x=>{
+    const m=String(x.periode||'').slice(0,7);
     if(/^\d{4}-\d{2}$/.test(m))set.add(m);
   });
   try{FFCore.monthsOfData(data()).forEach(m=>set.add(m));}catch(e){}
@@ -639,7 +683,7 @@ function renderCards(){
     $('month').value;
 
   const v =
-    onlineFinance(m);
+    finance(m);
 
   if(!v){
 
@@ -655,7 +699,7 @@ function renderCards(){
 
 
   const h =
-    onlineHpp(m);
+    hppForChannel(m);
 
 
   $('rev').textContent =
@@ -722,7 +766,7 @@ function renderMonthly(){
 
       <tr>
         <td colspan="6" class="empty">
-          Belum ada data Online.
+          Belum ada data ${$('channel').value}.
         </td>
       </tr>
 
@@ -738,7 +782,7 @@ function renderMonthly(){
     ms.map(m => {
 
       const v =
-        onlineFinance(m);
+        finance(m);
 
       if(!v){
         return '';
@@ -746,7 +790,7 @@ function renderMonthly(){
 
 
       const h =
-        onlineHpp(m);
+        hppForChannel(m);
 
 
       const modal =
@@ -878,6 +922,7 @@ function renderMonthOptions(){
 
 function render(){
 
+  updateChannelUI();
   renderCards();
 
   renderMonthly();
@@ -929,8 +974,7 @@ async function init(){
     ]);
 
 
-    $('channel').value =
-      'Online';
+    if(!['Offline','Online'].includes($('channel').value)) $('channel').value='Online';
 
 
     renderMonthOptions();
