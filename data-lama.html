@@ -292,6 +292,7 @@ async function parseFamiliaStandardWorkbook(wb){
       quantity_return:0,harga_asli:0,omzet_produk:0,order_amount:0,biaya_platform:null,uang_bersih:null,
       modal_hpp:null,profit_online:null,source:'online_standard_product',purchase_channel:'TikTok Shop',
       order_channel:'TikTok Shop',created_time:null,paid_time:bulan+'-01T00:00:00',
+      isi_pcs:isi,
       import_key:['familia-standard-product-v1',bulan,product,variation,isi,qty,rows].join('|')});
   }
   if(!out.length)throw new Error('File STANDARD Familia Food tidak memiliki data valid.');
@@ -338,6 +339,10 @@ function onlineMatchText(row){return [row?.product_name,row?.variation,row?.sell
 function detectOnlinePackSize(row){
   const n=onlineMatchText(row);
   const exactSku=String(row?.sku_id??'').trim();
+  // Excel STANDARD membawa kolom Isi (pcs). Gunakan ini sebagai sumber ukuran
+  // ketika ukuran tidak tertulis di Nama Produk/Variasi.
+  const explicitIsi=Number(row?.isi_pcs ?? row?.isi ?? 0);
+  if([10,12,20,25,30,40,50].includes(explicitIsi))return explicitIsi;
   // SKU terverifikasi dari Seller Center: 1733751720824702091 = BULAT ISI 12.
   if(exactSku==='1733751720824702091')return 12;
   // Saat sudah menjadi Excel STANDARD, SKU ID tidak dibawa. Dua listing BULAT
@@ -631,6 +636,7 @@ function renderOnlineOldMonthTable(month){
       <div class="sectionTotal"><span>Total Bungkus Semua Listing</span><b>${Number(r.qty||0).toLocaleString('id-ID')} bungkus</b></div>
       <div class="sectionTotal"><span>Bungkus Familia Food terpetakan ke HPP</span><b>${Number(r.mappedQty||0).toLocaleString('id-ID')} bungkus</b></div>
       <div class="sectionTotal"><span>Produk lain di luar HPP Familia Food</span><b>${Number(r.nonFamiliaQty||0).toLocaleString('id-ID')} bungkus</b></div>
+      <div class="reportNotice">✅ Klasifikasi mengikuti data STANDARD: listing Tempura/Naget dengan Isi (pcs) yang valid masuk HPP Familia Food.</div>
       ${Number(r.unmappedQty||0)>0?`<div class="reportNotice">⚠️ ${Number(r.unmappedQty).toLocaleString('id-ID')} bungkus produk Familia Food masih belum terpetakan ke HPP.</div>`:`<div class="reportNotice">✅ Semua bungkus produk Familia Food sudah memiliki mapping HPP.</div>`}
       ${r.margin!=null?`<div class="sectionTotal"><span>Margin</span><b>${Number(r.margin).toFixed(2)}%</b></div>`:''}
     </section>`;
