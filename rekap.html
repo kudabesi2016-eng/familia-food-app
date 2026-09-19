@@ -762,9 +762,9 @@ function renderMonthly(){
 
 
       const margin =
-        profit !== null && v[2]
-          ? (profit / v[2]) * 100
-          : null;
+        profit !== null && Number(v[2]) > 0
+          ? (profit / Number(v[2])) * 100
+          : 0;
 
 
       return `
