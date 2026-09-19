@@ -2,14 +2,15 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Data Lama - Familia Food</title><!-- v11: STANDARD REKAP_ONLINE Modal/HPP is source of truth, including modal produk lain. -->
+<title>Data Lama - Familia Food</title><!-- v11: Data Lama has Offline/Online tabs with monthly Online history. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script><script src="app-settings.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="ff-core.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f7f5;color:#1f2937}.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand-color,#126b3a);color:#fff;padding:25px 15px;z-index:10}.brand{font-size:24px;font-weight:bold;text-align:center;margin-bottom:30px}.menu a{display:block;color:#fff;text-decoration:none;padding:12px 15px;margin-bottom:6px;border-radius:8px}.menu a:hover,.menu a.active{background:#0d542d}.main{margin-left:240px;padding:30px;max-width:1450px}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.header h1{color:var(--brand-color,#126b3a);margin:0}.card{background:#fff;padding:22px;border-radius:14px;margin-top:18px;box-shadow:0 2px 10px #0000000d}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}.btn{margin-top:15px;background:var(--brand-color,#087443);color:#fff;border:0;border-radius:8px;padding:11px 18px;cursor:pointer;font-weight:bold}.btn.secondary{background:#6b7280}.filebox{border:2px dashed #b7d7c5;padding:18px;border-radius:12px;background:#f8fcfa}.hint{color:#6b7280;font-size:13px;line-height:1.5}.msg{margin-top:10px;padding:10px;border-radius:8px}.preview{display:none}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e8f7ed;color:#087443;font-size:12px;font-weight:bold}.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th{background:var(--brand-color,#087443);color:white;padding:10px;text-align:left}td{padding:10px;border-bottom:1px solid #ddd}.del{background:#fdecec;color:#a22;border:0;padding:7px;border-radius:6px;cursor:pointer}.monthtabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px;padding-bottom:12px;border-bottom:1px solid #e2ebe5}.monthtab{border:1px solid #cfe0d6;background:#fff;color:#315247;border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:bold}.monthtab:hover{background:#eef8f1}.monthtab.active{background:var(--brand-color,#087443);border-color:var(--brand-color,#087443);color:#fff}.emptyState{padding:35px;text-align:center;color:#6b7280;background:#fbfdfc;border:1px dashed #cfe0d6;border-radius:12px}.reportHead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:5px 2px 18px}.eyebrow{font-size:11px;letter-spacing:1.3px;font-weight:800;color:#6b8b7b}.reportHead h2{margin:5px 0 3px;font-size:28px;color:#143c2b}.reportHead p{margin:0;color:#6b7280}.reportMeta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.reportMeta span{background:#f0f7f3;border:1px solid #d9e8df;border-radius:8px;padding:8px 11px;font-size:12px;color:#315247;font-weight:700}.kpiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.kpi{background:#fff;border:1px solid #dfe9e3;border-radius:12px;padding:16px;box-shadow:0 2px 8px #00000008}.kpi span{display:block;font-size:12px;color:#6b7280;font-weight:700}.kpi strong{display:block;font-size:23px;color:#087443;margin-top:7px}.kpi small{color:#8a9992}.reportSection{background:#fff;border:1px solid #dfe9e3;border-radius:12px;overflow:hidden;margin-bottom:16px}.sectionHead{padding:15px 17px;border-bottom:1px solid #e6eee9;background:#fbfdfc}.sectionHead h3{margin:0;color:#143c2b;font-size:17px}.sectionHead p{margin:4px 0 0;color:#7a8781;font-size:12px}.cleanTable{min-width:0!important}.cleanTable th{background:#f1f6f3;color:#315247;font-size:12px;text-transform:uppercase;letter-spacing:.2px;border-bottom:1px solid #dfe9e3}.cleanTable td{font-size:13px}.cleanTable tbody tr:hover{background:#f8fbf9}.detailSection .tablewrap{max-height:440px;overflow:auto}.detailSection thead th{position:sticky;top:0;z-index:1}.sectionTotal{display:flex;justify-content:flex-end;gap:18px;padding:12px 17px;background:#fbfdfc;border-top:1px solid #e6eee9;font-weight:bold;color:#315247}.sectionTotal b{color:#087443}.consumerName{font-weight:700;color:#143c2b}.productPill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef8f1;color:#087443;font-size:12px;font-weight:700}.rank{width:42px;color:#7a8781}.reportNotice{padding:10px 12px;background:#f5faf7;border:1px solid #d9e8df;border-radius:10px;color:#315247;font-size:12px;margin-bottom:14px}
 @media(max-width:900px){.sidebar{position:relative;width:100%;height:auto}.main{margin-left:0;padding:15px}.grid,.filters,.kpiGrid{grid-template-columns:1fr}.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}.reportHead{flex-direction:column}.reportMeta{justify-content:flex-start}}
-.history-title{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.history-title h2{margin:0 0 4px}.month-summary{border:1px solid #dfe9e3;border-radius:12px;overflow:hidden}.month-row{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr auto;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid #e8eee9}.month-row:last-child{border-bottom:0}.month-name{font-weight:800;color:#143c2b}.money-label{font-size:11px;color:#7a8781;display:block;margin-bottom:3px}.money{font-weight:800}.income{color:#087443}.expense{color:#b23b3b}.balance{color:#315247}.view-btn{margin:0;background:#087443;color:#fff;border:0;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer;white-space:nowrap}.view-btn:hover{filter:brightness(.95)}.month-detail{grid-column:1/-1;background:#f8fbf9;border-top:1px solid #e8eee9;padding:16px;margin:0 -16px -15px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mini-detail{background:#fff;border:1px solid #dfe9e3;border-radius:10px;padding:14px}.mini-detail h4{margin:0 0 10px;color:#143c2b}.mini-detail table{min-width:0}.mini-detail th{font-size:11px;padding:8px}.mini-detail td{font-size:12px;padding:8px}.close-detail{margin-top:12px;background:#6b7280}.history-note{margin-top:12px;padding:9px 11px;background:#f5faf7;border-radius:8px;font-size:12px;color:#315247}@media(max-width:900px){.month-row{grid-template-columns:1fr 1fr}.month-row>div:last-of-type,.view-btn{grid-column:auto}.month-detail{grid-column:1/-1}.detail-grid{grid-template-columns:1fr}}@media(max-width:600px){.month-row{grid-template-columns:1fr}.view-btn{width:100%}.history-title{flex-direction:column}}</style>
+.history-title{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.history-title h2{margin:0 0 4px}.month-summary{border:1px solid #dfe9e3;border-radius:12px;overflow:hidden}.month-row{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr auto;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid #e8eee9}.month-row:last-child{border-bottom:0}.month-name{font-weight:800;color:#143c2b}.money-label{font-size:11px;color:#7a8781;display:block;margin-bottom:3px}.money{font-weight:800}.income{color:#087443}.expense{color:#b23b3b}.balance{color:#315247}.view-btn{margin:0;background:#087443;color:#fff;border:0;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer;white-space:nowrap}.view-btn:hover{filter:brightness(.95)}.month-detail{grid-column:1/-1;background:#f8fbf9;border-top:1px solid #e8eee9;padding:16px;margin:0 -16px -15px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mini-detail{background:#fff;border:1px solid #dfe9e3;border-radius:10px;padding:14px}.mini-detail h4{margin:0 0 10px;color:#143c2b}.mini-detail table{min-width:0}.mini-detail th{font-size:11px;padding:8px}.mini-detail td{font-size:12px;padding:8px}.close-detail{margin-top:12px;background:#6b7280}.history-note{margin-top:12px;padding:9px 11px;background:#f5faf7;border-radius:8px;font-size:12px;color:#315247}@media(max-width:900px){.month-row{grid-template-columns:1fr 1fr}.month-row>div:last-of-type,.view-btn{grid-column:auto}.month-detail{grid-column:1/-1}.detail-grid{grid-template-columns:1fr}}@media(max-width:600px){.month-row{grid-template-columns:1fr}.view-btn{width:100%}.history-title{flex-direction:column}}
+.history-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px;padding-bottom:10px;border-bottom:1px solid #e2ebe5}.history-tab{border:1px solid #cfe0d6;background:#fff;color:#315247;border-radius:999px;padding:9px 16px;cursor:pointer;font-weight:800}.history-tab.active{background:var(--brand-color,#087443);border-color:var(--brand-color,#087443);color:#fff}.online-month-row{display:grid;grid-template-columns:1.25fr .95fr .95fr .95fr .95fr auto;align-items:center;gap:12px;padding:15px 16px;border-bottom:1px solid #e8eee9}.online-month-row:last-child{border-bottom:0}.online-detail{grid-column:1/-1;background:#f8fbf9;border-top:1px solid #e8eee9;padding:16px;margin:0 -16px -15px}.online-mini{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}.online-mini>div{background:#fff;border:1px solid #dfe9e3;border-radius:10px;padding:11px}.online-mini small{display:block;color:#7a8781;font-size:11px;margin-bottom:4px}.online-mini b{color:#087443}.tab-panel{display:none}.tab-panel.active{display:block}@media(max-width:900px){.online-month-row{grid-template-columns:1fr 1fr}.online-mini{grid-template-columns:1fr 1fr}.online-month-row .online-detail{grid-column:1/-1}}@media(max-width:600px){.online-month-row{grid-template-columns:1fr}.online-mini{grid-template-columns:1fr}.history-tab{width:100%;text-align:center}}</style>
 </head>
 <body>
 <aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="menu">
@@ -18,7 +19,7 @@
 <main class="main">
 <div class="header"><div><h1>📁 Data Lama</h1><p>Riwayat penjualan lama tetap tersimpan per <b>bulan → ringkasan → konsumen → keluar per produk → detail transaksi</b> dan tetap dapat dibaca oleh Rekap dan Dashboard.</p></div><span class="badge">Historis Offline + Online</span></div>
 
-<div class="card history-card"><div class="history-title"><div><h2>📚 Data Lama per Bulan</h2><p class="hint">Tampilan ringkas: <b>Pemasukan · Pengeluaran · Selisih</b>. Detail hanya muncul saat bro menekan <b>👁 Lihat Data</b>.</p></div><span class="badge">Ringkas</span></div><div id="monthlySummary"><div class="hint">Memuat data...</div></div></div>
+<div class="card history-card"><div class="history-title"><div><h2>📚 Data Lama per Bulan</h2><p class="hint">Pilih tab <b>Offline</b> atau <b>Online</b>. Masing-masing ditampilkan per bulan dan memiliki <b>👁 Lihat Data</b>.</p></div><span class="badge">Ringkas</span></div><div class="history-tabs"><button type="button" id="tabOffline" class="history-tab active">🟢 Data Offline</button><button type="button" id="tabOnline" class="history-tab">🔵 Data Online</button></div><div id="offlineTabPanel" class="tab-panel active"><div id="monthlySummary"><div class="hint">Memuat data...</div></div></div><div id="onlineTabPanel" class="tab-panel"><div id="onlineMonthlySummary"><div class="hint">Memuat data Online...</div></div></div></div>
 
 <div class="card"><details><summary>📥 Import Data Lama</summary><h2>📥 Import Data Lama</h2><div class="filebox"><input id="file" type="file" accept=".xlsx,.xls,.csv,.pdf"><p class="hint"><b>PDF Familia Food:</b> sistem membaca tabel <b>Bulan → Konsumen → Produk → Qty → Omzet</b>. Baris Subtotal/TOTAL BULAN tidak disimpan. Angka Indonesia seperti <b>3.774.000</b> dibaca sebagai <b>Rp3.774.000</b>.</p></div>
 <div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></details></div>
@@ -158,7 +159,75 @@ function detailMonth(m){
 }
 window.toggleMonth=function(m){const el=$('detail-'+m);if(!el)return;if(el.style.display==='none'){el.innerHTML=detailMonth(m);el.style.display='block'}else{el.style.display='none'}};
 function renderGrouped(){renderMonthlySummary()}
-function renderAll(){renderGrouped()}
+function renderAll(){renderGrouped();renderOnlineMonthlySummary()}
+function onlineFinanceRowsForMonth(m){return onlineSalesAll.filter(x=>String(x.periode||'').slice(0,7)===m && String(x.source||'')==='online_standard_finance')}
+function onlineProductRowsForMonth(m){return onlineSalesAll.filter(x=>String(x.periode||'').slice(0,7)===m && String(x.source||'')==='online_standard_product')}
+function onlineMonths(){
+  const set=new Set();
+  onlineSalesAll.forEach(x=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+  return Array.from(set).sort();
+}
+function onlineMonthDetail(m){
+  const fin=onlineFinanceRowsForMonth(m), prods=onlineProductRowsForMonth(m);
+  const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+  const pot=fin.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
+  const net=fin.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+  const baseModal=fin.reduce((a,x)=>a+Number(x.modal_hpp||0),0);
+  const qty=prods.reduce((a,x)=>a+Number(x.qty||0),0);
+  const packing=qty*1000;
+  const modal=baseModal+packing;
+  const profit=net-modal;
+  const margin=net?profit/net*100:0;
+  const grouped={};
+  prods.forEach(x=>{const key=[String(x.product_name||x.produk||'-').trim(),String(x.variation||'').trim()].join(' | ');if(!grouped[key])grouped[key]={produk:String(x.product_name||x.produk||'-').trim(),variation:String(x.variation||'').trim(),qty:0};grouped[key].qty+=Number(x.qty||0)});
+  const rows=Object.values(grouped).sort((a,b)=>b.qty-a.qty);
+  let h='<div class="online-detail">';
+  h+='<div class="online-mini">';
+  h+='<div><small>Pemasukan</small><b>'+rupiah(rev)+'</b></div>';
+  h+='<div><small>Potongan Online Shop</small><b>'+rupiah(pot)+'</b></div>';
+  h+='<div><small>Uang Bersih</small><b>'+rupiah(net)+'</b></div>';
+  h+='<div><small>Modal + Packing</small><b>'+rupiah(modal)+'</b></div>';
+  h+='<div><small>Profit / Margin</small><b>'+rupiah(profit)+' · '+margin.toFixed(2)+'%</b></div>';
+  h+='</div>';
+  h+='<div class="sectionTotal"><span>Total Produk Keluar</span><b>'+qty.toLocaleString('id-ID')+' bungkus</b></div>';
+  h+='<div class="sectionTotal"><span>Packing Online (Rp1.000 × bungkus)</span><b>'+rupiah(packing)+'</b></div>';
+  h+='<div class="mini-detail"><h4>📦 Produk Online per Bulan</h4><div class="tablewrap"><table><thead><tr><th>Produk / Listing</th><th>Variasi</th><th>Bungkus</th></tr></thead><tbody>';
+  rows.forEach(x=>{h+='<tr><td>'+esc(x.produk)+'</td><td>'+esc(x.variation||'—')+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td></tr>'});
+  if(!rows.length)h+='<tr><td colspan="3">Belum ada detail produk.</td></tr>';
+  h+='</tbody></table></div></div>';
+  h+='<button class="view-btn close-detail" type="button" data-online-month="'+m+'">Tutup Data</button>';
+  h+='</div>';
+  return h;
+}
+function renderOnlineMonthlySummary(){
+  const box=$('onlineMonthlySummary'); if(!box)return;
+  const months=onlineMonths();
+  if(!months.length){box.innerHTML='<div class="emptyState">Belum ada data Online historis.</div>';return}
+  let html='<div class="month-summary">';
+  months.forEach(m=>{
+    const fin=onlineFinanceRowsForMonth(m), prods=onlineProductRowsForMonth(m);
+    const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+    const pot=fin.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
+    const net=fin.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+    const baseModal=fin.reduce((a,x)=>a+Number(x.modal_hpp||0),0);
+    const qty=prods.reduce((a,x)=>a+Number(x.qty||0),0);
+    const modal=baseModal+(qty*1000);
+    const profit=net-modal;
+    const margin=net?profit/net*100:0;
+    html+='<div class="online-month-row"><div class="month-name">📅 '+esc(monthLabel(m))+'</div><div><span class="money-label">🟢 Pemasukan</span><span class="money income">'+rupiah(rev)+'</span></div><div><span class="money-label">🔴 Potongan</span><span class="money expense">'+rupiah(pot)+'</span></div><div><span class="money-label">💰 Uang Bersih</span><span class="money balance">'+rupiah(net)+'</span></div><div><span class="money-label">📦 Modal + Packing</span><span class="money">'+rupiah(modal)+'</span></div><div><span class="money-label">📈 Profit / Margin</span><span class="money">'+rupiah(profit)+' · '+margin.toFixed(2)+'%</span><button class="view-btn" type="button" style="margin-top:7px" data-online-month="'+m+'">👁 Lihat Data</button></div><div id="online-detail-'+m+'" class="online-detail" style="display:none"></div></div>';
+  });
+  html+='</div><div class="history-note">🔵 Data Online historis berasal dari <b>STANDARD</b>. Modal = modal HPP tersimpan + <b>Rp1.000 × bungkus</b> untuk packing Online. Data ditampilkan per bulan tanpa mengubah detail Seller Center.</div>';
+  box.innerHTML=html;
+}
+window.toggleOnlineMonth=function(m){const el=$('online-detail-'+m);if(!el)return;if(el.style.display==='none'){el.innerHTML=onlineMonthDetail(m);el.style.display='block'}else{el.style.display='none'}};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-online-month]');if(b){toggleOnlineMonth(b.getAttribute('data-online-month'))}});
+function setHistoryTab(tab){
+  const off=tab==='offline';
+  $('tabOffline').classList.toggle('active',off);$('tabOnline').classList.toggle('active',!off);
+  $('offlineTabPanel').classList.toggle('active',off);$('onlineTabPanel').classList.toggle('active',!off);
+}
+$('tabOffline').onclick=()=>setHistoryTab('offline');
+$('tabOnline').onclick=()=>setHistoryTab('online');
 async function load(){
   try{
     const schema=await getDataLamaSchema();
@@ -292,7 +361,6 @@ async function parseFamiliaStandardWorkbook(wb){
       quantity_return:0,harga_asli:0,omzet_produk:0,order_amount:0,biaya_platform:null,uang_bersih:null,
       modal_hpp:null,profit_online:null,source:'online_standard_product',purchase_channel:'TikTok Shop',
       order_channel:'TikTok Shop',created_time:null,paid_time:bulan+'-01T00:00:00',
-      isi_pcs:isi,
       import_key:['familia-standard-product-v1',bulan,product,variation,isi,qty,rows].join('|')});
   }
   if(!out.length)throw new Error('File STANDARD Familia Food tidak memiliki data valid.');
@@ -339,15 +407,6 @@ function onlineMatchText(row){return [row?.product_name,row?.variation,row?.sell
 function detectOnlinePackSize(row){
   const n=onlineMatchText(row);
   const exactSku=String(row?.sku_id??'').trim();
-  // Excel STANDARD membawa kolom Isi (pcs). Gunakan ini sebagai sumber ukuran
-  // ketika ukuran tidak tertulis di Nama Produk/Variasi.
-  const explicitIsi=Number(row?.isi_pcs ?? row?.isi ?? 0);
-  if([10,12,20,25,30,40,50].includes(explicitIsi))return explicitIsi;
-  // Dua listing tambahan sudah diverifikasi langsung di Seller Center sebagai ISI 12.
-  // Pada STANDARD namanya memang tidak memuat angka isi.
-  const verifiedPname=normOnlineName(row?.product_name);
-  if(/tempura eskrim nanagetan/.test(verifiedPname))return 12;
-  if(/tempura lidah nanagetan/.test(verifiedPname))return 12;
   // SKU terverifikasi dari Seller Center: 1733751720824702091 = BULAT ISI 12.
   if(exactSku==='1733751720824702091')return 12;
   // Saat sudah menjadi Excel STANDARD, SKU ID tidak dibawa. Dua listing BULAT
@@ -449,8 +508,7 @@ async function ensureOnlineHppMaster(){
 function standardIsFamiliaProduct(row){
   const n=onlineMatchText(row);
   if(/saus bantal|saos bakso/.test(n))return false;
-  // Termasuk dua listing Tempura/Nanagetan yang sudah diverifikasi sebagai Familia Food isi 12.
-  return /\btempura aci\b|\bnaget\b|tempura eskrim nanagetan|tempura lidah nanagetan/.test(n);
+  return /\btempura aci\b|\bnaget\b/.test(n);
 }
 function masterProductNameForSize(size){
   const n=Number(size);
@@ -482,26 +540,20 @@ function calculateStandardHppByMonth(standardFinance,standardProduct){
   const byMonth={};
   standardFinance.forEach(x=>{
     const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
-    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,modalFromStandard:false,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
+    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
     const g=byMonth[bulan];
     g.rev+=Number(x.omzet_produk||0);
     g.pot+=Number(x.biaya_platform||0);
     if(x.uang_bersih!=null){g.net+=Number(x.uang_bersih||0);g.netKnown=true;}
-    // STANDARD REKAP_ONLINE is the source of truth for the combined Modal/HPP.
-    // This may include HPP Familia Food + modal beli produk lain.
-    if(x.modal_hpp!=null && String(x.modal_hpp).trim()!==''){
-      g.modal=Number(x.modal_hpp)||0;
-      g.modalFromStandard=true;
-    }
   });
   standardProduct.forEach(x=>{
     const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
-    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,modalFromStandard:false,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
+    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
     const g=byMonth[bulan];
     const qty=Number(x.qty||0);
     const unit=standardHppUnitForRow(x);
     if(unit!=null){
-      if(!g.modalFromStandard) g.modal+=qty*Math.trunc(Number(unit)||0);
+      g.modal+=qty*Math.trunc(Number(unit)||0);
       g.mappedQty+=qty;
       g.hasMapped=true;
     }else if(standardIsFamiliaProduct(x)){
@@ -511,17 +563,17 @@ function calculateStandardHppByMonth(standardFinance,standardProduct){
     }
   });
   Object.values(byMonth).forEach(g=>{
-    if(g.hasMapped || g.modalFromStandard){
+    if(g.hasMapped){
       g.profit=g.netKnown?g.net-g.modal:null;
       g.margin=g.netKnown&&g.net!==0&&g.profit!=null?(g.profit/g.net)*100:null;
     }else{
       g.modal=null;g.profit=null;g.margin=null;
     }
   });
-  // Push the FINAL combined Modal/Profit back into finance rows.
+  // Push calculated values back into the finance rows so the saved Data Lama rows carry Modal/Profit.
   standardFinance.forEach(x=>{
     const m=byMonth[FFCore.monthOf(x.tanggal)||''];
-    if(m && (m.hasMapped || m.modalFromStandard)){
+    if(m && m.hasMapped){
       x.modal_hpp=Math.trunc(Number(m.modal)||0);
       x.profit_online=m.profit==null?null:Math.trunc(Number(m.profit)||0);
       x.hpp=Math.trunc(Number(m.modal)||0);
@@ -642,7 +694,6 @@ function renderOnlineOldMonthTable(month){
       <div class="sectionTotal"><span>Total Bungkus Semua Listing</span><b>${Number(r.qty||0).toLocaleString('id-ID')} bungkus</b></div>
       <div class="sectionTotal"><span>Bungkus Familia Food terpetakan ke HPP</span><b>${Number(r.mappedQty||0).toLocaleString('id-ID')} bungkus</b></div>
       <div class="sectionTotal"><span>Produk lain di luar HPP Familia Food</span><b>${Number(r.nonFamiliaQty||0).toLocaleString('id-ID')} bungkus</b></div>
-      <div class="reportNotice">✅ Klasifikasi mengikuti data STANDARD dan verifikasi Seller Center: 35 bungkus Tempura ESKRIM nanagetan + 8 bungkus Tempura Lidah nanagetan masuk HPP Naget 12.</div>
       ${Number(r.unmappedQty||0)>0?`<div class="reportNotice">⚠️ ${Number(r.unmappedQty).toLocaleString('id-ID')} bungkus produk Familia Food masih belum terpetakan ke HPP.</div>`:`<div class="reportNotice">✅ Semua bungkus produk Familia Food sudah memiliki mapping HPP.</div>`}
       ${r.margin!=null?`<div class="sectionTotal"><span>Margin</span><b>${Number(r.margin).toFixed(2)}%</b></div>`:''}
     </section>`;
@@ -688,69 +739,41 @@ $('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files
 $('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
 renderOnlineOldFileQueue();
 async function saveOnlineHistoricalRows(rows){
-  // STANDARD historis yang sudah tersimpan tidak dianggap "duplikat"
-  // jika nilai Modal/Profit berubah. Baris finance STANDARD akan diperbarui,
-  // sedangkan detail produk yang identik tetap dilewati.
+  // Gunakan batch kecil agar URL query .in() tidak terlalu panjang dan POST tidak rapuh.
   const QUERY_BATCH=75;
   const INSERT_BATCH=50;
-  const financeRows=rows.filter(x=>x.source==='online_standard_finance');
-  const detailRows=rows.filter(x=>x.source!=='online_standard_finance');
-  const existingByOrder=new Map();
-  const existingByKey=new Map();
-
-  const allOrders=[...new Set(rows.map(x=>String(x.order_id||'')).filter(Boolean))];
-  const allKeys=[...new Set(rows.map(x=>String(x.import_key||'')).filter(Boolean))];
-
-  for(let i=0;i<allOrders.length;i+=QUERY_BATCH){
-    const part=allOrders.slice(i,i+QUERY_BATCH);
-    const r=await supabaseClient.from('penjualan').select('id,import_key,order_id,source').in('order_id',part);
-    if(r.error)throw r.error;
-    (r.data||[]).forEach(x=>{
-      if(x.order_id)existingByOrder.set(String(x.order_id),x);
-      if(x.import_key)existingByKey.set(String(x.import_key),x);
-    });
-  }
-
-  for(let i=0;i<allKeys.length;i+=QUERY_BATCH){
-    const part=allKeys.slice(i,i+QUERY_BATCH);
-    const r=await supabaseClient.from('penjualan').select('id,import_key,order_id,source').in('import_key',part);
-    if(r.error)throw r.error;
-    (r.data||[]).forEach(x=>{
-      if(x.order_id)existingByOrder.set(String(x.order_id),x);
-      if(x.import_key)existingByKey.set(String(x.import_key),x);
-    });
-  }
-
-  let updated=0;
-  for(const row of financeRows){
-    const hit=existingByOrder.get(String(row.order_id||'')) || existingByKey.get(String(row.import_key||''));
-    if(hit?.id){
-      const {id,...payload}=row;
-      const r=await supabaseClient.from('penjualan').update(payload).eq('id',hit.id);
-      if(r.error)throw r.error;
-      updated++;
-    }
-  }
-
   const existing=new Set();
   const existingOrders=new Set();
-  [...existingByKey.keys()].forEach(k=>existing.add(k));
-  [...existingByOrder.keys()].forEach(k=>existingOrders.add(k));
+  const keys=[...new Set(rows.map(x=>String(x.import_key||'')).filter(Boolean))];
+  const orders=[...new Set(rows.map(x=>String(x.order_id||'')).filter(Boolean))];
 
-  const rowsToSave=detailRows.filter(x=>!existing.has(String(x.import_key||'')) && !(x.order_id && existingOrders.has(String(x.order_id))));
+  for(let i=0;i<keys.length;i+=QUERY_BATCH){
+    const part=keys.slice(i,i+QUERY_BATCH);
+    const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('import_key',part);
+    if(r.error)throw r.error;
+    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key));if(x.order_id)existingOrders.add(String(x.order_id))});
+  }
+  for(let i=0;i<orders.length;i+=QUERY_BATCH){
+    const part=orders.slice(i,i+QUERY_BATCH);
+    const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('order_id',part);
+    if(r.error)throw r.error;
+    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key));if(x.order_id)existingOrders.add(String(x.order_id))});
+  }
+
+  const rowsToSave=rows.filter(x=>!existing.has(String(x.import_key||'')) && !(x.order_id && existingOrders.has(String(x.order_id))));
   for(let i=0;i<rowsToSave.length;i+=INSERT_BATCH){
     const batch=rowsToSave.slice(i,i+INSERT_BATCH);
     const r=await supabaseClient.from('penjualan').insert(batch);
     if(r.error)throw r.error;
   }
-  return {saved:rowsToSave.length,duplicates:detailRows.length-rowsToSave.length,updated};
+  return {saved:rowsToSave.length,duplicates:rows.length-rowsToSave.length};
 }
 
 $('onlineOldSave').onclick=async()=>{
   try{
     if(!onlineOldImportRows.length)return;
     const result=await saveOnlineHistoricalRows(onlineOldImportRows);
-    $('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+result.saved.toLocaleString('id-ID')+'</b> baris Online historis. Memperbarui <b>'+result.updated.toLocaleString('id-ID')+'</b> baris ringkasan Modal/Profit. '+result.duplicates.toLocaleString('id-ID')+' detail duplikat dilewati.</div>';
+    $('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+result.saved.toLocaleString('id-ID')+'</b> baris Online historis. '+result.duplicates.toLocaleString('id-ID')+' duplikat dilewati.</div>';
     onlineOldImportRows=[];
     await load();
   }catch(e){
