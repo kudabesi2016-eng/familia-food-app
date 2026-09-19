@@ -39,7 +39,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
 <div class="main">
   <div class="header">
     <div><h1>🍀 Dashboard Familia Food</h1><p>POS 2 channel: Offline + Online. Data lama tetap tersambung dengan transaksi baru.</p></div>
-    <button class="refresh" id="refreshBtn" type="button">↻ Muat Ulang</button>
+    <button class="refresh" id="refreshBtn" type="button" onclick="refreshDashboard(event)" style="position:relative;z-index:10;pointer-events:auto;cursor:pointer">↻ Muat Ulang</button>
   </div>
 
   <div class="cards">
@@ -203,7 +203,8 @@ async function loadDashboard(){
 }
 const refreshBtn=document.getElementById('refreshBtn');
 let refreshing=false;
-async function handleRefresh(){
+async function refreshDashboard(event){
+  if(event) event.preventDefault();
   if(refreshing) return;
   refreshing=true;
   refreshBtn.disabled=true;
@@ -219,8 +220,8 @@ async function handleRefresh(){
     refreshBtn.textContent='↻ Muat Ulang';
   }
 }
-refreshBtn.onclick=handleRefresh;
-refreshBtn.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();handleRefresh();}});
+refreshBtn.onclick=refreshDashboard;
+refreshBtn.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();refreshDashboard(event);}});
 loadDashboard();
 </script>
 </body>
