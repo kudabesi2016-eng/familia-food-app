@@ -21,3 +21,6 @@ Tampilan preview:
 
 ## Catatan
 Paket ini berisi halaman aplikasi. File support yang sudah ada di repo (misalnya `supabase.js`, `app-settings.js`, `ff-core.js`) tetap digunakan dari instalasi aplikasi yang sudah ada.
+
+## v14
+- Data Lama Online now has per-month financial KPI summary and stronger HPP mapping fallback.

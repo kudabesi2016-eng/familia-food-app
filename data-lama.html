@@ -317,15 +317,26 @@ function findOnlineMasterProduct(row){
 function previewOnlineHpp(row){
   try{
     const p=findOnlineMasterProduct(row);
-    const h=p?hppMasterRows.find(x=>String(x.produk_id)===String(p.id)):null;
+    const aliases=explicitOnlineProductCandidates(row).map(normOnlineName);
+    let h=null;
+    if(p) h=hppMasterRows.find(x=>String(x.produk_id)===String(p.id))||null;
+    if(!h && p) h=hppMasterRows.find(x=>normOnlineName(x.nama_produk)===normOnlineName(p.nama_produk))||null;
+    if(!h && aliases.length) h=hppMasterRows.find(x=>aliases.includes(normOnlineName(x.nama_produk)))||null;
     if(h){
-      if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Number(h.hpp_online);
-      if(h.untung_online!=null&&(h.harga_online!=null||p.harga_online!=null)){
+      // HPP unit adalah modal produksi per bungkus yang tersimpan di master HPP.
+      if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Number(h.hpp_unit);
+      // Fallback sesuai pola HPP Online Familia Food: Harga Online - Untung Online.
+      if(h.untung_online!=null&&(h.harga_online!=null||(p&&p.harga_online!=null))){
         const onlinePrice=Number(h.harga_online!=null?h.harga_online:p.harga_online);
         const online=onlinePrice-Number(h.untung_online);
         if(Number.isFinite(online)&&online>0)return online;
       }
-      if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Number(h.hpp_unit);
+      if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Number(h.hpp_online);
+    }
+    // Last explicit fallback: resolve alias directly to the matching HPP row by name.
+    for(const alias of aliases){
+      const hit=hppMasterRows.find(x=>normOnlineName(x.nama_produk)===alias);
+      if(hit && hit.hpp_unit!=null && Number(hit.hpp_unit)>0) return Number(hit.hpp_unit);
     }
   }catch(_){}
   return null;
@@ -431,9 +442,33 @@ function renderOnlineOldMonthTable(month){
   if(!host)return;
   const rows=onlineOldPreviewRows.filter(x=>String(x.bulan||'')===String(month||''));
   if(!rows.length){host.innerHTML='<div class="emptyState">Tidak ada data untuk bulan '+FFCore.esc(monthLabel(month))+'.</div>';return;}
+
+  // Ringkasan dihitung per bulan dari preview yang sudah digabung Income + Pesanan.
+  // Nilai tidak ditebak: hanya angka yang memang tersedia di sumber/import.
+  const totalQty=rows.reduce((a,x)=>a+(x.qty==null?0:Number(x.qty||0)),0);
+  const totalRev=rows.reduce((a,x)=>a+(x.rev==null?0:Number(x.rev||0)),0);
+  const totalNet=rows.reduce((a,x)=>a+(x.net==null?0:Number(x.net||0)),0);
+  const hppKnown=rows.filter(x=>x.hpp!=null);
+  const totalHpp=hppKnown.reduce((a,x)=>a+Number(x.hpp||0),0);
+  const profitKnown=rows.filter(x=>x.profit!=null);
+  const totalProfit=profitKnown.reduce((a,x)=>a+Number(x.profit||0),0);
+  const revKnown=rows.some(x=>x.rev!=null), netKnown=rows.some(x=>x.net!=null);
+  const more=rows.length>500?`<div class="reportNotice">Menampilkan <b>500</b> dari <b>${rows.length.toLocaleString('id-ID')}</b> baris detail untuk ${FFCore.esc(monthLabel(month))}. Semua data tetap tersimpan untuk proses simpan.</div>`:'';
   const shown=rows.slice(0,500);
-  const more=rows.length>shown.length?`<div class="reportNotice">Menampilkan <b>${shown.length.toLocaleString('id-ID')}</b> dari <b>${rows.length.toLocaleString('id-ID')}</b> baris untuk ${FFCore.esc(monthLabel(month))}. Semua data tetap tersimpan untuk proses simpan.</div>`:'';
-  host.innerHTML=`<section class="reportSection detailSection"><div class="sectionHead"><h3>📅 ${FFCore.esc(monthLabel(month))}</h3><p>Data bulan ini berdiri sendiri — tidak digabung dengan Januari, Februari, Maret, dan bulan lainnya.</p></div>${more}<div class="tablewrap"><table class="cleanTable"><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody>${shown.map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('')}</tbody></table></div></section>`;
+  const note=(hppKnown.length===0)
+    ? '<div class="reportNotice">⚠️ Modal/HPP belum tersedia pada data detail bulan ini karena belum ada produk yang berhasil dipetakan ke master HPP Online. Pemasukan/Uang Bersih tetap mengikuti Income TikTok.</div>'
+    : (profitKnown.length===0?'':'');
+  host.innerHTML=`<section class="reportSection detailSection">
+    <div class="sectionHead"><h3>📅 ${FFCore.esc(monthLabel(month))}</h3><p>Data bulan ini berdiri sendiri — tidak digabung dengan bulan lain.</p></div>
+    <div class="kpiGrid" style="padding:16px;margin:0">
+      <div class="kpi"><span>🟢 Pemasukan</span><strong>${revKnown?FFCore.rupiah(totalRev):'—'}</strong><small>Income TikTok bulan ini</small></div>
+      <div class="kpi"><span>💰 Uang Bersih</span><strong>${netKnown?FFCore.rupiah(totalNet):'—'}</strong><small>Settlement Income TikTok</small></div>
+      <div class="kpi"><span>📦 Modal/HPP</span><strong>${hppKnown.length?FFCore.rupiah(totalHpp):'—'}</strong><small>${hppKnown.length?hppKnown.length.toLocaleString('id-ID')+' baris terukur':'belum terpetakan'}</small></div>
+      <div class="kpi"><span>📈 Profit</span><strong>${profitKnown.length?FFCore.rupiah(totalProfit):'—'}</strong><small>${profitKnown.length?'Uang Bersih − Modal/HPP':'belum bisa dihitung'}</small></div>
+    </div>
+    <div class="sectionTotal"><span>Qty Produk</span><b>${totalQty.toLocaleString('id-ID')} bungkus</b></div>
+    ${note}${more}
+    <div class="tablewrap"><table class="cleanTable"><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody>${shown.map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('')}</tbody></table></div></section>`;
 }
 async function refreshOnlineOldPreview(){
   await ensureOnlineHppMaster();
