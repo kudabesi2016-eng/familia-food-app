@@ -531,48 +531,31 @@ function onlineFinance(m){
 ===================================================== */
 
 function onlineHpp(m){
-
   try{
-
-    const rows =
-      FFCore.productSummary(
-        m,
-        'Online',
-        data()
-      ) || [];
-
-    let total = 0;
-
-    for(const x of rows){
-
-      if(!x.hppKnown){
-
-        return {
-          known:false,
-          total:0
-        };
-
-      }
-
-      total +=
-        Number(x.hpp || 0);
-
+    // Historis Online STANDARD: Modal sudah dihitung dari PRODUK_ONLINE
+    // berdasarkan mapping Tempura Aci/Naget -> master Naget menurut ISI.
+    const standard=(sales||[]).filter(x=>
+      String(x.channel||'')==='Online' &&
+      String(x.source||'')==='online_standard_finance' &&
+      monthOfSaleRow(x)===m
+    );
+    if(standard.length){
+      const missing=standard.some(x=>x.modal_hpp==null);
+      if(missing)return {known:false,total:0};
+      return {known:true,total:standard.reduce((a,x)=>a+Math.trunc(Number(x.modal_hpp||0)),0)};
     }
 
-    return {
-      known:true,
-      total
-    };
-
+    // Fallback untuk transaksi Online baru/historis lama yang bukan STANDARD.
+    const rows=FFCore.productSummary(m,'Online',data())||[];
+    let total=0;
+    for(const x of rows){
+      if(!x.hppKnown)return {known:false,total:0};
+      total+=Math.trunc(Number(x.hpp||0));
+    }
+    return {known:true,total};
   }catch(e){
-
-    return {
-      known:false,
-      total:0
-    };
-
+    return {known:false,total:0};
   }
-
 }
 
 
