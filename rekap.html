@@ -506,11 +506,11 @@ function onlineFinance(m){
   const standard=rows.filter(x=>String(x.source||'')==='online_standard_finance');
 
   if(standard.length){
-    return {
-      rev:standard.reduce((a,x)=>a+Number(x.omzet_produk||0),0),
-      out:standard.reduce((a,x)=>a+Number(x.biaya_platform||0),0),
-      net:standard.reduce((a,x)=>a+Number(x.uang_bersih||0),0)
-    };
+    return [
+      standard.reduce((a,x)=>a+Number(x.omzet_produk||0),0),
+      standard.reduce((a,x)=>a+Number(x.biaya_platform||0),0),
+      standard.reduce((a,x)=>a+Number(x.uang_bersih||0),0)
+    ];
   }
 
   const fresh=rows.filter(x=>![
@@ -518,11 +518,11 @@ function onlineFinance(m){
     'online_historical_product','seller_center','online_standard_product','online_historical_cash'
   ].includes(String(x.source||'')));
 
-  if(!fresh.length)return null;
+  if(!fresh.length)return [0,0,0];
   const rev=fresh.reduce((a,x)=>a+Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0)),0),0);
   const netKnown=fresh.some(x=>x.uang_bersih!=null);
   const net=netKnown?fresh.reduce((a,x)=>a+Number(x.uang_bersih||0),0):rev;
-  return {rev,out:Math.max(0,rev-net),net};
+  return [rev,Math.max(0,rev-net),net];
 }
 
 
@@ -621,23 +621,23 @@ function renderCards(){
 
 
   $('rev').textContent =
-    money(v.rev);
+    money(v[0]);
 
   $('out').textContent =
-    money(v.out);
+    money(v[1]);
 
   $('net').textContent =
-    money(v.net);
+    money(v[2]);
 
 
   if(h.known){
 
     const profit =
-      v.net - h.total;
+      v[2] - h.total;
 
     const margin =
-      v.net
-        ? (profit / v.net) * 100
+      v[2]
+        ? (profit / v[2]) * 100
         : 0;
 
 
@@ -719,13 +719,13 @@ function renderMonthly(){
 
       const profit =
         modal !== null
-          ? v.net - modal
+          ? v[2] - modal
           : null;
 
 
       const margin =
-        profit !== null && v.net
-          ? (profit / v.net) * 100
+        profit !== null && v[2]
+          ? (profit / v[2]) * 100
           : null;
 
 
@@ -738,15 +738,15 @@ function renderMonthly(){
           </td>
 
           <td>
-            ${money(v.rev)}
+            ${money(v[0])}
           </td>
 
           <td>
-            ${money(v.out)}
+            ${money(v[1])}
           </td>
 
           <td>
-            <b>${money(v.net)}</b>
+            <b>${money(v[2])}</b>
           </td>
 
           <td>
