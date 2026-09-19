@@ -340,8 +340,8 @@ td{
   </div>
 
 
-  <!-- PENGELUARAN USAHA -->
-  <div class="card">
+  <!-- PENGELUARAN USAHA: detail ditampilkan saat 👁 Lihat Data pada Rekap Offline -->
+  <div class="card" id="expenseCard" style="display:none">
     <h2 style="margin-top:0">💸 Pengeluaran Usaha</h2>
     <div class="notice" id="expenseNotice">
       Pengeluaran usaha dibaca dari tabel <b>pengeluaran</b> dan ditampilkan terpisah dari Modal/HPP agar tidak dihitung dua kali.
@@ -765,7 +765,7 @@ function updateChannelUI(){
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Potongan untuk Offline tidak ada sehingga nilainya Rp 0.<br>Uang Bersih sama dengan Pemasukan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.<br>Pengeluaran usaha ditampilkan terpisah pada bagian Pengeluaran Usaha.'
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran usaha ditampilkan ringkas per bulan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.<br>Detail pengeluaran hanya muncul saat menekan 👁 Lihat Data.'
     : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br>Modal menggunakan HPP Online apabila sudah tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.';
 }
 
@@ -872,120 +872,129 @@ function renderCards(){
 
 function renderMonthly(){
 
-  const ms =
-    months();
+  const ms = months();
 
   if(!ms.length){
-
     $('monthly').innerHTML = `
-
-      <tr>
-        <td colspan="6" class="empty">
-          Belum ada data ${$('channel').value}.
-        </td>
-      </tr>
-
+      <tr><td colspan="6" class="empty">Belum ada data ${$('channel').value}.</td></tr>
     `;
-
     return;
-
   }
 
+  const offline = $('channel').value === 'Offline';
 
-  $('monthly').innerHTML =
-
-    ms.map(m => {
-
-      const v =
-        finance(m);
-
-      if(!v){
-        return '';
-      }
-
-
-      const h =
-        hppForChannel(m);
-
-
-      const modal =
-        h.known
-          ? h.total
-          : null;
-
-
-      const profit =
-        modal !== null
-          ? v[2] - modal
-          : null;
-
-
-      const margin =
-        profit !== null && Number(v[2]) > 0
-          ? (profit / Number(v[2])) * 100
-          : 0;
-
+  if(offline){
+    $('monthly').innerHTML = ms.map(m => {
+      const v = offlineFinance(m);
+      const h = offlineHpp(m);
+      const income = Number(v[0]) || 0;
+      const expense = expenseForMonth(m);
+      const modal = h && h.known ? Math.round(Number(h.total) || 0) : null;
+      const net = Number(v[2]) || 0;
+      const profit = modal !== null ? Math.round(net - modal) : null;
+      const margin = profit !== null && net > 0 ? (profit / net) * 100 : 0;
 
       return `
-
         <tr>
-
+          <td><b>${label(m)}</b></td>
+          <td>${money(income)}</td>
+          <td>${money(expense)}</td>
           <td>
-            <b>${label(m)}</b>
+            ${profit !== null
+              ? `<b>${money(profit)}</b><br><span class="hint">Margin ${margin.toFixed(2)}%</span>`
+              : `<span class="hint">Modal belum tersedia</span>`}
           </td>
-
           <td>
-            ${money(v[0])}
+            <button class="view-btn" type="button" onclick="toggleOfflineDetail('${m}')">👁 Lihat Data</button>
           </td>
-
-          <td>
-            ${money(v[1])}
-          </td>
-
-          <td>
-            <b>${money(v[2])}</b>
-          </td>
-
-          <td>
-
-            ${
-              modal !== null
-                ? money(modal)
-                : '—'
-            }
-
-          </td>
-
-          <td>
-
-            ${
-              profit !== null
-
-                ? `
-                  <b>${money(profit)}</b>
-                  <br>
-                  <span class="hint">
-                    Margin ${margin.toFixed(2)}%
-                  </span>
-                `
-
-                : `
-                  <span class="hint">
-                    Modal belum tersedia
-                  </span>
-                `
-            }
-
-          </td>
-
         </tr>
-
+        <tr id="offline-detail-row-${m}" style="display:none">
+          <td colspan="5" style="padding:0;border:0">
+            <div id="offline-detail-${m}" class="card" style="margin:10px 0;background:#fbfdfb;display:none"></div>
+          </td>
+        </tr>
       `;
-
     }).join('');
+    return;
+  }
 
+  // ONLINE: pertahankan format yang sudah dikunci.
+  $('monthly').innerHTML = ms.map(m => {
+    const v = onlineFinance(m);
+    const h = onlineHpp(m);
+    const modal = h.known ? h.total : null;
+    const profit = modal !== null ? v[2] - modal : null;
+    const margin = profit !== null && Number(v[2]) > 0
+      ? (profit / Number(v[2])) * 100
+      : 0;
+
+    return `
+      <tr>
+        <td><b>${label(m)}</b></td>
+        <td>${money(v[0])}</td>
+        <td>${money(v[1])}</td>
+        <td><b>${money(v[2])}</b></td>
+        <td>${modal !== null ? money(modal) : '—'}</td>
+        <td>
+          ${profit !== null
+            ? `<b>${money(profit)}</b><br><span class="hint">Margin ${margin.toFixed(2)}%</span>`
+            : `<span class="hint">Modal belum tersedia</span>`}
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
+function toggleOfflineDetail(m){
+  const row = $('offline-detail-row-' + m);
+  const box = $('offline-detail-' + m);
+  if(!row || !box) return;
+
+  if(row.style.display !== 'none'){
+    row.style.display = 'none';
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+
+  const rows = (expenses || []).filter(x => String(x.periode || '').slice(0,7) === m);
+  const total = rows.reduce((a,x) => a + Math.round(Number(x.nominal) || 0), 0);
+
+  let html = `<h3 style="margin-top:0">👁 Detail Pengeluaran ${label(m)}</h3>`;
+  html += `<div class="stat" style="margin:10px 0"><small>Total Pengeluaran</small><strong>${money(total)}</strong></div>`;
+
+  if(!rows.length){
+    html += `<div class="hint">Tidak ada pengeluaran pada bulan ini.</div>`;
+  }else{
+    const groups = {};
+    rows.forEach(x => {
+      const k = String(x.kategori || 'Tanpa Kategori');
+      (groups[k] ||= []).push(x);
+    });
+
+    for(const [k, rs] of Object.entries(groups)){
+      const gt = rs.reduce((a,x) => a + Math.round(Number(x.nominal) || 0), 0);
+      html += `<div style="margin:0 0 14px">
+        <div style="display:flex;justify-content:space-between;gap:10px;font-weight:800">
+          <span>${FFCore.esc(k)}</span><span>${money(gt)}</span>
+        </div>
+        <div class="tablewrap" style="margin-top:6px">
+          <table style="min-width:500px">
+            <thead><tr><th>Keterangan</th><th>Nominal</th></tr></thead>
+            <tbody>
+              ${rs.map(x => `<tr><td>${FFCore.esc(x.keterangan || '—')}</td><td>${money(x.nominal)}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    }
+  }
+
+  html += `<button class="view-btn" type="button" onclick="toggleOfflineDetail('${m}')">Tutup Data</button>`;
+  box.innerHTML = html;
+  row.style.display = '';
+  box.style.display = 'block';
+}
 
 /* =====================================================
    PILIH BULAN
@@ -1041,7 +1050,6 @@ function render(){
   renderCards();
 
   renderMonthly();
-  renderExpenseSection();
 
 }
 
