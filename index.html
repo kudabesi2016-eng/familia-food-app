@@ -1,33 +1,205 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Familia Food — Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script><script src="app-settings.js"></script><script src="ff-core.js"></script>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Familia Food - Dashboard</title>
 <style>
-:root{--brand:#087443;--soft:#eaf6ef;--bg:#f5faf7;--line:#dce8e1;--text:#26352d;--muted:#68736d}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}.sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid var(--line);padding:20px 14px}.brand{font-size:20px;font-weight:700;color:var(--brand);margin:4px 8px 22px}.nav a{display:block;text-decoration:none;color:#315247;padding:11px 12px;border-radius:9px;margin:4px 0}.nav a:hover,.nav a.active{background:var(--soft);color:var(--brand);font-weight:700}main{margin-left:230px;padding:28px;max-width:1500px}h1{margin:0;color:var(--brand)}.sub{color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:18px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}.card small{display:block;color:var(--muted);margin-bottom:6px}.card strong{font-size:21px}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}.channel h2{margin-top:0;color:var(--brand)}.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.metric{background:#f7fbf8;border:1px solid #e2eee6;border-radius:10px;padding:12px}.metric b{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.metric span{font-weight:700}.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.quick a{text-decoration:none;padding:14px;background:#fff;border:1px solid var(--line);border-radius:10px;color:var(--brand);font-weight:700}.status{margin-top:16px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:10px}.hint{font-size:12px;color:var(--muted)}.notice{padding:10px 12px;border-radius:9px;background:#eef7f1;border:1px solid #cde7d7;color:#166534;font-size:13px;margin-top:12px}
-@media(max-width:1050px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:850px){.sidebar{position:static;width:auto}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}main{margin-left:0;padding:16px}.two{grid-template-columns:1fr}.quick{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.cards,.quick{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}}
-</style></head><body>
-<aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav"><a class="active" href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a></nav></aside>
-<main><h1>🍀 Dashboard Familia Food</h1><div class="sub">POS 2 channel: Offline + Online. Data lama tetap tersambung dengan transaksi baru.</div>
-<div class="cards"><div class="card"><small>Total Pemasukan</small><strong id="totalRev">Rp 0</strong></div><div class="card"><small>Total Pengeluaran/Potongan</small><strong id="totalOut">Rp 0</strong></div><div class="card"><small>Total Uang Bersih</small><strong id="totalNet">Rp 0</strong></div><div class="card"><small>Total HPP/Modal</small><strong id="totalHpp">—</strong></div><div class="card"><small>Profit Terukur</small><strong id="totalProfit">—</strong></div></div>
-<div class="two"><div class="card channel"><h2>🛍️ Offline</h2><div class="metrics"><div class="metric"><b>Data Lama</b><span id="offOld">0</span></div><div class="metric"><b>Transaksi Baru</b><span id="offNew">0</span></div><div class="metric"><b>Pemasukan</b><span id="offRev">Rp 0</span></div><div class="metric"><b>Pengeluaran</b><span id="offExp">Rp 0</span></div><div class="metric"><b>Uang Bersih</b><span id="offNet">Rp 0</span></div><div class="metric"><b>HPP/Modal</b><span id="offHpp">—</span></div><div class="metric"><b>Profit</b><span id="offProfit">—</span></div><div class="metric"><b>Produk Keluar</b><span id="offQty">0</span></div></div></div><div class="card channel"><h2>📱 Online</h2><div class="metrics"><div class="metric"><b>Baris Income</b><span id="onIncome">0</span></div><div class="metric"><b>Detail Produk</b><span id="onDetail">0</span></div><div class="metric"><b>Pemasukan</b><span id="onRev">—</span></div><div class="metric"><b>Potongan</b><span id="onFee">—</span></div><div class="metric"><b>Uang Bersih</b><span id="onNet">—</span></div><div class="metric"><b>HPP/Modal</b><span id="onHpp">—</span></div><div class="metric"><b>Profit</b><span id="onProfit">—</span></div><div class="metric"><b>Produk Keluar</b><span id="onQty">0</span></div></div><div class="notice">Seller Center hanya detail produk/qty. Angka keuangan online harus berasal dari sumber keuangan online.</div></div></div>
-<div class="card"><h2 style="margin-top:0">Akses Cepat</h2><div class="quick"><a href="penjualan.html">💰 POS / Penjualan</a><a href="rekap.html">📊 Rekap + Lihat Data</a><a href="produk.html">📦 Produk</a><a href="hpp.html">🧮 HPP</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a></div><div class="status"><b>Status:</b> <span id="status">Memuat database…</span><div class="hint" style="margin-top:5px">Tidak ada angka historis yang dibuat dari tebakan. Data gabungan mengikuti sumber yang benar-benar tersimpan.</div></div></div>
-</main>
+*{box-sizing:border-box}
+:root{--brand:#146b3a;--brand2:#1f844b;--bg:#f5f7f6;--muted:#777;--danger:#c62828}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
+.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand);color:#fff;padding:22px 15px}
+.logo{font-size:22px;font-weight:bold;padding:10px;margin-bottom:25px}.menu{display:block;color:#fff;text-decoration:none;padding:13px 15px;margin:4px 0;border-radius:9px}.menu:hover,.menu.active{background:var(--brand2)}
+.main{margin-left:240px;padding:30px}.header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:25px}.header h1{margin:0 0 8px;color:var(--brand)}.header p{margin:0;color:var(--muted)}
+.refresh{border:0;background:var(--brand);color:#fff;padding:10px 16px;border-radius:9px;cursor:pointer;font-weight:bold}.refresh:hover{background:var(--brand2)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.card{background:#fff;padding:20px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);min-height:112px}.card-title{color:var(--muted);font-size:14px}.card-number{font-size:28px;font-weight:bold;color:var(--brand);margin-top:10px;word-break:break-word}.negative{color:var(--danger)!important}
+.section{margin-top:25px}.section h2{color:var(--brand);margin-bottom:14px}.channel{margin-top:22px}.channel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px}.channel-head h2{margin:0}.badge{background:#eaf5ee;color:var(--brand);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:bold}
+.channel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.mini{background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}.mini small{display:block;color:var(--muted);margin-bottom:6px}.mini b{font-size:20px;color:var(--brand)}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.quick a{text-decoration:none;background:#fff;color:var(--brand);padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);font-weight:bold}.quick a:hover{background:#eaf5ee}
+.status{margin-top:25px;background:#fff;padding:18px 20px;border-radius:12px;color:#666}.status strong{color:var(--brand)}
+.note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
+@media(max-width:1050px){.cards{grid-template-columns:repeat(2,1fr)}.channel-grid{grid-template-columns:repeat(2,1fr)}.quick{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.sidebar{width:100%;height:auto;position:relative}.main{margin-left:0;padding:20px}.header{flex-direction:column}.quick{grid-template-columns:1fr}}
+@media(max-width:500px){.cards,.channel-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">🍀 Familia Food</div>
+  <a class="menu active" href="index.html">🏠 Dashboard</a>
+  <a class="menu" href="produk.html">📦 Produk</a>
+  <a class="menu" href="bahan-baku.html">🥣 Bahan Baku</a>
+  <a class="menu" href="resep.html">📋 Resep</a>
+  <a class="menu" href="hpp.html">🧮 HPP</a>
+  <a class="menu" href="penjualan.html">💰 Penjualan</a>
+  <a class="menu" href="rekap.html">📊 Rekap</a>
+  <a class="menu" href="data-lama.html">📁 Data Lama</a>
+  <a class="menu" href="pengaturan.html">⚙️ Pengaturan</a>
+</div>
+<div class="main">
+  <div class="header">
+    <div><h1>🍀 Dashboard Familia Food</h1><p>POS 2 channel: Offline + Online. Data lama tetap tersambung dengan transaksi baru.</p></div>
+    <button class="refresh" id="refreshBtn" type="button">↻ Muat Ulang</button>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="card-title">Total Pemasukan</div><div class="card-number" id="totalRevenue">Rp 0</div></div>
+    <div class="card"><div class="card-title">Total Pengeluaran / Potongan</div><div class="card-number" id="totalOut">Rp 0</div></div>
+    <div class="card"><div class="card-title">Total Uang Bersih</div><div class="card-number" id="totalNet">Rp 0</div></div>
+    <div class="card"><div class="card-title">Total HPP / Modal</div><div class="card-number" id="totalHpp">Rp 0</div></div>
+    <div class="card"><div class="card-title">Profit Terukur</div><div class="card-number" id="totalProfit">Rp 0</div></div>
+    <div class="card"><div class="card-title">Margin Terukur</div><div class="card-number" id="totalMargin">0.00%</div></div>
+    <div class="card"><div class="card-title">Produk Aktif</div><div class="card-number" id="totalProduk">-</div></div>
+    <div class="card"><div class="card-title">Transaksi Baru</div><div class="card-number" id="totalPenjualan">-</div></div>
+  </div>
+
+  <div class="channel">
+    <div class="channel-head"><h2>🛍️ Offline</h2><span class="badge">Data Lama + Transaksi Baru</span></div>
+    <div class="channel-grid">
+      <div class="mini"><small>Data Lama</small><b id="offOldCount">0 baris</b></div>
+      <div class="mini"><small>Transaksi Baru</small><b id="offNewCount">0</b></div>
+      <div class="mini"><small>Pemasukan</small><b id="offRevenue">Rp 0</b></div>
+      <div class="mini"><small>Pengeluaran</small><b id="offExpense">Rp 0</b></div>
+      <div class="mini"><small>Uang Bersih</small><b id="offNet">Rp 0</b></div>
+      <div class="mini"><small>Profit</small><b id="offProfit">Rp 0</b></div>
+      <div class="mini"><small>Produk Keluar</small><b id="offQty">0</b></div>
+    </div>
+    <div class="note">Offline memakai Pemasukan − Pengeluaran, sama seperti Rekap Offline. HPP offline historis tidak dipaksakan agar tidak mengganti rumus yang sudah dikunci.</div>
+  </div>
+
+  <div class="channel">
+    <div class="channel-head"><h2>📱 Online</h2><span class="badge">STANDARD + Transaksi Baru</span></div>
+    <div class="channel-grid">
+      <div class="mini"><small>Baris Income Historis</small><b id="onIncomeRows">0</b></div>
+      <div class="mini"><small>Detail Produk Historis</small><b id="onProductRows">0</b></div>
+      <div class="mini"><small>Pemasukan</small><b id="onRevenue">Rp 0</b></div>
+      <div class="mini"><small>Potongan Online Shop</small><b id="onFee">Rp 0</b></div>
+      <div class="mini"><small>Uang Bersih</small><b id="onNet">Rp 0</b></div>
+      <div class="mini"><small>HPP / Modal</small><b id="onHpp">Rp 0</b></div>
+      <div class="mini"><small>Profit</small><b id="onProfit">Rp 0</b></div>
+      <div class="mini"><small>Produk Keluar</small><b id="onQty">0</b></div>
+    </div>
+    <div class="note">Online historis membaca <b>online_standard_finance</b> untuk keuangan dan <b>online_standard_product</b> untuk bungkus. HPP mengikuti HPP Online resmi yang sudah dikunci.</div>
+  </div>
+
+  <div class="section"><h2>Akses Cepat</h2><div class="quick">
+    <a href="penjualan.html">💰 POS / Penjualan</a><a href="rekap.html">📊 Rekap + Lihat Data</a><a href="produk.html">📦 Produk</a><a href="hpp.html">🧮 HPP</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
+  </div></div>
+
+  <div class="status" id="statusBox"><strong>Status:</strong> <span id="statusText">Memuat data dari database...</span></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script><script src="app-settings.js"></script>
 <script>
-const $=id=>document.getElementById(id);
-async function fetchAll(table,select='*'){let out=[],start=0;while(true){const r=await supabaseClient.from(table).select(select).range(start,start+999);if(r.error)throw r.error;const d=r.data||[];out.push(...d);if(d.length<1000)break;start+=1000}return out}
-async function load(){try{const [sales,olds,expenses,products,hpps]=await Promise.all([fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran'),fetchAll('produk'),fetchAll('hpp')]);
-  const data={sales,olds,expenses,products,hpps};
-  const months=FFCore.monthsOfData(data);
-  const sum=(arr,k)=>arr.reduce((a,x)=>a+Number(x[k]||0),0);
-  const offOld=FFCore.offlineOldRows(olds,products); const offNew=sales.filter(x=>x.channel==='Offline');
-  let offRev=sum(offOld,'revenue');offNew.forEach(x=>offRev+=Number(x.omzet_produk??(Number(x.qty||0)*Number(x.harga||0))));
-  const offExp=expenses.filter(x=>FFCore.expenseMonth(x)&&!FFCore.isRangeExpense(x)).reduce((a,x)=>a+Number(x.nominal||0),0);const offNet=offRev-offExp;
-  let offHpp=0,offHppKnown=true;offOld.forEach(x=>{const h=FFCore.hppFor(products,hpps,x);if(h==null)offHppKnown=false;else offHpp+=x.qty*h});offNew.forEach(x=>{const h=x.modal_hpp!=null?Number(x.modal_hpp):x.hpp!=null?Number(x.hpp):null;if(h==null)offHppKnown=false;else offHpp+=h});
-  const offProfit=offHppKnown?offNet-offHpp:null;
-  const onFinMonths=months.map(m=>FFCore.financeFor(m,'Online',data));const onRev=onFinMonths.reduce((a,f)=>a+f.rev,0),onNet=onFinMonths.reduce((a,f)=>a+f.net,0),onFee=onFinMonths.reduce((a,f)=>a+f.out,0);let onHpp=0,onHppKnown=true,onFinance=false;onFinMonths.forEach(f=>{if(f.rev>0||f.net!==0)onFinance=true;if(!f.hppKnown)onHppKnown=false;else onHpp+=f.hpp});const onProfit=onFinance&&onHppKnown?onNet-onHpp:null;
-  const totalRev=offRev+onRev,totalOut=offExp+onFee,totalNet=offNet+onNet,totalKnown=offHppKnown&&(!onFinance||onHppKnown),totalHpp=offHpp+(onFinance?onHpp:0),totalProfit=totalKnown?totalNet-totalHpp:null;
-  $('totalRev').textContent=FFCore.rupiah(totalRev);$('totalOut').textContent=FFCore.rupiah(totalOut);$('totalNet').textContent=FFCore.rupiah(totalNet);$('totalHpp').textContent=totalKnown?FFCore.rupiah(totalHpp):'—';$('totalProfit').textContent=totalProfit==null?'—':FFCore.rupiah(totalProfit);
-  $('offOld').textContent=olds.length.toLocaleString('id-ID')+' baris';$('offNew').textContent=offNew.length.toLocaleString('id-ID');$('offRev').textContent=FFCore.rupiah(offRev);$('offExp').textContent=FFCore.rupiah(offExp);$('offNet').textContent=FFCore.rupiah(offNet);$('offHpp').textContent=offHppKnown?FFCore.rupiah(offHpp):'—';$('offProfit').textContent=offProfit==null?'—':FFCore.rupiah(offProfit);$('offQty').textContent=(offOld.reduce((a,x)=>a+x.qty,0)+offNew.reduce((a,x)=>a+Number(x.qty||0),0)).toLocaleString('id-ID');
-  const income=sales.filter(x=>x.channel==='Online'&&(x.source==='income_tiktok_pesanan'||x.source==='online_historical_finance'||x.source==='online_historical_import'));const detail=sales.filter(x=>x.channel==='Online'&&(x.source==='seller_center'||x.source==='online_historical_product'));$('onIncome').textContent=income.length.toLocaleString('id-ID');$('onDetail').textContent=detail.length.toLocaleString('id-ID');$('onRev').textContent=onFinance?FFCore.rupiah(onRev):'—';$('onFee').textContent=onFinance?FFCore.rupiah(onFee):'—';$('onNet').textContent=onFinance?FFCore.rupiah(onNet):'—';$('onHpp').textContent=onFinance&&onHppKnown?FFCore.rupiah(onHpp):'—';$('onProfit').textContent=onProfit==null?'—':FFCore.rupiah(onProfit);$('onQty').textContent=detail.reduce((a,x)=>a+Number(x.qty||0),0).toLocaleString('id-ID');
-  $('status').textContent='Database terhubung • '+new Date().toLocaleString('id-ID');
-}catch(e){console.error(e);$('status').textContent='Gagal memuat database: '+e.message}}
-load();
-</script></body></html>
+const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
+const num=n=>Number(n)||0;
+const colorValue=(el,v,formatted=rupiah(v))=>{el.textContent=formatted;el.classList.toggle('negative',v<0)};
+const pct=(v)=>{const t=(Number(v)||0).toFixed(2)+'%';return t};
+async function fetchAll(table, select='*'){
+  const page=1000; let offset=0, all=[];
+  while(true){
+    const r=await supabaseClient.from(table).select(select).range(offset,offset+page-1);
+    if(r.error) throw r.error;
+    const rows=r.data||[]; all.push(...rows);
+    if(rows.length<page) break;
+    offset+=page;
+  }
+  return all;
+}
+function monthOf(v){
+  if(!v) return '';
+  const s=String(v);
+  const m=s.match(/(20\\d{2}-\\d{2})/);
+  return m?m[1]:'';
+}
+function isHistoricalSource(s){
+  return ['online_standard_finance','online_standard_product','online_historical_finance','online_historical_import','online_historical_product','seller_center','online_standard_product','online_historical_cash'].includes(String(s||''));
+}
+function active(row){
+  const s=String(row?.statustext ?? row?.status ?? 'Aktif').toLowerCase();
+  return s!=='arsip'&&s!=='nonaktif';
+}
+function setNumber(id,v){colorValue(document.getElementById(id),v);}
+async function loadDashboard(){
+  document.getElementById('statusText').textContent='Memuat data dari database...';
+  try{
+    const results=await Promise.allSettled([
+      fetchAll('produk'),fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran')
+    ]);
+    const [rp,rs,rd,re]=results;
+    const errors=[];
+    const products=rp.status==='fulfilled'?rp.value:[]; if(rp.status!=='fulfilled') errors.push('Produk');
+    const sales=rs.status==='fulfilled'?rs.value:[]; if(rs.status!=='fulfilled') errors.push('Penjualan');
+    const old=rd.status==='fulfilled'?rd.value:[]; if(rd.status!=='fulfilled') errors.push('Data Lama');
+    const expenseRows=re.status==='fulfilled'?re.value:[]; if(re.status!=='fulfilled') errors.push('Pengeluaran');
+
+    const activeProducts=products.filter(active).length;
+
+    // OFFLINE: Data Lama + transaksi baru.
+    const offOld=old;
+    const offNew=sales.filter(x=>String(x.channel||'')==='Offline' && !isHistoricalSource(x.source));
+    const offOldRevenue=offOld.reduce((s,x)=>s+Math.round(num(x.nominal ?? x.omzet ?? x.total)),0);
+    const offNewRevenue=offNew.reduce((s,x)=>s+Math.round(num(x.omzet_produk ?? (num(x.qty)*num(x.harga)))),0);
+    const offRevenue=offOldRevenue+offNewRevenue;
+    const offExpense=expenseRows.reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    const offNet=offRevenue-offExpense;
+    const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+
+    // ONLINE: STANDARD historis + transaksi online baru.
+    const onlineFinanceRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_finance');
+    const onlineProductRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_product');
+    const onlineNew=sales.filter(x=>String(x.channel||'')==='Online' && !isHistoricalSource(x.source));
+    const onOldRevenue=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.omzet_produk)),0);
+    const onOldFee=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.biaya_platform)),0);
+    const onOldNet=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.uang_bersih)),0);
+    const onOldHpp=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.modal_hpp)),0);
+    const onNewRevenue=onlineNew.reduce((s,x)=>s+Math.round(num(x.omzet_produk ?? (num(x.qty)*num(x.harga)))),0);
+    const onNewNet=onlineNew.some(x=>x.uang_bersih!=null)?onlineNew.reduce((s,x)=>s+Math.round(num(x.uang_bersih)),0):onNewRevenue;
+    const onNewFee=Math.max(0,onNewRevenue-onNewNet);
+    const onNewHpp=onlineNew.reduce((s,x)=>s+Math.round(num(x.hpp)),0);
+    const onRevenue=onOldRevenue+onNewRevenue;
+    const onFee=onOldFee+onNewFee;
+    const onNet=onOldNet+onNewNet;
+    const onHpp=onOldHpp+onNewHpp;
+    const onProfit=onNet-onHpp;
+    const onQty=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.qty)),0)+onlineNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+
+    // GABUNGAN: konsisten dengan dua channel.
+    const totalRevenue=offRevenue+onRevenue;
+    const totalOut=offExpense+onFee;
+    const totalNet=(offRevenue-offExpense)+onNet;
+    const totalHpp=onHpp;
+    const totalProfit=offNet+onProfit;
+    const totalMargin=totalNet?totalProfit/totalNet*100:0;
+
+    setNumber('totalRevenue',totalRevenue);
+    setNumber('totalOut',totalOut);
+    setNumber('totalNet',totalNet);
+    setNumber('totalHpp',totalHpp);
+    setNumber('totalProfit',totalProfit);
+    const tm=document.getElementById('totalMargin');tm.textContent=pct(totalMargin);tm.classList.toggle('negative',totalMargin<0);
+    document.getElementById('totalProduk').textContent=activeProducts.toLocaleString('id-ID');
+    document.getElementById('totalPenjualan').textContent=sales.filter(x=>!isHistoricalSource(x.source)).length.toLocaleString('id-ID');
+
+    document.getElementById('offOldCount').textContent=offOld.length.toLocaleString('id-ID')+' baris';
+    document.getElementById('offNewCount').textContent=offNew.length.toLocaleString('id-ID');
+    setNumber('offRevenue',offRevenue); setNumber('offExpense',offExpense); setNumber('offNet',offNet); setNumber('offProfit',offNet);
+    document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
+
+    document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
+    document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
+    setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet); setNumber('onHpp',onHpp); setNumber('onProfit',onProfit);
+    document.getElementById('onQty').textContent=onQty.toLocaleString('id-ID');
+
+    const status=errors.length?('Sebagian data gagal dimuat: '+errors.join(', ')+'.'):('Database terhubung • Dashboard Offline + Online berhasil dimuat.');
+    document.getElementById('statusText').textContent=status;
+  }catch(e){
+    console.error(e);
+    document.getElementById('statusText').textContent='Gagal memuat dashboard. Periksa koneksi database.';
+  }
+}
+document.getElementById('refreshBtn').addEventListener('click',loadDashboard);
+loadDashboard();
+</script>
+</body>
+</html>
