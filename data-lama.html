@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Data Lama - Familia Food</title><!-- v11: Data Lama has Offline/Online tabs with monthly Online history. -->
+<title>Data Lama - Familia Food</title><!-- v12: Data Lama has Offline/Online tabs; Online tab reads full historical penjualan fields. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script><script src="app-settings.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="ff-core.js"></script>
@@ -242,7 +242,7 @@ async function load(){
     const pr=await supabaseClient.from('produk').select('id,nama_produk');
     if(pr.error)throw new Error('Gagal memuat produk: '+pr.error.message);
     productMap=Object.fromEntries((pr.data||[]).map(x=>[x.id,String(x.nama_produk||`Produk #${x.id}`)]));
-    const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,channel,harga,hpp,laba');
+    const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,channel,harga,hpp,laba,source,product_name,variation,sku_id,seller_sku,omzet_produk,biaya_platform,uang_bersih,modal_hpp,profit_online,order_id,import_key');
     if(sr.error)throw new Error('Gagal memuat penjualan: '+sr.error.message);
     const allSalesRows=sr.data||[];
     salesAll=allSalesRows.filter(x=>String(x.channel||'')==='Offline').map(x=>({id:x.id,periode:saleMonth(x.tanggal),produk_id:x.produk_id,produk:productMap[x.produk_id]||String(x.product_name||`Produk #${x.produk_id||'-'}`),qty:Number(x.qty||0),channel:String(x.channel||''),harga:Math.round(Number(x.harga)||0),omzet:Math.round(Number(x.omzet_produk??(Number(x.qty||0)*Number(x.harga||0)))||0)}));
