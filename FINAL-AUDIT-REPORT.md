@@ -1,53 +1,66 @@
-# Familia Food POS — Audit & Perbaikan Final
+# Familia Food POS — Audit & Perbaikan v10
 
-Tanggal audit: 18 September 2026
+Tanggal: 19 September 2026
 
-## 1. Supabase yang sudah terverifikasi dari hasil SQL pengguna
-- `produk`: 10 data.
-- `hpp`: 10 data.
-- `data_lama`: 311 data.
-- `pengeluaran`: 446 data.
-- `penjualan`: 2 data, keduanya Offline saat audit; Online belum tersimpan.
-- Index online yang sudah ada: primary key + unique partial `import_key` + index Order ID/Product/Source.
+## A. Masalah yang ditemukan pada v9
+1. Preview Data Lama Online sudah berhasil menggabungkan Income + Pesanan berdasarkan ID Pesanan, tetapi HPP Online masih mengambil jalur `hpp_unit` sehingga belum mengikuti pola HPP Online master.
+2. Informasi jumlah cocok sebelumnya dihitung dari bulan+produk, bukan jumlah Order ID yang benar-benar cocok.
+3. Grup produk masih memasukkan bulan ke dalam key, padahal penggabungan seharusnya tetap berbasis Order ID dan identitas produk.
+4. Kegagalan membaca master Produk/HPP sebelumnya ditelan tanpa pesan yang jelas.
 
-## 2. Sumber data online yang tersedia di workspace
-- `Familia-Food-Import-Online-SIAP.xlsx`: 1.846 baris detail Jan–Feb 2026.
-- `Online Database (8).xlsx`: 2.023 baris `Keluar Resi` Mar–Sep 2026 + 104 baris `Uang Masuk` historis.
-- File Income TikTok per bulan juga tersedia untuk beberapa bulan.
+## B. Pola final v10
+- **Income TikTok** → Pemasukan + Uang Bersih.
+- **Seller Center** → Produk + Qty.
+- **Kunci penggabungan** → ID Pesanan.
+- **Multi-produk dalam satu order** → alokasi Pemasukan/Uang Bersih secara proporsional berdasarkan omzet produk Seller Center.
+- **HPP Online** → Harga Online − Untung Online dari master HPP.
+- **Fallback HPP** → hpp_unit hanya bila HPP Online master tidak tersedia.
+- **Profit** → Uang Bersih − Modal/HPP bila HPP tersedia.
 
-## 3. Perbaikan utama
-- Rekap dipisahkan tegas Offline vs Online.
-- Offline = `data_lama` + transaksi baru Offline.
-- Online = data keuangan Income/historis yang valid + detail produk Seller Center/historis.
-- Seller Center tidak pernah menjadi sumber Pemasukan/Uang Bersih.
-- Pengeluaran periode gabungan seperti `2026-01 s/d 2026-08` tidak dialokasikan ke bulan tertentu.
-- HPP/profit hanya ditampilkan bila sumber HPP yang dibutuhkan tersedia.
-- Produk lama memakai pemetaan nama produk yang eksplisit; transaksi baru mengutamakan `produk_id`.
-- Seller Center sekarang preview dulu; pengguna harus menekan Simpan.
-- Dedup Seller Center memakai signature stabil dan mengenali pola key legacy.
-- Data Lama tidak lagi menjalankan seed pengeluaran otomatis ketika halaman dibuka.
-- Data Lama Online memiliki importer terpisah untuk sumber online lama.
-- `Uang Masuk` dari workbook legacy tidak dipakai otomatis sebagai potongan bulanan karena waktu uang masuk dapat berbeda dari periode penjualan.
+## C. Pengujian file nyata di workspace
+File Seller Center lokal:
+- 11.473 baris.
+- 8.786 Order ID unik.
 
-## 4. Pengujian kode
-- Syntax JavaScript seluruh halaman: PASS.
-- Internal link antar halaman: PASS.
-- Unit test helper rekap (Offline/Online, HPP, potongan, produk): PASS.
-- Pengujian anti-double-count Seller Center dilakukan pada level signature: PASS.
+Satu file Income TikTok nyata yang diuji:
+- 11 transaksi Pesanan.
+- 11 Order ID Pesanan unik.
+- 10 Order ID cocok dengan Seller Center setelah normalisasi whitespace/ID.
+- 11 baris produk preview dari order yang cocok.
+- 10 baris produk dapat dipetakan ke HPP Online dengan alias eksplisit `Tempura Aci ...` → `Naget isi 12` pada baseline HPP yang sudah disepakati.
 
-## 5. Hal yang belum boleh diklaim selesai sebelum deployment
-Versi file final ini belum dianggap live sampai file baru menggantikan file di GitHub Pages dan halaman live berhasil dimuat ulang. Setelah deployment, verifikasi live yang diperlukan hanya:
-1. Penjualan → Offline: simpan satu transaksi uji dan cek Rekap.
-2. Penjualan → Online: import satu file Income satu bulan dan cek Pemasukan/Potongan/Uang Bersih.
-3. Rekap → pilih Januari dan bulan terbaru, lalu `👁 Lihat Data`.
-4. Dashboard: pastikan Offline + Online tidak double count.
+Empat file Income bulanan nyata yang diuji bersama Seller Center:
+- 55 Order ID unik setelah deduplikasi fingerprint transaksi.
+- 49 Order ID cocok dengan Seller Center.
+- Duplikasi file Income tidak dihitung dua kali.
 
-## Patch v6 — Import Historis Online
-- File asli TikTok Income dideteksi dari header `ID Pesanan/Penyesuaian`, `Jenis transaksi`, `Jumlah penyelesaian pembayaran`, `Total Pendapatan`, `Total Biaya`.
-- File Seller Center dideteksi dari `Order ID`, `Product Name`, `Quantity`, dan kolom harga/tanggal terkait.
-- Workbook `Online Database (8).xlsx` didukung melalui sheet `Keluar Resi` dan `Uang Masuk`.
-- Workbook `Familia-Food-Import-Online-SIAP.xlsx` didukung melalui sheet `Import Penjualan`.
-- Beberapa file dapat dipilih sekaligus; `import_key` digunakan untuk melewati duplikat sebelum penyimpanan.
-- Seller Center historis hanya menjadi detail produk/qty; sumber keuangan historis berasal dari Income/legacy finance.
-- Data Lama sekarang memuat sumber Online historis ke daftar bulan dan detail, sementara Pengeluaran tetap berasal dari tabel `pengeluaran`.
-- Tidak ada INSERT/UPDATE/DELETE Supabase yang dilakukan saat membuat paket ini.
+## D. Unit test v10
+Skenario multi-produk satu order diuji:
+- Pemasukan order dibagi menurut proporsi omzet produk.
+- Uang Bersih order dibagi menurut proporsi omzet produk.
+- Total alokasi Pemasukan kembali sama dengan Pemasukan order.
+- Total alokasi Uang Bersih kembali sama dengan Uang Bersih order.
+- HPP Online varian Tempura Aci 12 terbaca sebagai HPP Online master, bukan hpp_unit offline.
+
+## E. Validasi syntax
+Semua halaman HTML yang berisi JavaScript lulus pemeriksaan syntax setelah patch v10:
+- bahan-baku.html PASS
+- data-lama.html PASS
+- hpp.html PASS
+- index.html PASS
+- pengaturan.html PASS
+- penjualan.html PASS
+- produk.html PASS
+- rekap.html PASS
+- resep.html PASS
+
+## F. Supabase
+Struktur Supabase yang sudah menjadi acuan aplikasi:
+- tabel produk
+- tabel hpp dengan `hpp_unit`, `harga_online`, `untung_online`
+- tabel penjualan dengan field Online seperti Order ID, Product Name, Quantity, Pemasukan/Uang Bersih, HPP, Profit, Source, dan Import Key.
+
+Query REST live ke endpoint Supabase tidak dapat dijalankan dari environment pembuatan paket ini karena koneksi DNS outbound tidak tersedia. Karena itu v10 **tidak mengklaim membaca database live saat build**. Patch hanya menggunakan field/schema yang sudah dipakai aplikasi dan pola HPP yang telah diverifikasi dari source aplikasi.
+
+## G. Tidak ada perubahan database selama build
+Pembuatan paket v10 tidak melakukan INSERT, UPDATE, atau DELETE ke Supabase.

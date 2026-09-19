@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Data Lama - Familia Food</title>
+<title>Data Lama - Familia Food</title><!-- v10: Online preview uses master HPP Online (harga_online - untung_online) and explicit product aliases. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script><script src="app-settings.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="ff-core.js"></script>
@@ -237,19 +237,19 @@ function parseSellerHistorical(raw){return raw.map(r=>{const order=String(r['Ord
 function parseLegacyDatabase(wb){
   const names=wb.SheetNames.map(String), norm=s=>FFCore.norm(s), out=[];
   const hasOut=names.some(n=>norm(n)==='keluar resi'), hasCash=names.some(n=>norm(n)==='uang masuk');
-  if(hasOut){const wr=XLSX.utils.sheet_to_json(wb.Sheets[names.find(n=>norm(n)==='keluar resi')],{defval:'',raw:true});wr.forEach(r=>{const d=parseAnyDate(r['Tanggal']);if(!d)return;const product=String(r['Produk']??'').trim(),qty=toNum(r['Qty']),rev=toNum(r['Total Jual']),modal=toNum(r['Total Modal']);if(!product||!qty)return;const order=String(r['No Resi']??'').trim();out.push({tanggal:d,produk_id:null,qty,channel:'Online',harga:toNum(r['Harga Jual']),hpp:modal,laba:toNum(r['Margin'])||rev-modal,order_id:order,product_name:product,variation:'',sku_id:'',seller_sku:'',quantity_return:0,harga_asli:toNum(r['Harga Jual']),omzet_produk:rev,order_amount:rev,biaya_platform:null,uang_bersih:null,modal_hpp:modal,profit_online:toNum(r['Margin'])||rev-modal,source:'online_historical_product',purchase_channel:'TikTok Shop',order_channel:'TikTok Shop',created_time:null,paid_time:d+'T00:00:00',import_key:['online-historical-product',order,d,product,qty].join('|')});});}
-  if(hasCash){const wm=XLSX.utils.sheet_to_json(wb.Sheets[names.find(n=>norm(n)==='uang masuk')],{defval:'',raw:true});const monthNet={};wm.forEach(r=>{const d=parseAnyDate(r['Tanggal']);if(!d)return;const m=FFCore.monthOf(d);monthNet[m]=(monthNet[m]||0)+toNum(r['Nominal'])});Object.keys(monthNet).sort().forEach(m=>out.push({tanggal:m+'-01',produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:0,order_id:'HIST-CASH-'+m,product_name:'[Historis Online] Uang Masuk',variation:'',sku_id:'',seller_sku:'',quantity_return:0,harga_asli:0,omzet_produk:0,order_amount:0,biaya_platform:null,uang_bersih:monthNet[m]||0,modal_hpp:null,profit_online:null,source:'online_historical_cash',purchase_channel:'TikTok Shop',order_channel:'TikTok Shop',created_time:null,paid_time:m+'-01T00:00:00',import_key:['online-historical-cash',m].join('|') }));}
+  if(hasOut){const wr=XLSX.utils.sheet_to_json(wb.Sheets[names.find(n=>norm(n)==='keluar resi')],{defval:'',raw:false});wr.forEach(r=>{const d=parseAnyDate(r['Tanggal']);if(!d)return;const product=String(r['Produk']??'').trim(),qty=toNum(r['Qty']),rev=toNum(r['Total Jual']),modal=toNum(r['Total Modal']);if(!product||!qty)return;const order=String(r['No Resi']??'').trim();out.push({tanggal:d,produk_id:null,qty,channel:'Online',harga:toNum(r['Harga Jual']),hpp:modal,laba:toNum(r['Margin'])||rev-modal,order_id:order,product_name:product,variation:'',sku_id:'',seller_sku:'',quantity_return:0,harga_asli:toNum(r['Harga Jual']),omzet_produk:rev,order_amount:rev,biaya_platform:null,uang_bersih:null,modal_hpp:modal,profit_online:toNum(r['Margin'])||rev-modal,source:'online_historical_product',purchase_channel:'TikTok Shop',order_channel:'TikTok Shop',created_time:null,paid_time:d+'T00:00:00',import_key:['online-historical-product',order,d,product,qty].join('|')});});}
+  if(hasCash){const wm=XLSX.utils.sheet_to_json(wb.Sheets[names.find(n=>norm(n)==='uang masuk')],{defval:'',raw:false});const monthNet={};wm.forEach(r=>{const d=parseAnyDate(r['Tanggal']);if(!d)return;const m=FFCore.monthOf(d);monthNet[m]=(monthNet[m]||0)+toNum(r['Nominal'])});Object.keys(monthNet).sort().forEach(m=>out.push({tanggal:m+'-01',produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:0,order_id:'HIST-CASH-'+m,product_name:'[Historis Online] Uang Masuk',variation:'',sku_id:'',seller_sku:'',quantity_return:0,harga_asli:0,omzet_produk:0,order_amount:0,biaya_platform:null,uang_bersih:monthNet[m]||0,modal_hpp:null,profit_online:null,source:'online_historical_cash',purchase_channel:'TikTok Shop',order_channel:'TikTok Shop',created_time:null,paid_time:m+'-01T00:00:00',import_key:['online-historical-cash',m].join('|') }));}
   return out;
 }
 function readCSVText(text){const raw=[];let row=[],cell='',quote=false;for(let i=0;i<text.length;i++){const ch=text[i],n=text[i+1];if(ch==='"'){if(quote&&n==='"'){cell+='"';i++}else quote=!quote}else if(ch===','&&!quote){row.push(cell);cell=''}else if((ch==='\n'||ch==='\r')&&!quote){if(ch==='\r'&&n==='\n')i++;row.push(cell);if(row.some(v=>String(v).trim()))raw.push(row.slice());row=[];cell=''}else cell+=ch}if(cell||row.length){row.push(cell);raw.push(row)}const head=raw.shift()?.map(x=>String(x).trim())||[];return raw.map(a=>Object.fromEntries(head.map((h,i)=>[h,a[i]??''])))}
 function parseOnlineOldWorkbook(wb){
   const names=wb.SheetNames.map(String), norm=s=>FFCore.norm(s), out=[];
   const importName=names.find(n=>norm(n)==='import penjualan');
-  if(importName){const raw=XLSX.utils.sheet_to_json(wb.Sheets[importName],{defval:'',raw:true});if(raw.some(looksProcessedImport))return parseProcessedHistorical(raw);}
+  if(importName){const raw=XLSX.utils.sheet_to_json(wb.Sheets[importName],{defval:'',raw:false});if(raw.some(looksProcessedImport))return parseProcessedHistorical(raw);}
   const detailName=names.find(n=>norm(n)==='detail pesanan')||names.find(n=>norm(n).includes('detail pesanan'));
-  if(detailName){const raw=XLSX.utils.sheet_to_json(wb.Sheets[detailName],{defval:'',raw:true});if(raw.some(looksOriginalIncome))out.push(...raw.map(normalizeIncomeHistorical).filter(x=>x.tanggal));}
+  if(detailName){const raw=XLSX.utils.sheet_to_json(wb.Sheets[detailName],{defval:'',raw:false});if(raw.some(looksOriginalIncome))out.push(...raw.map(normalizeIncomeHistorical).filter(x=>x.tanggal));}
   const legacy=parseLegacyDatabase(wb); if(legacy.length)out.push(...legacy);
-  for(const n of names){const raw=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:'',raw:true});if(raw.length&&raw.some(looksSeller)&&!norm(n).includes('detail pesanan'))out.push(...parseSellerHistorical(raw))}
+  for(const n of names){const raw=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:'',raw:false});if(raw.length&&raw.some(looksSeller)&&!norm(n).includes('detail pesanan'))out.push(...parseSellerHistorical(raw))}
   if(!out.length)throw new Error('Format Excel online historis tidak dikenali. File asli TikTok Income, Seller Center, Familia-Food-Import-Online-SIAP.xlsx, dan Online Database (8).xlsx didukung.');
   const seen=new Set(); return out.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true});
 }
@@ -259,16 +259,51 @@ async function parseOnlineOldFile(file){
 }
 async function parseOnlineOldFiles(files){let out=[];for(const f of Array.from(files||[])){out.push(...await parseOnlineOldFile(f))}const seen=new Set();return out.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true})}
 function previewMoney(v){return v==null?'—':FFCore.rupiah(v)}
-function previewUnitHpp(row){
-  try{const h=FFCore.hppFor(productMasterRows,hppMasterRows,row);if(h!=null&&Number(h)>0)return Number(h)}catch(_){}
-  const pid=String(row.produk_id||'');
-  const byId=hppMasterRows.find(x=>pid&&String(x.produk_id||'')===pid);
-  if(byId&&Number(byId.hpp_unit)>0)return Number(byId.hpp_unit);
-  const name=String(row.product_name||'').trim().toLowerCase();
-  const direct=hppMasterRows.find(x=>String(x.nama_produk||'').trim().toLowerCase()===name && Number(x.hpp_unit)>0);
-  return direct?Number(direct.hpp_unit):null;
+function normOnlineName(v){return String(v??'').toLowerCase().trim().replace(/\s+/g,' ')}
+function explicitOnlineProductCandidates(name){
+  const n=normOnlineName(name);
+  const out=[];
+  if(/\b(naget|tempura aci)\b/.test(n)){
+    const m=n.match(/isi\s*(10|12|20|25|30|40|50)/); if(m)out.push('naget isi '+m[1]);
+    if(/tempura aci.*(isi\s*12|eskrim|kotak|stik|bulat|lidah|mie|opal)/.test(n))out.push('naget isi 12');
+    if(/tempura aci.*25\s*pcs|isi\s*25/.test(n))out.push('naget isi 25');
+  }
+  if(/\bcireng\s+isi\b/.test(n))out.push('cireng isi');
+  if(/\bcireng\s+biasa\b/.test(n))out.push('cireng biasa');
+  if(/\bcibay\b/.test(n))out.push('cibay');
+  return [...new Set(out)];
 }
-function normOrderId(v){return String(v??'').trim().replace(/\s+/g,'');}
+function findOnlineMasterProduct(row){
+  const pid=String(row?.produk_id||'');
+  if(pid){const p=productMasterRows.find(x=>String(x.id)===pid);if(p)return p;}
+  const n=normOnlineName(row?.product_name);
+  if(!n)return null;
+  const exact=productMasterRows.find(p=>normOnlineName(p.nama_produk)===n);
+  if(exact)return exact;
+  const aliases=explicitOnlineProductCandidates(n);
+  for(const alias of aliases){
+    const p=productMasterRows.find(x=>normOnlineName(x.nama_produk)===alias);
+    if(p)return p;
+  }
+  return null;
+}
+function previewOnlineHpp(row){
+  try{
+    const p=findOnlineMasterProduct(row);
+    const h=p?hppMasterRows.find(x=>String(x.produk_id)===String(p.id)):null;
+    if(h){
+      if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Number(h.hpp_online);
+      if(h.untung_online!=null&&(h.harga_online!=null||p.harga_online!=null)){
+        const onlinePrice=Number(h.harga_online!=null?h.harga_online:p.harga_online);
+        const online=onlinePrice-Number(h.untung_online);
+        if(Number.isFinite(online)&&online>0)return online;
+      }
+      if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Number(h.hpp_unit);
+    }
+  }catch(_){}
+  return null;
+}
+function normOrderId(v){let s=String(v??'').trim().replace(/[\s\u00A0]+/g,'').replace(/^['"]+|['"]+$/g,'');if(/^\d+\.0+$/.test(s))s=s.replace(/\.0+$/,'');return s;}
 function makeOnlineOldPreviewRows(rows){
   const finance=rows.filter(x=>x.source==='online_historical_finance');
   const directFinance=rows.filter(x=>x.source==='online_historical_import');
@@ -286,7 +321,7 @@ function makeOnlineOldPreviewRows(rows){
   seller.forEach(x=>{const k=normOrderId(x.order_id);if(!k)return;(sellerByOrder[k]??=[]).push(x)});
   const grouped={};
   seller.forEach(x=>{
-    const k=[normOrderId(x.order_id),String(x.sku_id||''),String(x.seller_sku||''),String(x.variation||''),String(x.product_name||''),String(FFCore.monthOf(x.tanggal)||'')].join('|');
+    const k=[normOrderId(x.order_id),String(x.sku_id||''),String(x.seller_sku||''),String(x.variation||''),String(x.product_name||'')].join('|');
     grouped[k]??={...x,qty:0,omzet_produk:0};
     grouped[k].qty+=Number(x.qty||0);
     grouped[k].omzet_produk+=Number(x.omzet_produk||0);
@@ -298,32 +333,32 @@ function makeOnlineOldPreviewRows(rows){
     const share=total>0?base/total:(lines.length===1?1:null);
     const rev=f&&share!=null?Math.round(f.rev*share):null;
     const net=f&&f.netKnown&&share!=null?Math.round(f.net*share):null;
-    const unit=previewUnitHpp(x), hpp=unit!=null?Math.round(Number(x.qty||0)*unit):null;
+    const unit=previewOnlineHpp(x), hpp=unit!=null?Math.round(Number(x.qty||0)*unit):null;
     const profit=net!=null&&hpp!=null?net-hpp:null;
     if(f)usedFinance.add(order);
-    out.push({source:f?'Income + Pesanan':'Pesanan',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:Number(x.qty||0),rev,net,hpp,profit});
+    out.push({source:f?'Income + Pesanan':'Pesanan',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:Number(x.qty||0),rev,net,hpp,profit,_order_id:order});
   });
   finance.forEach(x=>{
     const k=normOrderId(x.order_id); if(usedFinance.has(k))return;
     out.push({source:'Income',bulan:FFCore.monthOf(x.tanggal)||'',produk:null,qty:null,rev:Number(x.omzet_produk||0),net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null});
   });
   directFinance.forEach(x=>{
-    const unit=previewUnitHpp(x), hpp=unit!=null?Math.round(Number(x.qty||0)*unit):(x.modal_hpp==null?null:Number(x.modal_hpp));
+    const unit=previewOnlineHpp(x), hpp=unit!=null?Math.round(Number(x.qty||0)*unit):(x.modal_hpp==null?null:Number(x.modal_hpp));
     const net=x.uang_bersih==null?null:Number(x.uang_bersih||0), rev=x.omzet_produk==null?null:Number(x.omzet_produk||0);
     const profit=x.profit_online!=null?Number(x.profit_online):(net!=null&&hpp!=null?net-hpp:null);
     out.push({source:'Import Penjualan',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:Number(x.qty||0),rev,net,hpp,profit});
   });
   cash.forEach(x=>out.push({source:'Uang Masuk',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:null,rev:null,net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null}));
-  out.sort((a,b)=>(a.bulan||'').localeCompare(b.bulan||'')||String(a.produk||'').localeCompare(String(b.produk||''))||String(a.source).localeCompare(String(b.source)));
+  out.sort((a,b)=>{const ra=a.source==='Income + Pesanan'?0:a.source==='Income'?1:a.source==='Import Penjualan'?2:a.source==='Pesanan'?3:4;const rb=b.source==='Income + Pesanan'?0:b.source==='Income'?1:b.source==='Import Penjualan'?2:b.source==='Pesanan'?3:4;return ra-rb||(a.bulan||'').localeCompare(b.bulan||'')||String(a.produk||'').localeCompare(String(b.produk||''))});
   return out;
 }
 async function ensureOnlineHppMaster(){
   try{
-    const pr=await supabaseClient.from('produk').select('id,nama_produk,hpp_offline'); if(pr.error)throw pr.error;
+    const pr=await supabaseClient.from('produk').select('id,nama_produk,harga_online,hpp_offline'); if(pr.error)throw pr.error;
     productMasterRows=pr.data||[];
-    const hr=await supabaseClient.from('hpp').select('produk_id,hpp_unit'); if(hr.error)throw hr.error;
+    const hr=await supabaseClient.from('hpp').select('produk_id,hpp_unit,untung_online,harga_online'); if(hr.error)throw hr.error;
     hppMasterRows=(hr.data||[]).map(h=>({...h,nama_produk:(productMasterRows.find(p=>String(p.id)===String(h.produk_id))||{}).nama_produk||''}));
-  }catch(_){productMasterRows=[];hppMasterRows=[];}
+  }catch(e){productMasterRows=[];hppMasterRows=[];throw new Error('Gagal membaca master Produk/HPP dari Supabase: '+(e.message||e));}
 }
 let onlineOldQueuedFiles=[];
 function renderOnlineOldFileQueue(){
@@ -363,8 +398,10 @@ async function refreshOnlineOldPreview(){
   const net=fin.filter(x=>x.uang_bersih!=null).reduce((a,x)=>a+Number(x.uang_bersih||0),0);
   const cash=onlineOldImportRows.filter(x=>x.source==='online_historical_cash').reduce((a,x)=>a+Number(x.uang_bersih||0),0);
   const seller=onlineOldImportRows.filter(x=>x.source==='seller_center'||x.source==='online_historical_product').reduce((a,x)=>a+Number(x.qty||0),0);
-  const matched=onlineOldPreviewRows.filter(x=>x.source==='Income + Pesanan');
-  $('onlineOldInfo').innerHTML='<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty produk <b>'+seller.toLocaleString('id-ID')+'</b> • Pesanan cocok dengan Income <b>'+matched.length.toLocaleString('id-ID')+'</b> baris. '+(seller?'<b>Produk + Qty sudah digabung dari Pesanan.</b>':'<b>Qty masih 0 karena file Pesanan/Seller Center belum masuk.</b>')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>. Profit = Uang Bersih − Modal/HPP saat HPP tersedia.</div>';
+  const matchedRows=onlineOldPreviewRows.filter(x=>x.source==='Income + Pesanan');
+  const matchedOrders=new Set(matchedRows.map(x=>x._order_id||'' ).filter(Boolean)).size;
+  const hppKnown=onlineOldPreviewRows.filter(x=>x.hpp!=null).length;
+  $('onlineOldInfo').innerHTML='<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty produk <b>'+seller.toLocaleString('id-ID')+'</b> • Order cocok <b>'+matchedOrders.toLocaleString('id-ID')+'</b> • Baris produk cocok <b>'+matchedRows.length.toLocaleString('id-ID')+'</b> • HPP Online terukur <b>'+hppKnown.toLocaleString('id-ID')+'</b> baris. '+(seller?'<b>Produk + Qty sudah digabung dari Pesanan.</b>':'<b>Qty masih 0 karena file Pesanan/Seller Center belum masuk.</b>')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>. Profit = Uang Bersih − Modal/HPP saat HPP tersedia.</div>';
   $('onlineOldRows').innerHTML=onlineOldPreviewRows.slice(0,500).map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('');
   $('onlineOldPreview').style.display='block';
 }

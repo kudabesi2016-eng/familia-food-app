@@ -1,55 +1,23 @@
 # Familia Food POS — FINAL 2 CHANNEL
 
-## Konsep terkunci
-- POS hanya memiliki 2 channel: **Offline** dan **Online**.
-- Offline: **Data Lama + transaksi kasir baru**.
-- Online: **Data Lama + transaksi online baru**.
-- Rekap dan Dashboard tidak mengganti data lama ketika data baru masuk.
-- Detail dibuka dengan **👁 Lihat Data**.
-- Offline: pengeluaran dibaca per periode dan kategori.
-- Online: Income TikTok menjadi sumber utama Pemasukan, Potongan, dan Uang Bersih. Seller Center hanya detail produk/qty.
-- Rumus uang bersih online: **Pemasukan − Potongan = Uang Bersih**.
-- Profit hanya ditampilkan jika HPP/modal yang diperlukan tersedia; tidak menebak.
+## Data Lama Online
+Masukkan file asli TikTok Income dan file Pesanan/Seller Center. Keduanya digabung berdasarkan **ID Pesanan**.
 
-## Perbaikan final
-1. `ff-core.js` menjadi helper bersama untuk pemetaan produk, HPP, channel, periode, dan rekap.
-2. Rekap tidak lagi menjumlahkan pengeluaran periode gabungan Jan–Agustus ke satu bulan.
-3. Online tidak mengambil Pemasukan dari Seller Center.
-4. Produk transaksi baru memakai `produk_id`/master produk terlebih dahulu; tidak lagi tampil `-` jika master tersedia.
-5. Seller Center tidak otomatis menyimpan saat file dipilih; harus melalui preview lalu tombol Simpan.
-6. Dedup seller menggunakan signature stabil Order ID + SKU + variasi + produk + tanggal dan mencoba mengenali signature legacy.
-7. Data Lama tidak lagi otomatis menulis seed pengeluaran setiap halaman dibuka.
-8. Data lama Offline tidak lagi mencampur transaksi Online.
-9. Import Data Lama Online mendukung:
-   - `Familia-Food-Import-Online-SIAP.xlsx` (sheet **Import Penjualan**).
-   - `Online Database (8).xlsx` (sheet **Keluar Resi + Uang Masuk**).
-10. Untuk workbook legacy `Online Database (8).xlsx`, **Uang Masuk** disimpan sebagai historis cash terpisah dan tidak dipakai otomatis sebagai potongan TikTok bulanan karena tanggal uang masuk dapat berbeda dari tanggal penjualan.
+Tampilan preview:
+**Sumber | Bulan | Produk | Qty | Pemasukan | Uang Bersih | Modal/HPP | Profit**
 
-## Pengujian yang dilakukan
-- Syntax check seluruh JavaScript halaman: **lulus**.
-- Unit test helper rekap: **lulus**.
-- Test pemisahan Offline/Online: **lulus**.
-- Test deduksi `Pemasukan − Potongan = Uang Bersih`: **lulus**.
-- Test bahwa Seller Center tidak menambah Pemasukan/Uang Bersih: **lulus**.
-- Struktur Supabase live sebelumnya sudah diverifikasi dari hasil SQL/screenshots yang diberikan: tabel inti dan index import online tersedia.
+- Income TikTok = Pemasukan + Uang Bersih.
+- Pesanan/Seller Center = Produk + Qty.
+- Join keuangan = hanya ID Pesanan yang benar-benar cocok.
+- Jika satu order berisi beberapa produk, Pemasukan/Uang Bersih dialokasikan berdasarkan proporsi omzet produk pada Seller Center.
+- Modal/HPP Online = **Harga Online − Untung Online** dari master HPP, bila tersedia.
+- `hpp_unit` hanya fallback bila HPP Online master belum tersedia.
+- Alias produk Online hanya dipakai untuk pola Familia Food yang sudah eksplisit; produk yang tidak jelas tidak ditebak.
+- Profit = Uang Bersih − Modal/HPP hanya jika HPP tersedia.
+- File baru ditambahkan ke antrean, tidak menggantikan file sebelumnya.
+- Tidak perlu membuat Excel perantara.
+- Seller Center tidak dipakai sebagai sumber settlement keuangan.
+- Preview bukan data baru sampai bro menekan **Simpan Data Lama Online**.
 
-## Catatan live
-Belum ada klaim bahwa versi final ini sudah ter-deploy ke GitHub Pages. Setelah file diganti di repo, lakukan refresh halaman dan uji satu kali pada **Penjualan → Rekap → Dashboard**.
-
-`AUDIT-FINAL-READONLY.sql` hanya berisi SELECT dan bisa dijalankan di Supabase SQL Editor untuk audit pasca-deploy/import.
-
-## Patch v6
-- Import historis Online tidak lagi bergantung pada nama file tertentu.
-- Deteksi berdasarkan struktur header/sheet.
-- TikTok Income asli dibaca dari sheet `Detail pesanan`.
-- Seller Center asli dibaca sebagai detail produk/qty dan tidak dihitung sebagai settlement keuangan.
-- Beberapa file historis dapat dipilih sekaligus.
-- `Familia-Food-Import-Online-SIAP.xlsx` dan `Online Database (8).xlsx` tetap kompatibel.
-- Halaman Data Lama sekarang juga memuat transaksi Online historis ke ringkasan dan detail bulanan tanpa menggandakan Pemasukan dari Seller Center.
-- Tidak ada perubahan struktur/isi Supabase oleh patch ini.
-
-
-## Patch v7 — Preview Online
-- Preview Data Lama Online sekarang menampilkan tepat: **Sumber | Bulan | Produk | Qty | Pemasukan | Uang Bersih | Modal/HPP | Profit**.
-- Bila file TikTok Income dan Seller Center/Pesanan dipilih bersama, preview menghubungkan order berdasarkan ID pesanan. Pemasukan/Uang Bersih dialokasikan ke produk berdasarkan proporsi nilai produk agar tidak menggandakan omzet pada order multi-produk.
-- Modal/HPP mengambil master HPP; Profit = Uang Bersih − Modal/HPP hanya bila HPP tersedia. Jika sumber tidak menyediakan data yang diperlukan, tampil **—**.
+## Catatan
+Paket ini berisi halaman aplikasi. File support yang sudah ada di repo (misalnya `supabase.js`, `app-settings.js`, `ff-core.js`) tetap digunakan dari instalasi aplikasi yang sudah ada.
