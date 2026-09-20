@@ -1,11 +1,11 @@
 <!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Penjualan - Familia Food</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script><script src="app-settings.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5faf7;color:#26352d}.sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid #dce8e1;padding:20px 14px}.brand{font-size:20px;font-weight:700;color:var(--brand-color,#087443);margin:4px 8px 22px}.nav a{display:block;text-decoration:none;color:#315247;padding:11px 12px;border-radius:9px;margin:4px 0}.nav a:hover,.nav a.active{background:#eaf6ef;color:var(--brand-color,#087443);font-weight:600}main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 8px;color:var(--brand-color,#087443)}.sub{color:#6d7e76;margin-bottom:20px}.card{background:#fff;border:1px solid #dce8e1;border-radius:14px;padding:20px;margin-bottom:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.badge{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;background:#eef7f1;color:var(--brand-color,#087443);font-weight:bold;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.preview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.preview .box{background:#f7fbf8;border:1px solid #e2eee6;border-radius:12px;padding:14px}.preview small{display:block;color:#667;margin-bottom:5px}.preview strong{font-size:20px}.profit{background:#eef7f1!important}.note{font-size:13px;color:#68736d;margin-top:8px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #ccd5cf;border-radius:9px;background:#fff}.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.btn:disabled{opacity:.5;cursor:not-allowed}.btn{border:0;border-radius:9px;padding:11px 17px;background:var(--brand-color,#087443);color:#fff;cursor:pointer;font-weight:700}.btn.gray{background:#777}.btn.blue{background:#2563eb}.msg{margin-top:12px;padding:10px;border-radius:8px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;margin-top:8px;min-width:1250px}th{background:var(--brand-color,#087443);color:#fff;padding:10px;text-align:left;white-space:nowrap}td{padding:9px;border-bottom:1px solid #e5e5e5;vertical-align:top}.mini{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}.edit{background:#eaf5ee;color:var(--brand-color,#087443)}.del{background:#fdecec;color:#a22}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.stat{background:#f0f8f3;padding:16px;border-radius:12px}.stat b{font-size:21px;display:block;margin-top:6px}.importbox{border:2px dashed #cbded2;border-radius:12px;padding:18px;background:#fbfefc}.import-preview{display:none}.import-preview.show{display:block}.warn{background:#fff8df;border:1px solid #f0df9b;padding:12px;border-radius:9px;color:#6b5a16;margin-top:12px}.ok{background:#eef7f1;border:1px solid #cde7d7;padding:12px;border-radius:9px;color:#166534;margin-top:12px}.bad{background:#fdecec;border:1px solid #f4caca;padding:12px;border-radius:9px;color:#991b1b;margin-top:12px}.small{font-size:12px;color:#68736d}.modal-input{width:110px;padding:6px;border:1px solid #ccd5cf;border-radius:6px}@media(max-width:850px){.sidebar{position:static;width:auto;padding:14px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}main{margin-left:0;padding:16px}.grid,.summary,.preview{grid-template-columns:1fr}}
 .viewbtn{background:#eef7f1;color:var(--brand-color,#087443);font-weight:700}.import-compact{padding:4px 0}.import-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.import-stats>div{background:#f7fbf8;border:1px solid #e2eee6;border-radius:10px;padding:11px}.import-stats small{display:block;color:#667;margin-bottom:4px}.import-stats b{font-size:15px}.upload-tabs{display:flex;gap:8px;margin-bottom:14px}.upload-tab{flex:1;border:1px solid #cbded2;background:#f7fbf8;color:#315247;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}.upload-tab.active{background:#eaf6ef;color:var(--brand-color,#087443);border-color:#9fc9af}.upload-panel{display:none}.upload-panel.active{display:block}.import-preview{display:none}.import-preview.show{display:block}.import-recap{margin-top:16px}.import-detail{display:none;margin-top:16px}.import-detail.show{display:block}.import-recap table,.import-detail table{min-width:1100px}.clickrow{cursor:pointer}@media(max-width:900px){.import-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.import-stats{grid-template-columns:1fr}}.camera-modal{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}.camera-modal.open{display:flex}.camera-box{width:min(560px,100%);background:#fff;border-radius:16px;padding:14px}.camera-box video{width:100%;border-radius:12px;background:#111;aspect-ratio:3/4;object-fit:cover}.camera-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.camera-actions button{flex:1;min-width:130px}.camera-note{font-size:12px;color:#666;margin:8px 0}
-.batch-toolbar .btn{white-space:nowrap}.batch-count{font-weight:700}.batch-total{font-weight:800}.batch-del{background:#fdecec;color:#b91c1c}.batch-date,.batch-resi,.batch-order,.batch-type,.batch-produk,.batch-drop,.batch-qty{min-width:110px}.batch-date{min-width:135px}.batch-produk,.batch-drop{min-width:185px}
+.batch-toolbar .btn{white-space:nowrap}.batch-count{font-weight:700}.batch-total{font-weight:800}.batch-del{background:#fdecec;color:#b91c1c}.batch-date,.batch-type,.batch-produk,.batch-drop,.batch-qty{min-width:120px}.batch-date{min-width:135px}.batch-produk,.batch-drop{min-width:190px}
 </style></head><body>
 <aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav">
 <a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a class="active" href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
@@ -26,39 +26,33 @@
 <div class="card import-detail" id="importDetailCard"><div class="top"><div><h3 id="importDetailTitle" style="margin:0">Detail Import</h3></div><button class="btn gray" id="closeImportDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="importDetailRows"></tbody></table></div></div>
 <div class="actions"><button class="btn blue" id="importSave">+ Simpan Data Online</button><button class="btn gray" id="importCancel">Batal</button></div><div id="importMsg"></div></div></div>
 
-<div class="card"><h2>📁 Rekap Data Lama Online</h2><div class="note" id="recapNote">Bagian ini khusus data lama Seller Center/TikTok yang sudah terkunci. Transaksi Online baru memakai Scan Resi + Penerimaan Uang.</div><div class="tablewrap"><table><thead><tr><th>Periode</th><th>Pemasukan</th><th>Potongan TikTok</th><th>Uang Bersih</th><th>Profit</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="rows"><tr><td colspan="7">Belum ada penjualan online.</td></tr></tbody></table></div>
+<div class="card"><h2>📁 Rekap Data Lama Online</h2><div class="note" id="recapNote">Bagian ini khusus data lama Seller Center/TikTok yang sudah terkunci. Transaksi Online baru memakai input produk + jumlah + Penerimaan Uang.</div><div class="tablewrap"><table><thead><tr><th>Periode</th><th>Pemasukan</th><th>Potongan TikTok</th><th>Uang Bersih</th><th>Profit</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="rows"><tr><td colspan="7">Belum ada penjualan online.</td></tr></tbody></table></div>
 <div class="card" id="onlineNewCard">
   <div class="cashhead">
     <div>
-      <h2 style="margin:0">📦 Transaksi Online Baru — Input Banyak</h2>
-      <div class="note">
-        Untuk transaksi baru, tidak perlu OCR/scan otomatis. Bro cukup masukkan No. Resi, pilih jenis produk, pilih produk, dan jumlah. Bisa tambah banyak baris sekaligus lalu simpan semua.
-        HPP Naget/Tempura diambil dari HPP Online Familia Food. Produk Dropship memakai modal dari Master Dropship.
-      </div>
+      <h2 style="margin:0">📦 Transaksi Online Baru — Input Cepat</h2>
+      <div class="note">Tidak perlu No. Resi. Cukup catat <b>produk yang keluar</b> dan jumlah bungkus. HPP Naget/Tempura diambil otomatis dari HPP Online Familia Food. Produk Dropship memakai modal dari Master Dropship.</div>
     </div>
   </div>
 
   <div class="batch-toolbar" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <button class="btn blue" type="button" id="batchAddRow">+ Tambah 1 Baris</button>
+    <button class="btn blue" type="button" id="batchAddRow">+ Tambah Produk</button>
     <button class="btn light" type="button" id="batchAdd10">+ Tambah 10 Baris</button>
     <button class="btn gray" type="button" id="batchClear">Kosongkan Semua</button>
     <span class="small" id="batchCount">0 baris</span>
   </div>
 
   <div class="tablewrap" style="margin-top:12px">
-    <table id="onlineBatchTable" style="min-width:1200px">
+    <table id="onlineBatchTable" style="min-width:900px">
       <thead>
         <tr>
           <th>#</th>
           <th>Tanggal</th>
-          <th>No. Resi</th>
-          <th>Order ID</th>
           <th>Jenis</th>
-          <th>Produk Familia Food</th>
+          <th>Produk Naget/Tempura</th>
           <th>Produk Dropship</th>
-          <th>Qty (Bungkus)</th>
-          <th>HPP / Bungkus</th>
-          <th>Modal Dropship / Bungkus</th>
+          <th>Jumlah (Bungkus)</th>
+          <th>HPP / Modal per Bungkus</th>
           <th>Total Modal</th>
           <th>Aksi</th>
         </tr>
@@ -68,14 +62,14 @@
   </div>
 
   <div class="preview" style="margin-top:12px">
-    <div class="box"><small>Total Baris</small><strong id="batchTotalRows">0</strong></div>
-    <div class="box"><small>Total Bungkus</small><strong id="batchTotalQty">0</strong></div>
+    <div class="box"><small>Total Baris Produk</small><strong id="batchTotalRows">0</strong></div>
+    <div class="box"><small>Total Bungkus Keluar</small><strong id="batchTotalQty">0</strong></div>
     <div class="box"><small>Total HPP Naget / Tempura</small><strong id="batchTotalHpp">Rp 0</strong></div>
     <div class="box profit"><small>Total Modal Dropship</small><strong id="batchTotalDrop">Rp 0</strong></div>
   </div>
 
   <div class="actions" style="margin-top:12px">
-    <button class="btn" id="batchSave" type="button">+ Simpan Semua Transaksi Online</button>
+    <button class="btn" id="batchSave" type="button">+ Simpan Semua Produk Keluar</button>
   </div>
   <div id="batchMsg"></div>
 </div>
@@ -117,7 +111,7 @@
 <div class="preview"><div class="box"><small>Harga Jual</small><strong id="pvHarga">Rp 0</strong></div><div class="box"><small>Total Omzet</small><strong id="pvOmzet">Rp 0</strong></div><div class="box"><small>Total Modal / HPP</small><strong id="pvHpp">Rp 0</strong></div><div class="box profit"><small>Profit</small><strong id="pvProfit">Rp 0</strong></div></div>
 <div class="actions"><button class="btn" id="save">+ Simpan Penjualan</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div>
 
-<div class="card"><div class="summary"><div class="stat">Total Terjual<b id="sQty">0</b></div><div class="stat">Omzet Produk<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih<b id="sNet">Rp 0</b></div><div class="stat">Profit Terukur<b id="sProfit">Rp 0</b></div></div></div>
+<div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div>
 
 <div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div><script>
 const $=id=>document.getElementById(id);let products=[],sales=[],displaySales=[],editId=null,importRows=[];let stagedSellerRecords=[],stagedIncomeRecords=[],stagedSellerName='',stagedIncomeNames=[];
@@ -466,9 +460,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     return 0;
   }
 
-  function dropRows(){
-    return loadDrops();
-  }
+  function dropRows(){return loadDrops();}
   function dropSelectOptions(){
     return '<option value="">Pilih Dropship</option>'+dropRows().map((x,i)=>'<option value="'+i+'">'+esc(x.name)+' — '+money(x.modal)+'/bungkus</option>').join('');
   }
@@ -480,38 +472,33 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   let nextId=1;
 
   function emptyRow(){
-    return {id:nextId++,tanggal:today(),resi:'',orderId:'',jenis:'familia',produkId:'',dropIndex:'',qty:1};
+    return {id:nextId++,tanggal:today(),jenis:'familia',produkId:'',dropIndex:'',qty:1};
   }
   function addRows(n=1){for(let i=0;i<n;i++)rows.push(emptyRow());renderRows();}
-  function renderRows(){
-    const tb=byId('onlineBatchRows'); if(!tb)return;
-    tb.innerHTML=rows.map((r,idx)=>rowHtml(r,idx)).join('');
-    rows.forEach((r)=>refreshRow(r.id));
-    updateSummary();
-    byId('batchCount').textContent=rows.length+' baris';
-  }
   function rowHtml(r,idx){
     return `<tr data-row="${r.id}">
       <td>${idx+1}</td>
       <td><input class="batch-date" type="date" value="${esc(r.tanggal)}"></td>
-      <td><input class="batch-resi" type="text" placeholder="No. resi" value="${esc(r.resi)}"></td>
-      <td><input class="batch-order" type="text" placeholder="Opsional" value="${esc(r.orderId)}"></td>
       <td><select class="batch-type"><option value="familia" ${r.jenis==='familia'?'selected':''}>Naget/Tempura</option><option value="dropship" ${r.jenis==='dropship'?'selected':''}>Dropship</option></select></td>
       <td><select class="batch-produk" ${r.jenis==='dropship'?'disabled':''}>${familiaOptions()}</select></td>
       <td><select class="batch-drop" ${r.jenis==='familia'?'disabled':''}>${dropSelectOptions()}</select></td>
       <td><input class="batch-qty" type="number" min="1" step="1" value="${Math.max(1,Number(r.qty)||1)}"></td>
-      <td><input class="batch-hpp" type="number" min="0" step="1" readonly></td>
-      <td><input class="batch-dmodal" type="number" min="0" step="1" readonly></td>
+      <td class="batch-unitcost">Rp 0</td>
       <td class="batch-total">Rp 0</td>
       <td><button type="button" class="mini del batch-del">Hapus</button></td>
     </tr>`;
   }
   function getRowObj(id){return rows.find(x=>x.id===id);}
+  function renderRows(){
+    const tb=byId('onlineBatchRows'); if(!tb)return;
+    tb.innerHTML=rows.map(rowHtml).join('');
+    rows.forEach(r=>refreshRow(r.id));
+    updateSummary();
+    byId('batchCount').textContent=rows.length+' baris';
+  }
   function refreshRow(id){
     const r=getRowObj(id); const tr=document.querySelector(`tr[data-row="${id}"]`); if(!r||!tr)return;
     tr.querySelector('.batch-date').value=r.tanggal;
-    tr.querySelector('.batch-resi').value=r.resi;
-    tr.querySelector('.batch-order').value=r.orderId;
     tr.querySelector('.batch-type').value=r.jenis;
     tr.querySelector('.batch-produk').value=r.produkId||'';
     tr.querySelector('.batch-drop').value=r.dropIndex===''?'':String(r.dropIndex);
@@ -520,11 +507,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const h=r.jenis==='familia'?hppForProduct(p):0;
     const d=r.jenis==='dropship'&&r.dropIndex!==''?dropRows()[Number(r.dropIndex)]:null;
     const dm=d?Math.round(Number(d.modal)||0):0;
-    tr.querySelector('.batch-hpp').value=h||'';
-    tr.querySelector('.batch-dmodal').value=dm||'';
+    const unit=r.jenis==='familia'?h:dm;
     const qty=Math.max(1,Number(r.qty)||1);
-    const total=r.jenis==='familia'?qty*h:qty*dm;
-    tr.querySelector('.batch-total').textContent=money(total);
+    tr.querySelector('.batch-unitcost').textContent=money(unit);
+    tr.querySelector('.batch-total').textContent=money(qty*unit);
     tr.querySelector('.batch-produk').disabled=r.jenis!=='familia';
     tr.querySelector('.batch-drop').disabled=r.jenis!=='dropship';
   }
@@ -543,8 +529,6 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   function syncFromDOM(id){
     const r=getRowObj(id); const tr=document.querySelector(`tr[data-row="${id}"]`); if(!r||!tr)return;
     r.tanggal=tr.querySelector('.batch-date').value;
-    r.resi=tr.querySelector('.batch-resi').value.trim();
-    r.orderId=tr.querySelector('.batch-order').value.trim();
     r.jenis=tr.querySelector('.batch-type').value;
     r.produkId=tr.querySelector('.batch-produk').value;
     r.dropIndex=tr.querySelector('.batch-drop').value;
@@ -555,17 +539,14 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   async function saveBatch(){
     try{
       rows.forEach(r=>syncFromDOM(r.id));
-      if(!rows.length){setMsg('Belum ada baris transaksi.',true);return;}
+      if(!rows.length){setMsg('Belum ada produk yang dimasukkan.',true);return;}
       const valid=[]; const errors=[];
-      const seen=new Set();
       rows.forEach((r,i)=>{
         if(!r.tanggal)errors.push(`Baris ${i+1}: tanggal kosong`);
-        if(!r.resi)errors.push(`Baris ${i+1}: No. Resi wajib`);
-        if(seen.has(norm(r.resi)))errors.push(`Baris ${i+1}: No. Resi duplikat di input`); else if(r.resi)seen.add(norm(r.resi));
         const q=Math.max(1,Math.round(Number(r.qty)||0));
         if(r.jenis==='familia'){
           const p=productById(r.produkId), h=hppForProduct(p);
-          if(!p)errors.push(`Baris ${i+1}: pilih produk Naget`);
+          if(!p)errors.push(`Baris ${i+1}: pilih produk Naget/Tempura`);
           else if(h<=0)errors.push(`Baris ${i+1}: HPP Online ${p.nama_produk} belum tersedia`);
           else valid.push({r,p,h,q,total:q*h});
         }else{
@@ -576,14 +557,6 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       });
       if(errors.length){setMsg(errors.slice(0,12).join('<br>'),true);return;}
 
-      const existingResi=new Set();
-      try{
-        const q=await supabaseClient.from('penjualan').select('catatan,order_id').eq('channel','Online').eq('source','online_resi');
-        if(!q.error && Array.isArray(q.data)){
-          q.data.forEach(x=>{const c=String(x.catatan||'');const m=c.match(/RESI:([^|]+)/i);if(m)existingResi.add(norm(m[1])); if(x.order_id)existingResi.add('order:'+norm(x.order_id));});
-        }
-      }catch(e){}
-
       const newRows=valid.map(({r,p,d,h,q,total})=>({
         tanggal:r.tanggal,
         produk_id:r.jenis==='familia'?p.id:null,
@@ -592,7 +565,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         harga:0,
         hpp:Math.round(total),
         laba:0,
-        order_id:r.orderId||null,
+        order_id:null,
         product_name:r.jenis==='familia'?p.nama_produk:(d?.name||'Produk Dropship'),
         variation:r.jenis==='familia'?'Naget/Tempura':'Dropship',
         omzet_produk:0,
@@ -600,19 +573,20 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         modal_hpp:Math.round(total),
         profit_online:null,
         biaya_platform:null,
-        source:'online_resi',
-        catatan:(r.jenis==='familia'?'FAMILIA':'DROPSHIP')+'|RESI:'+r.resi
-      })).filter(row=>!existingResi.has(norm(String(row.catatan).split('RESI:')[1]||'')));
+        source:'online_batch',
+        catatan:r.jenis==='familia'?'Produk keluar online':'Produk dropship online'
+      }));
 
-      if(!newRows.length){setMsg('Semua resi pada input sudah pernah tercatat.',true);return;}
       const ins=await supabaseClient.from('penjualan').insert(newRows).select('id');
       if(ins.error)throw ins.error;
-      setMsg(`${newRows.length} transaksi online berhasil disimpan. Total modal ${money(newRows.reduce((a,x)=>a+Number(x.modal_hpp||0),0))}.`);
+      const totalModal=newRows.reduce((a,x)=>a+Number(x.modal_hpp||0),0);
+      const totalQty=newRows.reduce((a,x)=>a+Number(x.qty||0),0);
+      setMsg(`${newRows.length} baris produk tersimpan • ${totalQty} bungkus • Total HPP/Modal ${money(totalModal)}. Profit akan dihitung dari Uang Bersih yang dicatat pada Penerimaan Uang Online.`);
       rows=[];addRows(1);
       if(typeof load==='function')await load();
     }catch(e){
       console.error(e);
-      setMsg('Gagal menyimpan semua transaksi: '+esc(e.message||e),true);
+      setMsg('Gagal menyimpan produk online: '+esc(e.message||e),true);
     }
   }
 
