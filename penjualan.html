@@ -1,14 +1,14 @@
 <!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Penjualan - Familia Food</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script><script src="app-settings.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5faf7;color:#26352d}.sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid #dce8e1;padding:20px 14px}.brand{font-size:20px;font-weight:700;color:var(--brand-color,#087443);margin:4px 8px 22px}.nav a{display:block;text-decoration:none;color:#315247;padding:11px 12px;border-radius:9px;margin:4px 0}.nav a:hover,.nav a.active{background:#eaf6ef;color:var(--brand-color,#087443);font-weight:600}main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 8px;color:var(--brand-color,#087443)}.sub{color:#6d7e76;margin-bottom:20px}.card{background:#fff;border:1px solid #dce8e1;border-radius:14px;padding:20px;margin-bottom:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.badge{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;background:#eef7f1;color:var(--brand-color,#087443);font-weight:bold;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.preview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.preview .box{background:#f7fbf8;border:1px solid #e2eee6;border-radius:12px;padding:14px}.preview small{display:block;color:#667;margin-bottom:5px}.preview strong{font-size:20px}.profit{background:#eef7f1!important}.note{font-size:13px;color:#68736d;margin-top:8px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #ccd5cf;border-radius:9px;background:#fff}.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.btn:disabled{opacity:.5;cursor:not-allowed}.btn{border:0;border-radius:9px;padding:11px 17px;background:var(--brand-color,#087443);color:#fff;cursor:pointer;font-weight:700}.btn.gray{background:#777}.btn.blue{background:#2563eb}.msg{margin-top:12px;padding:10px;border-radius:8px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;margin-top:8px;min-width:1250px}th{background:var(--brand-color,#087443);color:#fff;padding:10px;text-align:left;white-space:nowrap}td{padding:9px;border-bottom:1px solid #e5e5e5;vertical-align:top}.mini{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}.edit{background:#eaf5ee;color:var(--brand-color,#087443)}.del{background:#fdecec;color:#a22}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.stat{background:#f0f8f3;padding:16px;border-radius:12px}.stat b{font-size:21px;display:block;margin-top:6px}.importbox{border:2px dashed #cbded2;border-radius:12px;padding:18px;background:#fbfefc}.import-preview{display:none}.import-preview.show{display:block}.warn{background:#fff8df;border:1px solid #f0df9b;padding:12px;border-radius:9px;color:#6b5a16;margin-top:12px}.ok{background:#eef7f1;border:1px solid #cde7d7;padding:12px;border-radius:9px;color:#166534;margin-top:12px}.bad{background:#fdecec;border:1px solid #f4caca;padding:12px;border-radius:9px;color:#991b1b;margin-top:12px}.small{font-size:12px;color:#68736d}.modal-input{width:110px;padding:6px;border:1px solid #ccd5cf;border-radius:6px}@media(max-width:850px){.sidebar{position:static;width:auto;padding:14px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}main{margin-left:0;padding:16px}.grid,.summary,.preview{grid-template-columns:1fr}}
 .viewbtn{background:#eef7f1;color:var(--brand-color,#087443);font-weight:700}.import-compact{padding:4px 0}.import-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.import-stats>div{background:#f7fbf8;border:1px solid #e2eee6;border-radius:10px;padding:11px}.import-stats small{display:block;color:#667;margin-bottom:4px}.import-stats b{font-size:15px}.upload-tabs{display:flex;gap:8px;margin-bottom:14px}.upload-tab{flex:1;border:1px solid #cbded2;background:#f7fbf8;color:#315247;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}.upload-tab.active{background:#eaf6ef;color:var(--brand-color,#087443);border-color:#9fc9af}.upload-panel{display:none}.upload-panel.active{display:block}.import-preview{display:none}.import-preview.show{display:block}.import-recap{margin-top:16px}.import-detail{display:none;margin-top:16px}.import-detail.show{display:block}.import-recap table,.import-detail table{min-width:1100px}.clickrow{cursor:pointer}@media(max-width:900px){.import-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.import-stats{grid-template-columns:1fr}}</style></head><body>
 <aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav">
 <a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a class="active" href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
 </nav></aside><main>
-<div class="top"><div><h1>💰 Penjualan</h1><div class="sub">Penjualan manual + import penjualan online dari Seller Center.</div></div><span class="badge">Familia Food</span></div>
+<div class="top"><div><h1>💰 Penjualan</h1><div class="sub">Penjualan Offline + Scan Resi Online + Penerimaan Uang Online.</div></div><span class="badge">Familia Food</span></div>
 
 <div class="card"><div class="cashhead"><div><h2 style="margin:0">📥 Import Penjualan Online</h2>
 <div class="note">Upload <b>file asli Seller Center</b> sekali, lalu tambahkan Excel Income TikTok bertahap. Tentukan <b>rentang tanggal yang ingin disimpan</b>.</div></div></div>
@@ -24,74 +24,115 @@
 <div class="card import-detail" id="importDetailCard"><div class="top"><div><h3 id="importDetailTitle" style="margin:0">Detail Import</h3></div><button class="btn gray" id="closeImportDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="importDetailRows"></tbody></table></div></div>
 <div class="actions"><button class="btn blue" id="importSave">+ Simpan Data Online</button><button class="btn gray" id="importCancel">Batal</button></div><div id="importMsg"></div></div></div>
 
-<div class="card"><h2>📊 Rekap Penjualan Online</h2><div class="note" id="recapNote">Rekap per bulan. Saat file import dipilih, angka dihitung langsung dari file dan belum masuk Supabase. Setelah disimpan, rekap membaca data yang tersimpan di Supabase.</div><div class="tablewrap"><table><thead><tr><th>Periode</th><th>Pemasukan</th><th>Potongan TikTok</th><th>Uang Bersih</th><th>Profit</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="rows"><tr><td colspan="7">Belum ada penjualan online.</td></tr></tbody></table></div>
+<div class="card"><h2>📁 Rekap Data Lama Online</h2><div class="note" id="recapNote">Bagian ini khusus data lama Seller Center/TikTok yang sudah terkunci. Transaksi Online baru memakai Scan Resi + Penerimaan Uang.</div><div class="tablewrap"><table><thead><tr><th>Periode</th><th>Pemasukan</th><th>Potongan TikTok</th><th>Uang Bersih</th><th>Profit</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="rows"><tr><td colspan="7">Belum ada penjualan online.</td></tr></tbody></table></div>
 <div class="card" id="onlineNewCard">
   <div class="cashhead">
     <div>
-      <h2 style="margin:0">📱 Transaksi Baru Online</h2>
-      <div class="note">
-        Transaksi Online baru disimpan ke tabel <b>penjualan</b> dengan channel <b>Online</b>.
-        Rekap akan menggabungkannya otomatis dengan Data Lama Online berdasarkan bulan.
-      </div>
+      <h2 style="margin:0">📷 Transaksi Online Baru — Scan Resi</h2>
+      <div class="note">Mulai transaksi baru: scan/foto resi. <b>Tidak ada input Potongan TikTok.</b> HPP Naget/Tempura diambil dari HPP Online Familia Food. Uang yang masuk dicatat terpisah sebagai Uang Bersih yang benar-benar diterima dari TikTok (sudah termasuk biaya TikTok + iklan).</div>
     </div>
   </div>
 
   <div class="grid" style="margin-top:16px">
     <div class="field">
       <label>Tanggal</label>
-      <input id="onNewTanggal" type="date">
+      <input id="resTanggal" type="date">
     </div>
     <div class="field">
-      <label>Nama Pelanggan / Keterangan</label>
-      <input id="onNewPelanggan" type="text" placeholder="Opsional">
+      <label>Scan / Foto Resi</label>
+      <input id="resImage" type="file" accept="image/*" capture="environment">
+      <div class="small" style="margin-top:5px">Di HP bisa langsung buka kamera. Sistem membaca barcode + tulisan resi.</div>
     </div>
     <div class="field">
-      <label>Produk</label>
-      <select id="onNewProduk"><option value="">Pilih Produk</option></select>
+      <label>No. Resi</label>
+      <input id="resResi" type="text" placeholder="Otomatis dari resi / isi manual bila perlu">
+    </div>
+    <div class="field">
+      <label>Order ID</label>
+      <input id="resOrderId" type="text" placeholder="Otomatis dari resi">
+    </div>
+    <div class="field">
+      <label>Jenis Produk</label>
+      <select id="resJenis"><option value="familia">Familia Food — Naget/Tempura</option><option value="dropship">Produk Dropship</option></select>
+    </div>
+    <div class="field">
+      <label>Produk Familia Food</label>
+      <select id="resProduk"><option value="">Pilih Produk Naget</option></select>
+    </div>
+    <div class="field">
+      <label>Produk Dropship</label>
+      <select id="resDropship"><option value="">Pilih / tambah master dropship</option></select>
     </div>
     <div class="field">
       <label>Jumlah (Bungkus)</label>
-      <input id="onNewQty" type="number" min="1" step="1" value="1">
+      <input id="resQty" type="number" min="1" step="1" value="1">
     </div>
     <div class="field">
-      <label>Harga Online / Bungkus</label>
-      <input id="onNewHarga" type="number" min="0" step="1" readonly>
+      <label>HPP / Bungkus</label>
+      <input id="resHpp" type="number" min="0" step="1" readonly>
     </div>
     <div class="field">
-      <label>HPP Online / Bungkus</label>
-      <input id="onNewHpp" type="number" min="0" step="1" readonly>
-    </div>
-    <div class="field">
-      <label>Potongan Online (opsional)</label>
-      <input id="onNewPotongan" type="number" min="0" step="1" value="0">
-      <div class="small" style="margin-top:5px">Isi bila transaksi baru sudah diketahui potongannya.</div>
+      <label>Modal Dropship / Bungkus</label>
+      <input id="resDropshipModal" type="number" min="0" step="1" readonly>
     </div>
   </div>
 
   <div class="preview">
-    <div class="box"><small>Pemasukan</small><strong id="onNewPvOmzet">Rp0</strong></div>
-    <div class="box"><small>Uang Bersih</small><strong id="onNewPvNet">Rp0</strong></div>
-    <div class="box"><small>Total HPP</small><strong id="onNewPvHpp">Rp0</strong></div>
-    <div class="box profit"><small>Profit</small><strong id="onNewPvProfit">Rp0</strong></div>
+    <div class="box"><small>Status Scan</small><strong id="resStatus">Belum ada resi</strong></div>
+    <div class="box"><small>Total HPP Naget / Tempura</small><strong id="resTotalHpp">Rp 0</strong></div>
+    <div class="box"><small>Total Modal Dropship</small><strong id="resTotalDrop">Rp 0</strong></div>
+    <div class="box profit"><small>Total Modal Barang</small><strong id="resTotalModal">Rp 0</strong></div>
   </div>
 
   <div class="actions">
-    <button class="btn blue" id="onNewSave">+ Simpan Transaksi Online</button>
-    <button class="btn gray" id="onNewReset" type="button">Reset</button>
+    <button class="btn blue" id="resScanBtn" type="button">📷 Baca Resi</button>
+    <button class="btn" id="resSave" type="button">+ Simpan Resi</button>
+    <button class="btn gray" id="resReset" type="button">Reset</button>
   </div>
-  <div id="onNewMsg"></div>
+  <div id="resMsg"></div>
+</div>
+
+<div class="card" id="onlineCashCard">
+  <div class="cashhead">
+    <div>
+      <h2 style="margin:0">💰 Penerimaan Uang Online</h2>
+      <div class="note">Masukkan saat TikTok benar-benar mencairkan uang. Nominal di sini dianggap <b>Uang Bersih</b> dan sudah termasuk potongan TikTok + iklan.</div>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:16px;grid-template-columns:1fr 1fr 2fr">
+    <div class="field"><label>Tanggal Diterima</label><input id="cashTanggal" type="date"></div>
+    <div class="field"><label>Uang Bersih Diterima</label><input id="cashAmount" type="number" min="0" step="1" placeholder="Contoh 850000"></div>
+    <div class="field"><label>Keterangan</label><input id="cashNote" type="text" placeholder="Pencairan TikTok / periode / catatan"></div>
+  </div>
+  <div class="actions"><button class="btn blue" id="cashSave" type="button">+ Simpan Penerimaan</button><button class="btn gray" id="cashReset" type="button">Reset</button></div>
+  <div id="cashMsg"></div>
+</div>
+
+<div class="card" id="dropshipMasterCard">
+  <div class="cashhead">
+    <div>
+      <h2 style="margin:0">📦 Master Produk Dropship</h2>
+      <div class="note">Simpan nama + modal per bungkus sekali. Saat nama produk terbaca dari resi, aplikasi bisa memakai master ini untuk menghitung modal.</div>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:16px;grid-template-columns:2fr 1fr auto">
+    <div class="field"><label>Nama Produk Dropship</label><input id="dropName" type="text" placeholder="Contoh: Bakso / Sosis"></div>
+    <div class="field"><label>Modal / Bungkus</label><input id="dropModal" type="number" min="0" step="1" placeholder="Contoh 7000"></div>
+    <div class="field" style="align-self:end"><button class="btn" id="dropAdd" type="button">+ Tambah / Update</button></div>
+  </div>
+  <div class="tablewrap" style="margin-top:12px"><table style="min-width:700px"><thead><tr><th>Produk Dropship</th><th>Modal / Bungkus</th><th>Aksi</th></tr></thead><tbody id="dropMasterRows"><tr><td colspan="3">Belum ada master dropship.</td></tr></tbody></table></div>
 </div>
 
 </div>
 <div class="card"><div class="cashhead"><div><h2 style="margin:0">Transaksi Manual</h2><div class="note">Tetap memakai struktur penjualan lama; pola HPP tidak diubah.</div></div></div>
-<div class="grid" style="margin-top:16px"><div class="field"><label>Tanggal</label><input id="tanggal" type="date"></div><div class="field"><label>Nama Pelanggan</label><input id="pelanggan" type="text" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><select id="produk"><option value="">Pilih Produk</option></select></div><div class="field"><label>Jumlah Terjual (Bungkus)</label><input id="qty" type="number" min="1" step="1" value="1"></div><div class="field"><label>Channel Penjualan</label><select id="channel"><option>Offline</option><option>Online</option></select></div><div class="field"><label>Harga Jual / Bungkus</label><input id="harga" type="number" min="0" step="1" readonly></div><div class="field"><label>HPP / Bungkus</label><input id="hpp" type="number" min="0" step="1" readonly></div></div>
+<div class="grid" style="margin-top:16px"><div class="field"><label>Tanggal</label><input id="tanggal" type="date"></div><div class="field"><label>Nama Pelanggan</label><input id="pelanggan" type="text" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><select id="produk"><option value="">Pilih Produk</option></select></div><div class="field"><label>Jumlah Terjual (Bungkus)</label><input id="qty" type="number" min="1" step="1" value="1"></div><div class="field"><label>Channel Penjualan</label><select id="channel"><option>Offline</option></select></div><div class="field"><label>Harga Jual / Bungkus</label><input id="harga" type="number" min="0" step="1" readonly></div><div class="field"><label>HPP / Bungkus</label><input id="hpp" type="number" min="0" step="1" readonly></div></div>
 <div class="preview"><div class="box"><small>Harga Jual</small><strong id="pvHarga">Rp 0</strong></div><div class="box"><small>Total Omzet</small><strong id="pvOmzet">Rp 0</strong></div><div class="box"><small>Total Modal / HPP</small><strong id="pvHpp">Rp 0</strong></div><div class="box profit"><small>Profit</small><strong id="pvProfit">Rp 0</strong></div></div>
 <div class="actions"><button class="btn" id="save">+ Simpan Penjualan</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div>
 
 <div class="card"><div class="summary"><div class="stat">Total Terjual<b id="sQty">0</b></div><div class="stat">Omzet Produk<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih<b id="sNet">Rp 0</b></div><div class="stat">Profit Terukur<b id="sProfit">Rp 0</b></div></div></div>
 
 <div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div><script>
-const $=id=>document.getElementById(id);let products=[],sales=[],editId=null,importRows=[];let stagedSellerRecords=[],stagedIncomeRecords=[],stagedSellerName='',stagedIncomeNames=[];
+const $=id=>document.getElementById(id);let products=[],sales=[],displaySales=[],editId=null,importRows=[];let stagedSellerRecords=[],stagedIncomeRecords=[],stagedSellerName='',stagedIncomeNames=[];
 let customerMap=JSON.parse(localStorage.getItem('ff_sale_customers_v1')||'{}');
 const rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
 const today=()=>new Date().toISOString().slice(0,10);$('tanggal').value=today();
@@ -327,7 +368,8 @@ async function load(){
   // HPP hanya boleh terhubung bila produk sudah jelas: produk_id yang tersimpan
   // atau nama produk yang sama setelah normalisasi sederhana. Tidak ada fuzzy match.
   function mapOnlineProduct(name){return exact.get(normName(name))||null;}
-  sales=allSales.map(s=>{
+  displaySales=allSales.filter(s=>!['online_resi','online_pencairan'].includes(String(s.source||'')));
+  sales=displaySales.map(s=>{
     const p=s.produk_id?pmap[String(s.produk_id)]:mapOnlineProduct(s.product_name||'');
     const hpp=hppOnlineFor(p);
     const qty=Number(s.qty||0);
@@ -394,194 +436,255 @@ window.viewPeriod=k=>{
 window.editSale=async id=>{const s=sales.find(x=>x.id===id);if(!s)return;editId=id;$('tanggal').value=s.tanggal;$('pelanggan').value=customerMap[String(s.id)]||'';$('produk').value=s.produk_id;$('qty').value=s.qty;$('channel').value=s.channel;$('harga').value=s.harga;$('hpp').value=Math.round(Number(s.hpp||0)/(Number(s.qty)||1));$('cancel').style.display='inline-block';$('save').textContent='Simpan Perubahan';updatePreview();scrollTo(0,0);};
 window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=await supabaseClient.from('penjualan').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);delete customerMap[String(id)];localStorage.setItem('ff_sale_customers_v1',JSON.stringify(customerMap));await load();msg('Penjualan dihapus.')};
 (async()=>{try{await loadProducts();await load()}catch(e){console.error(e);msg('Gagal memuat data: '+e.message,true)}})();
+</script>
 
 <script>
 /* =========================================================
-   TRANSAKSI BARU ONLINE — TERHUBUNG KE REKAP/DASHBOARD
-   ========================================================= */
+   ONLINE BARU — SCAN RESI + PENERIMAAN UANG
+========================================================= */
 (function(){
-  const $on = id => document.getElementById(id);
-  const rp = v => "Rp" + Math.round(Number(v)||0).toLocaleString("id-ID");
+  const byId=id=>document.getElementById(id);
+  const money=v=>'Rp '+Math.round(Number(v)||0).toLocaleString('id-ID');
+  const today=()=>new Date().toISOString().slice(0,10);
+  const DROP_KEY='ff_dropship_master_v1';
+  const LOCAL_KEY='ff_online_new_v2';
 
-  function todayOn(){
-    return new Date().toISOString().slice(0,10);
+  const norm=v=>String(v??'').toLowerCase().replace(/\s+/g,' ').trim();
+  const loadDrops=()=>{try{return JSON.parse(localStorage.getItem(DROP_KEY)||'[]')||[]}catch(e){return[]}};
+  const saveDrops=rows=>localStorage.setItem(DROP_KEY,JSON.stringify(rows));
+  const loadLocal=()=>{try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]')||[]}catch(e){return[]}};
+  const saveLocal=rows=>localStorage.setItem(LOCAL_KEY,JSON.stringify(rows));
+
+  function setMsg(id,text,bad=false){const el=byId(id);if(!el)return;el.innerHTML=text?'<div class="'+(bad?'bad':'ok')+'">'+text+'</div>':'';}
+  function setStatus(text){const el=byId('resStatus');if(el)el.textContent=text;}
+  function escLocal(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  function familiaProducts(){
+    return (window.products||[]).filter(p=>/^naget\s*(10|12|20|25|30|40|50)/i.test(String(p.nama_produk||'')));
+  }
+  function renderResProducts(keep){
+    const s=byId('resProduk'); if(!s)return;
+    const list=familiaProducts();
+    s.innerHTML='<option value="">Pilih Produk Naget</option>'+list.map(p=>'<option value="'+escLocal(p.id)+'">'+escLocal(p.nama_produk)+' ('+escLocal(p.isi_per_bungkus||'')+' pcs)</option>').join('');
+    if(keep)s.value=String(keep);
+  }
+  function renderDropMaster(keep){
+    const rows=loadDrops();
+    const sel=byId('resDropship');
+    if(sel){
+      sel.innerHTML='<option value="">Pilih / tambah master dropship</option>'+rows.map((x,i)=>'<option value="'+i+'">'+escLocal(x.name)+' — '+money(x.modal)+'/bungkus</option>').join('');
+      if(keep!=null)sel.value=String(keep);
+    }
+    const tb=byId('dropMasterRows');
+    if(tb)tb.innerHTML=rows.length?rows.map((x,i)=>'<tr><td>'+escLocal(x.name)+'</td><td>'+money(x.modal)+'</td><td><button type="button" class="mini edit" data-drop-edit="'+i+'">Edit</button> <button type="button" class="mini del" data-drop-del="'+i+'">Hapus</button></td></tr>').join(''):'<tr><td colspan="3">Belum ada master dropship.</td></tr>';
   }
 
-  function onMsg(text, bad){
-    const el = $on("onNewMsg");
-    if(!el) return;
-    el.innerHTML = text
-      ? '<div class="' + (bad ? 'bad' : 'ok') + '">' + text + '</div>'
-      : '';
+  function productById(id){return (window.products||[]).find(p=>String(p.id)===String(id));}
+  function hppForProduct(p){
+    if(!p)return 0;
+    const hs=window.importHppRows||[];
+    const h=hs.find(x=>String(x.produk_id)===String(p.id));
+    if(!h)return 0;
+    if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Math.round(Number(h.hpp_online));
+    if(h.harga_online!=null&&h.untung_online!=null)return Math.max(0,Math.round(Number(h.harga_online)-Number(h.untung_online)));
+    if(h.hpp_unit!=null)return Math.max(0,Math.round(Number(h.hpp_unit)));
+    return 0;
+  }
+  function selectedDrop(){
+    const i=Number(byId('resDropship')?.value);
+    const rows=loadDrops();
+    return Number.isInteger(i)&&rows[i]?rows[i]:null;
+  }
+  function refreshResPreview(){
+    const qty=Math.max(0,Math.round(Number(byId('resQty')?.value)||0));
+    const hpp=Math.max(0,Math.round(Number(byId('resHpp')?.value)||0));
+    const dm=Math.max(0,Math.round(Number(byId('resDropshipModal')?.value)||0));
+    const fam=byId('resJenis')?.value==='familia';
+    const famTot=fam?qty*hpp:0;
+    const dropTot=!fam?qty*dm:0;
+    const el=id=>byId(id);
+    if(el('resTotalHpp'))el('resTotalHpp').textContent=money(famTot);
+    if(el('resTotalDrop'))el('resTotalDrop').textContent=money(dropTot);
+    if(el('resTotalModal'))el('resTotalModal').textContent=money(famTot+dropTot);
+  }
+  function setJenisUI(){
+    const fam=byId('resJenis').value==='familia';
+    byId('resProduk').disabled=!fam;
+    byId('resDropship').disabled=fam;
+    byId('resDropshipModal').disabled=fam;
+    if(fam){byId('resDropshipModal').value='';const p=productById(byId('resProduk').value);byId('resHpp').value=p?hppForProduct(p):'';}
+    else{byId('resHpp').value='';const d=selectedDrop();byId('resDropshipModal').value=d?Math.round(d.modal):'';}
+    refreshResPreview();
   }
 
-  function onProducts(){
-    const s = $on("onNewProduk");
-    if(!s) return;
-    const keep = s.value;
-    s.innerHTML = '<option value="">Pilih Produk</option>' +
-      (window.products || []).map(p =>
-        '<option value="' + String(p.id) + '">' +
-        String(p.nama_produk || '') +
-        (p.isi_per_bungkus ? ' (' + p.isi_per_bungkus + ' pcs)' : '') +
-        '</option>'
-      ).join('');
-    if(keep) s.value = keep;
-  }
-
-  async function onLoadHpp(){
-    const pid = $on("onNewProduk")?.value;
-    if(!pid) return;
-
-    const p = (window.products || []).find(x => String(x.id) === String(pid));
-    if(!p) return;
-
-    $on("onNewHarga").value = Math.round(Number(p.harga_online || 0));
-
-    const r = await supabaseClient
-      .from("hpp")
-      .select("*")
-      .eq("produk_id", p.id)
-      .maybeSingle();
-
-    if(r.error) throw r.error;
-
-    let hpp = 0;
-    if(r.data){
-      const h = r.data;
-      if(h.hpp_online != null) {
-        hpp = Number(h.hpp_online);
-      } else if(h.harga_online != null && h.untung_online != null) {
-        hpp = Number(h.harga_online) - Number(h.untung_online);
+  function extractReceipt(text){
+    const raw=String(text||'').replace(/\r/g,'');
+    const lines=raw.split('\n').map(s=>s.trim()).filter(Boolean);
+    const lower=raw.toLowerCase();
+    const resiMatch=raw.match(/\b[A-Z]{1,4}[0-9]{8,20}\b/);
+    const orderMatch=raw.match(/order\s*id\s*[:#]?\s*([0-9]{10,30})/i);
+    const sizeMatch=raw.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/i)||raw.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/i);
+    let qty=1;
+    const qtyMatch=raw.match(/(?:qty|quantity|jumlah)\s*(?:total)?\s*[:#-]?\s*(\d{1,4})/i);
+    if(qtyMatch)qty=Math.max(1,Number(qtyMatch[1]));
+    else if(/\b1\s*(?:bks|bungkus)\b/i.test(raw))qty=1;
+    let productLine='';
+    const productIdx=lines.findIndex(x=>/product\s*name/i.test(x));
+    if(productIdx>=0){
+      for(let i=productIdx+1;i<Math.min(lines.length,productIdx+5);i++){
+        if(lines[i] && !/^(sku|seller sku|qty|quantity|order id|estimated date|in transit|weight|slip|tokopedia|shopee|tiktok)/i.test(lines[i])){productLine=lines[i];break;}
       }
     }
-    $on("onNewHpp").value = Math.round(hpp);
-    onPreview();
+    if(!productLine){productLine=lines.find(x=>/tempura\s*aci|naget/i.test(x))||lines.find(x=>/\b(bakso|sosis|bumbu|saus|mie|snack)\b/i.test(x))||'';}
+    const isFamilia=/tempura\s*aci|\bnaget\b/i.test(raw);
+    const size=sizeMatch?Number(sizeMatch[1]):null;
+    return {raw, resi:resiMatch?resiMatch[0]:'', orderId:orderMatch?orderMatch[1]:'', qty, size, productLine, type:isFamilia?'familia':'dropship'};
   }
 
-  function onPreview(){
-    const qty = Math.max(0, Number($on("onNewQty")?.value)||0);
-    const harga = Math.round(Number($on("onNewHarga")?.value)||0);
-    const hpp = Math.round(Number($on("onNewHpp")?.value)||0);
-    const pot = Math.max(0, Math.round(Number($on("onNewPotongan")?.value)||0));
-    const omzet = qty * harga;
-    const net = Math.max(0, omzet - pot);
-    const totalHpp = qty * hpp;
-    const profit = net - totalHpp;
-
-    $on("onNewPvOmzet").textContent = rp(omzet);
-    $on("onNewPvNet").textContent = rp(net);
-    $on("onNewPvHpp").textContent = rp(totalHpp);
-    $on("onNewPvProfit").textContent = rp(profit);
-  }
-
-  function onReset(){
-    $on("onNewTanggal").value = todayOn();
-    $on("onNewPelanggan").value = "";
-    $on("onNewProduk").value = "";
-    $on("onNewQty").value = 1;
-    $on("onNewHarga").value = "";
-    $on("onNewHpp").value = "";
-    $on("onNewPotongan").value = 0;
-    onPreview();
-    onMsg("");
-  }
-
-  async function onSave(){
+  async function readBarcode(file){
     try{
-      const tanggal = $on("onNewTanggal").value;
-      const pelanggan = $on("onNewPelanggan").value.trim();
-      const pid = $on("onNewProduk").value;
-      const qty = Math.round(Number($on("onNewQty").value)||0);
-      const harga = Math.round(Number($on("onNewHarga").value)||0);
-      const hpp = Math.round(Number($on("onNewHpp").value)||0);
-      const pot = Math.max(0, Math.round(Number($on("onNewPotongan").value)||0));
-
-      if(!tanggal || !pid || qty <= 0 || harga <= 0 || hpp < 0){
-        onMsg("Lengkapi Tanggal, Produk, dan Jumlah.", true);
-        return;
-      }
-
-      const produk = (window.products || []).find(x => String(x.id) === String(pid));
-      if(!produk){
-        onMsg("Produk tidak ditemukan.", true);
-        return;
-      }
-
-      const omzet = qty * harga;
-      const uangBersih = Math.max(0, omzet - pot);
-      const totalHpp = qty * hpp;
-      const profit = uangBersih - totalHpp;
-
-      const data = {
-        tanggal,
-        produk_id: produk.id,
-        qty,
-        channel: "Online",
-        harga,
-        hpp: totalHpp,
-        laba: profit,
-        source: "manual_online",
-        product_name: produk.nama_produk,
-        omzet_produk: omzet,
-        modal_hpp: totalHpp,
-        profit_online: profit,
-        uang_bersih: uangBersih,
-        biaya_platform: pot,
-        catatan: pelanggan || null
-      };
-
-      const r = await supabaseClient
-        .from("penjualan")
-        .insert([data])
-        .select("id")
-        .single();
-
-      if(r.error) throw r.error;
-
-      onMsg(
-        "Transaksi Online tersimpan. " +
-        "Pemasukan " + rp(omzet) +
-        " • Potongan " + rp(pot) +
-        " • Uang Bersih " + rp(uangBersih) +
-        " • HPP " + rp(totalHpp) +
-        " • Profit " + rp(profit)
-      );
-
-      await onRefreshMain();
-
-      onReset();
-      onMsg("Transaksi Online tersimpan dan sudah terhubung ke Rekap/Dashboard.");
-    }catch(e){
-      console.error(e);
-      onMsg("Gagal menyimpan transaksi Online: " + (e.message || e), true);
-    }
+      if(!('BarcodeDetector' in window))return '';
+      const img=await createImageBitmap(file);
+      const detector=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','qr_code','itf','data_matrix','pdf417']});
+      const codes=await detector.detect(img);
+      return codes?.[0]?.rawValue||'';
+    }catch(e){return '';}
   }
 
-  async function onRefreshMain(){
+  async function runOCR(file){
+    setStatus('Membaca resi...');
+    if(window.Tesseract){
+      const result=await Tesseract.recognize(file,'ind');
+      return result?.data?.text||'';
+    }
+    throw new Error('Mesin OCR belum tersedia. Periksa koneksi internet.');
+  }
+
+  function applyParsed(info,barcode){
+    byId('resResi').value=info.resi||barcode||'';
+    byId('resOrderId').value=info.orderId||'';
+    byId('resQty').value=info.qty||1;
+    if(info.type==='familia' && info.size){
+      byId('resJenis').value='familia';
+      const targetSize=info.size;
+      const p=familiaProducts().find(x=>{const m=String(x.nama_produk||'').match(/(10|12|20|25|30|40|50)/);return m&&Number(m[1])===targetSize;});
+      if(p){byId('resProduk').value=String(p.id);byId('resHpp').value=hppForProduct(p);}
+      setJenisUI();
+      const suffix=info.productLine?(' • '+info.productLine):'';
+      setStatus('Terbaca: Naget/Tempura isi '+targetSize+' • qty '+info.qty+suffix);
+    }else{
+      byId('resJenis').value='dropship';
+      setJenisUI();
+      const rows=loadDrops();
+      const match=rows.findIndex(x=>norm(info.productLine).includes(norm(x.name))||norm(x.name).includes(norm(info.productLine)));
+      if(match>=0){byId('resDropship').value=String(match);setJenisUI();}
+      setStatus(match>=0?'Terbaca: Dropship • master ditemukan':'Terbaca: Dropship • pilih master / tambah modal');
+    }
+    refreshResPreview();
+  }
+
+  async function scan(){
+    const file=byId('resImage').files?.[0];
+    if(!file){setMsg('resMsg','Pilih/foto resi terlebih dahulu.',true);return;}
     try{
-      if(typeof load === "function") await load();
+      setMsg('resMsg','');
+      const barcode=await readBarcode(file);
+      const text=await runOCR(file);
+      const info=extractReceipt(text);
+      applyParsed(info,barcode);
+      const extra=(barcode?' • Barcode: '+escLocal(barcode):'');
+      setMsg('resMsg','Resi berhasil dibaca.'+extra);
+    }catch(e){console.error(e);setStatus('Scan gagal');setMsg('resMsg','Gagal membaca resi: '+escLocal(e.message||e),true);}
+  }
+
+  function uniqueKey(row){
+    if(row.source==='online_resi')return 'resi|'+String(row.order_id||'')+'|'+String(row.tanggal||'')+'|'+String(row.catatan||'');
+    return 'cash|'+String(row.tanggal||'')+'|'+String(row.uang_bersih||0)+'|'+String(row.catatan||'');
+  }
+  async function persist(row){
+    try{
+      const r=await supabaseClient.from('penjualan').insert([row]).select('id').single();
+      if(r.error)throw r.error;
+      return {ok:true,id:r.data?.id,remote:true};
     }catch(e){
-      console.warn("Refresh Penjualan:", e);
+      const local=loadLocal();local.push({...row,id:'local-'+Date.now()+'-'+Math.random().toString(36).slice(2)});saveLocal(local);
+      return {ok:true,remote:false,error:e};
     }
   }
 
-  window.addEventListener("load", ()=>{
-    onProducts();
-    $on("onNewTanggal").value = todayOn();
+  async function saveResi(){
+    try{
+      const tanggal=byId('resTanggal').value;
+      const resi=byId('resResi').value.trim();
+      const orderId=byId('resOrderId').value.trim();
+      const qty=Math.max(1,Math.round(Number(byId('resQty').value)||0));
+      const fam=byId('resJenis').value==='familia';
+      const p=fam?productById(byId('resProduk').value):null;
+      const d=!fam?selectedDrop():null;
+      const hpp=fam?Math.max(0,hppForProduct(p)):0;
+      const dropModal=!fam?(d?Math.max(0,Math.round(d.modal)):Math.round(Number(byId('resDropshipModal').value)||0)):0;
+      if(!tanggal||!resi||qty<=0){setMsg('resMsg','Tanggal, No. Resi, dan Jumlah wajib diisi.',true);return;}
+      if(fam&&!p){setMsg('resMsg','Produk Naget/Tempura belum terbaca. Pilih produk.',true);return;}
+      if(fam&&hpp<=0){setMsg('resMsg','HPP Online produk belum tersedia.',true);return;}
+      if(!fam&&!d&&!dropModal){setMsg('resMsg','Produk Dropship belum dipilih atau modal belum diisi.',true);return;}
 
-    $on("onNewProduk").addEventListener("change", ()=>{
-      onLoadHpp().catch(e=>onMsg("Gagal membaca HPP Online: " + e.message, true));
-    });
+      const local=loadLocal();
+      const same=local.some(x=>x.source==='online_resi' && String(x.order_id||'')===orderId && orderId)||local.some(x=>x.source==='online_resi' && String(x.catatan||'').includes('RESI:'+resi));
+      if(same){setMsg('resMsg','Resi ini sudah tercatat.',true);return;}
 
-    ["onNewQty","onNewPotongan"].forEach(id=>{
-      $on(id).addEventListener("input", onPreview);
-    });
+      const totalHpp=qty*(fam?hpp:dropModal);
+      const row={tanggal,produk_id:fam?p.id:null,qty,channel:'Online',harga:0,hpp:Math.round(totalHpp),laba:0,order_id:orderId||null,product_name:fam?p.nama_produk:(d?.name||'Produk Dropship'),variation:fam?'Naget/Tempura':'Dropship',omzet_produk:0,uang_bersih:null,modal_hpp:Math.round(totalHpp),profit_online:null,biaya_platform:null,source:'online_resi',catatan:(fam?'FAMILIA':'DROPSHIP')+'|RESI:'+resi};
+      const saved=await persist(row);
+      setMsg('resMsg',(saved.remote?'Resi tersimpan ke database.':'Resi tersimpan di perangkat sementara karena database menolak penyimpanan.')+' HPP '+money(totalHpp)+'.',!saved.remote);
+      if(typeof load==='function'&&saved.remote)await load();
+      resetResi();
+    }catch(e){console.error(e);setMsg('resMsg','Gagal menyimpan resi: '+escLocal(e.message||e),true);}
+  }
 
-    $on("onNewSave").addEventListener("click", onSave);
-    $on("onNewReset").addEventListener("click", onReset);
-    onPreview();
+  async function saveCash(){
+    try{
+      const tanggal=byId('cashTanggal').value;
+      const amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0));
+      const note=byId('cashNote').value.trim();
+      if(!tanggal||amount<=0){setMsg('cashMsg','Tanggal dan Uang Bersih wajib diisi.',true);return;}
+      const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,order_id:null,product_name:'Pencairan TikTok',variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:null,source:'online_pencairan',catatan:note||'Penerimaan Uang Online'};
+      const saved=await persist(row);
+      setMsg('cashMsg',(saved.remote?'Penerimaan tersimpan ke database.':'Penerimaan tersimpan di perangkat sementara karena database menolak penyimpanan.')+' '+money(amount),!saved.remote);
+      if(typeof load==='function'&&saved.remote)await load();
+      byId('cashAmount').value='';byId('cashNote').value='';
+    }catch(e){setMsg('cashMsg','Gagal menyimpan penerimaan: '+escLocal(e.message||e),true);}
+  }
+
+  function resetResi(){
+    byId('resTanggal').value=today();byId('resImage').value='';byId('resResi').value='';byId('resOrderId').value='';byId('resJenis').value='familia';byId('resQty').value=1;byId('resProduk').value='';byId('resDropship').value='';byId('resHpp').value='';byId('resDropshipModal').value='';setStatus('Belum ada resi');refreshResPreview();
+  }
+  function resetCash(){byId('cashTanggal').value=today();byId('cashAmount').value='';byId('cashNote').value='';setMsg('cashMsg','');}
+
+  byId('resImage')?.addEventListener('change',()=>{ if(byId('resImage').files?.length)scan(); });
+  byId('resScanBtn')?.addEventListener('click',scan);
+  byId('resSave')?.addEventListener('click',saveResi);
+  byId('resReset')?.addEventListener('click',resetResi);
+  byId('resJenis')?.addEventListener('change',setJenisUI);
+  byId('resProduk')?.addEventListener('change',()=>{const p=productById(byId('resProduk').value);byId('resHpp').value=p?hppForProduct(p):'';refreshResPreview();});
+  byId('resDropship')?.addEventListener('change',setJenisUI);
+  byId('resQty')?.addEventListener('input',refreshResPreview);
+  byId('cashSave')?.addEventListener('click',saveCash);
+  byId('cashReset')?.addEventListener('click',resetCash);
+  byId('dropAdd')?.addEventListener('click',()=>{
+    const name=byId('dropName').value.trim();const modal=Math.max(0,Math.round(Number(byId('dropModal').value)||0));
+    if(!name||modal<=0){alert('Isi nama produk dan modal dropship.');return;}
+    const rows=loadDrops();const i=rows.findIndex(x=>norm(x.name)===norm(name));if(i>=0)rows[i]={name,modal};else rows.push({name,modal});saveDrops(rows);byId('dropName').value='';byId('dropModal').value='';renderDropMaster();
+  });
+  document.addEventListener('click',e=>{
+    const edit=e.target.closest('[data-drop-edit]');const del=e.target.closest('[data-drop-del]');
+    if(edit){const i=Number(edit.dataset.dropEdit),rows=loadDrops();if(rows[i]){byId('dropName').value=rows[i].name;byId('dropModal').value=rows[i].modal;byId('dropName').focus();}}
+    if(del){const i=Number(del.dataset.dropDel),rows=loadDrops();if(rows[i]&&confirm('Hapus master dropship ini?')){rows.splice(i,1);saveDrops(rows);renderDropMaster();}}
+  });
+
+  window.addEventListener('load',()=>{
+    byId('resTanggal').value=today();byId('cashTanggal').value=today();
+    setTimeout(()=>{renderResProducts();renderDropMaster();setJenisUI();},400);
   });
 })();
 </script>
-</script></body></html>
+</body></html>
