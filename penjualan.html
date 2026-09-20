@@ -78,7 +78,18 @@
 </div>
 <div class="actions"><button class="btn blue" id="cashSave" type="button">+ Simpan Penerimaan</button><button class="btn gray" id="cashReset" type="button">Reset</button></div>
 <div id="cashMsg"></div>
-</div></section><section class="penjualan-panel" data-panel="dropship"><div class="card" id="dropshipMasterCard">
+</div>
+<div class="card" id="onlineNewProfitCard">
+  <h3 style="margin:0 0 8px">📊 Profit Online Baru</h3>
+  <div class="note">Profit dihitung dari Uang Bersih yang sudah dicairkan dikurangi HPP Naget/Tempura dan Modal Produk Dropship yang sudah dicatat.</div>
+  <div class="summary" style="margin-top:12px">
+    <div class="stat">HPP/Modal Produk Keluar<b id="newOnlineModal">Rp 0</b></div>
+    <div class="stat">Uang Bersih Diterima<b id="newOnlineCash">Rp 0</b></div>
+    <div class="stat">Profit Terukur<b id="newOnlineProfit">Rp 0</b></div>
+    <div class="stat profit">Margin<b id="newOnlineMargin">0,00%</b></div>
+  </div>
+</div>
+</section><section class="penjualan-panel" data-panel="dropship"><div class="card" id="dropshipMasterCard">
 <div class="cashhead">
 <div>
 <h2 style="margin:0">📦 Master Produk Dropship</h2>
@@ -590,6 +601,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       setMsg(`${newRows.length} baris produk tersimpan • ${totalQty} bungkus • Total HPP/Modal ${money(totalModal)}. Profit akan dihitung dari Uang Bersih yang dicatat pada Penerimaan Uang Online.`);
       rows=[];addRows(1);
       if(typeof load==='function')await load();
+      await refreshNewOnlineProfit();
     }catch(e){
       console.error(e);
       setMsg('Gagal menyimpan produk online: '+esc(e.message||e),true);
@@ -604,6 +616,20 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     rows.forEach(r=>refreshRow(r.id));
     updateSummary();
   }
+  async function refreshNewOnlineProfit(){
+    try{
+      const r=await supabaseClient.from('penjualan').select('qty,hpp,modal_hpp,uang_bersih,source,channel').eq('channel','Online');
+      if(r.error)throw r.error;
+      const rows=r.data||[];
+      const modal=rows.filter(x=>String(x.source)==='online_batch').reduce((a,x)=>a+Math.round(Number(x.modal_hpp??x.hpp??0)),0);
+      const cash=rows.filter(x=>String(x.source)==='online_pencairan').reduce((a,x)=>a+Math.round(Number(x.uang_bersih??x.omzet_produk??0)),0);
+      const profit=cash-modal;
+      const margin=cash?profit/cash*100:0;
+      const a=document.getElementById('newOnlineModal'),b=document.getElementById('newOnlineCash'),c=document.getElementById('newOnlineProfit'),d=document.getElementById('newOnlineMargin');
+      if(a)a.textContent=money(modal); if(b)b.textContent=money(cash); if(c){c.textContent=money(profit);c.style.color=profit<0?'#b42318':'';} if(d){d.textContent=margin.toFixed(2).replace('.',',')+'%';d.style.color=margin<0?'#b42318':'';}
+    }catch(e){ console.warn('refreshNewOnlineProfit',e); }
+  }
+
   function saveCash(){
     const tanggal=byId('cashTanggal').value;
     const amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0));
@@ -615,6 +641,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       setCashMsg('Penerimaan Uang Online tersimpan: '+money(amount));
       byId('cashAmount').value='';byId('cashNote').value='';
       if(typeof load==='function')await load();
+      await refreshNewOnlineProfit();
     }).catch(e=>setCashMsg('Gagal menyimpan penerimaan: '+esc(e.message||e),true));
   }
 
@@ -653,7 +680,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       if(edit){const i=Number(edit.dataset.dropEdit),list=dropRows();if(list[i]){byId('dropName').value=list[i].name;byId('dropModal').value=list[i].modal;byId('dropName').focus();}}
       if(del){const i=Number(del.dataset.dropDel),list=dropRows();if(list[i]&&confirm('Hapus master dropship ini?')){list.splice(i,1);saveDrops(list);renderDropMaster();}}
     });
-    setTimeout(()=>{ensureSellerCenterDropship();renderDropMaster();},500);
+    setTimeout(()=>{ensureSellerCenterDropship();renderDropMaster();refreshNewOnlineProfit();},500);
   }
   window.addEventListener('load',init);
 })();
