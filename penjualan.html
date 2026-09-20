@@ -4,11 +4,13 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5faf7;color:#26352d}.sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid #dce8e1;padding:20px 14px}.brand{font-size:20px;font-weight:700;color:var(--brand-color,#087443);margin:4px 8px 22px}.nav a{display:block;text-decoration:none;color:#315247;padding:11px 12px;border-radius:9px;margin:4px 0}.nav a:hover,.nav a.active{background:#eaf6ef;color:var(--brand-color,#087443);font-weight:600}main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 8px;color:var(--brand-color,#087443)}.sub{color:#6d7e76;margin-bottom:20px}.card{background:#fff;border:1px solid #dce8e1;border-radius:14px;padding:20px;margin-bottom:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.badge{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;background:#eef7f1;color:var(--brand-color,#087443);font-weight:bold;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.preview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.preview .box{background:#f7fbf8;border:1px solid #e2eee6;border-radius:12px;padding:14px}.preview small{display:block;color:#667;margin-bottom:5px}.preview strong{font-size:20px}.profit{background:#eef7f1!important}.note{font-size:13px;color:#68736d;margin-top:8px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #ccd5cf;border-radius:9px;background:#fff}.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.btn:disabled{opacity:.5;cursor:not-allowed}.btn{border:0;border-radius:9px;padding:11px 17px;background:var(--brand-color,#087443);color:#fff;cursor:pointer;font-weight:700}.btn.gray{background:#777}.btn.blue{background:#2563eb}.msg{margin-top:12px;padding:10px;border-radius:8px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;margin-top:8px;min-width:1250px}th{background:var(--brand-color,#087443);color:#fff;padding:10px;text-align:left;white-space:nowrap}td{padding:9px;border-bottom:1px solid #e5e5e5;vertical-align:top}.mini{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}.edit{background:#eaf5ee;color:var(--brand-color,#087443)}.del{background:#fdecec;color:#a22}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.stat{background:#f0f8f3;padding:16px;border-radius:12px}.stat b{font-size:21px;display:block;margin-top:6px}.importbox{border:2px dashed #cbded2;border-radius:12px;padding:18px;background:#fbfefc}.import-preview{display:none}.import-preview.show{display:block}.warn{background:#fff8df;border:1px solid #f0df9b;padding:12px;border-radius:9px;color:#6b5a16;margin-top:12px}.ok{background:#eef7f1;border:1px solid #cde7d7;padding:12px;border-radius:9px;color:#166534;margin-top:12px}.bad{background:#fdecec;border:1px solid #f4caca;padding:12px;border-radius:9px;color:#991b1b;margin-top:12px}.small{font-size:12px;color:#68736d}.modal-input{width:110px;padding:6px;border:1px solid #ccd5cf;border-radius:6px}@media(max-width:850px){.sidebar{position:static;width:auto;padding:14px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}main{margin-left:0;padding:16px}.grid,.summary,.preview{grid-template-columns:1fr}}
-.viewbtn{background:#eef7f1;color:var(--brand-color,#087443);font-weight:700}.import-compact{padding:4px 0}.import-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.import-stats>div{background:#f7fbf8;border:1px solid #e2eee6;border-radius:10px;padding:11px}.import-stats small{display:block;color:#667;margin-bottom:4px}.import-stats b{font-size:15px}.upload-tabs{display:flex;gap:8px;margin-bottom:14px}.upload-tab{flex:1;border:1px solid #cbded2;background:#f7fbf8;color:#315247;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}.upload-tab.active{background:#eaf6ef;color:var(--brand-color,#087443);border-color:#9fc9af}.upload-panel{display:none}.upload-panel.active{display:block}.import-preview{display:none}.import-preview.show{display:block}.import-recap{margin-top:16px}.import-detail{display:none;margin-top:16px}.import-detail.show{display:block}.import-recap table,.import-detail table{min-width:1100px}.clickrow{cursor:pointer}@media(max-width:900px){.import-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.import-stats{grid-template-columns:1fr}}.camera-modal{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}.camera-modal.open{display:flex}.camera-box{width:min(560px,100%);background:#fff;border-radius:16px;padding:14px}.camera-box video{width:100%;border-radius:12px;background:#111;aspect-ratio:3/4;object-fit:cover}.camera-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.camera-actions button{flex:1;min-width:130px}.camera-note{font-size:12px;color:#666;margin:8px 0}</style></head><body>
+.viewbtn{background:#eef7f1;color:var(--brand-color,#087443);font-weight:700}.import-compact{padding:4px 0}.import-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.import-stats>div{background:#f7fbf8;border:1px solid #e2eee6;border-radius:10px;padding:11px}.import-stats small{display:block;color:#667;margin-bottom:4px}.import-stats b{font-size:15px}.upload-tabs{display:flex;gap:8px;margin-bottom:14px}.upload-tab{flex:1;border:1px solid #cbded2;background:#f7fbf8;color:#315247;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}.upload-tab.active{background:#eaf6ef;color:var(--brand-color,#087443);border-color:#9fc9af}.upload-panel{display:none}.upload-panel.active{display:block}.import-preview{display:none}.import-preview.show{display:block}.import-recap{margin-top:16px}.import-detail{display:none;margin-top:16px}.import-detail.show{display:block}.import-recap table,.import-detail table{min-width:1100px}.clickrow{cursor:pointer}@media(max-width:900px){.import-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.import-stats{grid-template-columns:1fr}}.camera-modal{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}.camera-modal.open{display:flex}.camera-box{width:min(560px,100%);background:#fff;border-radius:16px;padding:14px}.camera-box video{width:100%;border-radius:12px;background:#111;aspect-ratio:3/4;object-fit:cover}.camera-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.camera-actions button{flex:1;min-width:130px}.camera-note{font-size:12px;color:#666;margin:8px 0}
+.batch-toolbar .btn{white-space:nowrap}.batch-count{font-weight:700}.batch-total{font-weight:800}.batch-del{background:#fdecec;color:#b91c1c}.batch-date,.batch-resi,.batch-order,.batch-type,.batch-produk,.batch-drop,.batch-qty{min-width:110px}.batch-date{min-width:135px}.batch-produk,.batch-drop{min-width:185px}
+</style></head><body>
 <aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav">
 <a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a class="active" href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
 </nav></aside><main>
-<div class="top"><div><h1>💰 Penjualan</h1><div class="sub">Penjualan Offline + Scan Resi Online + Penerimaan Uang Online.</div></div><span class="badge">Familia Food</span></div>
+<div class="top"><div><h1>💰 Penjualan</h1><div class="sub">Penjualan Offline + Input Online Banyak + Penerimaan Uang Online.</div></div><span class="badge">Familia Food</span></div>
 
 <div class="card"><div class="cashhead"><div><h2 style="margin:0">📥 Import Penjualan Online</h2>
 <div class="note">Upload <b>file asli Seller Center</b> sekali, lalu tambahkan Excel Income TikTok bertahap. Tentukan <b>rentang tanggal yang ingin disimpan</b>.</div></div></div>
@@ -28,71 +30,57 @@
 <div class="card" id="onlineNewCard">
   <div class="cashhead">
     <div>
-      <h2 style="margin:0">📷 Transaksi Online Baru — Scan Resi</h2>
-      <div class="note">Mulai transaksi baru: scan/foto resi. <b>Tidak ada input Potongan TikTok.</b> HPP Naget/Tempura diambil dari HPP Online Familia Food. Uang yang masuk dicatat terpisah sebagai Uang Bersih yang benar-benar diterima dari TikTok (sudah termasuk biaya TikTok + iklan).</div>
+      <h2 style="margin:0">📦 Transaksi Online Baru — Input Banyak</h2>
+      <div class="note">
+        Untuk transaksi baru, tidak perlu OCR/scan otomatis. Bro cukup masukkan No. Resi, pilih jenis produk, pilih produk, dan jumlah. Bisa tambah banyak baris sekaligus lalu simpan semua.
+        HPP Naget/Tempura diambil dari HPP Online Familia Food. Produk Dropship memakai modal dari Master Dropship.
+      </div>
     </div>
   </div>
 
-  <div class="grid" style="margin-top:16px">
-    <div class="field">
-      <label>Tanggal</label>
-      <input id="resTanggal" type="date">
-    </div>
-    <div class="field">
-      <label>Scan / Foto Resi</label>
-      <input id="resImage" type="file" accept="image/*" style="display:none">
-      <div class="small" style="margin-top:5px">Tekan tombol kamera untuk membuka kamera HP. Pilih Foto tersedia sebagai cadangan.</div>
-    </div>
-    <div class="field">
-      <label>No. Resi</label>
-      <input id="resResi" type="text" placeholder="Otomatis dari resi / isi manual bila perlu">
-    </div>
-    <div class="field">
-      <label>Order ID</label>
-      <input id="resOrderId" type="text" placeholder="Otomatis dari resi">
-    </div>
-    <div class="field">
-      <label>Jenis Produk</label>
-      <select id="resJenis"><option value="familia">Familia Food — Naget/Tempura</option><option value="dropship">Produk Dropship</option></select>
-    </div>
-    <div class="field">
-      <label>Produk Familia Food</label>
-      <select id="resProduk"><option value="">Pilih Produk Naget</option></select>
-    </div>
-    <div class="field">
-      <label>Produk Dropship</label>
-      <select id="resDropship"><option value="">Pilih / tambah master dropship</option></select>
-    </div>
-    <div class="field">
-      <label>Jumlah (Bungkus)</label>
-      <input id="resQty" type="number" min="1" step="1" value="1">
-    </div>
-    <div class="field">
-      <label>HPP / Bungkus</label>
-      <input id="resHpp" type="number" min="0" step="1" readonly>
-    </div>
-    <div class="field">
-      <label>Modal Dropship / Bungkus</label>
-      <input id="resDropshipModal" type="number" min="0" step="1" readonly>
-    </div>
+  <div class="batch-toolbar" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button class="btn blue" type="button" id="batchAddRow">+ Tambah 1 Baris</button>
+    <button class="btn light" type="button" id="batchAdd10">+ Tambah 10 Baris</button>
+    <button class="btn gray" type="button" id="batchClear">Kosongkan Semua</button>
+    <span class="small" id="batchCount">0 baris</span>
   </div>
 
-  <div class="preview">
-    <div class="box"><small>Status Scan</small><strong id="resStatus">Belum ada resi</strong></div>
-    <div class="box"><small>Total HPP Naget / Tempura</small><strong id="resTotalHpp">Rp 0</strong></div>
-    <div class="box"><small>Total Modal Dropship</small><strong id="resTotalDrop">Rp 0</strong></div>
-    <div class="box profit"><small>Total Modal Barang</small><strong id="resTotalModal">Rp 0</strong></div>
+  <div class="tablewrap" style="margin-top:12px">
+    <table id="onlineBatchTable" style="min-width:1200px">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Tanggal</th>
+          <th>No. Resi</th>
+          <th>Order ID</th>
+          <th>Jenis</th>
+          <th>Produk Familia Food</th>
+          <th>Produk Dropship</th>
+          <th>Qty (Bungkus)</th>
+          <th>HPP / Bungkus</th>
+          <th>Modal Dropship / Bungkus</th>
+          <th>Total Modal</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="onlineBatchRows"></tbody>
+    </table>
   </div>
 
-  <div class="actions">
-    <button class="btn blue" id="resScanBtn" type="button" onclick="window.openFamiliaCamera && window.openFamiliaCamera()">🎥 Kamera Langsung & Baca Resi</button><button class="btn gray" id="resPickBtn" type="button">🖼️ Pilih Foto</button>
-    <button class="btn" id="resSave" type="button">+ Simpan Resi</button>
-    <button class="btn gray" id="resReset" type="button">Reset</button>
+  <div class="preview" style="margin-top:12px">
+    <div class="box"><small>Total Baris</small><strong id="batchTotalRows">0</strong></div>
+    <div class="box"><small>Total Bungkus</small><strong id="batchTotalQty">0</strong></div>
+    <div class="box"><small>Total HPP Naget / Tempura</small><strong id="batchTotalHpp">Rp 0</strong></div>
+    <div class="box profit"><small>Total Modal Dropship</small><strong id="batchTotalDrop">Rp 0</strong></div>
   </div>
-  <div id="resMsg"></div>
+
+  <div class="actions" style="margin-top:12px">
+    <button class="btn" id="batchSave" type="button">+ Simpan Semua Transaksi Online</button>
+  </div>
+  <div id="batchMsg"></div>
 </div>
 
-<div id="cameraModal" class="camera-modal" aria-hidden="true"><div class="camera-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">📷 Scan Resi</h3><button class="btn gray" id="cameraClose" type="button">Tutup</button></div><div class="camera-note">Arahkan kamera ke seluruh resi, pastikan tulisan dan barcode terlihat jelas.</div><video id="cameraVideo" playsinline autoplay muted></video><div class="camera-actions"><button class="btn blue" id="cameraCapture" type="button">📸 Ambil Foto Resi</button><button class="btn gray" id="cameraSwitch" type="button">🔄 Ganti Kamera</button></div><div id="cameraMsg" class="small" style="margin-top:8px"></div></div></div><div class="card" id="onlineCashCard">
+<div class="card" id="onlineCashCard">
   <div class="cashhead">
     <div>
       <h2 style="margin:0">💰 Penerimaan Uang Online</h2>
@@ -112,7 +100,7 @@
   <div class="cashhead">
     <div>
       <h2 style="margin:0">📦 Master Produk Dropship</h2>
-      <div class="note">Simpan nama + modal per bungkus sekali. Saat nama produk terbaca dari resi, aplikasi bisa memakai master ini untuk menghitung modal.</div>
+      <div class="note">Simpan nama + modal per bungkus sekali. Saat bro memilih produk Dropship, aplikasi memakai master ini untuk menghitung modal.</div>
     </div>
   </div>
   <div class="grid" style="margin-top:16px;grid-template-columns:2fr 1fr auto">
@@ -440,45 +428,32 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
 
 <script>
 /* =========================================================
-   ONLINE BARU — SCAN RESI + PENERIMAAN UANG
+   ONLINE BARU — INPUT MANUAL BANYAK + PENERIMAAN UANG
 ========================================================= */
 (function(){
   const byId=id=>document.getElementById(id);
   const money=v=>'Rp '+Math.round(Number(v)||0).toLocaleString('id-ID');
   const today=()=>new Date().toISOString().slice(0,10);
   const DROP_KEY='ff_dropship_master_v1';
-  const LOCAL_KEY='ff_online_new_v2';
+  const LOCAL_KEY='ff_online_new_v3';
 
   const norm=v=>String(v??'').toLowerCase().replace(/\s+/g,' ').trim();
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const loadDrops=()=>{try{return JSON.parse(localStorage.getItem(DROP_KEY)||'[]')||[]}catch(e){return[]}};
   const saveDrops=rows=>localStorage.setItem(DROP_KEY,JSON.stringify(rows));
-  const loadLocal=()=>{try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]')||[]}catch(e){return[]}};
-  const saveLocal=rows=>localStorage.setItem(LOCAL_KEY,JSON.stringify(rows));
 
-  function setMsg(id,text,bad=false){const el=byId(id);if(!el)return;el.innerHTML=text?'<div class="'+(bad?'bad':'ok')+'">'+text+'</div>':'';}
-  function setStatus(text){const el=byId('resStatus');if(el)el.textContent=text;}
-  function escLocal(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function setMsg(text,bad=false){
+    const el=byId('batchMsg'); if(!el)return;
+    el.innerHTML=text?'<div class="'+(bad?'bad':'ok')+'">'+text+'</div>':'';
+  }
+  function setCashMsg(text,bad=false){
+    const el=byId('cashMsg'); if(!el)return;
+    el.innerHTML=text?'<div class="'+(bad?'bad':'ok')+'">'+text+'</div>':'';
+  }
 
   function familiaProducts(){
     return (window.products||[]).filter(p=>/^naget\s*(10|12|20|25|30|40|50)/i.test(String(p.nama_produk||'')));
   }
-  function renderResProducts(keep){
-    const s=byId('resProduk'); if(!s)return;
-    const list=familiaProducts();
-    s.innerHTML='<option value="">Pilih Produk Naget</option>'+list.map(p=>'<option value="'+escLocal(p.id)+'">'+escLocal(p.nama_produk)+' ('+escLocal(p.isi_per_bungkus||'')+' pcs)</option>').join('');
-    if(keep)s.value=String(keep);
-  }
-  function renderDropMaster(keep){
-    const rows=loadDrops();
-    const sel=byId('resDropship');
-    if(sel){
-      sel.innerHTML='<option value="">Pilih / tambah master dropship</option>'+rows.map((x,i)=>'<option value="'+i+'">'+escLocal(x.name)+' — '+money(x.modal)+'/bungkus</option>').join('');
-      if(keep!=null)sel.value=String(keep);
-    }
-    const tb=byId('dropMasterRows');
-    if(tb)tb.innerHTML=rows.length?rows.map((x,i)=>'<tr><td>'+escLocal(x.name)+'</td><td>'+money(x.modal)+'</td><td><button type="button" class="mini edit" data-drop-edit="'+i+'">Edit</button> <button type="button" class="mini del" data-drop-del="'+i+'">Hapus</button></td></tr>').join(''):'<tr><td colspan="3">Belum ada master dropship.</td></tr>';
-  }
-
   function productById(id){return (window.products||[]).find(p=>String(p.id)===String(id));}
   function hppForProduct(p){
     if(!p)return 0;
@@ -490,328 +465,217 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     if(h.hpp_unit!=null)return Math.max(0,Math.round(Number(h.hpp_unit)));
     return 0;
   }
-  function selectedDrop(){
-    const i=Number(byId('resDropship')?.value);
-    const rows=loadDrops();
-    return Number.isInteger(i)&&rows[i]?rows[i]:null;
+
+  function dropRows(){
+    return loadDrops();
   }
-  function refreshResPreview(){
-    const qty=Math.max(0,Math.round(Number(byId('resQty')?.value)||0));
-    const hpp=Math.max(0,Math.round(Number(byId('resHpp')?.value)||0));
-    const dm=Math.max(0,Math.round(Number(byId('resDropshipModal')?.value)||0));
-    const fam=byId('resJenis')?.value==='familia';
-    const famTot=fam?qty*hpp:0;
-    const dropTot=!fam?qty*dm:0;
-    const el=id=>byId(id);
-    if(el('resTotalHpp'))el('resTotalHpp').textContent=money(famTot);
-    if(el('resTotalDrop'))el('resTotalDrop').textContent=money(dropTot);
-    if(el('resTotalModal'))el('resTotalModal').textContent=money(famTot+dropTot);
+  function dropSelectOptions(){
+    return '<option value="">Pilih Dropship</option>'+dropRows().map((x,i)=>'<option value="'+i+'">'+esc(x.name)+' — '+money(x.modal)+'/bungkus</option>').join('');
   }
-  function setJenisUI(){
-    const fam=byId('resJenis').value==='familia';
-    byId('resProduk').disabled=!fam;
-    byId('resDropship').disabled=fam;
-    byId('resDropshipModal').disabled=fam;
-    if(fam){byId('resDropshipModal').value='';const p=productById(byId('resProduk').value);byId('resHpp').value=p?hppForProduct(p):'';}
-    else{byId('resHpp').value='';const d=selectedDrop();byId('resDropshipModal').value=d?Math.round(d.modal):'';}
-    refreshResPreview();
+  function familiaOptions(){
+    return '<option value="">Pilih Naget</option>'+familiaProducts().map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nama_produk)+' ('+esc(p.isi_per_bungkus||'')+' pcs)</option>').join('');
   }
 
-  function extractReceipt(text){
-    const raw=String(text||'').replace(/\r/g,'');
-    const lines=raw.split('\n').map(s=>s.trim()).filter(Boolean);
-    const lower=raw.toLowerCase();
-    const resiMatch=raw.match(/\b[A-Z]{1,4}[0-9]{8,20}\b/);
-    const orderMatch=raw.match(/order\s*id\s*[:#]?\s*([0-9]{8,30})/i);
+  let rows=[];
+  let nextId=1;
 
-    // OCR resi bisa salah membaca “pcs”, jadi cukup cari “isi XX” atau “XX pcs”.
-    const sizeMatch=raw.match(/\bisi\s*(10|12|20|25|30|40|50)\s*(?:pcs?|pes|pc)?\b/i)
-      ||raw.match(/\b(10|12|20|25|30|40|50)\s*(?:pcs?|pes)\b/i);
-
-    let qty=1;
-    const qtyMatch=raw.match(/(?:qty|quantity|jumlah)\s*(?:total)?\s*[:#-]?\s*(\d{1,4})/i);
-    if(qtyMatch) qty=Math.max(1,Number(qtyMatch[1]));
-    else {
-      const bksMatch=raw.match(/(?:\b|\s)(\d{1,4})\s*(?:bks|bungkus)\b/i);
-      if(bksMatch) qty=Math.max(1,Number(bksMatch[1]));
-    }
-
-    let productLine='';
-    const productIdx=lines.findIndex(x=>/product\s*name/i.test(x));
-    if(productIdx>=0){
-      const candidates=[];
-      for(let i=productIdx+1;i<Math.min(lines.length,productIdx+8);i++){
-        const line=lines[i];
-        if(!line) continue;
-        if(/^(sku|seller sku|qty|quantity|order id|estimated date|in transit|weight|slip|tokopedia|shopee|tiktok)/i.test(line)) continue;
-        candidates.push(line);
-      }
-      productLine=candidates.join(' ');
-    }
-    if(!productLine){
-      productLine=lines.find(x=>/tempura|naget|eskrim|stik|lidah|kotak|bulat|mie|familia/i.test(x))||'';
-    }
-
-    // Penanda Familia Food dari resi, termasuk sender “PD FAMILIA FOOD”.
-    // Ini membuat OCR tetap mengenali produk meskipun “Tempura Aci” terbaca tidak sempurna.
-    const shapeWord=/(eskrim|stik|lidah|kotak|bulat|mie)\b/i.test(raw);
-    const isFamilia=/familia\s*food|tempura|naget/i.test(raw) || (shapeWord && !!sizeMatch);
-    const size=sizeMatch?Number(sizeMatch[1]):null;
-
-    return {raw, resi:resiMatch?resiMatch[0]:'', orderId:orderMatch?orderMatch[1]:'', qty, size, productLine, type:isFamilia?'familia':'dropship'};
+  function emptyRow(){
+    return {id:nextId++,tanggal:today(),resi:'',orderId:'',jenis:'familia',produkId:'',dropIndex:'',qty:1};
+  }
+  function addRows(n=1){for(let i=0;i<n;i++)rows.push(emptyRow());renderRows();}
+  function renderRows(){
+    const tb=byId('onlineBatchRows'); if(!tb)return;
+    tb.innerHTML=rows.map((r,idx)=>rowHtml(r,idx)).join('');
+    rows.forEach((r)=>refreshRow(r.id));
+    updateSummary();
+    byId('batchCount').textContent=rows.length+' baris';
+  }
+  function rowHtml(r,idx){
+    return `<tr data-row="${r.id}">
+      <td>${idx+1}</td>
+      <td><input class="batch-date" type="date" value="${esc(r.tanggal)}"></td>
+      <td><input class="batch-resi" type="text" placeholder="No. resi" value="${esc(r.resi)}"></td>
+      <td><input class="batch-order" type="text" placeholder="Opsional" value="${esc(r.orderId)}"></td>
+      <td><select class="batch-type"><option value="familia" ${r.jenis==='familia'?'selected':''}>Naget/Tempura</option><option value="dropship" ${r.jenis==='dropship'?'selected':''}>Dropship</option></select></td>
+      <td><select class="batch-produk" ${r.jenis==='dropship'?'disabled':''}>${familiaOptions()}</select></td>
+      <td><select class="batch-drop" ${r.jenis==='familia'?'disabled':''}>${dropSelectOptions()}</select></td>
+      <td><input class="batch-qty" type="number" min="1" step="1" value="${Math.max(1,Number(r.qty)||1)}"></td>
+      <td><input class="batch-hpp" type="number" min="0" step="1" readonly></td>
+      <td><input class="batch-dmodal" type="number" min="0" step="1" readonly></td>
+      <td class="batch-total">Rp 0</td>
+      <td><button type="button" class="mini del batch-del">Hapus</button></td>
+    </tr>`;
+  }
+  function getRowObj(id){return rows.find(x=>x.id===id);}
+  function refreshRow(id){
+    const r=getRowObj(id); const tr=document.querySelector(`tr[data-row="${id}"]`); if(!r||!tr)return;
+    tr.querySelector('.batch-date').value=r.tanggal;
+    tr.querySelector('.batch-resi').value=r.resi;
+    tr.querySelector('.batch-order').value=r.orderId;
+    tr.querySelector('.batch-type').value=r.jenis;
+    tr.querySelector('.batch-produk').value=r.produkId||'';
+    tr.querySelector('.batch-drop').value=r.dropIndex===''?'':String(r.dropIndex);
+    tr.querySelector('.batch-qty').value=Math.max(1,Number(r.qty)||1);
+    const p=productById(r.produkId);
+    const h=r.jenis==='familia'?hppForProduct(p):0;
+    const d=r.jenis==='dropship'&&r.dropIndex!==''?dropRows()[Number(r.dropIndex)]:null;
+    const dm=d?Math.round(Number(d.modal)||0):0;
+    tr.querySelector('.batch-hpp').value=h||'';
+    tr.querySelector('.batch-dmodal').value=dm||'';
+    const qty=Math.max(1,Number(r.qty)||1);
+    const total=r.jenis==='familia'?qty*h:qty*dm;
+    tr.querySelector('.batch-total').textContent=money(total);
+    tr.querySelector('.batch-produk').disabled=r.jenis!=='familia';
+    tr.querySelector('.batch-drop').disabled=r.jenis!=='dropship';
+  }
+  function updateSummary(){
+    let qty=0,hpp=0,drop=0;
+    rows.forEach(r=>{
+      const q=Math.max(1,Number(r.qty)||1); qty+=q;
+      if(r.jenis==='familia') hpp+=q*hppForProduct(productById(r.produkId));
+      else if(r.dropIndex!==''){const d=dropRows()[Number(r.dropIndex)];if(d)drop+=q*Math.round(Number(d.modal)||0);}
+    });
+    byId('batchTotalRows').textContent=rows.length.toLocaleString('id-ID');
+    byId('batchTotalQty').textContent=qty.toLocaleString('id-ID');
+    byId('batchTotalHpp').textContent=money(hpp);
+    byId('batchTotalDrop').textContent=money(drop);
+  }
+  function syncFromDOM(id){
+    const r=getRowObj(id); const tr=document.querySelector(`tr[data-row="${id}"]`); if(!r||!tr)return;
+    r.tanggal=tr.querySelector('.batch-date').value;
+    r.resi=tr.querySelector('.batch-resi').value.trim();
+    r.orderId=tr.querySelector('.batch-order').value.trim();
+    r.jenis=tr.querySelector('.batch-type').value;
+    r.produkId=tr.querySelector('.batch-produk').value;
+    r.dropIndex=tr.querySelector('.batch-drop').value;
+    r.qty=Math.max(1,Math.round(Number(tr.querySelector('.batch-qty').value)||1));
+    refreshRow(id); updateSummary();
   }
 
-  async function imageToCanvas(file,{threshold=false}={}){
-    const url=URL.createObjectURL(file);
+  async function saveBatch(){
     try{
-      const img=await new Promise((resolve,reject)=>{
-        const im=new Image(); im.onload=()=>resolve(im); im.onerror=reject; im.src=url;
+      rows.forEach(r=>syncFromDOM(r.id));
+      if(!rows.length){setMsg('Belum ada baris transaksi.',true);return;}
+      const valid=[]; const errors=[];
+      const seen=new Set();
+      rows.forEach((r,i)=>{
+        if(!r.tanggal)errors.push(`Baris ${i+1}: tanggal kosong`);
+        if(!r.resi)errors.push(`Baris ${i+1}: No. Resi wajib`);
+        if(seen.has(norm(r.resi)))errors.push(`Baris ${i+1}: No. Resi duplikat di input`); else if(r.resi)seen.add(norm(r.resi));
+        const q=Math.max(1,Math.round(Number(r.qty)||0));
+        if(r.jenis==='familia'){
+          const p=productById(r.produkId), h=hppForProduct(p);
+          if(!p)errors.push(`Baris ${i+1}: pilih produk Naget`);
+          else if(h<=0)errors.push(`Baris ${i+1}: HPP Online ${p.nama_produk} belum tersedia`);
+          else valid.push({r,p,h,q,total:q*h});
+        }else{
+          const d=r.dropIndex!==''?dropRows()[Number(r.dropIndex)]:null;
+          if(!d)errors.push(`Baris ${i+1}: pilih produk Dropship`);
+          else valid.push({r,d,h:Math.round(Number(d.modal)||0),q,total:q*Math.round(Number(d.modal)||0)});
+        }
       });
-      const maxW=1800;
-      const scale=Math.min(1,maxW/img.naturalWidth);
-      const c=document.createElement('canvas');
-      c.width=Math.max(1,Math.round(img.naturalWidth*scale));
-      c.height=Math.max(1,Math.round(img.naturalHeight*scale));
-      const ctx=c.getContext('2d',{willReadFrequently:true});
-      ctx.drawImage(img,0,0,c.width,c.height);
-      const data=ctx.getImageData(0,0,c.width,c.height);
-      for(let i=0;i<data.data.length;i+=4){
-        const r=data.data[i],g=data.data[i+1],b=data.data[i+2];
-        let gray=0.299*r+0.587*g+0.114*b;
-        // Kontras + sedikit threshold untuk tulisan resi.
-        gray=Math.max(0,Math.min(255,(gray-128)*1.65+128));
-        if(threshold) gray=gray>170?255:0;
-        data.data[i]=data.data[i+1]=data.data[i+2]=gray;
-      }
-      ctx.putImageData(data,0,0);
-      return c;
-    }finally{URL.revokeObjectURL(url);}
-  }
+      if(errors.length){setMsg(errors.slice(0,12).join('<br>'),true);return;}
 
-  async function readBarcode(file){
-    try{
-      if(!('BarcodeDetector' in window))return '';
-      const img=await createImageBitmap(file);
-      const detector=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','qr_code','itf','data_matrix','pdf417']});
-      const codes=await detector.detect(img);
-      return codes?.[0]?.rawValue||'';
-    }catch(e){return '';}
-  }
-
-  async function runOCR(file){
-    setStatus('Membaca tulisan resi...');
-    if(!window.Tesseract) throw new Error('Mesin OCR belum tersedia. Periksa koneksi internet.');
-
-    // Pass 1: OCR gambar asli dengan bahasa Inggris yang biasanya lebih stabil untuk label/resi.
-    let best='';
-    try{
-      const r1=await Tesseract.recognize(file,'eng',{
-        logger:m=>{if(m && m.status==='recognizing text') setStatus('Membaca tulisan resi '+Math.round((m.progress||0)*100)+'%...');},
-        tessedit_pageseg_mode:6
-      });
-      best=r1?.data?.text||'';
-    }catch(e){}
-
-    const p1=extractReceipt(best);
-    if(p1.size || /familia\s*food|tempura|naget|eskrim|stik|lidah|kotak|bulat/i.test(best)) return best;
-
-    // Pass 2: preprocessing kontras untuk foto kamera yang agak buram.
-    try{
-      const c=await imageToCanvas(file,{threshold:false});
-      const r2=await Tesseract.recognize(c.toDataURL('image/jpeg',0.94),'eng',{tessedit_pageseg_mode:6});
-      best=((best+'\n'+(r2?.data?.text||'')).trim());
-    }catch(e){}
-
-    const p2=extractReceipt(best);
-    if(p2.size || /familia\s*food|tempura|naget|eskrim|stik|lidah|kotak|bulat/i.test(best)) return best;
-
-    // Pass 3: threshold keras sebagai fallback.
-    try{
-      const c=await imageToCanvas(file,{threshold:true});
-      const r3=await Tesseract.recognize(c.toDataURL('image/jpeg',0.94),'eng',{tessedit_pageseg_mode:6});
-      best=((best+'\n'+(r3?.data?.text||'')).trim());
-    }catch(e){}
-
-    return best;
-  }
-
-  function applyParsed(info,barcode){
-    byId('resResi').value=info.resi||barcode||'';
-    byId('resOrderId').value=info.orderId||'';
-    byId('resQty').value=info.qty||1;
-    if(info.type==='familia' && info.size){
-      byId('resJenis').value='familia';
-      const targetSize=info.size;
-      const p=familiaProducts().find(x=>{const m=String(x.nama_produk||'').match(/(10|12|20|25|30|40|50)/);return m&&Number(m[1])===targetSize;});
-      if(p){byId('resProduk').value=String(p.id);byId('resHpp').value=hppForProduct(p);}
-      setJenisUI();
-      const suffix=info.productLine?(' • '+info.productLine):'';
-      setStatus('Terbaca: Naget/Tempura isi '+targetSize+' • qty '+info.qty+suffix);
-    }else{
-      byId('resJenis').value='dropship';
-      setJenisUI();
-      const rows=loadDrops();
-      const match=rows.findIndex(x=>norm(info.productLine).includes(norm(x.name))||norm(x.name).includes(norm(info.productLine)));
-      if(match>=0){byId('resDropship').value=String(match);setJenisUI();}
-      setStatus(match>=0?'Terbaca: Dropship • master ditemukan':'Terbaca: Dropship • pilih master / tambah modal');
-    }
-    refreshResPreview();
-  }
-
-  let cameraStream=null;
-  let cameraFacing='environment';
-  function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}const v=byId('cameraVideo');if(v)v.srcObject=null;}
-  async function startCamera(){
-    if(!window.isSecureContext) throw new Error('Kamera membutuhkan koneksi HTTPS. Buka aplikasi dari link GitHub Pages (https://...).');
-    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Browser ini tidak mengizinkan kamera langsung. Gunakan Google Chrome di HP.');
-    stopCamera();
-    try{
-      cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:cameraFacing}},audio:false});
-    }catch(e){
-      // Some Android browsers reject exact facingMode; retry with a looser constraint.
-      cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cameraFacing}},audio:false});
-    }
-    const v=byId('cameraVideo');
-    v.srcObject=cameraStream;
-    await v.play();
-  }
-  function openCamera(){
-    const m=byId('cameraModal');
-    if(!m)return;
-    m.classList.add('open');
-    m.setAttribute('aria-hidden','false');
-    const msg=byId('cameraMsg');
-    if(msg)msg.textContent='Meminta izin kamera...';
-    startCamera().then(()=>{if(msg)msg.textContent='✅ Kamera siap. Arahkan ke seluruh resi lalu tekan Ambil Foto Resi.';})
-      .catch(e=>{if(msg)msg.innerHTML='<span style=\"color:#b91c1c\">❌ Kamera gagal dibuka: '+escLocal(e.message||e)+'<br>Periksa izin Kamera untuk Chrome.</span>';});
-  }
-  window.openFamiliaCamera=openCamera;
-  function closeCamera(){stopCamera();const m=byId('cameraModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true');}}
-  async function captureFromCamera(){
-    const v=byId('cameraVideo');
-    if(!cameraStream||!v.videoWidth){byId('cameraMsg').textContent='Kamera belum siap.';return;}
-    const c=document.createElement('canvas');
-    c.width=v.videoWidth;c.height=v.videoHeight;
-    c.getContext('2d').drawImage(v,0,0,c.width,c.height);
-    c.toBlob(async blob=>{
-      if(!blob)return;
-      const file=new File([blob],'resi-camera.jpg',{type:'image/jpeg'});
+      const existingResi=new Set();
       try{
-        const dt=new DataTransfer();
-        dt.items.add(file);
-        byId('resImage').files=dt.files;
+        const q=await supabaseClient.from('penjualan').select('catatan,order_id').eq('channel','Online').eq('source','online_resi');
+        if(!q.error && Array.isArray(q.data)){
+          q.data.forEach(x=>{const c=String(x.catatan||'');const m=c.match(/RESI:([^|]+)/i);if(m)existingResi.add(norm(m[1])); if(x.order_id)existingResi.add('order:'+norm(x.order_id));});
+        }
       }catch(e){}
-      closeCamera();
-      await scan();
-    },'image/jpeg',0.92);
-  }
 
-  async function scan(){
-    const file=byId('resImage').files?.[0];
-    if(!file){setMsg('resMsg','Pilih/foto resi terlebih dahulu.',true);return;}
-    try{
-      setMsg('resMsg','');
-      const barcode=await readBarcode(file);
-      const text=await runOCR(file);
-      const info=extractReceipt(text);
-      applyParsed(info,barcode);
-      const extra=(barcode?' • Barcode: '+escLocal(barcode):'');
-      setMsg('resMsg','Resi berhasil dibaca.'+extra);
-    }catch(e){console.error(e);setStatus('Scan gagal');setMsg('resMsg','Gagal membaca resi: '+escLocal(e.message||e),true);}
-  }
+      const newRows=valid.map(({r,p,d,h,q,total})=>({
+        tanggal:r.tanggal,
+        produk_id:r.jenis==='familia'?p.id:null,
+        qty:q,
+        channel:'Online',
+        harga:0,
+        hpp:Math.round(total),
+        laba:0,
+        order_id:r.orderId||null,
+        product_name:r.jenis==='familia'?p.nama_produk:(d?.name||'Produk Dropship'),
+        variation:r.jenis==='familia'?'Naget/Tempura':'Dropship',
+        omzet_produk:0,
+        uang_bersih:null,
+        modal_hpp:Math.round(total),
+        profit_online:null,
+        biaya_platform:null,
+        source:'online_resi',
+        catatan:(r.jenis==='familia'?'FAMILIA':'DROPSHIP')+'|RESI:'+r.resi
+      })).filter(row=>!existingResi.has(norm(String(row.catatan).split('RESI:')[1]||'')));
 
-  function uniqueKey(row){
-    if(row.source==='online_resi')return 'resi|'+String(row.order_id||'')+'|'+String(row.tanggal||'')+'|'+String(row.catatan||'');
-    return 'cash|'+String(row.tanggal||'')+'|'+String(row.uang_bersih||0)+'|'+String(row.catatan||'');
-  }
-  async function persist(row){
-    try{
-      const r=await supabaseClient.from('penjualan').insert([row]).select('id').single();
-      if(r.error)throw r.error;
-      return {ok:true,id:r.data?.id,remote:true};
+      if(!newRows.length){setMsg('Semua resi pada input sudah pernah tercatat.',true);return;}
+      const ins=await supabaseClient.from('penjualan').insert(newRows).select('id');
+      if(ins.error)throw ins.error;
+      setMsg(`${newRows.length} transaksi online berhasil disimpan. Total modal ${money(newRows.reduce((a,x)=>a+Number(x.modal_hpp||0),0))}.`);
+      rows=[];addRows(1);
+      if(typeof load==='function')await load();
     }catch(e){
-      const local=loadLocal();local.push({...row,id:'local-'+Date.now()+'-'+Math.random().toString(36).slice(2)});saveLocal(local);
-      return {ok:true,remote:false,error:e};
+      console.error(e);
+      setMsg('Gagal menyimpan semua transaksi: '+esc(e.message||e),true);
     }
   }
 
-  async function saveResi(){
-    try{
-      const tanggal=byId('resTanggal').value;
-      const resi=byId('resResi').value.trim();
-      const orderId=byId('resOrderId').value.trim();
-      const qty=Math.max(1,Math.round(Number(byId('resQty').value)||0));
-      const fam=byId('resJenis').value==='familia';
-      const p=fam?productById(byId('resProduk').value):null;
-      const d=!fam?selectedDrop():null;
-      const hpp=fam?Math.max(0,hppForProduct(p)):0;
-      const dropModal=!fam?(d?Math.max(0,Math.round(d.modal)):Math.round(Number(byId('resDropshipModal').value)||0)):0;
-      if(!tanggal||!resi||qty<=0){setMsg('resMsg','Tanggal, No. Resi, dan Jumlah wajib diisi.',true);return;}
-      if(fam&&!p){setMsg('resMsg','Produk Naget/Tempura belum terbaca. Pilih produk.',true);return;}
-      if(fam&&hpp<=0){setMsg('resMsg','HPP Online produk belum tersedia.',true);return;}
-      if(!fam&&!d&&!dropModal){setMsg('resMsg','Produk Dropship belum dipilih atau modal belum diisi.',true);return;}
-
-      const local=loadLocal();
-      const same=local.some(x=>x.source==='online_resi' && String(x.order_id||'')===orderId && orderId)||local.some(x=>x.source==='online_resi' && String(x.catatan||'').includes('RESI:'+resi));
-      if(same){setMsg('resMsg','Resi ini sudah tercatat.',true);return;}
-
-      const totalHpp=qty*(fam?hpp:dropModal);
-      const row={tanggal,produk_id:fam?p.id:null,qty,channel:'Online',harga:0,hpp:Math.round(totalHpp),laba:0,order_id:orderId||null,product_name:fam?p.nama_produk:(d?.name||'Produk Dropship'),variation:fam?'Naget/Tempura':'Dropship',omzet_produk:0,uang_bersih:null,modal_hpp:Math.round(totalHpp),profit_online:null,biaya_platform:null,source:'online_resi',catatan:(fam?'FAMILIA':'DROPSHIP')+'|RESI:'+resi};
-      const saved=await persist(row);
-      setMsg('resMsg',(saved.remote?'Resi tersimpan ke database.':'Resi tersimpan di perangkat sementara karena database menolak penyimpanan.')+' HPP '+money(totalHpp)+'.',!saved.remote);
-      if(typeof load==='function'&&saved.remote)await load();
-      resetResi();
-    }catch(e){console.error(e);setMsg('resMsg','Gagal menyimpan resi: '+escLocal(e.message||e),true);}
+  function renderDropMaster(){
+    const list=dropRows();
+    const tb=byId('dropMasterRows');
+    if(tb)tb.innerHTML=list.length?list.map((x,i)=>`<tr><td>${esc(x.name)}</td><td>${money(x.modal)}</td><td><button type="button" class="mini edit" data-drop-edit="${i}">Edit</button> <button type="button" class="mini del" data-drop-del="${i}">Hapus</button></td></tr>`).join(''):'<tr><td colspan="3">Belum ada master dropship.</td></tr>';
+    document.querySelectorAll('.batch-drop').forEach(sel=>{const cur=sel.value;sel.innerHTML=dropSelectOptions();if(cur)sel.value=cur;});
+    rows.forEach(r=>refreshRow(r.id));
+    updateSummary();
   }
-
-  async function saveCash(){
-    try{
-      const tanggal=byId('cashTanggal').value;
-      const amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0));
-      const note=byId('cashNote').value.trim();
-      if(!tanggal||amount<=0){setMsg('cashMsg','Tanggal dan Uang Bersih wajib diisi.',true);return;}
-      const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,order_id:null,product_name:'Pencairan TikTok',variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:null,source:'online_pencairan',catatan:note||'Penerimaan Uang Online'};
-      const saved=await persist(row);
-      setMsg('cashMsg',(saved.remote?'Penerimaan tersimpan ke database.':'Penerimaan tersimpan di perangkat sementara karena database menolak penyimpanan.')+' '+money(amount),!saved.remote);
-      if(typeof load==='function'&&saved.remote)await load();
+  function saveCash(){
+    const tanggal=byId('cashTanggal').value;
+    const amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0));
+    const note=byId('cashNote').value.trim();
+    if(!tanggal||amount<=0){setCashMsg('Tanggal dan Uang Bersih wajib diisi.',true);return;}
+    const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,order_id:null,product_name:'Pencairan TikTok',variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:null,source:'online_pencairan',catatan:note||'Penerimaan Uang Online'};
+    supabaseClient.from('penjualan').insert([row]).select('id').single().then(async r=>{
+      if(r.error){setCashMsg('Gagal menyimpan penerimaan: '+esc(r.error.message),true);return;}
+      setCashMsg('Penerimaan Uang Online tersimpan: '+money(amount));
       byId('cashAmount').value='';byId('cashNote').value='';
-    }catch(e){setMsg('cashMsg','Gagal menyimpan penerimaan: '+escLocal(e.message||e),true);}
+      if(typeof load==='function')await load();
+    }).catch(e=>setCashMsg('Gagal menyimpan penerimaan: '+esc(e.message||e),true));
   }
 
-  function resetResi(){
-    byId('resTanggal').value=today();byId('resImage').value='';byId('resResi').value='';byId('resOrderId').value='';byId('resJenis').value='familia';byId('resQty').value=1;byId('resProduk').value='';byId('resDropship').value='';byId('resHpp').value='';byId('resDropshipModal').value='';setStatus('Belum ada resi');refreshResPreview();
+  function init(){
+    addRows(1);
+    byId('cashTanggal').value=today();
+    byId('batchAddRow')?.addEventListener('click',()=>addRows(1));
+    byId('batchAdd10')?.addEventListener('click',()=>addRows(10));
+    byId('batchClear')?.addEventListener('click',()=>{rows=[];addRows(1);setMsg('');});
+    byId('batchSave')?.addEventListener('click',saveBatch);
+    byId('cashSave')?.addEventListener('click',saveCash);
+    byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
+    byId('dropAdd')?.addEventListener('click',()=>{
+      const name=byId('dropName').value.trim();const modal=Math.max(0,Math.round(Number(byId('dropModal').value)||0));
+      if(!name||modal<=0){alert('Isi nama produk dan modal dropship.');return;}
+      const list=dropRows();const i=list.findIndex(x=>norm(x.name)===norm(name));if(i>=0)list[i]={name,modal};else list.push({name,modal});saveDrops(list);
+      byId('dropName').value='';byId('dropModal').value='';renderDropMaster();
+    });
+    document.addEventListener('input',e=>{
+      const tr=e.target.closest?.('tr[data-row]');if(!tr)return;
+      const r=getRowObj(Number(tr.dataset.row));if(!r)return;
+      syncFromDOM(r.id);
+    });
+    document.addEventListener('change',e=>{
+      const tr=e.target.closest?.('tr[data-row]');if(!tr)return;
+      const r=getRowObj(Number(tr.dataset.row));if(!r)return;
+      syncFromDOM(r.id);
+    });
+    document.addEventListener('click',e=>{
+      const tr=e.target.closest?.('tr[data-row]');
+      if(tr && e.target.closest('.batch-del')){
+        const id=Number(tr.dataset.row);rows=rows.filter(r=>r.id!==id);if(!rows.length)rows.push(emptyRow());renderRows();return;
+      }
+      const edit=e.target.closest?.('[data-drop-edit]');
+      const del=e.target.closest?.('[data-drop-del]');
+      if(edit){const i=Number(edit.dataset.dropEdit),list=dropRows();if(list[i]){byId('dropName').value=list[i].name;byId('dropModal').value=list[i].modal;byId('dropName').focus();}}
+      if(del){const i=Number(del.dataset.dropDel),list=dropRows();if(list[i]&&confirm('Hapus master dropship ini?')){list.splice(i,1);saveDrops(list);renderDropMaster();}}
+    });
+    setTimeout(()=>renderDropMaster(),500);
   }
-  function resetCash(){byId('cashTanggal').value=today();byId('cashAmount').value='';byId('cashNote').value='';setMsg('cashMsg','');}
-
-  byId('resImage')?.addEventListener('change',()=>{ if(byId('resImage').files?.length)scan(); });
-  byId('resScanBtn')?.addEventListener('click',openCamera);
-  byId('resPickBtn')?.addEventListener('click',()=>byId('resImage').click());
-  byId('cameraClose')?.addEventListener('click',closeCamera);
-  byId('cameraCapture')?.addEventListener('click',captureFromCamera);
-  byId('cameraSwitch')?.addEventListener('click',()=>{cameraFacing=cameraFacing==='environment'?'user':'environment';startCamera().catch(e=>byId('cameraMsg').textContent='Gagal ganti kamera: '+(e.message||e));});
-  byId('resSave')?.addEventListener('click',saveResi);
-  byId('resReset')?.addEventListener('click',resetResi);
-  byId('resJenis')?.addEventListener('change',setJenisUI);
-  byId('resProduk')?.addEventListener('change',()=>{const p=productById(byId('resProduk').value);byId('resHpp').value=p?hppForProduct(p):'';refreshResPreview();});
-  byId('resDropship')?.addEventListener('change',setJenisUI);
-  byId('resQty')?.addEventListener('input',refreshResPreview);
-  byId('cashSave')?.addEventListener('click',saveCash);
-  byId('cashReset')?.addEventListener('click',resetCash);
-  byId('dropAdd')?.addEventListener('click',()=>{
-    const name=byId('dropName').value.trim();const modal=Math.max(0,Math.round(Number(byId('dropModal').value)||0));
-    if(!name||modal<=0){alert('Isi nama produk dan modal dropship.');return;}
-    const rows=loadDrops();const i=rows.findIndex(x=>norm(x.name)===norm(name));if(i>=0)rows[i]={name,modal};else rows.push({name,modal});saveDrops(rows);byId('dropName').value='';byId('dropModal').value='';renderDropMaster();
-  });
-  document.addEventListener('click',e=>{
-    const edit=e.target.closest('[data-drop-edit]');const del=e.target.closest('[data-drop-del]');
-    if(edit){const i=Number(edit.dataset.dropEdit),rows=loadDrops();if(rows[i]){byId('dropName').value=rows[i].name;byId('dropModal').value=rows[i].modal;byId('dropName').focus();}}
-    if(del){const i=Number(del.dataset.dropDel),rows=loadDrops();if(rows[i]&&confirm('Hapus master dropship ini?')){rows.splice(i,1);saveDrops(rows);renderDropMaster();}}
-  });
-
-  window.addEventListener('load',()=>{
-    byId('resTanggal').value=today();byId('cashTanggal').value=today();
-    setTimeout(()=>{renderResProducts();renderDropMaster();setJenisUI();},400);
-  });
+  window.addEventListener('load',init);
 })();
 </script>
 </body></html>
