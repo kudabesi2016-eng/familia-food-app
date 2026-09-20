@@ -288,31 +288,6 @@ td{
 
     </div>
 
-  
-
-  <!-- REKAP ONLINE BARU -->
-  <div class="card" id="onlineNewRecapCard">
-    <h2 style="margin-top:0">📱 Rekap Online Baru</h2>
-    <div class="notice">
-      Mulai transaksi baru, pencatatan memakai <b>Scan Resi + HPP + Penerimaan Uang</b>.<br>
-      Tidak ada lagi Potongan TikTok pada transaksi baru. <b>Uang Bersih Diterima</b> adalah uang yang benar-benar masuk dari TikTok dan sudah termasuk biaya TikTok + iklan.<br>
-      Profit = Uang Bersih Diterima − HPP Naget/Tempura − Modal Produk Dropship.
-    </div>
-    <div class="tablewrap" style="margin-top:14px">
-      <table style="min-width:1100px">
-        <thead><tr>
-          <th>Bulan</th>
-          <th>Penjualan/Resi</th>
-          <th>HPP</th>
-          <th>Uang Bersih Diterima</th>
-          <th>Profit</th>
-          <th>Produk Dropship</th>
-          <th>Modal Produk Dropship</th>
-        </tr></thead>
-        <tbody id="newOnlineMonthly"><tr><td colspan="7">Memuat...</td></tr></tbody>
-      </table>
-    </div>
-    <div class="small" style="margin-top:8px">Data lama Jan–Agustus 2026 tetap dipertahankan pada rekap historis di bawah dan tidak diubah.</div>
   </div>
 
 
@@ -676,7 +651,7 @@ function updateChannelUI(){
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
     ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Potongan untuk Offline tidak ada sehingga nilainya Rp 0.<br>Uang Bersih sama dengan Pemasukan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.'
-    : 'Bagian historis memakai Data Lama Online STANDARD dan tidak diubah. Untuk transaksi baru gunakan tabel 📱 Rekap Online Baru di atas: Scan Resi + HPP + Penerimaan Uang.<br>';
+    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br>Modal menggunakan HPP Online apabila sudah tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.';
 }
 
 /* =====================================================
@@ -697,44 +672,6 @@ function months(){
   return [...set].sort();
 }
 
-
-/* =====================================================
-   REKAP ONLINE BARU — SCAN RESI + PENERIMAAN UANG
-===================================================== */
-function localOnlineNewRows(){
-  try{return JSON.parse(localStorage.getItem('ff_online_new_v2')||'[]')||[];}catch(e){return[];}
-}
-function mergedOnlineNewRows(){
-  const remote=(sales||[]).filter(x=>['online_resi','online_pencairan'].includes(String(x.source||'')));
-  const local=localOnlineNewRows();
-  const keys=new Set(remote.map(x=>newOnlineKey(x)));
-  for(const x of local){if(!keys.has(newOnlineKey(x)))remote.push(x);}
-  return remote;
-}
-function newOnlineKey(x){
-  if(String(x.source||'')==='online_resi') return 'resi|'+String(x.order_id||'')+'|'+String(x.tanggal||'')+'|'+String(x.catatan||'');
-  return 'cash|'+String(x.tanggal||'')+'|'+String(x.uang_bersih||0)+'|'+String(x.catatan||'');
-}
-function newIsDrop(x){return String(x.catatan||'').startsWith('DROPSHIP|');}
-function renderNewOnlineMonthly(){
-  const target=$('newOnlineMonthly');
-  if(!target)return;
-  const rows=mergedOnlineNewRows();
-  const months=[...new Set(rows.map(x=>String(x.tanggal||'').slice(0,7)).filter(x=>/^20\d{2}-\d{2}$/.test(x)))].sort().reverse();
-  if(!months.length){target.innerHTML='<tr><td colspan="7" class="empty">Belum ada transaksi Online Baru.</td></tr>';return;}
-  const labelNew=m=>{const [y,mo]=m.split('-');return new Date(Number(y),Number(mo)-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});};
-  target.innerHTML=months.map(m=>{
-    const rr=rows.filter(x=>String(x.source||'')==='online_resi' && String(x.tanggal||'').slice(0,7)===m);
-    const cc=rows.filter(x=>String(x.source||'')==='online_pencairan' && String(x.tanggal||'').slice(0,7)===m);
-    const uniqueResi=new Set(rr.map(x=>String(x.order_id||x.catatan||x.id)));
-    const hpp=rr.filter(x=>!newIsDrop(x)).reduce((a,x)=>a+Math.round(Number(x.modal_hpp ?? x.hpp ?? 0)),0);
-    const dropQty=rr.filter(newIsDrop).reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
-    const dropModal=rr.filter(newIsDrop).reduce((a,x)=>a+Math.round(Number(x.modal_hpp ?? x.hpp ?? 0)),0);
-    const cash=cc.reduce((a,x)=>a+Math.round(Number(x.uang_bersih||0)),0);
-    const profit=cash-hpp-dropModal;
-    return `<tr><td><b>${labelNew(m)}</b></td><td>${uniqueResi.size.toLocaleString('id-ID')}</td><td>${money(hpp)}</td><td><b>${money(cash)}</b></td><td><b>${money(profit)}</b></td><td>${dropQty.toLocaleString('id-ID')} bungkus</td><td>${money(dropModal)}</td></tr>`;
-  }).join('');
-}
 
 /* =====================================================
    RENDER KARTU
@@ -985,7 +922,6 @@ function renderMonthOptions(){
 
 function render(){
 
-  renderNewOnlineMonthly();
   updateChannelUI();
   renderCards();
 
