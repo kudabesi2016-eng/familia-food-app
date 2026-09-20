@@ -324,10 +324,12 @@ Pilih Produk
 
 <div class="box">
 <label>Isi per Bungkus</label>
+<div style="font-size:12px;color:#68756e;margin:4px 0 8px;">Untuk Naget: resep sama, pilih jumlah pcs per bungkus.</div>
 <select id="isiBungkusSelect">
 <option value="10">10 pcs</option>
 <option value="12">12 pcs</option>
 <option value="20">20 pcs</option>
+<option value="25">25 pcs</option>
 <option value="30">30 pcs</option>
 <option value="40">40 pcs</option>
 <option value="50">50 pcs</option>
@@ -509,6 +511,11 @@ Rp0
 <strong id="hasilHppBungkus">Rp0</strong>
 </div>
 
+<div class="result-row big-result">
+<span>HPP Online per Bungkus</span>
+<strong id="hasilHppBungkusOnline">Rp0</strong>
+</div>
+
 
 <div class="result-row">
 
@@ -581,78 +588,78 @@ let jumlahHasilProduksi = 0;
   sebelumnya melekat pada HPP masing-masing produk.
 */
 
-const HPP_OFFLINE_BUNGKUS = {
+const HPP_NAGET_OFFLINE_PER_PCS = 359.36363636;
+const HPP_NAGET_ONLINE_PACKING = 1000;
 
-  "naget 10": 3593.636,
-  "naget isi 10": 3593.636,
-  "naget 12": 4312.364,
-  "naget isi 12": 4312.364,
-  "naget 20": 7187.273,
-  "naget isi 20": 7187.273,
-  "naget 25+saus": 8984.091,
-  "naget isi 25": 8984.091,
-  "naget 30": 10780.909,
-  "naget isi 30": 10780.909,
-  "naget 40": 14374.545,
-  "naget isi 40": 14374.545,
-  "naget 50": 17968.182,
-  "naget isi 50": 17968.182,
+const NAGET_SIZE_PRICES = {
+  10: { offline: 4000, online: 5000 },
+  12: { offline: 4500, online: 6000 },
+  20: { offline: null, online: 10000 },
+  25: { offline: null, online: 15000 },
+  30: { offline: null, online: 15000 },
+  40: { offline: null, online: 20000 },
+  50: { offline: null, online: 25000 }
+};
+
+const HPP_FIXED_OFFLINE_BUNGKUS = {
   "cireng isi": 2946,
-  "cireng isi 10": 2946,
   "cireng biasa": 2473,
   "cibay": 2900
 };
 
-const HPP_ONLINE_BUNGKUS = {
-
-  "naget 10": 4593.636,
-  "naget isi 10": 4593.636,
-  "naget 12": 5312.364,
-  "naget isi 12": 5312.364,
-  "naget 20": 8187.273,
-  "naget isi 20": 8187.273,
-  "naget 25+saus": 9984.091,
-  "naget isi 25": 9984.091,
-  "naget 30": 11780.909,
-  "naget isi 30": 11780.909,
-  "naget 40": 15374.545,
-  "naget isi 40": 15374.545,
-  "naget 50": 18968.182,
-  "naget isi 50": 18968.182
-};
+const HPP_FIXED_ONLINE_BUNGKUS = {};
 
 function namaKunciProduk(nama){
   return String(nama || "").toLowerCase().replace(/\s+/g," ").trim();
 }
 
-function targetHppOfflineBungkus(){
-  const key = namaKunciProduk(produkTerpilih?.nama_produk);
-  return HPP_OFFLINE_BUNGKUS[key] ?? 0;
-}
-
-function targetHppOnlineBungkus(){
-  const key = namaKunciProduk(produkTerpilih?.nama_produk);
-  return HPP_ONLINE_BUNGKUS[key] ?? 0;
+function isNagetSelection(){
+  return !!document.getElementById("produkSelect") && document.getElementById("produkSelect").value === "__NAGET__";
 }
 
 function getIsiProduk(){
-  if(!produkTerpilih) return Number(document.getElementById("isiBungkusSelect").value || 1);
-  const key = namaKunciProduk(produkTerpilih.nama_produk);
-  const m = key.match(/(?:^|\s)(10|12|20|25|30|40|50)(?:\s|$)/);
-  if(m) return Number(m[1]);
-  if(produkTerpilih.isi_per_bungkus) return Number(produkTerpilih.isi_per_bungkus);
-  return Number(document.getElementById("isiBungkusSelect").value || 1);
+  const el = document.getElementById("isiBungkusSelect");
+  if (isNagetSelection()) return Number(el.value || 10);
+  if (produkTerpilih && produkTerpilih.isi_per_bungkus) return Number(produkTerpilih.isi_per_bungkus);
+  return Number(el?.value || 1);
+}
+
+function getNagetVariantBySize(size){
+  const wanted = size === 25 ? "naget 25+saus" : `naget ${size}`;
+  return produkData.find(p => namaKunciProduk(p.nama_produk) === wanted) ||
+         produkData.find(p => namaKunciProduk(p.nama_produk) === `naget ${size}`) ||
+         produkData.find(p => namaKunciProduk(p.nama_produk) === `naget isi ${size}`) || null;
+}
+
+function getNagetBaseProduct(){
+  return produkData.find(p => namaKunciProduk(p.nama_produk) === "naget 10") ||
+         produkData.find(p => namaKunciProduk(p.nama_produk) === "naget isi 10") ||
+         produkData.find(p => namaKunciProduk(p.nama_produk) === "naget") || null;
+}
+
+function targetHppOfflineBungkus(){
+  if(isNagetSelection()){
+    return HPP_NAGET_OFFLINE_PER_PCS * getIsiProduk();
+  }
+  const key = namaKunciProduk(produkTerpilih?.nama_produk);
+  return HPP_FIXED_OFFLINE_BUNGKUS[key] ?? 0;
+}
+
+function targetHppOnlineBungkus(){
+  if(isNagetSelection()){
+    return targetHppOfflineBungkus() + HPP_NAGET_ONLINE_PACKING;
+  }
+  return HPP_FIXED_ONLINE_BUNGKUS[namaKunciProduk(produkTerpilih?.nama_produk)] ?? 0;
 }
 
 function defaultJumlahProduksiPcs(){
+  if(isNagetSelection() || namaKunciProduk(produkTerpilih?.nama_produk).startsWith("naget")) return 2500;
   const key = namaKunciProduk(produkTerpilih?.nama_produk);
-  if(key.startsWith("naget")) return 2500;
   if(key === "cireng isi" || key === "cireng isi 10") return 400;
   if(key === "cireng biasa") return 100;
   if(key === "cibay") return 100;
   return 0;
 }
-
 
 
 /* =========================
@@ -683,79 +690,41 @@ function isiPerBungkus() {
 ========================= */
 
 async function loadProduk(){
+  const { data, error } = await supabaseClient
+    .from("produk")
+    .select("*")
+    .order("nama_produk");
 
-const {
-data,
-error
-} = await supabaseClient
-
-.from("produk")
-
-.select("*")
-
-.order("nama_produk");
-
-
-if(error){
-
-console.error(error);
-
-tampilkanStatus(
-"Gagal mengambil data produk: " + error.message,
-"error"
-);
-
-return;
-}
-
-
-produkData = data || [];
-
-const select =
-document.getElementById("produkSelect");
-
-
-select.innerHTML =
-'<option value="">Pilih Produk</option>';
-
-
-const namaSudahAda = new Set();
-
-// Pastikan setiap nama produk hanya muncul satu kali di pilihan HPP.
-select.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
-
-produkData.forEach(function(produk){
-
-const nama = String(produk.nama_produk || "").trim();
-
-if(!nama || namaSudahAda.has(nama.toLowerCase())) return;
-
-namaSudahAda.add(nama.toLowerCase());
-
-const option = document.createElement("option");
-option.value = produk.id;
-option.textContent = nama;
-select.appendChild(option);
-
-});
-
-// Naget isi 25 adalah produk khusus dengan tambahan saus.
-// Tampilkan di nama produk, bukan di pilihan isi per bungkus.
-const sudahAdaNaget25 = Array.from(select.options).some(function(option){
-  return option.textContent.trim().toLowerCase() === "naget isi 25";
-});
-if(!sudahAdaNaget25){
-  const nagetDasar = produkData.find(function(produk){
-    return String(produk.nama_produk || "").trim().toLowerCase() === "naget";
-  });
-  if(nagetDasar){
-    const option25 = document.createElement("option");
-    option25.value = nagetDasar.id;
-    option25.textContent = "Naget isi 25";
-    select.appendChild(option25);
+  if(error){
+    console.error(error);
+    tampilkanStatus("Gagal mengambil data produk: " + error.message, "error");
+    return;
   }
-}
 
+  produkData = data || [];
+  const select = document.getElementById("produkSelect");
+  select.innerHTML = '<option value="">Pilih Produk</option>';
+
+  // Naget memakai SATU resep dasar. Varian isi dipilih lewat dropdown Isi per Bungkus.
+  if(getNagetBaseProduct()){
+    const optNaget = document.createElement("option");
+    optNaget.value = "__NAGET__";
+    optNaget.textContent = "Naget";
+    select.appendChild(optNaget);
+  }
+
+  const seen = new Set();
+  produkData.forEach(function(produk){
+    const nama = String(produk.nama_produk || "").trim();
+    const key = namaKunciProduk(nama);
+    if(!nama || key.startsWith("naget ") || key === "naget") return;
+    if(seen.has(key)) return;
+    seen.add(key);
+    const option = document.createElement("option");
+    option.value = String(produk.id);
+    option.textContent = nama;
+    select.appendChild(option);
+  });
 }
 
 
@@ -1131,6 +1100,7 @@ function hitungSemua(){
   document.getElementById("hasilHpp").textContent = rupiah(hppOfflinePcs);
   document.getElementById("hasilIsi").textContent = isi + " pcs";
   document.getElementById("hasilHppBungkus").textContent = rupiah(hppOfflinePack);
+  document.getElementById("hasilHppBungkusOnline").textContent = rupiah(hppOnlinePack);
   document.getElementById("hasilUntungOffline").textContent = hargaOffline > 0 ? rupiah(untungOffline) : "Belum diisi";
   document.getElementById("hasilUntungOnline").textContent = hargaOnline > 0 ? rupiah(untungOnline) : "Belum diisi";
 
@@ -1140,152 +1110,85 @@ function hitungSemua(){
 
 
 /* =========================
-   PILIH PRODUK
+   PILIH PRODUK / UKURAN NAGET
 ========================= */
 
 document.getElementById("jumlahProduksi").addEventListener("input", function(){
-  if (produkTerpilih) hitungSemua();
+  if (produkTerpilih || isNagetSelection()) hitungSemua();
 });
 
 document.getElementById("isiBungkusSelect").addEventListener("change", function(){
-  if (produkTerpilih) hitungSemua();
-});
+  if(!isNagetSelection()) return;
 
-document.getElementById(
-"produkSelect"
-).addEventListener(
-"change",
-async function(){
-
-const id =
-this.value;
-const namaPilihan = this.options[this.selectedIndex] ? this.options[this.selectedIndex].textContent.trim() : "";
-
-
-if(!id){
-
-produkTerpilih = null;
-
-resepProduk = [];
-
-document.getElementById(
-"recipeBody"
-).innerHTML = `
-
-<tr>
-
-<td colspan="5" class="empty">
-
-Pilih produk terlebih dahulu.
-
-</td>
-
-</tr>
-
-`;
-
-document.getElementById(
-"jumlahProduksi"
-).value = "";
-
-document.getElementById(
-"totalBahan"
-).value = "Rp0";
-
-document.getElementById(
-"biayaProduksi"
-).value = "Rp0";
-
-document.getElementById(
-"hargaOffline"
-).value = "";
-
-document.getElementById(
-"hargaOnline"
-).value = "";
-
-document.getElementById(
-"hasilBahan"
-).textContent = "Rp0";
-
-document.getElementById(
-"hasilProduksi"
-).textContent = "Rp0";
-
-document.getElementById(
-"hasilModal"
-).textContent = "Rp0";
-
-document.getElementById(
-"hasilHpp"
-).textContent = "Rp0";
-
-document.getElementById(
-"hasilUntungOffline"
-).textContent = "Rp0";
-
-document.getElementById(
-"hasilUntungOnline"
-).textContent = "Rp0";
-
-document.getElementById(
-"btnSimpan"
-).disabled = true;
-
-return;
-
-}
-
-
-produkTerpilih = cariProduk(id);
-
-if (produkTerpilih) {
-  const key = namaKunciProduk(namaPilihan);
-  if(key === "naget 25+saus" || key === "naget isi 25") {
-    produkTerpilih = Object.assign({}, produkTerpilih, { nama_produk: "Naget 25+Saus", isi_per_bungkus: 25 });
+  const size = Number(this.value || 10);
+  const variant = getNagetVariantBySize(size);
+  if(variant){
+    produkTerpilih = variant;
   }
-}
 
-const isiOtomatis = getIsiProduk();
-document.getElementById("isiBungkusSelect").value = String(isiOtomatis);
-document.getElementById("isiBungkusSelect").disabled = false;
+  const harga = NAGET_SIZE_PRICES[size] || {offline:null, online:null};
+  document.getElementById("hargaOffline").value = harga.offline ?? "";
+  document.getElementById("hargaOnline").value = harga.online ?? "";
 
-
-resepProduk =
-resepData.filter(function(item){
-
-return String(item.produk_id) === String(id);
-
+  // Resep Naget selalu mengambil resep dasar Naget 10.
+  const base = getNagetBaseProduct();
+  resepProduk = base ? resepData.filter(r => String(r.produk_id) === String(base.id)) : [];
+  tampilkanResep();
+  hitungSemua();
 });
 
+document.getElementById("produkSelect").addEventListener("change", async function(){
+  const id = this.value;
 
-/*
- Harga jual dari tabel produk
-*/
+  if(!id){
+    produkTerpilih = null;
+    resepProduk = [];
+    document.getElementById("isiBungkusSelect").disabled = false;
+    document.getElementById("recipeBody").innerHTML = '<tr><td colspan="5" class="empty">Pilih produk terlebih dahulu.</td></tr>';
+    document.getElementById("jumlahProduksi").value = "";
+    document.getElementById("totalBahan").value = "Rp0";
+    document.getElementById("biayaProduksi").value = "Rp0";
+    document.getElementById("hargaOffline").value = "";
+    document.getElementById("hargaOnline").value = "";
+    document.getElementById("hasilBahan").textContent = "Rp0";
+    document.getElementById("hasilProduksi").textContent = "Rp0";
+    document.getElementById("hasilModal").textContent = "Rp0";
+    document.getElementById("hasilHpp").textContent = "Rp0";
+    document.getElementById("hasilIsi").textContent = "-";
+    document.getElementById("hasilHppBungkus").textContent = "Rp0";
+    document.getElementById("hasilHppBungkusOnline").textContent = "Rp0";
+    document.getElementById("hasilUntungOffline").textContent = "Rp0";
+    document.getElementById("hasilUntungOnline").textContent = "Rp0";
+    document.getElementById("btnSimpan").disabled = true;
+    return;
+  }
 
-document.getElementById(
-"hargaOffline"
-).value =
-produkTerpilih.harga_offline || "";
+  if(id === "__NAGET__"){
+    document.getElementById("isiBungkusSelect").disabled = false;
+    document.getElementById("isiBungkusSelect").value = "10";
 
+    produkTerpilih = getNagetVariantBySize(10) || getNagetBaseProduct();
+    const base = getNagetBaseProduct();
+    resepProduk = base ? resepData.filter(r => String(r.produk_id) === String(base.id)) : [];
 
-document.getElementById(
-"hargaOnline"
-).value =
-produkTerpilih.harga_online || "";
+    const harga = NAGET_SIZE_PRICES[10];
+    document.getElementById("hargaOffline").value = harga.offline;
+    document.getElementById("hargaOnline").value = harga.online;
+  } else {
+    document.getElementById("isiBungkusSelect").disabled = true;
+    produkTerpilih = cariProduk(id);
+    const size = Number(produkTerpilih?.isi_per_bungkus || 10);
+    document.getElementById("isiBungkusSelect").value = String(size);
+    resepProduk = produkTerpilih
+      ? resepData.filter(r => String(r.produk_id) === String(produkTerpilih.id))
+      : [];
+    document.getElementById("hargaOffline").value = produkTerpilih?.harga_offline || "";
+    document.getElementById("hargaOnline").value = produkTerpilih?.harga_online || "";
+  }
 
-
-/*
- Tampilkan resep berdasarkan
- harga bahan baku TERBARU.
-*/
-
-tampilkanResep();
-
-hitungSemua();
-
-}
-);
+  tampilkanResep();
+  hitungSemua();
+});
 
 
 /* =========================
