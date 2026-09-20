@@ -522,23 +522,70 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const lines=raw.split('\n').map(s=>s.trim()).filter(Boolean);
     const lower=raw.toLowerCase();
     const resiMatch=raw.match(/\b[A-Z]{1,4}[0-9]{8,20}\b/);
-    const orderMatch=raw.match(/order\s*id\s*[:#]?\s*([0-9]{10,30})/i);
-    const sizeMatch=raw.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/i)||raw.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/i);
+    const orderMatch=raw.match(/order\s*id\s*[:#]?\s*([0-9]{8,30})/i);
+
+    // OCR resi bisa salah membaca “pcs”, jadi cukup cari “isi XX” atau “XX pcs”.
+    const sizeMatch=raw.match(/\bisi\s*(10|12|20|25|30|40|50)\s*(?:pcs?|pes|pc)?\b/i)
+      ||raw.match(/\b(10|12|20|25|30|40|50)\s*(?:pcs?|pes)\b/i);
+
     let qty=1;
     const qtyMatch=raw.match(/(?:qty|quantity|jumlah)\s*(?:total)?\s*[:#-]?\s*(\d{1,4})/i);
-    if(qtyMatch)qty=Math.max(1,Number(qtyMatch[1]));
-    else if(/\b1\s*(?:bks|bungkus)\b/i.test(raw))qty=1;
+    if(qtyMatch) qty=Math.max(1,Number(qtyMatch[1]));
+    else {
+      const bksMatch=raw.match(/(?:\b|\s)(\d{1,4})\s*(?:bks|bungkus)\b/i);
+      if(bksMatch) qty=Math.max(1,Number(bksMatch[1]));
+    }
+
     let productLine='';
     const productIdx=lines.findIndex(x=>/product\s*name/i.test(x));
     if(productIdx>=0){
-      for(let i=productIdx+1;i<Math.min(lines.length,productIdx+5);i++){
-        if(lines[i] && !/^(sku|seller sku|qty|quantity|order id|estimated date|in transit|weight|slip|tokopedia|shopee|tiktok)/i.test(lines[i])){productLine=lines[i];break;}
+      const candidates=[];
+      for(let i=productIdx+1;i<Math.min(lines.length,productIdx+8);i++){
+        const line=lines[i];
+        if(!line) continue;
+        if(/^(sku|seller sku|qty|quantity|order id|estimated date|in transit|weight|slip|tokopedia|shopee|tiktok)/i.test(line)) continue;
+        candidates.push(line);
       }
+      productLine=candidates.join(' ');
     }
-    if(!productLine){productLine=lines.find(x=>/tempura\s*aci|naget/i.test(x))||lines.find(x=>/\b(bakso|sosis|bumbu|saus|mie|snack)\b/i.test(x))||'';}
-    const isFamilia=/tempura\s*aci|\bnaget\b/i.test(raw);
+    if(!productLine){
+      productLine=lines.find(x=>/tempura|naget|eskrim|stik|lidah|kotak|bulat|mie|familia/i.test(x))||'';
+    }
+
+    // Penanda Familia Food dari resi, termasuk sender “PD FAMILIA FOOD”.
+    // Ini membuat OCR tetap mengenali produk meskipun “Tempura Aci” terbaca tidak sempurna.
+    const shapeWord=/(eskrim|stik|lidah|kotak|bulat|mie)\b/i.test(raw);
+    const isFamilia=/familia\s*food|tempura|naget/i.test(raw) || (shapeWord && !!sizeMatch);
     const size=sizeMatch?Number(sizeMatch[1]):null;
+
     return {raw, resi:resiMatch?resiMatch[0]:'', orderId:orderMatch?orderMatch[1]:'', qty, size, productLine, type:isFamilia?'familia':'dropship'};
+  }
+
+  async function imageToCanvas(file,{threshold=false}={}){
+    const url=URL.createObjectURL(file);
+    try{
+      const img=await new Promise((resolve,reject)=>{
+        const im=new Image(); im.onload=()=>resolve(im); im.onerror=reject; im.src=url;
+      });
+      const maxW=1800;
+      const scale=Math.min(1,maxW/img.naturalWidth);
+      const c=document.createElement('canvas');
+      c.width=Math.max(1,Math.round(img.naturalWidth*scale));
+      c.height=Math.max(1,Math.round(img.naturalHeight*scale));
+      const ctx=c.getContext('2d',{willReadFrequently:true});
+      ctx.drawImage(img,0,0,c.width,c.height);
+      const data=ctx.getImageData(0,0,c.width,c.height);
+      for(let i=0;i<data.data.length;i+=4){
+        const r=data.data[i],g=data.data[i+1],b=data.data[i+2];
+        let gray=0.299*r+0.587*g+0.114*b;
+        // Kontras + sedikit threshold untuk tulisan resi.
+        gray=Math.max(0,Math.min(255,(gray-128)*1.65+128));
+        if(threshold) gray=gray>170?255:0;
+        data.data[i]=data.data[i+1]=data.data[i+2]=gray;
+      }
+      ctx.putImageData(data,0,0);
+      return c;
+    }finally{URL.revokeObjectURL(url);}
   }
 
   async function readBarcode(file){
@@ -552,12 +599,40 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   async function runOCR(file){
-    setStatus('Membaca resi...');
-    if(window.Tesseract){
-      const result=await Tesseract.recognize(file,'ind');
-      return result?.data?.text||'';
-    }
-    throw new Error('Mesin OCR belum tersedia. Periksa koneksi internet.');
+    setStatus('Membaca tulisan resi...');
+    if(!window.Tesseract) throw new Error('Mesin OCR belum tersedia. Periksa koneksi internet.');
+
+    // Pass 1: OCR gambar asli dengan bahasa Inggris yang biasanya lebih stabil untuk label/resi.
+    let best='';
+    try{
+      const r1=await Tesseract.recognize(file,'eng',{
+        logger:m=>{if(m && m.status==='recognizing text') setStatus('Membaca tulisan resi '+Math.round((m.progress||0)*100)+'%...');},
+        tessedit_pageseg_mode:6
+      });
+      best=r1?.data?.text||'';
+    }catch(e){}
+
+    const p1=extractReceipt(best);
+    if(p1.size || /familia\s*food|tempura|naget|eskrim|stik|lidah|kotak|bulat/i.test(best)) return best;
+
+    // Pass 2: preprocessing kontras untuk foto kamera yang agak buram.
+    try{
+      const c=await imageToCanvas(file,{threshold:false});
+      const r2=await Tesseract.recognize(c.toDataURL('image/jpeg',0.94),'eng',{tessedit_pageseg_mode:6});
+      best=((best+'\n'+(r2?.data?.text||'')).trim());
+    }catch(e){}
+
+    const p2=extractReceipt(best);
+    if(p2.size || /familia\s*food|tempura|naget|eskrim|stik|lidah|kotak|bulat/i.test(best)) return best;
+
+    // Pass 3: threshold keras sebagai fallback.
+    try{
+      const c=await imageToCanvas(file,{threshold:true});
+      const r3=await Tesseract.recognize(c.toDataURL('image/jpeg',0.94),'eng',{tessedit_pageseg_mode:6});
+      best=((best+'\n'+(r3?.data?.text||'')).trim());
+    }catch(e){}
+
+    return best;
   }
 
   function applyParsed(info,barcode){
