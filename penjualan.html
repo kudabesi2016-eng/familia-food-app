@@ -85,7 +85,7 @@
   </div>
 
   <div class="actions">
-    <button class="btn blue" id="resScanBtn" type="button">📷 Buka Kamera & Baca Resi</button><button class="btn gray" id="resPickBtn" type="button">🖼️ Pilih Foto</button>
+    <button class="btn blue" id="resScanBtn" type="button" onclick="window.openFamiliaCamera && window.openFamiliaCamera()">🎥 Kamera Langsung & Baca Resi</button><button class="btn gray" id="resPickBtn" type="button">🖼️ Pilih Foto</button>
     <button class="btn" id="resSave" type="button">+ Simpan Resi</button>
     <button class="btn gray" id="resReset" type="button">Reset</button>
   </div>
@@ -586,10 +586,50 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   let cameraStream=null;
   let cameraFacing='environment';
   function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}const v=byId('cameraVideo');if(v)v.srcObject=null;}
-  async function startCamera(){if(!navigator.mediaDevices?.getUserMedia)throw new Error('Kamera langsung tidak didukung browser ini. Gunakan Chrome/Edge di HP.');stopCamera();cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cameraFacing}},audio:false});const v=byId('cameraVideo');v.srcObject=cameraStream;await v.play();}
-  function openCamera(){const m=byId('cameraModal');m.classList.add('open');m.setAttribute('aria-hidden','false');byId('cameraMsg').textContent='Meminta izin kamera...';startCamera().then(()=>byId('cameraMsg').textContent='Kamera siap. Posisikan resi lalu tekan Ambil Foto Resi.').catch(e=>byId('cameraMsg').textContent='Kamera gagal dibuka: '+(e.message||e));}
-  function closeCamera(){stopCamera();const m=byId('cameraModal');m.classList.remove('open');m.setAttribute('aria-hidden','true');}
-  async function captureFromCamera(){const v=byId('cameraVideo');if(!cameraStream||!v.videoWidth){byId('cameraMsg').textContent='Kamera belum siap.';return;}const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0,c.width,c.height);c.toBlob(async blob=>{if(!blob)return;const file=new File([blob],'resi-camera.jpg',{type:'image/jpeg'});const dt=new DataTransfer();dt.items.add(file);byId('resImage').files=dt.files;closeCamera();await scan();},'image/jpeg',0.92);}
+  async function startCamera(){
+    if(!window.isSecureContext) throw new Error('Kamera membutuhkan koneksi HTTPS. Buka aplikasi dari link GitHub Pages (https://...).');
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Browser ini tidak mengizinkan kamera langsung. Gunakan Google Chrome di HP.');
+    stopCamera();
+    try{
+      cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:cameraFacing}},audio:false});
+    }catch(e){
+      // Some Android browsers reject exact facingMode; retry with a looser constraint.
+      cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cameraFacing}},audio:false});
+    }
+    const v=byId('cameraVideo');
+    v.srcObject=cameraStream;
+    await v.play();
+  }
+  function openCamera(){
+    const m=byId('cameraModal');
+    if(!m)return;
+    m.classList.add('open');
+    m.setAttribute('aria-hidden','false');
+    const msg=byId('cameraMsg');
+    if(msg)msg.textContent='Meminta izin kamera...';
+    startCamera().then(()=>{if(msg)msg.textContent='✅ Kamera siap. Arahkan ke seluruh resi lalu tekan Ambil Foto Resi.';})
+      .catch(e=>{if(msg)msg.innerHTML='<span style=\"color:#b91c1c\">❌ Kamera gagal dibuka: '+escLocal(e.message||e)+'<br>Periksa izin Kamera untuk Chrome.</span>';});
+  }
+  window.openFamiliaCamera=openCamera;
+  function closeCamera(){stopCamera();const m=byId('cameraModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true');}}
+  async function captureFromCamera(){
+    const v=byId('cameraVideo');
+    if(!cameraStream||!v.videoWidth){byId('cameraMsg').textContent='Kamera belum siap.';return;}
+    const c=document.createElement('canvas');
+    c.width=v.videoWidth;c.height=v.videoHeight;
+    c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+    c.toBlob(async blob=>{
+      if(!blob)return;
+      const file=new File([blob],'resi-camera.jpg',{type:'image/jpeg'});
+      try{
+        const dt=new DataTransfer();
+        dt.items.add(file);
+        byId('resImage').files=dt.files;
+      }catch(e){}
+      closeCamera();
+      await scan();
+    },'image/jpeg',0.92);
+  }
 
   async function scan(){
     const file=byId('resImage').files?.[0];
