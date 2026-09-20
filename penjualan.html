@@ -4,7 +4,7 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5faf7;color:#26352d}.sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid #dce8e1;padding:20px 14px}.brand{font-size:20px;font-weight:700;color:var(--brand-color,#087443);margin:4px 8px 22px}.nav a{display:block;text-decoration:none;color:#315247;padding:11px 12px;border-radius:9px;margin:4px 0}.nav a:hover,.nav a.active{background:#eaf6ef;color:var(--brand-color,#087443);font-weight:600}main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 8px;color:var(--brand-color,#087443)}.sub{color:#6d7e76;margin-bottom:20px}.card{background:#fff;border:1px solid #dce8e1;border-radius:14px;padding:20px;margin-bottom:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.badge{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;background:#eef7f1;color:var(--brand-color,#087443);font-weight:bold;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.preview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.preview .box{background:#f7fbf8;border:1px solid #e2eee6;border-radius:12px;padding:14px}.preview small{display:block;color:#667;margin-bottom:5px}.preview strong{font-size:20px}.profit{background:#eef7f1!important}.note{font-size:13px;color:#68736d;margin-top:8px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #ccd5cf;border-radius:9px;background:#fff}.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.btn:disabled{opacity:.5;cursor:not-allowed}.btn{border:0;border-radius:9px;padding:11px 17px;background:var(--brand-color,#087443);color:#fff;cursor:pointer;font-weight:700}.btn.gray{background:#777}.btn.blue{background:#2563eb}.msg{margin-top:12px;padding:10px;border-radius:8px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;margin-top:8px;min-width:1250px}th{background:var(--brand-color,#087443);color:#fff;padding:10px;text-align:left;white-space:nowrap}td{padding:9px;border-bottom:1px solid #e5e5e5;vertical-align:top}.mini{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}.edit{background:#eaf5ee;color:var(--brand-color,#087443)}.del{background:#fdecec;color:#a22}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.stat{background:#f0f8f3;padding:16px;border-radius:12px}.stat b{font-size:21px;display:block;margin-top:6px}.importbox{border:2px dashed #cbded2;border-radius:12px;padding:18px;background:#fbfefc}.import-preview{display:none}.import-preview.show{display:block}.warn{background:#fff8df;border:1px solid #f0df9b;padding:12px;border-radius:9px;color:#6b5a16;margin-top:12px}.ok{background:#eef7f1;border:1px solid #cde7d7;padding:12px;border-radius:9px;color:#166534;margin-top:12px}.bad{background:#fdecec;border:1px solid #f4caca;padding:12px;border-radius:9px;color:#991b1b;margin-top:12px}.small{font-size:12px;color:#68736d}.modal-input{width:110px;padding:6px;border:1px solid #ccd5cf;border-radius:6px}@media(max-width:850px){.sidebar{position:static;width:auto;padding:14px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}main{margin-left:0;padding:16px}.grid,.summary,.preview{grid-template-columns:1fr}}
-.viewbtn{background:#eef7f1;color:var(--brand-color,#087443);font-weight:700}.import-compact{padding:4px 0}.import-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.import-stats>div{background:#f7fbf8;border:1px solid #e2eee6;border-radius:10px;padding:11px}.import-stats small{display:block;color:#667;margin-bottom:4px}.import-stats b{font-size:15px}.upload-tabs{display:flex;gap:8px;margin-bottom:14px}.upload-tab{flex:1;border:1px solid #cbded2;background:#f7fbf8;color:#315247;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}.upload-tab.active{background:#eaf6ef;color:var(--brand-color,#087443);border-color:#9fc9af}.upload-panel{display:none}.upload-panel.active{display:block}.import-preview{display:none}.import-preview.show{display:block}.import-recap{margin-top:16px}.import-detail{display:none;margin-top:16px}.import-detail.show{display:block}.import-recap table,.import-detail table{min-width:1100px}.clickrow{cursor:pointer}@media(max-width:900px){.import-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.import-stats{grid-template-columns:1fr}}</style></head><body>
+.viewbtn{background:#eef7f1;color:var(--brand-color,#087443);font-weight:700}.import-compact{padding:4px 0}.import-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.import-stats>div{background:#f7fbf8;border:1px solid #e2eee6;border-radius:10px;padding:11px}.import-stats small{display:block;color:#667;margin-bottom:4px}.import-stats b{font-size:15px}.upload-tabs{display:flex;gap:8px;margin-bottom:14px}.upload-tab{flex:1;border:1px solid #cbded2;background:#f7fbf8;color:#315247;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}.upload-tab.active{background:#eaf6ef;color:var(--brand-color,#087443);border-color:#9fc9af}.upload-panel{display:none}.upload-panel.active{display:block}.import-preview{display:none}.import-preview.show{display:block}.import-recap{margin-top:16px}.import-detail{display:none;margin-top:16px}.import-detail.show{display:block}.import-recap table,.import-detail table{min-width:1100px}.clickrow{cursor:pointer}@media(max-width:900px){.import-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.import-stats{grid-template-columns:1fr}}.camera-modal{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}.camera-modal.open{display:flex}.camera-box{width:min(560px,100%);background:#fff;border-radius:16px;padding:14px}.camera-box video{width:100%;border-radius:12px;background:#111;aspect-ratio:3/4;object-fit:cover}.camera-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.camera-actions button{flex:1;min-width:130px}.camera-note{font-size:12px;color:#666;margin:8px 0}</style></head><body>
 <aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav">
 <a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a class="active" href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
 </nav></aside><main>
@@ -40,8 +40,8 @@
     </div>
     <div class="field">
       <label>Scan / Foto Resi</label>
-      <input id="resImage" type="file" accept="image/*" capture="environment">
-      <div class="small" style="margin-top:5px">Di HP bisa langsung buka kamera. Sistem membaca barcode + tulisan resi.</div>
+      <input id="resImage" type="file" accept="image/*" style="display:none">
+      <div class="small" style="margin-top:5px">Tekan tombol kamera untuk membuka kamera HP. Pilih Foto tersedia sebagai cadangan.</div>
     </div>
     <div class="field">
       <label>No. Resi</label>
@@ -85,14 +85,14 @@
   </div>
 
   <div class="actions">
-    <button class="btn blue" id="resScanBtn" type="button">📷 Baca Resi</button>
+    <button class="btn blue" id="resScanBtn" type="button">📷 Buka Kamera & Baca Resi</button><button class="btn gray" id="resPickBtn" type="button">🖼️ Pilih Foto</button>
     <button class="btn" id="resSave" type="button">+ Simpan Resi</button>
     <button class="btn gray" id="resReset" type="button">Reset</button>
   </div>
   <div id="resMsg"></div>
 </div>
 
-<div class="card" id="onlineCashCard">
+<div id="cameraModal" class="camera-modal" aria-hidden="true"><div class="camera-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">📷 Scan Resi</h3><button class="btn gray" id="cameraClose" type="button">Tutup</button></div><div class="camera-note">Arahkan kamera ke seluruh resi, pastikan tulisan dan barcode terlihat jelas.</div><video id="cameraVideo" playsinline autoplay muted></video><div class="camera-actions"><button class="btn blue" id="cameraCapture" type="button">📸 Ambil Foto Resi</button><button class="btn gray" id="cameraSwitch" type="button">🔄 Ganti Kamera</button></div><div id="cameraMsg" class="small" style="margin-top:8px"></div></div></div><div class="card" id="onlineCashCard">
   <div class="cashhead">
     <div>
       <h2 style="margin:0">💰 Penerimaan Uang Online</h2>
@@ -583,6 +583,14 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     refreshResPreview();
   }
 
+  let cameraStream=null;
+  let cameraFacing='environment';
+  function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}const v=byId('cameraVideo');if(v)v.srcObject=null;}
+  async function startCamera(){if(!navigator.mediaDevices?.getUserMedia)throw new Error('Kamera langsung tidak didukung browser ini. Gunakan Chrome/Edge di HP.');stopCamera();cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cameraFacing}},audio:false});const v=byId('cameraVideo');v.srcObject=cameraStream;await v.play();}
+  function openCamera(){const m=byId('cameraModal');m.classList.add('open');m.setAttribute('aria-hidden','false');byId('cameraMsg').textContent='Meminta izin kamera...';startCamera().then(()=>byId('cameraMsg').textContent='Kamera siap. Posisikan resi lalu tekan Ambil Foto Resi.').catch(e=>byId('cameraMsg').textContent='Kamera gagal dibuka: '+(e.message||e));}
+  function closeCamera(){stopCamera();const m=byId('cameraModal');m.classList.remove('open');m.setAttribute('aria-hidden','true');}
+  async function captureFromCamera(){const v=byId('cameraVideo');if(!cameraStream||!v.videoWidth){byId('cameraMsg').textContent='Kamera belum siap.';return;}const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0,c.width,c.height);c.toBlob(async blob=>{if(!blob)return;const file=new File([blob],'resi-camera.jpg',{type:'image/jpeg'});const dt=new DataTransfer();dt.items.add(file);byId('resImage').files=dt.files;closeCamera();await scan();},'image/jpeg',0.92);}
+
   async function scan(){
     const file=byId('resImage').files?.[0];
     if(!file){setMsg('resMsg','Pilih/foto resi terlebih dahulu.',true);return;}
@@ -661,7 +669,11 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   function resetCash(){byId('cashTanggal').value=today();byId('cashAmount').value='';byId('cashNote').value='';setMsg('cashMsg','');}
 
   byId('resImage')?.addEventListener('change',()=>{ if(byId('resImage').files?.length)scan(); });
-  byId('resScanBtn')?.addEventListener('click',scan);
+  byId('resScanBtn')?.addEventListener('click',openCamera);
+  byId('resPickBtn')?.addEventListener('click',()=>byId('resImage').click());
+  byId('cameraClose')?.addEventListener('click',closeCamera);
+  byId('cameraCapture')?.addEventListener('click',captureFromCamera);
+  byId('cameraSwitch')?.addEventListener('click',()=>{cameraFacing=cameraFacing==='environment'?'user':'environment';startCamera().catch(e=>byId('cameraMsg').textContent='Gagal ganti kamera: '+(e.message||e));});
   byId('resSave')?.addEventListener('click',saveResi);
   byId('resReset')?.addEventListener('click',resetResi);
   byId('resJenis')?.addEventListener('change',setJenisUI);
