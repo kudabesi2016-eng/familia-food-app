@@ -380,6 +380,17 @@ td{
 
   </div>
 
+  <div class="card">
+    <h2 style="margin-top:0">📦 Rekap Online Baru</h2>
+    <div class="notice">Transaksi Online Baru memakai tanggal produk keluar untuk HPP/Modal dan tanggal pencairan untuk Uang Bersih. Profit bulan = Uang Bersih Diterima bulan tersebut − Modal Produk Keluar bulan tersebut.</div>
+    <div class="tablewrap" style="margin-top:12px">
+      <table>
+        <thead><tr><th>Bulan</th><th>Penjualan / Bungkus</th><th>HPP Naget/Tempura</th><th>Uang Bersih Diterima</th><th>Profit</th><th>Produk Dropship</th><th>Modal Produk Dropship</th><th>Margin</th></tr></thead>
+        <tbody id="newOnlineMonthly"></tbody>
+      </table>
+    </div>
+  </div>
+
 </main>
 
 
@@ -755,6 +766,23 @@ function renderCards(){
    RENDER TABEL
 ===================================================== */
 
+function renderNewOnlineMonthly(){
+  const tb=document.getElementById('newOnlineMonthly'); if(!tb)return;
+  const ms=months();
+  if(!ms.length){tb.innerHTML='<tr><td colspan="8" class="empty">Belum ada data.</td></tr>';return;}
+  tb.innerHTML=ms.map(m=>{
+    const productRows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_batch' && monthOfSaleRow(x)===m);
+    const cashRows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_pencairan' && monthOfSaleRow(x)===m);
+    const qty=productRows.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
+    let familia=0,dropship=0;
+    productRows.forEach(x=>{const v=Math.round(Number(x.modal_hpp??x.hpp??0)); if(String(x.variation||'').toLowerCase()==='dropship')dropship+=v; else familia+=v;});
+    const cash=cashRows.reduce((a,x)=>a+Math.round(Number(x.uang_bersih??x.omzet_produk??0)),0);
+    const profit=cash-(familia+dropship);
+    const margin=cash?profit/cash*100:0;
+    return `<tr><td><b>${label(m)}</b></td><td>${qty.toLocaleString('id-ID')}</td><td>${money(familia)}</td><td><b>${money(cash)}</b></td><td><b style="color:${profit<0?'#b42318':''}">${money(profit)}</b></td><td>${productRows.filter(x=>String(x.variation||'').toLowerCase()==='dropship').reduce((a,x)=>a+Math.round(Number(x.qty||0)),0).toLocaleString('id-ID')} bungkus</td><td>${money(dropship)}</td><td>${margin.toFixed(2)}%</td></tr>`;
+  }).join('');
+}
+
 function renderMonthly(){
 
   const ms =
@@ -926,6 +954,7 @@ function render(){
   renderCards();
 
   renderMonthly();
+  renderNewOnlineMonthly();
 
 }
 
