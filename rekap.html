@@ -380,29 +380,6 @@ td{
 
   </div>
 
-
-  <!-- REKAP ONLINE BARU -->
-  <div class="card" id="onlineNewRecapCard">
-    <h2 style="margin-top:0">📦 Rekap Online Baru</h2>
-    <div class="notice">Transaksi baru tidak memakai No. Resi. Yang dicatat adalah <b>produk keluar + jumlah bungkus + HPP/modal</b>. Uang Bersih berasal dari Penerimaan Uang Online. Profit = Uang Bersih Diterima − HPP Naget/Tempura − Modal Produk Dropship.</div>
-    <div class="tablewrap" style="margin-top:12px">
-      <table style="min-width:1000px">
-        <thead>
-          <tr>
-            <th>Bulan</th>
-            <th>Penjualan / Bungkus</th>
-            <th>HPP Naget / Tempura</th>
-            <th>Uang Bersih Diterima</th>
-            <th>Profit</th>
-            <th>Produk Dropship (Bungkus)</th>
-            <th>Modal Produk Dropship</th>
-          </tr>
-        </thead>
-        <tbody id="onlineNewMonthly"><tr><td colspan="7" class="empty">Memuat...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
 </main>
 
 
@@ -939,33 +916,6 @@ function renderMonthOptions(){
 }
 
 
-function renderOnlineNewRecap(){
-  const el=$('onlineNewMonthly');
-  if(!el)return;
-  const map=new Map();
-  (sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_batch').forEach(x=>{
-    const m=monthOfSaleRow(x); if(!/^\d{4}-\d{2}$/.test(m))return;
-    if(!map.has(m))map.set(m,{qty:0,hpp:0,dropQty:0,dropModal:0,cash:0});
-    const a=map.get(m);
-    const q=Math.max(0,Math.round(Number(x.qty||0)));
-    const modal=Math.max(0,Math.round(Number(x.modal_hpp||x.hpp||0)));
-    a.qty+=q; a.hpp+=modal;
-    if(x.produk_id==null){a.dropQty+=q;a.dropModal+=modal;}
-  });
-  (sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_pencairan').forEach(x=>{
-    const m=monthOfSaleRow(x); if(!/^\d{4}-\d{2}$/.test(m))return;
-    if(!map.has(m))map.set(m,{qty:0,hpp:0,dropQty:0,dropModal:0,cash:0});
-    map.get(m).cash+=Math.max(0,Math.round(Number(x.uang_bersih||x.omzet_produk||0)));
-  });
-  const ms=[...map.keys()].sort().reverse();
-  if(!ms.length){el.innerHTML='<tr><td colspan="7" class="empty">Belum ada transaksi online baru.</td></tr>';return;}
-  el.innerHTML=ms.map(m=>{
-    const a=map.get(m);
-    const profit=a.cash-a.hpp;
-    return `<tr><td><b>${label(m)}</b></td><td>${a.qty.toLocaleString('id-ID')} bungkus</td><td>${money(a.hpp-a.dropModal)}</td><td><b>${money(a.cash)}</b></td><td><b>${money(profit)}</b></td><td>${a.dropQty.toLocaleString('id-ID')} bungkus</td><td>${money(a.dropModal)}</td></tr>`;
-  }).join('');
-}
-
 /* =====================================================
    RENDER
 ===================================================== */
@@ -976,7 +926,6 @@ function render(){
   renderCards();
 
   renderMonthly();
-  renderOnlineNewRecap();
 
 }
 
