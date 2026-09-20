@@ -46,8 +46,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
     <div class="card"><div class="card-title">Total Pemasukan</div><div class="card-number" id="totalRevenue">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Pengeluaran / Potongan</div><div class="card-number" id="totalOut">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Uang Bersih</div><div class="card-number" id="totalNet">Rp 0</div></div>
-    <div class="card"><div class="card-title">Total HPP / Modal + Packing Online</div><div class="card-number" id="totalHpp">Rp 0</div></div>
-    <div class="card"><div class="card-title">Sisa Online Setelah Semua Biaya</div><div class="card-number" id="onlineFinal">Rp 0</div></div>
+    <div class="card"><div class="card-title">Total HPP / Modal</div><div class="card-number" id="totalHpp">Rp 0</div></div>
     <div class="card"><div class="card-title">Profit Terukur</div><div class="card-number" id="totalProfit">Rp 0</div></div>
     <div class="card"><div class="card-title">Margin Terukur</div><div class="card-number" id="totalMargin">0.00%</div></div>
     <div class="card"><div class="card-title">Produk Aktif</div><div class="card-number" id="totalProduk">-</div></div>
@@ -81,6 +80,13 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Produk Keluar</small><b id="onQty">0</b></div>
     </div>
     <div class="note">Online historis membaca <b>online_standard_finance</b> untuk keuangan dan <b>online_standard_product</b> untuk bungkus. HPP mengikuti HPP Online resmi yang sudah dikunci.</div>
+    <div class="channel-grid" style="margin-top:12px">
+      <div class="mini"><small>Online Baru — Produk Keluar</small><b id="newOnQty">0 bungkus</b></div>
+      <div class="mini"><small>Online Baru — HPP/Modal</small><b id="newOnModal">Rp 0</b></div>
+      <div class="mini"><small>Online Baru — Uang Bersih</small><b id="newOnCash">Rp 0</b></div>
+      <div class="mini"><small>Online Baru — Profit</small><b id="newOnProfit">Rp 0</b></div>
+      <div class="mini"><small>Online Baru — Margin</small><b id="newOnMargin">0,00%</b></div>
+    </div>
   </div>
 
   <div class="section"><h2>Akses Cepat</h2><div class="quick">
@@ -153,27 +159,25 @@ async function loadDashboard(){
     const onlineFinanceRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_finance');
     const onlineProductRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_product');
     const onlineNew=sales.filter(x=>String(x.channel||'')==='Online' && !isHistoricalSource(x.source));
+    const onlineBatchNew=onlineNew.filter(x=>String(x.source||'')==='online_batch');
+    const onlineCashNew=onlineNew.filter(x=>String(x.source||'')==='online_pencairan');
     const onOldRevenue=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.omzet_produk)),0);
-    const onOldFeeBase=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.biaya_platform)),0);
-    // IKLAN TIKTOK: biaya sudah divalidasi per bulan dan digabung ke Potongan Online.
-    const ADS_BY_MONTH={'2026-01':0,'2026-02':0,'2026-03':156728,'2026-04':1520830,'2026-05':2359332,'2026-06':3770101,'2026-07':3650244,'2026-08':4319420};
-    const adTotal=Object.values(ADS_BY_MONTH).reduce((a,b)=>a+b,0);
-    const onOldFee=onOldFeeBase+adTotal;
+    const onOldFee=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.biaya_platform)),0);
     const onOldNet=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.uang_bersih)),0);
-    const onOldHppBase=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.modal_hpp)),0);
-    // Packing online Rp1.000 per bungkus, total historis 3.271 bungkus.
-    const packingOnline=3271000;
-    const onOldHpp=onOldHppBase+packingOnline;
-    const onNewRevenue=onlineNew.reduce((s,x)=>s+Math.round(num(x.omzet_produk ?? (num(x.qty)*num(x.harga)))),0);
-    const onNewNet=onlineNew.some(x=>x.uang_bersih!=null)?onlineNew.reduce((s,x)=>s+Math.round(num(x.uang_bersih)),0):onNewRevenue;
-    const onNewFee=Math.max(0,onNewRevenue-onNewNet);
-    const onNewHpp=onlineNew.reduce((s,x)=>s+Math.round(num(x.hpp)),0);
+    const onOldHpp=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.modal_hpp)),0);
+    const onNewRevenue=onlineCashNew.reduce((s,x)=>s+Math.round(num(x.uang_bersih ?? x.omzet_produk)),0);
+    const onNewNet=onNewRevenue;
+    const onNewFee=0;
+    const onNewHpp=onlineBatchNew.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? x.hpp)),0);
+    const onNewQty=onlineBatchNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+    const onNewProfit=onNewNet-onNewHpp;
+    const onNewMargin=onNewNet?onNewProfit/onNewNet*100:0;
     const onRevenue=onOldRevenue+onNewRevenue;
     const onFee=onOldFee+onNewFee;
     const onNet=onOldNet+onNewNet;
     const onHpp=onOldHpp+onNewHpp;
-    const onProfit=onNet-onFee-onHpp;
-    const onQty=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.qty)),0)+onlineNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+    const onProfit=onNet-onHpp;
+    const onQty=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.qty)),0)+onNewQty;
 
     // GABUNGAN: konsisten dengan dua channel.
     const totalRevenue=offRevenue+onRevenue;
@@ -200,10 +204,12 @@ async function loadDashboard(){
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
     setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet); setNumber('onHpp',onHpp); setNumber('onProfit',onProfit);
-    // Patokan final Familia Food Jan–Agustus 2026.
-    const onlineFinal=onNet-onFee-onHpp;
-    setNumber('onlineFinal',onlineFinal);
     document.getElementById('onQty').textContent=onQty.toLocaleString('id-ID');
+    document.getElementById('newOnQty').textContent=onNewQty.toLocaleString('id-ID')+' bungkus';
+    setNumber('newOnModal',onNewHpp);
+    setNumber('newOnCash',onNewNet);
+    setNumber('newOnProfit',onNewProfit);
+    const nm=document.getElementById('newOnMargin'); nm.textContent=onNewMargin.toFixed(2).replace('.',',')+'%'; nm.classList.toggle('negative',onNewMargin<0);
 
     const status=errors.length?('Sebagian data gagal dimuat: '+errors.join(', ')+'.'):('Database terhubung • Dashboard Offline + Online berhasil dimuat.');
     document.getElementById('statusText').textContent=status;
