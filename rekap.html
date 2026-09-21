@@ -332,8 +332,7 @@ td{
       Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>
       Uang Bersih adalah nilai yang diterima setelah potongan.<br>
       Modal menggunakan HPP Online apabila sudah tersedia.<br>
-      Profit = Uang Bersih − Modal.<br>
-      Margin = Profit ÷ Uang Bersih × 100%.</span>
+      Profit = Uang Bersih − Modal.<br></span>
 
     </div>
 
@@ -359,7 +358,7 @@ td{
             <th id="monthlyOutHead">Potongan Online Shop</th>
             <th>Uang Bersih yang Diterima</th>
             <th>Modal</th>
-            <th>Profit / Margin</th>
+            <th>Profit</th>
           </tr>
 
         </thead>
@@ -661,8 +660,8 @@ function updateChannelUI(){
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Potongan untuk Offline tidak ada sehingga nilainya Rp 0.<br>Uang Bersih sama dengan Pemasukan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.'
-    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br>Modal menggunakan HPP Online apabila sudah tersedia.<br>Profit = Uang Bersih − Modal.<br>Margin = Profit ÷ Uang Bersih × 100%.';
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Potongan untuk Offline tidak ada sehingga nilainya Rp 0.<br>Uang Bersih sama dengan Pemasukan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>'
+    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br>Modal menggunakan HPP Online apabila sudah tersedia.<br>Profit = Uang Bersih − Modal.<br>';
 }
 
 /* =====================================================
