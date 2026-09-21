@@ -46,7 +46,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
     <div class="card"><div class="card-title">Total Pemasukan</div><div class="card-number" id="totalRevenue">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Pengeluaran / Potongan</div><div class="card-number" id="totalOut">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Uang Bersih</div><div class="card-number" id="totalNet">Rp 0</div></div>
-    <div class="card"><div class="card-title">Total HPP / Modal</div><div class="card-number" id="totalHpp">Rp 0</div></div>
+    <div class="card"><div class="card-title">HPP / Modal Terukur</div><div class="card-number" id="totalHpp">Rp 0</div></div>
     <div class="card"><div class="card-title">Profit Terukur</div><div class="card-number" id="totalProfit">Rp 0</div></div>
     <div class="card"><div class="card-title">Margin Terukur</div><div class="card-number" id="totalMargin">0.00%</div></div>
     <div class="card"><div class="card-title">Produk Aktif</div><div class="card-number" id="totalProduk">-</div></div>
@@ -77,9 +77,9 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Uang Bersih</small><b id="onNet">Rp 0</b></div>
       <div class="mini"><small>HPP / Modal</small><b id="onHpp">Rp 0</b></div>
       <div class="mini"><small>Profit</small><b id="onProfit">Rp 0</b></div>
-      <div class="mini"><small>Produk Keluar</small><b id="onQty">0</b></div>
+      <div class="mini"><small>Produk Keluar Terbaca (STANDARD)</small><b id="onQty">0</b></div>
     </div>
-    <div class="note">Online historis membaca <b>online_standard_finance</b> untuk keuangan dan <b>online_standard_product</b> untuk bungkus. HPP mengikuti HPP Online resmi yang sudah dikunci.</div>
+    <div class="note">Online historis membaca <b>online_standard_finance</b> untuk keuangan dan <b>online_standard_product</b> untuk bungkus. HPP mengikuti HPP Online resmi. <b>Catatan audit:</b> histori Jan–Agustus harus cocok dengan kunci 5.937 bungkus; bila STANDARD belum cocok, Produk Keluar dan HPP historis belum boleh dianggap final.</div>
     <div class="channel-grid" style="margin-top:12px">
       <div class="mini"><small>Online Baru — Produk Keluar</small><b id="newOnQty">0 bungkus</b></div>
       <div class="mini"><small>Online Baru — HPP/Modal</small><b id="newOnModal">Rp 0</b></div>
