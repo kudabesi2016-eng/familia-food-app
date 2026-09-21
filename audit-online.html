@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Familia Food - Audit Online</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f5f7f6;color:#333;margin:0}.wrap{max-width:1200px;margin:auto;padding:28px}
+h1{color:#146b3a}.box{background:#fff;border-radius:12px;padding:18px;margin:14px 0;box-shadow:0 2px 8px #0001}.ok{color:#146b3a}.warn{color:#a66a00}.bad{color:#c62828}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:right}th:first-child,td:first-child{text-align:left}button{background:#146b3a;color:#fff;border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
+</style>
+</head>
+<body><div class="wrap">
+<h1>🍀 Audit Online Familia Food</h1>
+<p>Audit READ-ONLY. Halaman ini tidak melakukan INSERT, UPDATE, DELETE, atau mengubah data.</p>
+<button onclick="runAudit()">↻ Jalankan Audit</button>
+<div id="status" class="box">Menunggu audit...</div>
+<div id="result"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script>
+const LOCKED={12:5597,20:192,25:78,30:38,40:23};
+const LOCKED_TOTAL=5937;
+function esc(v){return String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+function sizeOf(row){
+ const s=((row.nama_produk||row.product_name||'')+' '+(row.variansi||row.variation||row.variasi||'')).toLowerCase();
+ let m=s.match(/(\d+)\s*bungkus\s*(?:is|isi)\s*(\d+)\s*pcs/); if(m)return Number(m[2])/Number(m[1]);
+ m=s.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/); if(m)return Number(m[1]);
+ m=s.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/); if(m)return Number(m[1]);
+ return null;
+}
+function qtyOf(r){return Number(r.bungkus??r.qty??r.jumlah??r.quantity??0)||0;}
+function monthOf(r){return String(r.bulan??r.periode??r.tanggal??'').slice(0,7);}
+async function allRows(table){
+ let out=[],from=0;
+ while(true){
+  const {data,error}=await supabaseClient.from(table).select('*').range(from,from+999);
+  if(error)throw error;
+  out.push(...(data||[])); if(!data||data.length<1000)break; from+=1000;
+ }
+ return out;
+}
+async function runAudit(){
+ const st=document.getElementById('status'),res=document.getElementById('result');
+ st.textContent='⏳ Membaca online_standard_product (READ-ONLY)...';res.innerHTML='';
+ try{
+  const rows=await allRows('online_standard_product');
+  const bySize={12:0,20:0,25:0,30:0,40:0,other:0},byMonth={};
+  let total=0,familia=0;
+  const famRows=[];
+  for(const r of rows){
+   const q=qtyOf(r); total+=q;
+   const s=sizeOf(r); bySize[[12,20,25,30,40].includes(s)?s:'other']+=q;
+   const m=monthOf(r); if(m)byMonth[m]=(byMonth[m]||0)+q;
+   const name=String(r.nama_produk??r.product_name??'').toLowerCase();
+   if(/tempura aci|naget/.test(name)){familia+=q;famRows.push(r);}
+  }
+  const expectedRows=Object.entries(LOCKED).map(([s,e])=>({size:s,expected:e,actual:bySize[s]||0,diff:(bySize[s]||0)-e}));
+  const exact=[...expectedRows].reduce((a,x)=>a+x.actual,0);
+  st.innerHTML='<b>Audit selesai.</b> '+rows.length.toLocaleString('id-ID')+' baris STANDARD terbaca.';
+  res.innerHTML=
+   '<div class="box"><h2>Perbandingan data terkunci</h2>'+
+   '<table><tr><th>Varian</th><th>Terkunci</th><th>Database</th><th>Selisih</th></tr>'+
+   expectedRows.map(x=>'<tr><td>Isi '+x.size+'</td><td>'+x.expected.toLocaleString('id-ID')+'</td><td>'+x.actual.toLocaleString('id-ID')+'</td><td class="'+(x.diff===0?'ok':'bad')+'">'+(x.diff>0?'+':'')+x.diff.toLocaleString('id-ID')+'</td></tr>').join('')+
+   '<tr><th>Total varian terkunci</th><th>'+LOCKED_TOTAL.toLocaleString('id-ID')+'</th><th>'+exact.toLocaleString('id-ID')+'</th><th class="'+(exact===LOCKED_TOTAL?'ok':'bad')+'">'+(exact-LOCKED_TOTAL).toLocaleString('id-ID')+'</th></tr></table></div>'+
+   '<div class="box"><h2>Ringkasan sumber STANDARD</h2><p>Total semua listing: <b>'+total.toLocaleString('id-ID')+'</b> bungkus</p><p>Listing terdeteksi Familia Food: <b>'+familia.toLocaleString('id-ID')+'</b> bungkus</p><p>Listing lain/produk non-Familia: <b>'+(total-familia).toLocaleString('id-ID')+'</b> bungkus</p></div>'+
+   '<div class="box"><h2>Per bulan</h2><table><tr><th>Bulan</th><th>Bungkus</th></tr>'+Object.keys(byMonth).sort().map(m=>'<tr><td>'+m+'</td><td>'+byMonth[m].toLocaleString('id-ID')+'</td></tr>').join('')+'</table></div>'+
+   '<div class="box"><h2>Status</h2><p class="'+(total===LOCKED_TOTAL?'ok':'bad')+'">'+(total===LOCKED_TOTAL?'SUMBER STANDARD sudah sama dengan total terkunci.':'SUMBER STANDARD BELUM berisi total 5.937. Jangan mengubah angka terkunci atau menambal dengan angka buatan.')+'</p></div>';
+ }catch(e){st.innerHTML='<span class="bad">Gagal audit: '+esc(e.message)+'</span>';}
+}
+runAudit();
+</script></body></html>
