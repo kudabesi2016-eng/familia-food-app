@@ -315,7 +315,7 @@ td{
     </div>
 
     <div class="stat profit">
-      <small>Profit / Margin</small>
+      <small>Profit</small>
       <strong id="profit">—</strong>
     </div>
 
@@ -741,10 +741,7 @@ function renderCards(){
     $('profit').innerHTML =
 
       `${money(profit)}
-       <br>
-       <span class="hint">
-         Margin ${margin.toFixed(2)}%
-       </span>`;
+       `;
 
   }else{
 
@@ -876,10 +873,7 @@ function renderMonthly(){
 
                 ? `
                   <b>${money(profit)}</b>
-                  <br>
-                  <span class="hint">
-                    Margin ${margin.toFixed(2)}%
-                  </span>
+                  
                 `
 
                 : `
