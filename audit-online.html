@@ -141,7 +141,7 @@ document.getElementById('csvFile').addEventListener('change',e=>{
     }
     const gap=converted-LOCKED_TOTAL;
     st.innerHTML='✅ CSV dibaca lokal: <b>'+rows.length.toLocaleString('id-ID')+'</b> baris TikTok Jan–Agustus 2026, dari total Tempura Aci <b>'+temp.length.toLocaleString('id-ID')+'</b> baris.';
-    res.innerHTML='<div class="box" style="box-shadow:none;border:1px solid #e2ebe5"><p>Qty mentah Tempura Aci: <b>'+rawQty.toLocaleString('id-ID')+'</b></p><p>Retur Qty: <b>'+rawRet.toLocaleString('id-ID')+'</b></p><p>Qty bersih sebelum ekspansi bundle: <b>'+(rawQty-rawRet).toLocaleString('id-ID')+'</b></p><p>Qty bersih setelah ekspansi 2/3/6 bungkus: <b>'+converted.toLocaleString('id-ID')+'</b></p><p class="'+(gap===0?'ok':'bad')">Selisih terhadap data terkunci 5.928: <b>'+(gap>0?'+':'')+gap.toLocaleString('id-ID')+'</b></p></div>'+
+    res.innerHTML='<div class="box" style="box-shadow:none;border:1px solid #e2ebe5"><p>Qty mentah Tempura Aci: <b>'+rawQty.toLocaleString('id-ID')+'</b></p><p>Retur Qty: <b>'+rawRet.toLocaleString('id-ID')+'</b></p><p>Qty bersih sebelum ekspansi bundle: <b>'+(rawQty-rawRet).toLocaleString('id-ID')+'</b></p><p>Qty bersih setelah ekspansi 2/3/6 bungkus: <b>'+converted.toLocaleString('id-ID')+'</b></p><p class="'+(gap===0?'ok':'bad')+'">Selisih terhadap data terkunci 5.928: <b>'+(gap>0?'+':'')+gap.toLocaleString('id-ID')+'</b></p></div>'+
       comparison(byShape,bySize)+
       '<h3>Status baris TikTok Jan–Agustus</h3>'+renderTable(['Status','Baris'],Object.entries(status).map(([k,v])=>[k,v.toLocaleString('id-ID')]));  
    }catch(err){st.innerHTML='<span class="bad">Gagal audit CSV: '+esc(err.message)+'</span>';}
