@@ -77,9 +77,9 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Uang Bersih</small><b id="onNet">Rp 0</b></div>
       <div class="mini"><small>HPP / Modal</small><b id="onHpp">Rp 0</b></div>
       <div class="mini"><small>Profit</small><b id="onProfit">Rp 0</b></div>
-      <div class="mini"><small>Produk Keluar Terbaca (STANDARD)</small><b id="onQty">0</b></div>
+      <div class="mini"><small>Produk Keluar Historis (Kunci)</small><b id="onQty">0</b></div>
     </div>
-    <div class="note">Online historis membaca <b>online_standard_finance</b> untuk keuangan dan <b>online_standard_product</b> untuk bungkus. HPP mengikuti HPP Online resmi. <b>Catatan audit:</b> histori Jan–Agustus harus cocok dengan kunci 5.937 bungkus; bila STANDARD belum cocok, Produk Keluar dan HPP historis belum boleh dianggap final.</div>
+    <div class="note">Online historis memakai <b>5.937 bungkus</b> sebagai kunci Produk Keluar Jan–Agustus 2026. Sumber STANDARD tetap ditampilkan untuk audit; HPP/Profit historis hanya dianggap final bila sumber cocok dengan kunci.<br><span id="onlineHistoryAudit">Memeriksa rekonsiliasi…</span></div>
     <div class="channel-grid" style="margin-top:12px">
       <div class="mini"><small>Online Baru — Produk Keluar</small><b id="newOnQty">0 bungkus</b></div>
       <div class="mini"><small>Online Baru — HPP/Modal</small><b id="newOnModal">Rp 0</b></div>
@@ -100,6 +100,8 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
 <script>
 const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
 const num=n=>Number(n)||0;
+const ONLINE_LOCKED_HISTORY={12:5597,20:192,25:78,30:38,40:23};
+const ONLINE_LOCKED_TOTAL=5937;
 const colorValue=(el,v,formatted=rupiah(v))=>{el.textContent=formatted;el.classList.toggle('negative',v<0)};
 const pct=(v)=>{const t=(Number(v)||0).toFixed(2)+'%';return t};
 async function fetchAll(table, select='*'){
@@ -204,7 +206,10 @@ async function loadDashboard(){
     const onNet=onOldNet+onNewNet;
     const onHpp=onOldHpp+onNewHpp;
     const onProfit=onOldProfit+(onNewNet-onNewHpp);
-    const onQty=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.qty)),0)+onNewQty;
+    const onlineHistoricalQtyRaw=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+    const onlineHistoricalQtyMismatch=onlineFinanceRows.length>0 && onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
+    // Jan–Agustus 2026 memakai angka historis yang sudah dikunci.
+    const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
 
     // GABUNGAN: konsisten dengan dua channel.
     const totalRevenue=offRevenue+onRevenue;
@@ -217,9 +222,15 @@ async function loadDashboard(){
     setNumber('totalRevenue',totalRevenue);
     setNumber('totalOut',totalOut);
     setNumber('totalNet',totalNet);
-    setNumber('totalHpp',totalHpp);
-    setNumber('totalProfit',totalProfit);
-    const tm=document.getElementById('totalMargin');tm.textContent=pct(totalMargin);tm.classList.toggle('negative',totalMargin<0);
+    if(onlineHistoricalQtyMismatch){
+      document.getElementById('totalHpp').textContent='—';
+      document.getElementById('totalProfit').textContent='—';
+      const tm=document.getElementById('totalMargin');tm.textContent='—';tm.classList.remove('negative');
+    }else{
+      setNumber('totalHpp',totalHpp);
+      setNumber('totalProfit',totalProfit);
+      const tm=document.getElementById('totalMargin');tm.textContent=pct(totalMargin);tm.classList.toggle('negative',totalMargin<0);
+    }
     document.getElementById('totalProduk').textContent=activeProducts.toLocaleString('id-ID');
     document.getElementById('totalPenjualan').textContent=sales.filter(x=>!isHistoricalSource(x.source)).length.toLocaleString('id-ID');
 
@@ -230,8 +241,17 @@ async function loadDashboard(){
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
-    setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet); setNumber('onHpp',onHpp); setNumber('onProfit',onProfit);
+    setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet);
+    if(onlineHistoricalQtyMismatch){
+      document.getElementById('onHpp').textContent='—';
+      document.getElementById('onProfit').textContent='—';
+    }else{
+      setNumber('onHpp',onHpp); setNumber('onProfit',onProfit);
+    }
     document.getElementById('onQty').textContent=onQty.toLocaleString('id-ID');
+    document.getElementById('onlineHistoryAudit').innerHTML=onlineHistoricalQtyMismatch
+      ? '🔴 <b>Audit:</b> STANDARD terbaca '+onlineHistoricalQtyRaw.toLocaleString('id-ID')+' bungkus, sedangkan kunci historis adalah <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b>. Selisih <b>'+(onlineHistoricalQtyRaw-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+'</b>. Produk Keluar memakai angka kunci; HPP/Profit historis ditahan sampai STANDARD direkonsiliasi.'
+      : '🟢 <b>Audit:</b> STANDARD historis cocok dengan kunci '+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+' bungkus.';
     document.getElementById('newOnQty').textContent=onNewQty.toLocaleString('id-ID')+' bungkus';
     setNumber('newOnModal',onNewHpp);
     setNumber('newOnCash',onNewNet);
