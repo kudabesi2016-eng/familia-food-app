@@ -590,9 +590,9 @@ function ffOnlineHppUnit(row){
 
 function onlineHpp(m){
   try{
-    // Jan–Agustus 2026 wajib cocok dengan kunci 5.937 bungkus.
+    // Jan–Agustus 2026 wajib cocok dengan kunci 5.928 bungkus.
     // Jangan hitung HPP/Profit dari sumber STANDARD yang masih tidak lengkap/salah.
-    const lockedTotal=5937;
+    const lockedTotal=5928;
     if(m>='2026-01' && m<='2026-08'){
       const lockedSource=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_product' && monthOfSaleRow(x)>='2026-01' && monthOfSaleRow(x)<='2026-08');
       const lockedRawQty=lockedSource.reduce((a,x)=>a+Math.trunc(Number(x.qty||0)),0);
@@ -669,7 +669,7 @@ function updateChannelUI(){
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
     ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Potongan untuk Offline tidak ada sehingga nilainya Rp 0.<br>Uang Bersih sama dengan Pemasukan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>'
-    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br><b>HPP/Profit historis Jan–Agustus hanya final bila sumber STANDARD cocok dengan kunci 5.937 bungkus.</b><br>Profit = Uang Bersih − Modal.<br>';
+    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br><b>HPP/Profit historis Jan–Agustus hanya final bila sumber STANDARD cocok dengan kunci 5.928 bungkus.</b><br>Profit = Uang Bersih − Modal.<br>';
 }
 
 /* =====================================================
