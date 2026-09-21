@@ -120,9 +120,13 @@
         if(r.knownHpp) hpp += Number(r.hpp||0); else hppKnown=false;
         productRows.push(r);
       }
-      const ex = (expenses || []).filter(x => expenseMonth(x) === month && !isRangeExpense(x));
-      out += ex.reduce((a,x)=>a+Number(x.nominal||0),0);
-      net -= ex.reduce((a,x)=>a+Number(x.nominal||0),0);
+      // Pengeluaran sah untuk bulan berjalan. Gunakan periode bila valid,
+      // atau fallback ke tanggal. Jangan membuang data hanya karena periode
+      // berbentuk rentang/teks; yang penting bulan dapat ditentukan dengan aman.
+      const ex = (expenses || []).filter(x => expenseMonth(x) === month);
+      const expenseTotal = ex.reduce((a,x)=>a+Number(x.nominal||0),0);
+      out += expenseTotal;
+      net -= expenseTotal;
     }
     if(channel === 'Online' || channel === 'all'){
       const fin = onlineIncomeRows(sales,month);
