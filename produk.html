@@ -950,125 +950,45 @@
           }
 
           /*
-            Cari HPP yang sudah ada.
+            Harga produk dan HPP adalah master yang berbeda.
+            Edit/tambah produk tidak boleh menimpa HPP yang sudah dikunci.
+            HPP hanya dibuat bila belum ada; record HPP existing dibiarkan.
           */
 
-          const {
-            data: hppLama,
-            error: hppCariError
-          } = await supabaseClient
+          const { data: hppLama, error: hppCariError } = await supabaseClient
             .from("hpp")
-            .select("*")
+            .select("id")
             .eq("produk_id", produkId)
             .maybeSingle();
 
           if (hppCariError) {
-
             console.error(hppCariError);
-
             tampilkanError(
-              "Produk tersimpan, tetapi HPP gagal diperiksa: " +
-              hppCariError.message
+              "Produk tersimpan, tetapi HPP gagal diperiksa: " + hppCariError.message
             );
-
             return;
           }
 
-          /*
-            Data HPP.
-            
-            hpp_unit = HPP Offline.
-            
-            HPP Online belum dimasukkan
-            karena datanya belum tersedia.
-          */
+          if (!hppLama) {
+            const dataHpp = {
+              produk_id: produkId,
+              hpp_unit: hpp_offline === "" ? null : Number(hpp_offline),
+              harga_offline: harga_offline === "" ? null : Number(harga_offline),
+              harga_online: harga_online === "" ? null : Number(harga_online),
+              untung_offline:
+                hpp_offline !== "" && harga_offline !== ""
+                  ? Number(harga_offline) - Number(hpp_offline) : null,
+              untung_online:
+                hpp_online !== "" && harga_online !== ""
+                  ? Number(harga_online) - Number(hpp_online) : null
+            };
 
-          const dataHpp = {
-
-            produk_id:
-              produkId,
-
-            hpp_unit:
-              hpp_offline === ""
-                ? null
-                : Number(hpp_offline),
-
-            harga_offline:
-              harga_offline === ""
-                ? null
-                : Number(harga_offline),
-
-            harga_online:
-              harga_online === ""
-                ? null
-                : Number(harga_online),
-
-            untung_offline:
-              hpp_offline !== "" &&
-              harga_offline !== ""
-                ? Number(harga_offline) -
-                  Number(hpp_offline)
-                : null,
-
-            untung_online:
-              hpp_online !== "" &&
-              harga_online !== ""
-                ? Number(harga_online) -
-                  Number(hpp_online)
-                : null
-          };
-
-          /*
-            UPDATE HPP jika sudah ada.
-          */
-
-          if (
-            hppLama &&
-            hppLama.id
-          ) {
-
-            const {
-              error
-            } = await supabaseClient
-              .from("hpp")
-              .update(dataHpp)
-              .eq("id", hppLama.id);
-
+            const { error } = await supabaseClient.from("hpp").insert([dataHpp]);
             if (error) {
-
               console.error(error);
-
               tampilkanError(
-                "Produk tersimpan, tetapi HPP gagal diperbarui: " +
-                error.message
+                "Produk tersimpan, tetapi HPP baru gagal dibuat: " + error.message
               );
-
-              return;
-            }
-
-          }
-
-          /*
-            INSERT HPP jika belum ada.
-          */
-
-          else {
-
-            const {
-              error
-            } = await supabaseClient
-              .from("hpp")
-              .insert([dataHpp]);
-
-            if (error) {
-
-              console.error(error);
-
-              tampilkanError(
-                "Produk tersimpan, tetapi HPP gagal disimpan: " +
-                error.message
-              );
-
               return;
             }
           }
