@@ -671,7 +671,7 @@ function updateChannelUI(){
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Potongan untuk Offline tidak ada sehingga nilainya Rp 0.<br>Uang Bersih sama dengan Pemasukan.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>'
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran Offline berasal dari tabel Pengeluaran pada bulan yang dipilih.<br>Uang Bersih = Pemasukan − Pengeluaran.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>'
     : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br><b>HPP/Profit historis Jan–Agustus hanya final bila sumber STANDARD cocok dengan kunci rincian 5.928 bungkus.</b><br>Profit = Uang Bersih − Modal.<br>';
 }
 
