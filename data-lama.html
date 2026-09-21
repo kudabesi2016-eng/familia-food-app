@@ -711,6 +711,41 @@ function renderOnlineOldMonthTable(month){
     ${note}${more}
     <div class="tablewrap"><table class="cleanTable"><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody>${shown.map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('')}</tbody></table></div></section>`;
 }
+
+const ONLINE_LOCKED_HISTORY={12:5597,20:192,25:78,30:38,40:23};
+const ONLINE_LOCKED_TOTAL=5937;
+function auditStandardLockedRows(rows){
+  const bySize={12:0,20:0,25:0,30:0,40:0};
+  let total=0,lockedRows=0;
+  for(const r of (rows||[])){
+    if(r.source!=='online_standard_product')continue;
+    const m=FFCore.monthOf(r.tanggal)||'';
+    if(m<'2026-01'||m>'2026-08')continue;
+    lockedRows++;
+    const q=Number(r.qty||0); total+=q;
+    let size=detectOnlinePackSize(r);
+    // Listing Tempura Aci/Naget tanpa angka isi tetap diperlakukan sebagai isi 12
+    // hanya bila bentuk legacy-nya jelas; ukuran 20/25/30/40/50 akan terdeteksi lebih dulu.
+    if(!size){
+      const n=onlineMatchText(r);
+      if(/\btempura aci\b.*(?:eskrim|kotak|stik|bulat|lidah|mie|opal)\b/.test(n) ||
+         /\btempura aci\b.*\bisi\s*12\b/.test(n)) size=12;
+    }
+    if(ONLINE_LOCKED_HISTORY[size]!=null)bySize[size]+=q;
+  }
+  const all=[12,20,25,30,40].reduce((a,s)=>a+Number(bySize[s]||0),0);
+  return {bySize,total,all,lockedRows,expected:ONLINE_LOCKED_TOTAL,
+    ok:lockedRows===0 || all===ONLINE_LOCKED_TOTAL};
+}
+function lockedAuditMessage(audit){
+  if(!audit.lockedRows)return '';
+  const diffs=[12,20,25,30,40].map(s=>[s,Number(audit.bySize[s]||0)-ONLINE_LOCKED_HISTORY[s]])
+    .filter(x=>x[1]!==0)
+    .map(x=>'Isi '+x[0]+': '+(x[1]>0?'+':'')+x[1].toLocaleString('id-ID')).join(' • ');
+  if(audit.all===ONLINE_LOCKED_TOTAL) return '<div class="reportNotice" style="border-color:#cfe6d7;background:#f4fbf6;color:#146b3a">✅ Data STANDARD Jan–Agustus 2026 cocok dengan kunci historis <b>5.937 bungkus</b>.</div>';
+  return '<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>⛔ IMPOR DIBLOKIR UNTUK HISTORI TERKUNCI.</b> Data STANDARD Jan–Agustus terbaca <b>'+audit.all.toLocaleString('id-ID')+'</b> bungkus, sedangkan kunci resmi <b>5.937</b>. '+esc(diffs||('Selisih '+(audit.all-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'))+'<br>Jangan menambal angka dengan data buatan. Gunakan sumber STANDARD yang sudah direkonsiliasi.</div>';
+}
+
 async function refreshOnlineOldPreview(){
   const isStandard=onlineOldImportRows.some(x=>x.source==='online_standard_finance'||x.source==='online_standard_product');
   // STANDARD tetap membaca master Produk/HPP aplikasi agar Modal/Profit dihitung dari HPP resmi.
@@ -730,7 +765,9 @@ async function refreshOnlineOldPreview(){
   const matchedRows=onlineOldPreviewRows.filter(x=>x.source==='Income + Pesanan');
   const matchedOrders=new Set(matchedRows.map(x=>x._order_id||'' ).filter(Boolean)).size;
   const hppKnown=onlineOldPreviewRows.filter(x=>x.hpp!=null).length;
-  $('onlineOldInfo').innerHTML='<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty semua listing <b>'+seller.toLocaleString('id-ID')+'</b> • '+(isStandard?'<b>Preview memakai HASIL RANGKUMAN REKAP_ONLINE, bukan detail listing.</b> Modal/HPP memakai HPP ONLINE resmi (Harga Online − Untung Online), dengan mapping Tempura Aci/Naget → master Naget berdasarkan ISI. Modal terukur <b>'+FFCore.rupiah(totalModal)+'</b> • Profit terukur <b>'+FFCore.rupiah(totalProfit)+'</b> • Bungkus Familia Food terpetakan <b>'+totalMapped.toLocaleString('id-ID')+'</b> • Produk lain di luar HPP <b>'+standardSummaries.reduce((a,x)=>a+Number(x.nonFamiliaQty||0),0).toLocaleString('id-ID')+'</b> • Produk Familia Food belum terpetakan <b>'+totalUnmapped.toLocaleString('id-ID')+'</b>.':'Order cocok <b>'+matchedOrders.toLocaleString('id-ID')+'</b> • Baris produk cocok <b>'+matchedRows.length.toLocaleString('id-ID')+'</b> • HPP Online terukur <b>'+hppKnown.toLocaleString('id-ID')+'</b> baris. Produk + Qty mengikuti data historis yang diimpor.')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>.</div>';
+  const lockedAudit=isStandard?auditStandardLockedRows(onlineOldImportRows):{lockedRows:0,ok:true,all:0,bySize:{}};
+  const lockedNotice=lockedAuditMessage(lockedAudit);
+  $('onlineOldInfo').innerHTML=lockedNotice+'<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty semua listing <b>'+seller.toLocaleString('id-ID')+'</b> • '+(isStandard?'<b>Preview memakai HASIL RANGKUMAN REKAP_ONLINE, bukan detail listing.</b> Modal/HPP memakai HPP ONLINE resmi (Harga Online − Untung Online), dengan mapping Tempura Aci/Naget → master Naget berdasarkan ISI. Modal terukur <b>'+FFCore.rupiah(totalModal)+'</b> • Profit terukur <b>'+FFCore.rupiah(totalProfit)+'</b> • Bungkus Familia Food terpetakan <b>'+totalMapped.toLocaleString('id-ID')+'</b> • Produk lain di luar HPP <b>'+standardSummaries.reduce((a,x)=>a+Number(x.nonFamiliaQty||0),0).toLocaleString('id-ID')+'</b> • Produk Familia Food belum terpetakan <b>'+totalUnmapped.toLocaleString('id-ID')+'</b>.':'Order cocok <b>'+matchedOrders.toLocaleString('id-ID')+'</b> • Baris produk cocok <b>'+matchedRows.length.toLocaleString('id-ID')+'</b> • HPP Online terukur <b>'+hppKnown.toLocaleString('id-ID')+'</b> baris. Produk + Qty mengikuti data historis yang diimpor.')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>.</div>';
   renderOnlineOldMonthTabs(ms);
   renderOnlineOldMonthTable(onlineOldActiveMonth);
   $('onlineOldPreview').style.display='block';
@@ -772,6 +809,14 @@ async function saveOnlineHistoricalRows(rows){
 $('onlineOldSave').onclick=async()=>{
   try{
     if(!onlineOldImportRows.length)return;
+    const standardLockedRows=onlineOldImportRows.filter(x=>x.source==='online_standard_product'&&String(FFCore.monthOf(x.tanggal)||'')>='2026-01'&&String(FFCore.monthOf(x.tanggal)||'')<='2026-08');
+    if(standardLockedRows.length){
+      const audit=auditStandardLockedRows(onlineOldImportRows);
+      if(!audit.ok){
+        $('onlineOldMsg').innerHTML=lockedAuditMessage(audit);
+        return;
+      }
+    }
     const result=await saveOnlineHistoricalRows(onlineOldImportRows);
     $('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+result.saved.toLocaleString('id-ID')+'</b> baris Online historis. '+result.duplicates.toLocaleString('id-ID')+' duplikat dilewati.</div>';
     onlineOldImportRows=[];
