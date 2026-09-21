@@ -758,7 +758,7 @@ function lockedAuditMessage(audit){
     .filter(x=>x[1]!==0)
     .map(x=>'Isi '+x[0]+': '+(x[1]>0?'+':'')+x[1].toLocaleString('id-ID')).join(' • ');
   if(audit.all===ONLINE_LOCKED_TOTAL) return '<div class="reportNotice" style="border-color:#cfe6d7;background:#f4fbf6;color:#146b3a">✅ Data STANDARD Jan–Agustus 2026 cocok dengan kunci historis <b>5.928 bungkus</b>.</div>';
-  return '<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>⛔ IMPOR DIBLOKIR UNTUK HISTORI TERKUNCI.</b> Data STANDARD Jan–Agustus terbaca <b>'+audit.all.toLocaleString('id-ID')+'</b> bungkus, sedangkan kunci resmi <b>5.928</b>. '+esc(diffs||('Selisih '+(audit.all-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'))+'<br>Jangan menambal angka dengan data buatan. Gunakan sumber STANDARD yang sudah direkonsiliasi.</div>';
+  return '<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>⛔ IMPOR DIBLOKIR UNTUK HISTORI TERKUNCI.</b> Data STANDARD Jan–Agustus terbaca <b>'+audit.all.toLocaleString('id-ID')+'</b> bungkus, sedangkan kunci rincian resmi <b>5.928</b> (5.597 + 192 + 78 + 38 + 23). '+esc(diffs||('Selisih '+(audit.all-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'))+'<br>Jangan menambal angka dengan data buatan. Gunakan sumber STANDARD yang sudah direkonsiliasi.</div>';
 }
 
 async function refreshOnlineOldPreview(){
