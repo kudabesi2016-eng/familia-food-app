@@ -182,7 +182,7 @@ function onlineMonthDetail(m){
   h+='<div><small>Potongan Online Shop</small><b>'+rupiah(pot)+'</b></div>';
   h+='<div><small>Uang Bersih</small><b>'+rupiah(net)+'</b></div>';
   h+='<div><small>Modal / Profit Historis</small><b>'+(ready?'Mengikuti HPP resmi':'—')+'</b></div>';
-  h+='<div><small>Status Audit</small><b style="color:'+(ready?'#087443':'#a22')+'">'+(ready?'✅ Cocok 5.937':'🔴 Belum cocok')+'</b></div>';
+  h+='<div><small>Status Audit</small><b style="color:'+(ready?'#087443':'#a22')+'">'+(ready?'✅ Cocok 5.928':'🔴 Belum cocok')+'</b></div>';
   h+='</div>';
 
   if(!ready){
@@ -198,7 +198,7 @@ function onlineMonthDetail(m){
   const rows=Object.values(grouped).sort((a,b)=>b.qty-a.qty);
   h+='<div class="mini-detail"><h4>📦 Produk Online per Bulan</h4><div class="tablewrap"><table><thead><tr><th>Produk / Listing</th><th>Variasi</th><th>Bungkus</th></tr></thead><tbody>';
   if(!ready){
-    h+='<tr><td colspan="3">⛔ Detail produk disembunyikan sampai sumber STANDARD cocok dengan kunci 5.937 bungkus.</td></tr>';
+    h+='<tr><td colspan="3">⛔ Detail produk disembunyikan sampai sumber STANDARD cocok dengan kunci 5.928 bungkus.</td></tr>';
   }else{
     rows.forEach(x=>{h+='<tr><td>'+esc(x.produk)+'</td><td>'+esc(x.variation||'—')+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td></tr>'});
     if(!rows.length)h+='<tr><td colspan="3">Belum ada detail produk.</td></tr>';
@@ -231,7 +231,7 @@ function renderOnlineMonthlySummary(){
     const net=fin.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
     html+='<div class="online-month-row"><div class="month-name">📅 '+esc(monthLabel(m))+'</div><div><span class="money-label">🟢 Pemasukan</span><span class="money income">'+rupiah(rev)+'</span></div><div><span class="money-label">🔴 Potongan</span><span class="money expense">'+rupiah(pot)+'</span></div><div><span class="money-label">💰 Uang Bersih</span><span class="money balance">'+rupiah(net)+'</span></div><div><span class="money-label">📦 Produk Keluar Historis</span><span class="money">'+(ready?'Tersedia':'—')+'</span></div><div><span class="money-label">🧮 HPP / Profit</span><span class="money">'+(ready?'Tersedia':'Ditahan')+'</span><button class="view-btn" type="button" style="margin-top:7px" data-online-month="'+m+'">👁 Lihat Data</button></div><div id="online-detail-'+m+'" class="online-detail" style="display:none"></div></div>';
   });
-  html+='</div><div class="history-note">🔵 Keuangan historis tetap membaca <b>STANDARD Finance</b>. Produk Keluar Jan–Agustus memakai kunci <b>5.937 bungkus</b>. Detail produk dan HPP historis tidak dianggap final selama sumber STANDARD belum cocok.</div>';
+  html+='</div><div class="history-note">🔵 Keuangan historis tetap membaca <b>STANDARD Finance</b>. Produk Keluar Jan–Agustus memakai kunci <b>5.928 bungkus</b>. Detail produk dan HPP historis tidak dianggap final selama sumber STANDARD belum cocok.</div>';
   box.innerHTML=html;
 }
 window.toggleOnlineMonth=function(m){const el=$('online-detail-'+m);if(!el)return;if(el.style.display==='none'){el.innerHTML=onlineMonthDetail(m);el.style.display='block'}else{el.style.display='none'}};
@@ -728,7 +728,7 @@ function renderOnlineOldMonthTable(month){
 }
 
 const ONLINE_LOCKED_HISTORY={12:5597,20:192,25:78,30:38,40:23};
-const ONLINE_LOCKED_TOTAL=5937;
+const ONLINE_LOCKED_TOTAL=5928;
 function auditStandardLockedRows(rows){
   const bySize={12:0,20:0,25:0,30:0,40:0};
   let total=0,lockedRows=0;
@@ -757,8 +757,8 @@ function lockedAuditMessage(audit){
   const diffs=[12,20,25,30,40].map(s=>[s,Number(audit.bySize[s]||0)-ONLINE_LOCKED_HISTORY[s]])
     .filter(x=>x[1]!==0)
     .map(x=>'Isi '+x[0]+': '+(x[1]>0?'+':'')+x[1].toLocaleString('id-ID')).join(' • ');
-  if(audit.all===ONLINE_LOCKED_TOTAL) return '<div class="reportNotice" style="border-color:#cfe6d7;background:#f4fbf6;color:#146b3a">✅ Data STANDARD Jan–Agustus 2026 cocok dengan kunci historis <b>5.937 bungkus</b>.</div>';
-  return '<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>⛔ IMPOR DIBLOKIR UNTUK HISTORI TERKUNCI.</b> Data STANDARD Jan–Agustus terbaca <b>'+audit.all.toLocaleString('id-ID')+'</b> bungkus, sedangkan kunci resmi <b>5.937</b>. '+esc(diffs||('Selisih '+(audit.all-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'))+'<br>Jangan menambal angka dengan data buatan. Gunakan sumber STANDARD yang sudah direkonsiliasi.</div>';
+  if(audit.all===ONLINE_LOCKED_TOTAL) return '<div class="reportNotice" style="border-color:#cfe6d7;background:#f4fbf6;color:#146b3a">✅ Data STANDARD Jan–Agustus 2026 cocok dengan kunci historis <b>5.928 bungkus</b>.</div>';
+  return '<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>⛔ IMPOR DIBLOKIR UNTUK HISTORI TERKUNCI.</b> Data STANDARD Jan–Agustus terbaca <b>'+audit.all.toLocaleString('id-ID')+'</b> bungkus, sedangkan kunci resmi <b>5.928</b>. '+esc(diffs||('Selisih '+(audit.all-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'))+'<br>Jangan menambal angka dengan data buatan. Gunakan sumber STANDARD yang sudah direkonsiliasi.</div>';
 }
 
 async function refreshOnlineOldPreview(){
