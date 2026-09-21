@@ -38,7 +38,7 @@ input[type=file]{padding:10px;border:1px dashed #8bb8a0;border-radius:8px;backgr
 <div class="box">
 <h2>🔒 Data Historis yang Dikunci</h2>
 <table><thead><tr><th>Bentuk</th><th>Isi</th><th>Bungkus Terkunci</th></tr></thead><tbody id="lockedRows"></tbody>
-<tfoot><tr><th>Total</th><th>—</th><th>5.937</th></tr></tfoot></table>
+<tfoot><tr><th>Total</th><th>—</th><th>5.928</th></tr></tfoot></table>
 <p class="small">Kunci lama tidak diubah. Audit hanya membandingkan sumber baru terhadap angka tersebut.</p>
 </div>
 </div>
@@ -48,7 +48,7 @@ input[type=file]{padding:10px;border:1px dashed #8bb8a0;border-radius:8px;backgr
 <script src="supabase.js"></script>
 <script>
 const LOCKED_SHAPES={ESKRIM:3045,STIK:1509,KOTAK:333,BULAT:363,LIDAH:74,MIE:273};
-const LOCKED_TOTAL=5937;
+const LOCKED_TOTAL=5928;
 const LOCKED_SIZE={12:5597,20:192,25:78,30:38,40:23};
 
 function esc(v){return String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
@@ -118,7 +118,7 @@ async function runDbAudit(){
    }
    const size12to40=Object.values(bySize).reduce((a,b)=>a+b,0);
    st.innerHTML='✅ '+rows.length.toLocaleString('id-ID')+' baris terbaca. Total STANDARD = <b>'+total.toLocaleString('id-ID')+' bungkus</b>.';
-   res.innerHTML='<p class="'+(total===LOCKED_TOTAL?'ok':'bad')+'">'+(total===LOCKED_TOTAL?'SUMBER STANDARD sama dengan total terkunci.':'SUMBER STANDARD belum sama dengan 5.937; jangan menambal angka dengan angka buatan.')+'</p>'+
+   res.innerHTML='<p class="'+(total===LOCKED_TOTAL?'ok':'bad')+'">'+(total===LOCKED_TOTAL?'SUMBER STANDARD sama dengan total terkunci.':'SUMBER STANDARD belum sama dengan 5.928; jangan menambal angka dengan angka buatan.')+'</p>'+
      '<p>Listing terdeteksi Tempura Aci: <b>'+fam.toLocaleString('id-ID')+'</b> baris.</p>'+comparison(byShape,bySize)+
      '<h3>Per bulan</h3>'+renderTable(['Bulan','Bungkus'],Object.keys(byMonth).sort().map(m=>[m,byMonth[m].toLocaleString('id-ID')]));  
  }catch(e){st.innerHTML='<span class="bad">Gagal: '+esc(e.message)+'</span>';}
@@ -141,7 +141,7 @@ document.getElementById('csvFile').addEventListener('change',e=>{
     }
     const gap=converted-LOCKED_TOTAL;
     st.innerHTML='✅ CSV dibaca lokal: <b>'+rows.length.toLocaleString('id-ID')+'</b> baris TikTok Jan–Agustus 2026, dari total Tempura Aci <b>'+temp.length.toLocaleString('id-ID')+'</b> baris.';
-    res.innerHTML='<div class="box" style="box-shadow:none;border:1px solid #e2ebe5"><p>Qty mentah Tempura Aci: <b>'+rawQty.toLocaleString('id-ID')+'</b></p><p>Retur Qty: <b>'+rawRet.toLocaleString('id-ID')+'</b></p><p>Qty bersih sebelum ekspansi bundle: <b>'+(rawQty-rawRet).toLocaleString('id-ID')+'</b></p><p>Qty bersih setelah ekspansi 2/3/6 bungkus: <b>'+converted.toLocaleString('id-ID')+'</b></p><p class="'+(gap===0?'ok':'bad')">Selisih terhadap data terkunci 5.937: <b>'+(gap>0?'+':'')+gap.toLocaleString('id-ID')+'</b></p></div>'+
+    res.innerHTML='<div class="box" style="box-shadow:none;border:1px solid #e2ebe5"><p>Qty mentah Tempura Aci: <b>'+rawQty.toLocaleString('id-ID')+'</b></p><p>Retur Qty: <b>'+rawRet.toLocaleString('id-ID')+'</b></p><p>Qty bersih sebelum ekspansi bundle: <b>'+(rawQty-rawRet).toLocaleString('id-ID')+'</b></p><p>Qty bersih setelah ekspansi 2/3/6 bungkus: <b>'+converted.toLocaleString('id-ID')+'</b></p><p class="'+(gap===0?'ok':'bad')">Selisih terhadap data terkunci 5.928: <b>'+(gap>0?'+':'')+gap.toLocaleString('id-ID')+'</b></p></div>'+
       comparison(byShape,bySize)+
       '<h3>Status baris TikTok Jan–Agustus</h3>'+renderTable(['Status','Baris'],Object.entries(status).map(([k,v])=>[k,v.toLocaleString('id-ID')]));  
    }catch(err){st.innerHTML='<span class="bad">Gagal audit CSV: '+esc(err.message)+'</span>';}
