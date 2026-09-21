@@ -96,7 +96,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
   <div class="status" id="statusBox"><strong>Status:</strong> <span id="statusText">Memuat data dari database...</span></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script><script src="app-settings.js"></script>
+<script src="supabase.js"></script><script src="app-settings.js"></script><script src="ff-core.js"></script>
 <script>
 const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
 const num=n=>Number(n)||0;
@@ -131,14 +131,16 @@ async function loadDashboard(){
   document.getElementById('statusText').textContent='Memuat data dari database...';
   try{
     const results=await Promise.allSettled([
-      fetchAll('produk'),fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran')
+      fetchAll('produk'),fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran'),fetchAll('produk'),fetchAll('hpp')
     ]);
-    const [rp,rs,rd,re]=results;
+    const [rp,rs,rd,re,rprod,rhpp]=results;
     const errors=[];
     const products=rp.status==='fulfilled'?rp.value:[]; if(rp.status!=='fulfilled') errors.push('Produk');
     const sales=rs.status==='fulfilled'?rs.value:[]; if(rs.status!=='fulfilled') errors.push('Penjualan');
     const old=rd.status==='fulfilled'?rd.value:[]; if(rd.status!=='fulfilled') errors.push('Data Lama');
     const expenseRows=re.status==='fulfilled'?re.value:[]; if(re.status!=='fulfilled') errors.push('Pengeluaran');
+    const productMaster=rprod.status==='fulfilled'?rprod.value:[]; if(rprod.status!=='fulfilled') errors.push('Produk/HPP');
+    const hppRows=rhpp.status==='fulfilled'?rhpp.value:[]; if(rhpp.status!=='fulfilled') errors.push('Produk/HPP');
 
     const activeProducts=products.filter(active).length;
 
@@ -165,8 +167,29 @@ async function loadDashboard(){
     // Historis Online: gunakan angka yang tersimpan di STANDARD,
     // bukan angka hard-coded, agar Dashboard selalu sama dengan Rekap.
     const onOldNet=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.uang_bersih)),0);
-    const onOldFee=onlineFinanceRows.reduce((s,x)=>s+Math.max(0,Math.round(num(x.omzet_produk))-Math.round(num(x.uang_bersih))),0);
-    const onOldHpp=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? x.hpp ?? 0)),0);
+    const onOldFee=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.biaya_platform ?? (num(x.omzet_produk)-num(x.uang_bersih)))),0);
+    function onlineHppUnit(row){
+      if(Number(row?.modal_hpp ?? row?.hpp ?? 0)>0) return Math.round(Number(row.modal_hpp ?? row.hpp));
+      const n=String([row?.product_name,row?.variation,row?.seller_sku].filter(Boolean).join(' ')).toLowerCase().trim().replace(/\s+/g,' ');
+      let size=null;
+      const exactSku=String(row?.sku_id??'').trim();
+      if(exactSku==='1733751720824702091') size=12;
+      if(!size){ const m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/); if(m) size=Number(m[1]); }
+      if(!size){ const m=n.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/); if(m) size=Number(m[1]); }
+      if(!size && /tempura aci naget/.test(n) && /bulat/.test(n) && /default/.test(n)) size=12;
+      const masterName=size===25?'naget 25+saus':size?'naget '+size:'';
+      if(!masterName) return 0;
+      const p=productMaster.find(x=>String(x.nama_produk||'').toLowerCase().trim()===masterName);
+      if(!p) return 0;
+      const h=hppRows.find(x=>String(x.produk_id)===String(p.id));
+      if(!h) return 0;
+      const price=Number(h.harga_online ?? p.harga_online ?? 0);
+      const profit=Number(h.untung_online ?? 0);
+      if(price>0 && profit>=0 && price-profit>0) return Math.round(price-profit);
+      if(Number(h.hpp_online)>0) return Math.round(Number(h.hpp_online));
+      return Number(h.hpp_unit)>0 ? Math.round(Number(h.hpp_unit)) : 0;
+    }
+    const onOldHpp=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.qty))*onlineHppUnit(x),0);
     const onOldProfit=onOldNet-onOldHpp;
     // Transaksi Online baru memakai basis kas: Uang Bersih yang benar-benar cair.
     const onNewRevenue=onlineCashNew.reduce((s,x)=>s+Math.round(num(x.uang_bersih ?? x.omzet_produk)),0);
