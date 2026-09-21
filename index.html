@@ -162,11 +162,11 @@ async function loadDashboard(){
     const onlineBatchNew=onlineNew.filter(x=>String(x.source||'')==='online_batch');
     const onlineCashNew=onlineNew.filter(x=>String(x.source||'')==='online_pencairan');
     const onOldRevenue=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.omzet_produk)),0);
-    // Kunci historis Jan–Agustus 2026: Potongan TikTok + Iklan = Rp55.481.006
-    // dan HPP + Packing Online = Rp23.459.105. Uang Bersih tetap Rp96.167.983.
-    const onOldFee=55481006;
+    // Historis Online: gunakan angka yang tersimpan di STANDARD,
+    // bukan angka hard-coded, agar Dashboard selalu sama dengan Rekap.
     const onOldNet=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.uang_bersih)),0);
-    const onOldHpp=23459105;
+    const onOldFee=onlineFinanceRows.reduce((s,x)=>s+Math.max(0,Math.round(num(x.omzet_produk))-Math.round(num(x.uang_bersih))),0);
+    const onOldHpp=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? x.hpp ?? 0)),0);
     const onOldProfit=onOldNet-onOldHpp;
     // Transaksi Online baru memakai basis kas: Uang Bersih yang benar-benar cair.
     const onNewRevenue=onlineCashNew.reduce((s,x)=>s+Math.round(num(x.uang_bersih ?? x.omzet_produk)),0);
