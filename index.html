@@ -206,8 +206,9 @@ async function loadDashboard(){
     const onNet=onOldNet+onNewNet;
     const onHpp=onOldHpp+onNewHpp;
     const onProfit=onOldProfit+(onNewNet-onNewHpp);
-    const onlineHistoricalQtyRaw=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.qty)),0);
-    const onlineHistoricalQtyMismatch=onlineFinanceRows.length>0 && onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
+    const onlineHistoricalQtyLockedRows=onlineProductRows.filter(x=>{const m=String(x.tanggal||'').slice(0,7);return m>='2026-01'&&m<='2026-08';});
+    const onlineHistoricalQtyRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+    const onlineHistoricalQtyMismatch=onlineFinanceRows.some(x=>{const m=String(x.tanggal||'').slice(0,7);return m>='2026-01'&&m<='2026-08';}) && onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
     // Jan–Agustus 2026 memakai angka historis yang sudah dikunci.
     const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
 
