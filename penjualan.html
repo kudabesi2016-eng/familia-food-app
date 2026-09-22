@@ -511,7 +511,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   function familiaProducts(){
-    return (window.products||[]).filter(p=>/^naget\s*(10|12|20|25|30|40|50)/i.test(String(p.nama_produk||'').trim()));
+    return (window.products||[]).filter(p=>{
+      const n=String(p.nama_produk||'').trim().toLowerCase();
+      return /^naget\s*(10|12|20|25|30|40|50)/i.test(n) || n.includes('tempura aci') || n.startsWith('tempura');
+    });
   }
   function productById(id){return (window.products||[]).find(p=>String(p.id)===String(id));}
   function hppForProduct(p){
@@ -530,7 +533,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     return '<option value="">Pilih Dropship</option>'+dropRows().map((x,i)=>'<option value="'+i+'">'+esc(x.name)+' — '+(Number(x.modal)>0?money(x.modal)+'/bungkus':'Modal belum diisi')+'</option>').join('');
   }
   function familiaOptions(){
-    return '<option value="">Pilih Naget</option>'+familiaProducts().map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nama_produk)+' ('+esc(p.isi_per_bungkus||'')+' pcs)</option>').join('');
+    return '<option value="">Pilih Naget / Tempura Aci</option>'+familiaProducts().map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nama_produk)+' ('+esc(p.isi_per_bungkus||'')+' pcs)</option>').join('');
   }
 
   let rows=[];
