@@ -66,6 +66,42 @@
   .tablewrap table{min-width:760px}
   #detailCard .tablewrap table{min-width:1050px}
 }
+
+/* ===== Mode Kasir Online Baru: sederhana, tanpa tabel melebar ===== */
+#onlineNewCard .tablewrap{overflow:visible!important}
+#onlineBatchTable{width:100%!important;min-width:0!important;table-layout:fixed;border-collapse:separate;border-spacing:0 8px}
+#onlineBatchTable thead{display:none}
+#onlineBatchTable tbody,#onlineBatchTable tr{display:block;width:100%}
+#onlineBatchTable tr{border:0!important;background:transparent!important}
+#onlineBatchTable td{display:block!important;width:100%!important;border:1px solid #dce8e1!important;border-radius:12px!important;padding:10px!important;background:#fbfefc!important}
+.kasir-line{display:grid;grid-template-columns:34px 150px 140px minmax(220px,1.5fr) minmax(220px,1.5fr) 110px 110px 110px 80px;gap:8px;align-items:end}
+.kasir-no{font-weight:800;color:#087443;text-align:center;padding:10px 0}
+.kasir-field{min-width:0}
+.kasir-field>span,.kasir-cost>span{display:block;font-size:10px;font-weight:700;color:#718078;text-transform:uppercase;margin-bottom:4px}
+.kasir-field input,.kasir-field select{width:100%;min-width:0;padding:9px;border:1px solid #ccd5cf;border-radius:8px;background:#fff}
+.kasir-cost{padding:8px 6px;border-radius:8px;background:#f2f8f4}
+.kasir-cost b{font-size:12px;white-space:nowrap}
+.kasir-del{width:100%;padding:9px 7px!important}
+#batchCount{color:#68736d}
+#onlineNewCard .preview{grid-template-columns:repeat(3,1fr)}
+#batchTotalRows{display:none}
+#onlineNewCard .preview .box:first-child{display:none}
+@media(max-width:1100px){
+ .kasir-line{grid-template-columns:32px 140px 125px minmax(180px,1.4fr) minmax(180px,1.4fr) 95px 100px 100px 72px}
+}
+@media(max-width:700px){
+ #onlineNewCard .tablewrap{overflow:visible!important}
+ .kasir-line{grid-template-columns:1fr 1fr;gap:8px}
+ .kasir-no{grid-column:1/-1;text-align:left;padding:0;color:#087443}
+ .kasir-field.date,.kasir-field.type{grid-column:span 1}
+ .kasir-field.product,.kasir-field.drop,.kasir-field.qty{grid-column:1/-1}
+ .kasir-cost{display:flex;justify-content:space-between;gap:10px;align-items:center}
+ .kasir-cost:first-of-type{grid-column:1}
+ .kasir-cost:nth-of-type(2){grid-column:2}
+ .kasir-del{grid-column:1/-1;width:100%}
+ #onlineNewCard .preview{grid-template-columns:1fr 1fr!important}
+ #onlineNewCard .preview .box{min-height:70px}
+}
   /* Input online mobile dibuat satu kartu sederhana, tanpa geser horizontal */
   body{overflow-x:hidden}
   #onlineNewCard{overflow:hidden}
@@ -92,13 +128,12 @@
 <div class="cashhead">
 <div>
 <h2 style="margin:0">📦 Transaksi Online Baru — Input Cepat</h2>
-<div class="note">Tidak perlu No. Resi. Cukup pilih <b>Produk Keluar</b>, isi <b>Jumlah Bungkus</b>, lalu simpan. HPP produk Familia diambil otomatis dari HPP Online; Dropship memakai modal dari Master Dropship.</div>
+<div class="note">Pola kasir sederhana: pilih <b>Jenis</b>, pilih <b>Produk</b>, isi <b>Qty Bungkus</b>, lalu simpan. Tanggal dan modal dihitung otomatis.</div>
 </div>
 </div>
 <div class="batch-toolbar" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
 <button class="btn blue" id="batchAddRow" type="button">+ Tambah Produk</button>
-<button class="btn light" id="batchAdd10" type="button">+ Tambah 10 Baris</button>
-<button class="btn gray" id="batchClear" type="button">Kosongkan Semua</button>
+<button class="btn gray" id="batchClear" type="button">Reset</button>
 <span class="small" id="batchCount">0 baris</span>
 </div>
 <div class="tablewrap" style="margin-top:12px">
@@ -564,15 +599,19 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   function addRows(n=1){for(let i=0;i<n;i++)rows.push(emptyRow());renderRows();}
   function rowHtml(r,idx){
     return `<tr data-row="${r.id}">
-      <td>${idx+1}</td>
-      <td><input class="batch-date" type="date" value="${esc(r.tanggal)}"></td>
-      <td><select class="batch-type"><option value="familia" ${r.jenis==='familia'?'selected':''}>Naget</option><option value="dropship" ${r.jenis==='dropship'?'selected':''}>Dropship</option></select></td>
-      <td><select class="batch-produk" ${r.jenis==='dropship'?'disabled':''}>${familiaOptions()}</select></td>
-      <td><select class="batch-drop" ${r.jenis==='familia'?'disabled':''}>${dropSelectOptions()}</select></td>
-      <td><input class="batch-qty" type="number" min="1" step="1" value="${Math.max(1,Number(r.qty)||1)}"></td>
-      <td class="batch-unitcost">Rp 0</td>
-      <td class="batch-total">Rp 0</td>
-      <td><button type="button" class="mini del batch-del">Hapus</button></td>
+      <td colspan="9">
+        <div class="kasir-line">
+          <div class="kasir-no">${idx+1}</div>
+          <div class="kasir-field date"><span>Tanggal</span><input class="batch-date" type="date" value="${esc(r.tanggal)}"></div>
+          <div class="kasir-field type"><span>Jenis</span><select class="batch-type"><option value="familia" ${r.jenis==='familia'?'selected':''}>Naget</option><option value="dropship" ${r.jenis==='dropship'?'selected':''}>Dropship</option></select></div>
+          <div class="kasir-field product"><span>Produk</span><select class="batch-produk" ${r.jenis==='dropship'?'disabled':''}>${familiaOptions()}</select></div>
+          <div class="kasir-field drop"><span>Produk Dropship</span><select class="batch-drop" ${r.jenis==='familia'?'disabled':''}>${dropSelectOptions()}</select></div>
+          <div class="kasir-field qty"><span>Qty Bungkus</span><input class="batch-qty" type="number" min="1" step="1" value="${Math.max(1,Number(r.qty)||1)}"></div>
+          <div class="kasir-cost"><span>Modal</span><b class="batch-unitcost">Rp 0</b></div>
+          <div class="kasir-cost"><span>Total</span><b class="batch-total">Rp 0</b></div>
+          <button type="button" class="mini del batch-del kasir-del">Hapus</button>
+        </div>
+      </td>
     </tr>`;
   }
   function getRowObj(id){return rows.find(x=>x.id===id);}
