@@ -10,6 +10,8 @@ on:
       - "*.html"
       - "*.js"
       - "*.css"
+      - "tests/**"
+      - "SUPABASE-EXPANSION.sql"
 
 jobs:
   build-android:
@@ -44,6 +46,9 @@ jobs:
             -exec cp -f {} www/ \;
 
           test -f www/index.html
+
+      - name: Deep integration smoke tests
+        run: node tests/familia-smoke.mjs
 
       - name: Syntax check web scripts
         shell: bash
