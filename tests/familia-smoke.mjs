@@ -74,6 +74,8 @@ assert(penjualan.includes('customerLinksReady'),'POS customer links must be data
 assert(!penjualan.includes('ff_sale_customers_v1'),'POS must not keep sale↔customer mapping only in localStorage');
 assert(penjualan.includes('await supabaseClient.from(\'penjualan\').update(oldSale)'), 'Editing a sale must rollback when customer mapping fails');
 
+const oldData=await read('data-lama.html');
+assert(oldData.includes('loadSaleCustomers'),'Historical data page must read persistent customer↔sale mapping');
 const index=await read('index.html');
 assert(index.includes('const validExpenseRows='),'Dashboard expense validation missing');
 assert(index.indexOf('const validExpenseRows=') < index.indexOf('const opExpense='),'Dashboard operational expense order is invalid');
