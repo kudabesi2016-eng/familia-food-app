@@ -937,14 +937,17 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     setTimeout(()=>{ensureSellerCenterDropship();renderDropMaster();refreshOnlineBatchHistory();refreshNewOnlineProfit();},500);
   }
   window.addEventListener('load',async ()=>{
+    // Jangan menunggu master produk: kasir + riwayat harus langsung tampil.
+    // Setelah master selesai dibaca, baris aktif dirender ulang agar pilihan produk muncul.
+    init();
     try{
-      // Pastikan master produk + HPP selesai terbaca sebelum kasir dirender.
       await loadProducts();
+      renderRows();
+      await refreshOnlineBatchHistory();
+      await refreshNewOnlineProfit();
     }catch(e){
-      console.error('Gagal memuat master produk sebelum kasir:',e);
-    }finally{
-      // Kasir dan riwayat tetap harus diinisialisasi walaupun master gagal sesaat.
-      init();
+      console.error('Gagal memuat master produk/data riwayat:',e);
+      renderRows();
     }
   });
 })();
