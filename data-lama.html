@@ -172,7 +172,7 @@ function onlineMonthDetail(m){
   const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
   const pot=fin.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
   const net=fin.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
-  const audit=auditStandardLockedRows(onlineSalesAll);
+  const audit=auditOnlineLockedRows(onlineSalesAll);
   const ready=!audit.lockedRows || audit.all===ONLINE_LOCKED_TOTAL;
   const qty=prods.reduce((a,x)=>a+Number(x.qty||0),0);
 
@@ -213,7 +213,7 @@ function renderOnlineMonthlySummary(){
   const months=onlineMonths();
   if(!months.length){box.innerHTML='<div class="emptyState">Belum ada data Online historis.</div>';return}
 
-  const audit=auditStandardLockedRows(onlineSalesAll);
+  const audit=auditOnlineLockedRows(onlineSalesAll);
   const ready=!audit.lockedRows || audit.all===ONLINE_LOCKED_TOTAL;
   let html='';
 
