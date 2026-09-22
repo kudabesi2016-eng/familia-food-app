@@ -330,13 +330,21 @@ async function loadDashboard(){
     }
     document.getElementById('onQty').textContent=onQty.toLocaleString('id-ID');
     const missingBySize={};
-    onlineHistoricalQtyLockedRows.filter(x=>Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0).forEach(x=>{const s=detectDashboardPackSize(x)||'tidak-terdeteksi';missingBySize[s]=(missingBySize[s]||0)+1;});
-    const missingCount=Object.values(missingBySize).reduce((a,n)=>a+n,0);
+    const missingRows=onlineHistoricalQtyLockedRows.filter(x=>Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
+    missingRows.forEach(x=>{const s=detectDashboardPackSize(x)||'tidak-terdeteksi';missingBySize[s]=(missingBySize[s]||0)+1;});
+    const missingCount=missingRows.length;
     const missingDetail=Object.entries(missingBySize).map(([s,n])=>'isi '+s+': '+n+' baris').join(' • ');
+    const unresolvedDetail=missingRows.slice(0,20).map((x,i)=>{
+      const sku=String(x.sku_id||x.seller_sku||'-');
+      const prod=String(x.product_name||'-').replace(/[<>]/g,'');
+      const vari=String(x.variation||'').replace(/[<>]/g,'');
+      const size=detectDashboardPackSize(x)||'-';
+      return (i+1)+'. <b>isi '+size+'</b> • SKU '+sku+' • '+prod+(vari?' • '+vari:'');
+    }).join('<br>');
     document.getElementById('onlineHistoryAudit').innerHTML=onlineHistoricalQtyMismatch
       ? '🔴 <b>Audit:</b> histori seller_center terbaca '+onlineHistoricalQtyRaw.toLocaleString('id-ID')+' bungkus, sedangkan kunci <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b>. Selisih '+(onlineHistoricalQtyRaw-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'
       : (onlineHistoricalMissingHpp
-        ? '🟠 <b>Audit:</b> 8.085 bungkus cocok, tetapi ada <b>'+missingCount.toLocaleString('id-ID')+'</b> baris tanpa HPP'+(missingDetail?' ('+missingDetail+')':'')+'. <button type="button" id="repairOnlineHpp" style="margin-left:8px;padding:5px 9px;border:0;border-radius:6px;cursor:pointer">🔧 Perbaiki HPP Historis</button>'
+        ? '🟠 <b>Audit:</b> 8.085 bungkus cocok, tetapi ada <b>'+missingCount.toLocaleString('id-ID')+'</b> baris tanpa HPP'+(missingDetail?' ('+missingDetail+')':'')+'. <button type="button" id="repairOnlineHpp" style="margin-left:8px;padding:5px 9px;border:0;border-radius:6px;cursor:pointer">🔧 Perbaiki HPP Historis</button><details style="margin-top:6px"><summary>Lihat baris yang belum terpetakan</summary><div style="font-size:12px;line-height:1.5;margin-top:6px">'+unresolvedDetail+'</div></details>'
         : '🟢 <b>Audit:</b> histori seller_center cocok dengan kunci <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b> bungkus dan HPP terukur.');
     const repairBtn=document.getElementById('repairOnlineHpp');
     if(repairBtn)repairBtn.onclick=async()=>{repairBtn.disabled=true;repairBtn.textContent='⏳ Memperbaiki...';try{await repairDashboardOnlineHpp();}catch(e){document.getElementById('onlineHistoryAudit').innerHTML='🔴 Gagal memperbaiki HPP: '+String(e.message||e).replace(/</g,'&lt;');}finally{repairBtn.disabled=false;}};
