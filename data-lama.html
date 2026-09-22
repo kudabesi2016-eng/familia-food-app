@@ -580,13 +580,11 @@ function previewOnlineHpp(row){
     if(!h && p) h=hppMasterRows.find(x=>normOnlineName(x.nama_produk)===normOnlineName(p.nama_produk))||null;
     if(!h && aliases.length) h=hppMasterRows.find(x=>aliases.includes(normOnlineName(x.nama_produk)))||null;
 
-    // HPP Online yang sudah dikunci harus mengalahkan nilai master lama.
-    // Untuk histori TikTok isi 10/12, kunci resmi Familia Food = Rp4.000/bungkus.
-    const locked=hppLockedOnlineFallback(row);
-    if(locked!=null)return locked;
-
     const fromMaster=hppUnitFromRowAndMaster(row,p,h);
     if(fromMaster!=null)return fromMaster;
+
+    const locked=hppLockedOnlineFallback(row);
+    if(locked!=null)return locked;
   }catch(_){}
   return null;
 }
