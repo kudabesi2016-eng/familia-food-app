@@ -749,10 +749,22 @@ function makeOnlineOldPreviewRows(rows){
     if(f){usedFinance.add(order)}
     const net=f&&f.netKnown?f.net:null;
     const rev=f?f.rev:Number(x.omzet_produk||0);
-    const unit=previewOnlineHpp(x);
+    const hppSource=onlineHppSource(x);
+    const unit=hppSource?.hppOnline ?? null;
     const hpp=unit!=null?Number(x.qty||0)*unit:null;
     const profit=net!=null&&hpp!=null?net-hpp:null;
-    out.push({source:f?'Income + Pesanan':'Pesanan',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:Number(x.qty||0),rev,net,hpp,profit,_order_id:order});
+    out.push({
+      source:f?'Income + Pesanan':'Pesanan',
+      bulan:FFCore.monthOf(x.tanggal)||'',
+      produk:x.product_name||'-',
+      product_name:x.product_name||'',
+      variation:x.variation||'',
+      sku_id:x.sku_id||'',
+      seller_sku:x.seller_sku||'',
+      qty:Number(x.qty||0),rev,net,hpp,profit,
+      _hppSource:hppSource,
+      _order_id:order
+    });
   });
   directFinance.forEach(x=>out.push({source:'Income Historis',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:null,rev:Number(x.omzet_produk||0),net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null,_order_id:x.order_id}));
   cash.forEach(x=>out.push({source:'Uang Masuk',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:null,rev:null,net:Number(x.uang_bersih||0),hpp:null,profit:null,_order_id:x.order_id}));
@@ -786,8 +798,8 @@ function renderOnlineOldMonthTable(month){
   const revKnown=rows.some(x=>x.rev!=null), netKnown=rows.some(x=>x.net!=null);
   const hppSources={};
   rows.filter(x=>x.qty!=null).forEach(x=>{
-    const src=onlineHppSource(x);
-    if(src && src.hargaOnline!=null && src.untungOnline!=null){
+    const src=x._hppSource || onlineHppSource(x);
+    if(src){
       const key=[src.produk||'',src.hargaOnline,src.untungOnline,src.hppOnline,src.sumber].join('|');
       hppSources[key]=src;
     }
