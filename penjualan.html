@@ -262,33 +262,69 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="card import-detail" id="importDetailCard"><div class="top"><div><h3 id="importDetailTitle" style="margin:0">Detail Import</h3></div><button class="btn gray" id="closeImportDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="importDetailRows"></tbody></table></div></div>
 <div class="actions"><button class="btn blue" id="importSave">+ Simpan Data Online</button><button class="btn gray" id="importCancel">Batal</button></div><div id="importMsg"></div></div></div></section><script>
 const $=id=>document.getElementById(id);let products=[],sales=[],displaySales=[],editId=null,importRows=[];let stagedSellerRecords=[],stagedIncomeRecords=[],stagedSellerName='',stagedIncomeNames=[];
-let customerMap=JSON.parse(localStorage.getItem('ff_sale_customers_v1')||'{}');
 let customerMaster=[];
+let customerLinks={};
+let customerDbReady=false;
+let customerLinksReady=false;
 async function loadCustomerMaster(){
   try{
     const r=await supabaseClient.from('ff_pelanggan').select('id,nama,status').eq('status','Aktif').order('nama',{ascending:true});
-    if(!r.error){
-      customerMaster=r.data||[];
-      $('ffCustomerList').innerHTML=customerMaster.map(x=>'<option value="'+esc(x.nama)+'"></option>').join('');
-      return;
-    }
-  }catch(e){}
-  const names=[...new Set(Object.values(customerMap).map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));
-  $('ffCustomerList').innerHTML=names.map(v=>'<option value="'+esc(v)+'"></option>').join('');
+    if(r.error)throw r.error;
+    customerMaster=r.data||[];
+    customerDbReady=true;
+    $('ffCustomerList').innerHTML=customerMaster.map(x=>'<option value="'+esc(x.nama)+'"></option>').join('');
+  }catch(e){
+    customerMaster=[];
+    customerDbReady=false;
+    $('ffCustomerList').innerHTML='';
+    console.warn('Master pelanggan belum terhubung:',e);
+  }
+}
+async function loadCustomerLinks(){
+  customerLinks={};
+  customerLinksReady=false;
+  if(!customerDbReady)return;
+  const r=await supabaseClient.from('ff_penjualan_pelanggan').select('penjualan_id,pelanggan_id');
+  if(r.error)throw r.error;
+  (r.data||[]).forEach(x=>{customerLinks[String(x.penjualan_id)]=x.pelanggan_id;});
+  customerLinksReady=true;
 }
 async function saveCustomerMaster(nama){
   const name=String(nama||'').trim();
-  if(!name)return;
-  customerMap['last:'+name.toLowerCase()]=name;
-  localStorage.setItem('ff_sale_customers_v1',JSON.stringify(customerMap));
-  if(customerMaster.some(x=>normName(x.nama)===normName(name)))return;
-  try{
-    const r=await supabaseClient.from('ff_pelanggan').insert([{nama:name,status:'Aktif'}]).select('id,nama,status').single();
-    if(!r.error&&r.data){
-      customerMaster.push(r.data);
-      $('ffCustomerList').innerHTML=customerMaster.filter(x=>x.status==='Aktif').map(x=>'<option value="'+esc(x.nama)+'"></option>').join('');
-    }
-  }catch(e){}
+  if(!name)return null;
+  if(!customerDbReady)throw new Error('Master Pelanggan belum terhubung ke database.');
+  const found=customerMaster.find(x=>normName(x.nama)===normName(name));
+  if(found)return found;
+  const r=await supabaseClient.from('ff_pelanggan').insert([{nama:name,status:'Aktif'}]).select('id,nama,status').single();
+  if(r.error)throw r.error;
+  if(r.data){
+    customerMaster.push(r.data);
+    $('ffCustomerList').innerHTML=customerMaster.filter(x=>x.status==='Aktif').map(x=>'<option value="'+esc(x.nama)+'"></option>').join('');
+  }
+  return r.data||null;
+}
+async function saveCustomerLink(penjualanId,nama){
+  if(!customerLinksReady)throw new Error('Pemetaan Pelanggan↔Penjualan belum terhubung. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.');
+  const name=String(nama||'').trim();
+  if(!name){
+    const d=await supabaseClient.from('ff_penjualan_pelanggan').delete().eq('penjualan_id',penjualanId);
+    if(d.error)throw d.error;
+    delete customerLinks[String(penjualanId)];
+    return;
+  }
+  const customer=await saveCustomerMaster(name);
+  if(!customer?.id)throw new Error('Pelanggan gagal disimpan.');
+  const u=await supabaseClient.from('ff_penjualan_pelanggan').upsert(
+    [{penjualan_id:Number(penjualanId),pelanggan_id:Number(customer.id)}],
+    {onConflict:'penjualan_id'}
+  );
+  if(u.error)throw u.error;
+  customerLinks[String(penjualanId)]=Number(customer.id);
+}
+function customerNameForSale(id){
+  const cid=customerLinks[String(id)];
+  const c=customerMaster.find(x=>String(x.id)===String(cid));
+  return c?.nama||'';
 }
 const rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
 const today=()=>new Date().toISOString().slice(0,10);$('tanggal').value=today();
@@ -306,7 +342,36 @@ $('qty').addEventListener('input',updatePreview);$('harga').addEventListener('in
 async function loadHpp(){const p=selectedProduct();if(!p)return;$('harga').value=($('channel').value==='Online'?p.harga_online:p.harga_offline)||'';const r=await supabaseClient.from('hpp').select('*').eq('produk_id',p.id).maybeSingle();if(r.error)throw r.error;let nilaiHpp='';if(r.data){const h=r.data;nilaiHpp=Number(h.hpp_unit||0);if($('channel').value==='Online'&&h.harga_online!=null&&h.untung_online!=null)nilaiHpp=Number(h.harga_online)-Number(h.untung_online)}$('hpp').value=nilaiHpp!==''?Math.round(nilaiHpp):'';updatePreview();}
 $('produk').onchange=()=>loadHpp().catch(e=>msg('Gagal mengambil HPP: '+e.message,true));
 $('channel').onchange=()=>{const current=$('produk').value;renderProductOptions(current);loadHpp().catch(e=>msg('Gagal mengambil HPP: '+e.message,true));};
-$('save').onclick=async()=>{try{const p=selectedProduct(),tanggal=$('tanggal').value,qty=Number($('qty').value),harga=Number($('harga').value),hpp=Number($('hpp').value),channel=$('channel').value;if(!p||!tanggal||qty<=0||harga<0||hpp<0)return msg('Lengkapi data penjualan.',true);const hargaBulat=Math.round(harga),hppBulat=Math.round(hpp),total=qty*hargaBulat,hppTotal=qty*hppBulat,laba=total-hppTotal;const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,source:'manual',product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,profit_online:channel==='Online'?laba:null};let r=editId?await supabaseClient.from('penjualan').update(data).eq('id',editId):await supabaseClient.from('penjualan').insert([data]).select('id').single();if(r.error)throw r.error;const savedId=editId||(r.data&&r.data.id);if(savedId){const nama=$('pelanggan').value.trim();if(nama){customerMap[String(savedId)]=nama;await saveCustomerMaster(nama);}else delete customerMap[String(savedId)];localStorage.setItem('ff_sale_customers_v1',JSON.stringify(customerMap));}msg(editId?'Penjualan diperbarui.':'Penjualan tersimpan.');editId=null;$('cancel').style.display='none';$('save').textContent='+ Simpan Penjualan';await load();}catch(e){console.error(e);msg('Gagal menyimpan: '+e.message,true)}};
+$('save').onclick=async()=>{
+  const wasEdit=!!editId;
+  try{
+    const p=selectedProduct(),tanggal=$('tanggal').value,qty=Number($('qty').value),harga=Number($('harga').value),hpp=Number($('hpp').value),channel=$('channel').value;
+    if(!p||!tanggal||qty<=0||harga<0||hpp<0)return msg('Lengkapi data penjualan.',true);
+    const nama=$('pelanggan').value.trim();
+    if(nama && (!customerDbReady || !customerLinksReady)){
+      return msg('Master Pelanggan belum sepenuhnya terhubung. Jalankan SUPABASE-EXPANSION.sql sebelum menyimpan penjualan dengan nama pelanggan.',true);
+    }
+    const hargaBulat=Math.round(harga),hppBulat=Math.round(hpp),total=qty*hargaBulat,hppTotal=qty*hppBulat,laba=total-hppTotal;
+    const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,source:'manual',product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,profit_online:channel==='Online'?laba:null};
+    let r=editId
+      ? await supabaseClient.from('penjualan').update(data).eq('id',editId)
+      : await supabaseClient.from('penjualan').insert([data]).select('id').single();
+    if(r.error)throw r.error;
+    const savedId=editId||(r.data&&r.data.id);
+    if(savedId){
+      try{
+        await saveCustomerLink(savedId,nama);
+      }catch(linkErr){
+        if(!wasEdit){
+          await supabaseClient.from('penjualan').delete().eq('id',savedId);
+        }
+        throw linkErr;
+      }
+    }
+    msg(wasEdit?'Penjualan diperbarui.':'Penjualan tersimpan.');
+    editId=null;$('cancel').style.display='none';$('save').textContent='+ Simpan Penjualan';await load();
+  }catch(e){console.error(e);msg('Gagal menyimpan: '+e.message,true)}
+};
 $('cancel').onclick=()=>{editId=null;$('cancel').style.display='none';$('save').textContent='+ Simpan Penjualan';$('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();};
 function parseCSV(text){const rows=[],row=[];let cell='',quote=false;for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'){if(quote&&next==='"'){cell+='"';i++;}else quote=!quote;}else if(ch===','&&!quote){row.push(cell);cell='';}else if((ch==='\n'||ch==='\r')&&!quote){if(ch==='\r'&&next==='\n')i++;row.push(cell);if(row.some(x=>String(x).trim()!==''))rows.push(row.slice());row.length=0;cell='';}else cell+=ch;}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
 function num(v){if(v===null||v===undefined||v==='')return null;let s=String(v).trim().replace(/\s/g,'');if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(/^[-+]?\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');return Number(s)||0;}
@@ -503,6 +568,9 @@ async function load(){
     supabaseClient.from('produk').select('*').order('id',{ascending:true}),
     supabaseClient.from('hpp').select('*')
   ]);
+  if(customerDbReady){
+    try{await loadCustomerLinks();}catch(e){customerLinks={};customerLinksReady=false;console.warn('Pemetaan pelanggan belum terhubung:',e);}
+  }
   if(pr.error)throw pr.error;if(hr.error)throw hr.error;
   products=pr.data||[];
   window.products=products;
@@ -589,9 +657,9 @@ window.viewPeriod=k=>{
   }).join('');
   $('detailCard').scrollIntoView({behavior:'smooth',block:'start'});
 };
-window.editSale=async id=>{const s=sales.find(x=>x.id===id);if(!s)return;editId=id;$('tanggal').value=s.tanggal;$('pelanggan').value=customerMap[String(s.id)]||'';$('produk').value=s.produk_id;$('qty').value=s.qty;$('channel').value=s.channel;$('harga').value=s.harga;$('hpp').value=Math.round(Number(s.hpp||0)/(Number(s.qty)||1));$('cancel').style.display='inline-block';$('save').textContent='Simpan Perubahan';updatePreview();scrollTo(0,0);};
-window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=await supabaseClient.from('penjualan').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);delete customerMap[String(id)];localStorage.setItem('ff_sale_customers_v1',JSON.stringify(customerMap));await load();msg('Penjualan dihapus.')};
-(async()=>{try{await loadProducts();await load()}catch(e){console.error(e);msg('Gagal memuat data: '+e.message,true)}})();
+window.editSale=async id=>{const s=sales.find(x=>x.id===id);if(!s)return;editId=id;$('tanggal').value=s.tanggal;$('pelanggan').value=customerNameForSale(s.id);$('produk').value=s.produk_id;$('qty').value=s.qty;$('channel').value=s.channel;$('harga').value=s.harga;$('hpp').value=Math.round(Number(s.hpp||0)/(Number(s.qty)||1));$('cancel').style.display='inline-block';$('save').textContent='Simpan Perubahan';updatePreview();scrollTo(0,0);};
+window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;if(!customerLinksReady&&$('pelanggan').value.trim())return msg('Pemetaan pelanggan belum terhubung. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.',true);const r=await supabaseClient.from('penjualan').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);await load();msg('Penjualan dihapus.')};
+(async()=>{try{await loadCustomerMaster();await loadProducts();await load()}catch(e){console.error(e);msg('Gagal memuat data: '+e.message,true)}})();
 </script><script>
 /* =========================================================
    ONLINE BARU — INPUT MANUAL BANYAK + PENERIMAAN UANG
