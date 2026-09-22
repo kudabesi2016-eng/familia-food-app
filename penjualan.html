@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
+<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><meta name="theme-color" content="#087443">
 <title>Penjualan - Familia Food</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script><script src="app-settings.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -129,7 +129,7 @@
   #onlineBatchTable td[colspan="9"] .kasir-line{display:grid!important}
 }
 </style>
-</head><body>
+<link rel="stylesheet" href="android-shell.css"></head><body>
 <aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav">
 <a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a class="active" href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
 </nav></aside><main><div class="top"><div><h1>💰 Penjualan</h1><div class="sub">Penjualan Offline + Transaksi Online Baru + Penerimaan Uang Online.</div></div><span class="badge">Familia Food</span></div><div class="penjualan-tabs" id="penjualanTabs"><button class="penjualan-tab active" data-tab="onlineNew" type="button">1. 📦 Transaksi Online Baru</button><button class="penjualan-tab" data-tab="offline" type="button">2. 🟢 Transaksi Offline</button><button class="penjualan-tab" data-tab="cash" type="button">3. 💰 Penerimaan Uang Online</button><button class="penjualan-tab" data-tab="dropship" type="button">4. 📦 Master Produk Dropship</button><button class="penjualan-tab" data-tab="oldOnline" type="button">5. 📁 Rekap Data Lama Online</button><button class="penjualan-tab" data-tab="oldOffline" type="button">6. 📁 Rekap Data Lama Offline</button><button class="penjualan-tab" data-tab="import" type="button">7. 📥 Import Penjualan Online</button></div><section class="penjualan-panel active" data-panel="onlineNew"><div class="card" id="onlineNewCard">
@@ -987,4 +987,6 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }));
   const close=document.getElementById('closeOfflineHistoryDetail'); if(close) close.addEventListener('click',()=>{const c=document.getElementById('offlineHistoryDetailCard');if(c)c.style.display='none';});
 })();
-</script></main></body></html>
+</script></main><script src="android-shell.js" defer></script>
+</body>
+</html>
