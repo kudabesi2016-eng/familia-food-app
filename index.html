@@ -192,6 +192,12 @@ async function loadDashboard(){
       if(Number(h.hpp_online)>0) return Math.round(Number(h.hpp_online));
       return Number(h.hpp_unit)>0 ? Math.round(Number(h.hpp_unit)) : 0;
     }
+    const onlineHistoricalQtyLockedRows=onlineProductRows;
+    const onlineHistoricalQtyRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+    const onlineHistoricalModalRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))),0);
+    const onlineHistoricalMissingHpp=onlineHistoricalQtyLockedRows.some(x=>Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
+    const onlineHistoricalQtyMismatch=onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
+
     const onOldHpp=(!onlineHistoricalQtyMismatch && !onlineHistoricalMissingHpp)
       ? onlineHistoricalModalRaw
       : 0;
@@ -209,11 +215,6 @@ async function loadDashboard(){
     const onNet=onOldNet+onNewNet;
     const onHpp=onOldHpp+onNewHpp;
     const onProfit=onOldProfit+(onNewNet-onNewHpp);
-    const onlineHistoricalQtyLockedRows=onlineProductRows;
-    const onlineHistoricalQtyRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+Math.round(num(x.qty)),0);
-    const onlineHistoricalModalRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))),0);
-    const onlineHistoricalMissingHpp=onlineHistoricalQtyLockedRows.some(x=>Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
-    const onlineHistoricalQtyMismatch=onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
     // Jan–Agustus 2026 memakai angka histori audit seller_center yang dikunci.
     const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
 
