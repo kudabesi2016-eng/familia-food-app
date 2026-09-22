@@ -142,6 +142,7 @@
 <div class="batch-toolbar" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
 <button class="btn blue" id="batchAddRow" type="button">+ Tambah Produk</button>
 <button class="btn gray" id="batchClear" type="button">Reset</button>
+<button class="btn" id="batchHistoryJump" type="button">📋 Riwayat Transaksi Baru</button>
 <span class="small" id="batchCount">0 baris</span>
 </div>
 <div class="tablewrap" style="margin-top:12px">
@@ -173,7 +174,7 @@
 </div>
 <div id="batchMsg"></div>
 </div>
-<div class="card" id="onlineBatchHistoryCard">
+<div class="card" id="onlineBatchHistoryCard" style="border:2px solid #cfe4d7">
   <div class="cashhead">
     <div>
       <h2 style="margin:0">📋 Riwayat Transaksi Online Baru</h2>
@@ -867,6 +868,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     byId('batchClear')?.addEventListener('click',()=>{rows=[];addRows(1);setMsg('');});
     byId('batchSave')?.addEventListener('click',saveBatch);
     byId('batchHistoryRefresh')?.addEventListener('click',refreshOnlineBatchHistory);
+    byId('batchHistoryJump')?.addEventListener('click',()=>{
+      refreshOnlineBatchHistory();
+      byId('onlineBatchHistoryCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+    });
     byId('cashSave')?.addEventListener('click',saveCash);
     byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
     byId('dropAdd')?.addEventListener('click',()=>{
