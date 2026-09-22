@@ -835,7 +835,7 @@ function renderOnlineOldMonthTable(month){
       <div class="kpi"><span>📈 Profit</span><strong>${profitKnown.length?FFCore.rupiah(totalProfit):'—'}</strong><small>${profitKnown.length?'Uang Bersih − Modal/HPP':'belum bisa dihitung'}</small></div>
     </div>
     <div class="sectionTotal"><span>Qty Produk</span><b>${totalQty.toLocaleString('id-ID')} bungkus</b></div>
-    ${note}${more}
+    ${sourceNotice}${note}${more}
     <div class="tablewrap"><table class="cleanTable"><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody>${shown.map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('')}</tbody></table></div></section>`;
 }
 
