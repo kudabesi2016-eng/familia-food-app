@@ -17,7 +17,7 @@ input[type=file]{padding:10px;border:1px dashed #8bb8a0;border-radius:8px;backgr
 <h1>🍀 Audit Online Familia Food</h1>
 <div class="box">
 <b>Tujuan:</b> memastikan data historis Online tidak menyamakan export Seller Center terbaru dengan data historis yang sudah dikunci.
-<p class="small">Halaman ini bersifat <b>READ-ONLY</b> terhadap Supabase. Upload CSV diproses lokal di browser dan tidak disimpan ke database.</p>
+<p class="small">Halaman ini bersifat <b>READ-ONLY</b> terhadap Supabase. Upload CSV diproses lokal di browser dan tidak disimpan ke database.</p><div class="box" style="box-shadow:none;border:1px solid #dbe9df"><b>🟢 Kesimpulan sementara yang dapat dibuktikan:</b> 8.085 = audit langsung dari CSV terbaru. <b>5.928</b> adalah kunci historis lama yang belum memiliki sumber pembentuk yang dapat diverifikasi dari file yang tersedia. <b>3.271</b> adalah total file STANDARD, bukan total audit Seller Center.</div>
 </div>
 
 <div class="grid">
@@ -36,10 +36,10 @@ input[type=file]{padding:10px;border:1px dashed #8bb8a0;border-radius:8px;backgr
 </div>
 
 <div class="box">
-<h2>🔒 Data Historis yang Dikunci</h2>
+<h2>🔒 Data Historis yang Dikunci</h2><p class="small"><b>Status:</b> kunci 5.928 masih dipertahankan hanya sebagai baseline historis. Audit terbaru menemukan sumber Seller Center yang menghasilkan 8.085, tetapi belum ada dasar yang cukup untuk menyatakan bahwa seluruh 8.085 harus menggantikan baseline aplikasi.</p>
 <table><thead><tr><th>Bentuk</th><th>Isi</th><th>Bungkus Terkunci</th></tr></thead><tbody id="lockedRows"></tbody>
 <tfoot><tr><th>Total</th><th>—</th><th>5.928</th></tr></tfoot></table>
-<p class="small">Kunci lama tidak diubah. Audit hanya membandingkan sumber baru terhadap angka tersebut.</p>
+<p class="small">🟡 <b>Audit 22 September 2026:</b> CSV Seller Center terbaru menghasilkan <b>8.085 bungkus</b> untuk Tempura Aci Jan–Agustus 2026 dengan filter TikTok + Selesai. File STANDARD yang saat ini tersimpan hanya memuat <b>3.271 bungkus total</b>. Angka kunci <b>5.928</b> tidak dapat direkonstruksi dari dua sumber tersebut, sehingga <b>belum diganti otomatis</b>. Sumber historis pembentuk 5.928 belum tersedia di berkas yang sedang diaudit.</p>
 </div>
 </div>
 
@@ -128,7 +128,7 @@ document.getElementById('csvFile').addEventListener('change',e=>{
  const st=document.getElementById('csvStatus'),res=document.getElementById('csvResult');st.textContent='Membaca CSV lokal...';res.innerHTML='';
  Papa.parse(file,{header:true,skipEmptyLines:true,dynamicTyping:false,complete:function(parsed){
    try{
-    const rows=parsed.data.filter(r=>inJanAug2026(r['Created Time'])&&String(r['Purchase Channel']??'').trim().toLowerCase()==='tiktok');
+    const rows=parsed.data.filter(r=>inJanAug2026(r['Created Time'])&&String(r['Purchase Channel']??'').trim().toLowerCase()==='tiktok'&&String(r['Order Status']??'').trim().toLowerCase()==='selesai');
     const temp=rows.filter(isTempura);
     let rawQty=0,rawRet=0,converted=0;const byShape={ESKRIM:0,STIK:0,KOTAK:0,BULAT:0,LIDAH:0,MIE:0},bySize={12:0,20:0,25:0,30:0,40:0},status={};
     for(const r of rows){status[r['Cancelation/Return Type']||'NORMAL']=(status[r['Cancelation/Return Type']||'NORMAL']||0)+1;}
@@ -143,7 +143,7 @@ document.getElementById('csvFile').addEventListener('change',e=>{
     st.innerHTML='✅ CSV dibaca lokal: <b>'+rows.length.toLocaleString('id-ID')+'</b> baris TikTok Jan–Agustus 2026, dari total Tempura Aci <b>'+temp.length.toLocaleString('id-ID')+'</b> baris.';
     const audit8085=(rawQty-rawRet);
     const bundleExtra=converted-audit8085;
-    res.innerHTML='<div class="box" style="box-shadow:none;border:1px solid #e2ebe5"><p>Qty mentah Tempura Aci: <b>'+rawQty.toLocaleString('id-ID')+'</b></p><p>Retur Qty: <b>'+rawRet.toLocaleString('id-ID')+'</b></p><p>Qty bersih sebelum ekspansi bundle: <b>'+audit8085.toLocaleString('id-ID')+'</b></p><p>Tambahan dari ekspansi bundle 2/3/6: <b>+'+bundleExtra.toLocaleString('id-ID')+'</b></p><p>🔎 <b>Hasil audit CSV: '+converted.toLocaleString('id-ID')+' bungkus</b></p><p class="'+(gap===0?'ok':'bad')+'">Selisih terhadap data historis terkunci 5.928: <b>'+(gap>0?'+':'')+gap.toLocaleString('id-ID')+'</b></p><p class="small">Catatan: 8.085 adalah hasil audit CSV terbaru, bukan angka kunci historis. Angka kunci tetap 5.928 sampai sumber historis yang menjadi dasar kunci direkonsiliasi.</p></div>'+
+    res.innerHTML='<div class="box" style="box-shadow:none;border:1px solid #e2ebe5"><p>Qty mentah Tempura Aci: <b>'+rawQty.toLocaleString('id-ID')+'</b></p><p>Retur Qty: <b>'+rawRet.toLocaleString('id-ID')+'</b></p><p>Qty bersih sebelum ekspansi bundle: <b>'+audit8085.toLocaleString('id-ID')+'</b></p><p>Tambahan dari ekspansi bundle 2/3/6: <b>+'+bundleExtra.toLocaleString('id-ID')+'</b></p><p>🔎 <b>Hasil audit CSV: '+converted.toLocaleString('id-ID')+' bungkus</b></p><p class="'+(gap===0?'ok':'bad')+'">Selisih terhadap data historis terkunci 5.928: <b>'+(gap>0?'+':'')+gap.toLocaleString('id-ID')+'</b></p><p class="small">Catatan audit: <b>8.085</b> adalah hasil CSV terbaru setelah retur dan ekspansi paket. Selisih terhadap kunci lama adalah <b>+2.157</b>. Angka <b>5.928</b> tidak boleh dipaksa cocok dengan STANDARD 3.271 karena STANDARD berasal dari dataset berbeda/subset. Kunci aplikasi belum diubah.</p></div>'+
       comparison(byShape,bySize)+
       '<h3>Status baris TikTok Jan–Agustus</h3>'+renderTable(['Status','Baris'],Object.entries(status).map(([k,v])=>[k,v.toLocaleString('id-ID')]));  
    }catch(err){st.innerHTML='<span class="bad">Gagal audit CSV: '+esc(err.message)+'</span>';}
