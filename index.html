@@ -375,7 +375,7 @@ async function loadDashboard(){
     }
     const onlineHistoricalQtyLockedRows=onlineProductRows;
     const onlineHistoricalQtyRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+Math.round(num(x.qty)),0);
-    const onlineHistoricalModalRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+(Number(x.qty||0)>0?Math.round(num(x.modal_hpp ?? (num(x.qty)*num(x.hpp))):0),0);
+    const onlineHistoricalModalRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+(Number(x.qty||0)>0 ? Math.round(num(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))) : 0),0);
     const onlineHistoricalMissingHpp=onlineHistoricalQtyLockedRows.some(x=>Number(x.qty||0)>0 && Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
     const onlineHistoricalQtyMismatch=onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
 
