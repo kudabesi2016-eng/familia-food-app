@@ -604,6 +604,7 @@ function onlineHpp(m){
       if(lockedRows.length){
         const lockedQty=lockedRows.reduce((a,x)=>a+Math.trunc(Number(x.qty||0)),0);
         const hasMissingHpp=lockedRows.some(x=>
+          Number(x.qty||0)>0 &&
           x.modal_hpp==null &&
           x.hpp==null
         );
