@@ -573,7 +573,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   function familiaProducts(){
-    return (window.products||[]).filter(p=>{
+    const source=(Array.isArray(window.products)&&window.products.length)
+      ? window.products
+      : (Array.isArray(products)&&products.length ? products : []);
+    return source.filter(p=>{
       const n=String(p.nama_produk||'').trim().toLowerCase();
       // Semua produk Naget, termasuk format "Naget isi 10/12", serta semua Tempura Aci.
       return n.startsWith('naget') || n.includes('tempura aci') || n.startsWith('tempura');
@@ -801,7 +804,15 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     });
     setTimeout(()=>{ensureSellerCenterDropship();renderDropMaster();refreshNewOnlineProfit();},500);
   }
-  window.addEventListener('load',init);
+  window.addEventListener('load',async ()=>{
+    try{
+      // Pastikan master produk + HPP selesai terbaca sebelum kasir dirender.
+      await loadProducts();
+    }catch(e){
+      console.error('Gagal memuat master produk sebelum kasir:',e);
+    }
+    init();
+  });
 })();
 </script><script>
 (function(){
