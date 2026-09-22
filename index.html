@@ -68,7 +68,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
   </div>
 
   <div class="channel">
-    <div class="channel-head"><h2>📱 Online</h2><span class="badge">STANDARD + Transaksi Baru</span></div>
+    <div class="channel-head"><h2>📱 Online</h2><span class="badge">Audit TikTok + Transaksi Baru</span></div>
     <div class="channel-grid">
       <div class="mini"><small>Baris Income Historis</small><b id="onIncomeRows">0</b></div>
       <div class="mini"><small>Detail Produk Historis</small><b id="onProductRows">0</b></div>
@@ -79,7 +79,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Profit</small><b id="onProfit">Rp 0</b></div>
       <div class="mini"><small>Produk Keluar Historis (Kunci)</small><b id="onQty">0</b></div>
     </div>
-    <div class="note">Online historis memakai <b>8.085 bungkus</b> sebagai kunci Produk Keluar Jan–Agustus 2026. Sumber STANDARD tetap ditampilkan untuk audit; HPP/Profit historis hanya dianggap final bila sumber cocok dengan kunci.<br><span id="onlineHistoryAudit">Memeriksa rekonsiliasi…</span></div>
+    <div class="note">Online historis memakai <b>8.085 bungkus</b> hasil audit TikTok sebagai kunci Produk Keluar Jan–Agustus 2026. HPP/Profit hanya dianggap final bila seluruh baris histori sudah memiliki HPP master.<br><span id="onlineHistoryAudit">Memeriksa rekonsiliasi…</span></div>
     <div class="channel-grid" style="margin-top:12px">
       <div class="mini"><small>Online Baru — Produk Keluar</small><b id="newOnQty">0 bungkus</b></div>
       <div class="mini"><small>Online Baru — HPP/Modal</small><b id="newOnModal">Rp 0</b></div>
@@ -129,6 +129,63 @@ function active(row){
   return s!=='arsip'&&s!=='nonaktif';
 }
 function setNumber(id,v){colorValue(document.getElementById(id),v);}
+
+function detectDashboardPackSize(row){
+  const n=String([row?.product_name,row?.variation,row?.seller_sku].filter(Boolean).join(' | ')).toLowerCase().replace(/\s+/g,' ').trim();
+  const sku=String(row?.sku_id||'').trim();
+  if(sku==='1733751720824702091')return 12;
+  let m=n.match(/\b(\d+)\s*(?:bungkus|bks)\s*(?:isi|is)\s*(24|36|72)\s*pcs?\b/i);
+  if(m){const packs=Number(m[1]),pcs=Number(m[2]),per=packs>0?pcs/packs:0;if([10,12,20,25,30,40,50].includes(per))return per;}
+  m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/i); if(m)return Number(m[1]);
+  m=n.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/i); if(m)return Number(m[1]);
+  m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\b/i); if(m)return Number(m[1]);
+  return null;
+}
+function findDashboardMasterProduct(row, productMaster){
+  const size=detectDashboardPackSize(row);
+  if(!size)return null;
+  const norm=v=>String(v||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const exact=size===25?'naget 25+saus':('naget '+size);
+  let p=productMaster.find(x=>norm(x.nama_produk)===exact);
+  if(p)return p;
+  const re=new RegExp('(^|\\s)(?:isi\\s*)?'+size+'(?:\\s*(?:pcs|bungkus))?(\\s|$)','i');
+  const candidates=productMaster.filter(x=>{const n=norm(x.nama_produk);return /\b(naget|tempura aci)\b/i.test(n)&&re.test(n);});
+  return candidates.find(x=>/\bnaget\b/i.test(norm(x.nama_produk))) || candidates[0] || null;
+}
+function dashboardOnlineHppUnit(row, productMaster, hppRows){
+  const p=findDashboardMasterProduct(row,productMaster);
+  if(!p)return null;
+  const h=hppRows.find(x=>String(x.produk_id)===String(p.id))||null;
+  const directP=Number(p.hpp_online); if(Number.isFinite(directP)&&directP>0)return Math.trunc(directP);
+  const directH=Number(h?.hpp_online); if(Number.isFinite(directH)&&directH>0)return Math.trunc(directH);
+  const price=Number(h?.harga_online ?? p.harga_online), profit=Number(h?.untung_online);
+  if(price>0&&Number.isFinite(profit)&&profit>=0&&price-profit>0)return Math.trunc(price-profit);
+  return null;
+}
+async function repairDashboardOnlineHpp(){
+  const state=window.__FF_DASHBOARD_STATE, msg=document.getElementById('onlineHistoryAudit');
+  if(!state||!Array.isArray(state.sales)){if(msg)msg.innerHTML='🔴 Data Dashboard belum siap. Muat ulang halaman.';return;}
+  const rows=state.sales.filter(x=>String(x.channel||'')==='Online'&&String(x.source||'')==='seller_center'&&monthOf(x.tanggal||x.paid_time||x.created_time||'')>='2026-01'&&monthOf(x.tanggal||x.paid_time||x.created_time||'')<='2026-08');
+  const missing=rows.filter(x=>Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
+  if(!missing.length){if(msg)msg.innerHTML='🟢 Semua baris histori sudah memiliki HPP.';return;}
+  const bySize={},ids=[]; let repaired=0,stillMissing=0;
+  for(const x of missing){
+    const size=detectDashboardPackSize(x)||'tidak-terdeteksi', unit=dashboardOnlineHppUnit(x,state.productMaster,state.hppRows);
+    if(unit==null){bySize[size]=(bySize[size]||0)+1;stillMissing++;continue;}
+    ids.push({id:x.id,unit,qty:Math.trunc(Number(x.qty)||0)});
+  }
+  for(let i=0;i<ids.length;i+=50){
+    const batch=ids.slice(i,i+50);
+    for(const item of batch){
+      const upd=await supabaseClient.from('penjualan').update({hpp:Math.trunc(item.unit),modal_hpp:Math.trunc(item.qty*item.unit)}).eq('id',item.id);
+      if(upd.error)throw upd.error;
+      repaired++;
+    }
+  }
+  const detail=Object.entries(bySize).map(([s,n])=>'isi '+s+': '+n+' baris').join(' • ');
+  if(msg)msg.innerHTML=(repaired?'✅ HPP berhasil diperbaiki pada <b>'+repaired.toLocaleString('id-ID')+'</b> baris.':'⚠️ Tidak ada baris yang bisa diperbaiki.')+(stillMissing?' <span style="color:#a22">Masih belum terpetakan: '+detail+'.</span>':'');
+  await loadDashboard();
+}
 async function loadDashboard(){
   document.getElementById('statusText').textContent='Memuat data dari database...';
   try{
@@ -143,6 +200,8 @@ async function loadDashboard(){
     const expenseRows=re.status==='fulfilled'?re.value:[]; if(re.status!=='fulfilled') errors.push('Pengeluaran');
     const productMaster=rprod.status==='fulfilled'?rprod.value:[]; if(rprod.status!=='fulfilled') errors.push('Produk/HPP');
     const hppRows=rhpp.status==='fulfilled'?rhpp.value:[]; if(rhpp.status!=='fulfilled') errors.push('Produk/HPP');
+
+    window.__FF_DASHBOARD_STATE={sales,productMaster,hppRows};
 
     const activeProducts=products.filter(active).length;
 
@@ -256,11 +315,17 @@ async function loadDashboard(){
       setNumber('onHpp',onHpp); setNumber('onProfit',onProfit);
     }
     document.getElementById('onQty').textContent=onQty.toLocaleString('id-ID');
+    const missingBySize={};
+    onlineHistoricalQtyLockedRows.filter(x=>Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0).forEach(x=>{const s=detectDashboardPackSize(x)||'tidak-terdeteksi';missingBySize[s]=(missingBySize[s]||0)+1;});
+    const missingCount=Object.values(missingBySize).reduce((a,n)=>a+n,0);
+    const missingDetail=Object.entries(missingBySize).map(([s,n])=>'isi '+s+': '+n+' baris').join(' • ');
     document.getElementById('onlineHistoryAudit').innerHTML=onlineHistoricalQtyMismatch
-      ? '🔴 <b>Audit:</b> histori seller_center terbaca '+onlineHistoricalQtyRaw.toLocaleString('id-ID')+' bungkus, sedangkan kunci historis adalah <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b>. Selisih <b>'+(onlineHistoricalQtyRaw-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+'</b>. HPP/Profit historis ditahan.'
+      ? '🔴 <b>Audit:</b> histori seller_center terbaca '+onlineHistoricalQtyRaw.toLocaleString('id-ID')+' bungkus, sedangkan kunci <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b>. Selisih '+(onlineHistoricalQtyRaw-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'
       : (onlineHistoricalMissingHpp
-        ? '🟠 <b>Audit:</b> histori seller_center sudah cocok <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b> bungkus, tetapi ada baris tanpa HPP.'
+        ? '🟠 <b>Audit:</b> 8.085 bungkus cocok, tetapi ada <b>'+missingCount.toLocaleString('id-ID')+'</b> baris tanpa HPP'+(missingDetail?' ('+missingDetail+')':'')+'. <button type="button" id="repairOnlineHpp" style="margin-left:8px;padding:5px 9px;border:0;border-radius:6px;cursor:pointer">🔧 Perbaiki HPP Historis</button>'
         : '🟢 <b>Audit:</b> histori seller_center cocok dengan kunci <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b> bungkus dan HPP terukur.');
+    const repairBtn=document.getElementById('repairOnlineHpp');
+    if(repairBtn)repairBtn.onclick=async()=>{repairBtn.disabled=true;repairBtn.textContent='⏳ Memperbaiki...';try{await repairDashboardOnlineHpp();}catch(e){document.getElementById('onlineHistoryAudit').innerHTML='🔴 Gagal memperbaiki HPP: '+String(e.message||e).replace(/</g,'&lt;');}finally{repairBtn.disabled=false;}};
     document.getElementById('newOnQty').textContent=onNewQty.toLocaleString('id-ID')+' bungkus';
     setNumber('newOnModal',onNewHpp);
     setNumber('newOnCash',onNewNet);
