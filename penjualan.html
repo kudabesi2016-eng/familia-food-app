@@ -66,6 +66,25 @@
   .tablewrap table{min-width:760px}
   #detailCard .tablewrap table{min-width:1050px}
 }
+  /* Input online mobile dibuat satu kartu sederhana, tanpa geser horizontal */
+  body{overflow-x:hidden}
+  #onlineNewCard{overflow:hidden}
+  #onlineBatchTable{table-layout:fixed!important;min-width:0!important;width:100%!important}
+  #onlineBatchTable tbody{width:100%!important}
+  #onlineBatchTable tr{width:100%!important;grid-template-columns:1fr 1fr!important}
+  #onlineBatchTable td{overflow:hidden}
+  #onlineBatchTable td:nth-child(1){display:none!important}
+  #onlineBatchTable td:nth-child(2){grid-column:1/-1}
+  #onlineBatchTable td:nth-child(3){grid-column:1/-1}
+  #onlineBatchTable td:nth-child(4){grid-column:1/-1}
+  #onlineBatchTable td:nth-child(5){grid-column:1/-1}
+  #onlineBatchTable td:nth-child(6){grid-column:1;}
+  #onlineBatchTable td:nth-child(7),#onlineBatchTable td:nth-child(8){display:none!important}
+  #onlineBatchTable td:nth-child(9){grid-column:2;text-align:right;align-items:flex-end;justify-content:flex-end}
+  #onlineBatchTable td:nth-child(9) .batch-del{width:auto;min-width:90px}
+  #onlineBatchTable select,#onlineBatchTable input{max-width:100%;min-height:38px}
+  .batch-toolbar{position:static!important}
+
 </style></style></head><body>
 <aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav">
 <a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a class="active" href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
