@@ -912,7 +912,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       const r=getRowObj(Number(tr.dataset.row));if(!r)return;
       syncFromDOM(r.id);
     });
-    document.addEventListener('click',e=>{
+    document.addEventListener('click',async e=>{
       const tr=e.target.closest?.('tr[data-row]');
       if(tr && e.target.closest('.batch-del')){
         const id=Number(tr.dataset.row);rows=rows.filter(r=>r.id!==id);if(!rows.length)rows.push(emptyRow());renderRows();return;
@@ -942,8 +942,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       await loadProducts();
     }catch(e){
       console.error('Gagal memuat master produk sebelum kasir:',e);
+    }finally{
+      // Kasir dan riwayat tetap harus diinisialisasi walaupun master gagal sesaat.
+      init();
     }
-    init();
   });
 })();
 </script><script>
