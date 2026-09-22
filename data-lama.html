@@ -561,20 +561,39 @@ function hppUnitFromRowAndMaster(row,p,h){
   // hpp_unit adalah HPP Offline/unit, jadi tidak dipakai sebagai HPP Online.
   return null;
 }
-function previewOnlineHpp(row){
+function onlineHppSource(row){
   try{
     const p=findOnlineMasterProduct(row);
     const aliases=explicitOnlineProductCandidates(row).map(normOnlineName);
     let h=null;
-
     if(p) h=hppMasterRows.find(x=>String(x.produk_id)===String(p.id))||null;
     if(!h && p) h=hppMasterRows.find(x=>normOnlineName(x.nama_produk)===normOnlineName(p.nama_produk))||null;
     if(!h && aliases.length) h=hppMasterRows.find(x=>aliases.includes(normOnlineName(x.nama_produk)))||null;
 
-    const fromMaster=hppUnitFromRowAndMaster(row,p,h);
-    if(fromMaster!=null)return fromMaster;
+    const directProduct=Number(p?.hpp_online);
+    if(Number.isFinite(directProduct)&&directProduct>0){
+      return {produk:p?.nama_produk||'', hargaOnline:p?.harga_online??null, untungOnline:null, hppOnline:Math.trunc(directProduct), sumber:'produk.hpp_online'};
+    }
+
+    const directHpp=Number(h?.hpp_online);
+    if(Number.isFinite(directHpp)&&directHpp>0){
+      return {produk:h?.nama_produk||p?.nama_produk||'', hargaOnline:h?.harga_online??p?.harga_online??null, untungOnline:h?.untung_online??null, hppOnline:Math.trunc(directHpp), sumber:'hpp.hpp_online'};
+    }
+
+    const onlinePrice=Number(h?.harga_online ?? p?.harga_online);
+    const profitOnline=Number(h?.untung_online);
+    if(Number.isFinite(onlinePrice)&&onlinePrice>0&&Number.isFinite(profitOnline)&&profitOnline>=0){
+      const calc=onlinePrice-profitOnline;
+      if(calc>0){
+        return {produk:h?.nama_produk||p?.nama_produk||'', hargaOnline:onlinePrice, untungOnline:profitOnline, hppOnline:Math.trunc(calc), sumber:'harga_online - untung_online'};
+      }
+    }
   }catch(_){}
   return null;
+}
+function previewOnlineHpp(row){
+  const src=onlineHppSource(row);
+  return src?.hppOnline ?? null;
 }
 async function ensureOnlineHppMaster(){
   try{
@@ -765,6 +784,23 @@ function renderOnlineOldMonthTable(month){
   const profitKnown=rows.filter(x=>x.profit!=null);
   const totalProfit=profitKnown.reduce((a,x)=>a+Number(x.profit||0),0);
   const revKnown=rows.some(x=>x.rev!=null), netKnown=rows.some(x=>x.net!=null);
+  const hppSources={};
+  rows.filter(x=>x.qty!=null).forEach(x=>{
+    const src=onlineHppSource(x);
+    if(src && src.hargaOnline!=null && src.untungOnline!=null){
+      const key=[src.produk||'',src.hargaOnline,src.untungOnline,src.hppOnline,src.sumber].join('|');
+      hppSources[key]=src;
+    }
+  });
+  const sourceList=Object.values(hppSources);
+  const sourceNotice=sourceList.length
+    ? '<div class="reportNotice">🔎 <b>Sumber HPP terukur dari master Supabase:</b> '+sourceList.slice(0,8).map(s=>
+        '<span style="display:inline-block;margin:3px 8px 3px 0;padding:5px 8px;background:#fff;border:1px solid #dfe9e3;border-radius:7px">'+
+        FFCore.esc(s.produk||'Produk')+' → Harga Online '+FFCore.rupiah(s.hargaOnline)+' − Untung Online '+FFCore.rupiah(s.untungOnline)+' = <b>'+FFCore.rupiah(s.hppOnline)+'</b> ('+FFCore.esc(s.sumber)+')</span>'
+      ).join('')+
+      (sourceList.length>8?' …':'')+
+      '</div>'
+    : '';
   const more=rows.length>500?`<div class="reportNotice">Menampilkan <b>500</b> dari <b>${rows.length.toLocaleString('id-ID')}</b> baris detail untuk ${FFCore.esc(monthLabel(month))}. Semua data tetap tersimpan untuk proses simpan.</div>`:'';
   const shown=rows.slice(0,500);
   const note=(hppKnown.length===0)
