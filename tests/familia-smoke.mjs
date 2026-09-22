@@ -68,10 +68,26 @@ assert(rekap.includes("newModal"),'Rekap new-online modal calculation missing');
 const penjualan=await read('penjualan.html');
 assert(!penjualan.includes("supabaseClient.from('produk').select('id,nama_produk,hpp_offline"),'Forbidden hpp_offline select regression found in penjualan.html');
 assert(penjualan.includes("await loadCustomerMaster();"),'Customer master is not loaded at POS startup');
+assert(penjualan.includes('ffCustomerList'),'POS customer datalist missing');
 
 const index=await read('index.html');
 assert(index.includes('const validExpenseRows='),'Dashboard expense validation missing');
 assert(index.indexOf('const validExpenseRows=') < index.indexOf('const opExpense='),'Dashboard operational expense order is invalid');
+
+const operational=await read('operasional.html');
+assert(operational.includes("update({harga_beli:price})"),'Purchase does not sync latest raw-material price');
+assert(operational.includes("ff_pembelian_item"),'Purchase item table integration missing');
+assert(operational.includes("ff_retur_penjualan"),'Return table integration missing');
+
+const dashboard=await read('index.html');
+assert(dashboard.includes('const ONLINE_LOCKED_TOTAL=8085;'),'Locked online quantity 8,085 missing');
+assert(dashboard.includes('const onNewFee=0;'),'New-online fee must remain zero because input is already net');
+assert(dashboard.includes('const onNewProfit=onNewNet-onNewHpp;'),'New-online profit formula regression');
+
+const hpp=await read('hpp.html');
+for(const marker of ['HPP_FIXED_OFFLINE_BUNGKUS','"cireng isi": 2900','"cireng biasa": 2425','"cibay": 2900']) {
+  assert(hpp.includes(marker),'Locked HPP marker missing: '+marker);
+}
 
 const sql=await read('SUPABASE-EXPANSION.sql');
 const forbidden = ['stok','mutasi_stok','multi_outlet','user_role','pembayaran'];
