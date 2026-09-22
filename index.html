@@ -153,8 +153,23 @@ function findDashboardMasterProduct(row, productMaster){
   const exactCompact=compact(exact);
   p=productMaster.find(x=>compact(x.nama_produk)===exactCompact);
   if(p)return p;
-  // Accept harmless naming variants such as "Naget 25 + Saus", "Naget Isi 25",
-  // or "Naget 25 pcs" but never cross to another size.
+
+  // Utama: gunakan field master isi_per_bungkus bila tersedia.
+  // Ini memetakan listing TikTok ke master tanpa bergantung pada variasi nama.
+  const byPack=productMaster.filter(x=>{
+    const pack=Number(x.isi_per_bungkus);
+    const n=norm(x.nama_produk);
+    return pack===size && /\b(naget|tempura aci)\b/i.test(n);
+  });
+  if(size===25){
+    const sauce=byPack.find(x=>/saus|saos/i.test(norm(x.nama_produk)));
+    if(sauce)return sauce;
+  }
+  if(byPack.length===1)return byPack[0];
+  const byPackPreferred=byPack.find(x=>/\bnaget\b/i.test(norm(x.nama_produk)));
+  if(byPackPreferred)return byPackPreferred;
+
+  // Fallback nama: tetap jangan pernah silang ukuran.
   const sizeRe=new RegExp('(^|\\s)(?:isi\\s*)?'+size+'(?:\\s*(?:pcs|bungkus))?(\\s|$)','i');
   const candidates=productMaster.filter(x=>{
     const n=norm(x.nama_produk);
