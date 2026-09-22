@@ -281,7 +281,22 @@
         margin-left: 0;
       }
     }
-  </style>
+  <style id="familia-mobile">
+@media(max-width:700px){
+  .sidebar{position:sticky!important;top:0;z-index:100;width:100%!important;height:auto!important;padding:8px 10px!important}
+  .brand{font-size:17px!important;margin:0 0 7px!important;text-align:left!important}
+  .menu{display:flex!important;overflow-x:auto!important;gap:5px;scrollbar-width:none}
+  .menu a{flex:0 0 auto;margin:0 0 2px!important;padding:8px 10px!important;font-size:11px!important;white-space:nowrap}
+  .main{margin-left:0!important;padding:10px!important}
+  .header h1{font-size:22px}
+  .header{align-items:flex-start!important}
+  .card{padding:12px!important;border-radius:12px!important}
+  .form-grid{grid-template-columns:1fr!important}
+  .form-actions{display:grid;grid-template-columns:1fr}
+  .form-actions .btn{width:100%}
+  .table-container{overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
+</style></style>
 </head>
 
 <body>
