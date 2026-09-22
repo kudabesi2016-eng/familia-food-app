@@ -186,7 +186,7 @@ function onlineMonthDetail(m){
   h+='</div>';
 
   if(!ready){
-    h+='<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>🔴 Detail produk historis belum final.</b> Database sumber membaca <b>'+audit.all.toLocaleString('id-ID')+' bungkus</b>, sedangkan audit final Familia Food adalah <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+' bungkus</b>. Karena belum cocok, angka produk/HPP/profit bulanan tidak dipaksakan. Gunakan sumber audit terbaru; angka lama 5.928 tidak lagi menjadi baseline.</div>';
+    h+='<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>🔴 Detail produk historis belum final.</b> Database sumber membaca <b>'+audit.all.toLocaleString('id-ID')+' bungkus</b>, sedangkan audit final Familia Food adalah <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+' bungkus</b>. Karena belum cocok, angka produk/HPP/profit bulanan tidak dipaksakan. Gunakan sumber audit terbaru; baseline lama tidak lagi menjadi acuan.</div>';
   }else{
     h+='<div class="sectionTotal"><span>Total Produk Keluar</span><b>'+qty.toLocaleString('id-ID')+' bungkus</b></div>';
   }
@@ -918,31 +918,16 @@ async function refreshOnlineOldPreview(){
 $('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files);await refreshOnlineOldPreview();e.target.value='';}catch(err){$('onlineOldInfo').innerHTML='<div class="msg" style="color:#a22">'+FFCore.esc(err.message||err)+'</div>';$('onlineOldPreview').style.display='block'}};
 $('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
 renderOnlineOldFileQueue();
-function normalizeSellerAuditQty(row){
-  if(String(row?.source||'')!=='seller_center')return Math.trunc(Number(row?.qty)||0);
-  const key=String(row?.import_key||'');
-  const parts=key.split('|');
-  // seller-audit-v5|order|sku|variation|product|date|rawQty|returnQty|bundleMult|omzet
-  if(parts[0]==='seller-audit-v5' && parts.length>=10){
-    const rawQty=Number(parts[6]);
-    const returnQty=Number(parts[7]);
-    const bundleMult=Number(parts[8]);
-    if(Number.isFinite(rawQty)&&Number.isFinite(returnQty)&&Number.isFinite(bundleMult)&&bundleMult>0){
-      return Math.max(0,rawQty-returnQty)*bundleMult;
-    }
-  }
-  return Math.trunc(Number(row?.qty)||0);
-}
 async function saveOnlineHistoricalRows(rows){
-  // Sebelum disimpan, petakan HPP resmi berdasarkan master Produk/HPP.
-  // Qty SELLER AUDIT selalu dihitung ulang dari import_key agar tidak pernah menjadi 0
-  // akibat data lama/duplikat; unit tetap BUNGKUS hasil audit.
+  // Qty SELLER AUDIT sudah dihitung saat parse dari:
+  // (Quantity - Return Quantity) × bundle multiplier.
+  // Jangan hitung ulang dari import_key karena nama produk dapat mengandung karakter "|".
   const prepared=(rows||[]).map(x=>{
-    const auditQty=normalizeSellerAuditQty(x);
     const unit=previewOnlineHpp(x);
-    const base={...x,qty:auditQty};
+    const qty=Math.trunc(Number(x.qty||0));
+    const base={...x,qty};
     if(unit!=null){
-      return {...base,hpp:Math.trunc(unit),modal_hpp:Math.trunc(auditQty*unit),profit_online:null};
+      return {...base,hpp:Math.trunc(unit),modal_hpp:Math.trunc(qty*unit),profit_online:null};
     }
     return base;
   });
