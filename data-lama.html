@@ -25,7 +25,7 @@
 <div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></details></div>
 
 
-<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Upload <b>Excel STANDARD Familia Food</b> hasil pengolahan file TikTok. Aplikasi membaca sheet <b>REKAP_ONLINE</b> untuk Pemasukan/Potongan/Uang Bersih dan <b>PRODUK_ONLINE</b> untuk Produk + <b>Bungkus</b>. File TikTok asli tidak diurai oleh aplikasi.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>Gunakan hanya Excel STANDARD Familia Food.</b> Beberapa file periode berbeda boleh dipilih; file baru ditambahkan ke antrian dan tidak menggantikan file sebelumnya.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button class="btn" id="onlineOldSave">+ Simpan Data Lama Online</button><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
+<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Upload <b>CSV TikTok asli</b> untuk audit produk keluar Jan–Agustus 2026, atau <b>Excel STANDARD Familia Food</b>. CSV TikTok akan dikonversi otomatis menjadi <b>bungkus audit</b> setelah retur dan ekspansi paket 2/3/6. Data audit harus menghasilkan <b>8.085 bungkus</b> sebelum dapat disimpan.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>CSV TikTok asli atau Excel STANDARD.</b> Untuk mengganti histori produk lama dengan audit terbaru, gunakan CSV TikTok Jan–Agustus 2026. Beberapa file boleh dipilih; data yang sama tidak akan digandakan.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button class="btn" id="onlineOldSave">+ Simpan Data Lama Online</button><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
 
 <div class="card"><details><summary>✍️ Tambah Manual</summary><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
 <div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></details></div>
@@ -319,7 +319,8 @@ function parseProcessedHistorical(raw){
     out.push({tanggal:d.slice(0,10),produk_id:null,qty,channel:'Online',harga:toNum(r['Harga/Bungkus']),hpp:0,laba:0,order_id:order,product_name:product,variation:String(r['Variation']??''),sku_id:String(r['SKU ID']??''),seller_sku:String(r['Seller SKU']??''),quantity_return:toNum(r['Return Qty']),harga_asli:toNum(r['SKU Unit Original Price']),omzet_produk:rev,order_amount:toNum(r['Order Amount'])||rev,biaya_platform:String(r['Biaya Platform']??'').trim()===''?null:toNum(r['Biaya Platform']),uang_bersih:netVal,modal_hpp:modal,profit_online:String(r['Profit']??'').trim()===''?null:toNum(r['Profit']),source:'online_historical_import',purchase_channel:String(r['Purchase Channel']||'TikTok Shop'),order_channel:String(r['Order Channel']||'TikTok Shop'),created_time:null,paid_time:d.slice(0,10)+'T00:00:00',import_key:key});
   });return out;
 }
-function parseSellerHistorical(raw){return raw.map(r=>{const order=String(r['Order ID']??r['ID Pesanan']??r['Order ID/Pesanan']??'').trim().replace(/\s+/g,'');const product=String(r['Product Name']??r['Nama Produk']??r['Produk']??'').trim();if(!order||!product)return null;const qty=toNum(r['Quantity']??r['Qty']??r['Jumlah']);const omzet=toNum(r['SKU Subtotal After Discount']??r['SKU Subtotal Setelah Diskon']??r['Subtotal Produk']??r['Omzet Produk']??r['Total Jual']);const price=toNum(r['SKU Unit Original Price']??r['Harga Jual']??r['Harga'])||(qty?omzet/qty:0);const date=parseAnyDate(r['Paid Time']??r['Waktu Pembayaran']??r['Payment Time'])||parseAnyDate(r['Created Time']??r['Waktu Dibuat'])||parseAnyDate(r['Tanggal']);if(!date)return null;const variation=String(r['Variation']??r['Variasi']??'').trim(),sku=String(r['SKU ID']??r['SKU']??r['SKU ID Produk']??'').trim(),sellerSku=String(r['Seller SKU']??r['SKU Penjual']??'').trim();const key=['seller-old-v3',order,sku,variation,product,date.slice(0,10),qty,Math.round(omzet)].join('|');return {tanggal:date.slice(0,10),produk_id:null,qty,channel:'Online',harga:Math.round(price),hpp:0,laba:0,order_id:order,product_name:product,variation,sku_id:sku,seller_sku:sellerSku,quantity_return:toNum(r['Sku Quantity of return']??r['Return Qty']??r['Jumlah Retur']),harga_asli:Math.round(price),omzet_produk:omzet,order_amount:toNum(r['Order Amount']??r['Jumlah Pesanan'])||omzet,biaya_platform:null,uang_bersih:null,modal_hpp:null,profit_online:null,source:'seller_center',purchase_channel:String(r['Purchase Channel']||'TikTok Shop'),order_channel:String(r['Order Channel']||'TikTok Shop'),created_time:date+'T00:00:00',paid_time:date+'T00:00:00',import_key:key};}).filter(Boolean)}
+function sellerBundleMultiplier(r){const t=[r['Product Name'],r['Variation'],r['Seller SKU'],r['SKU ID']].map(v=>String(v??'')).join(' | ');const m=t.match(/\b([236])\s*(?:bungkus|bks)\s*(?:isi|is)\s*(?:24|36|72)\s*pcs?\b/i);return m?Number(m[1]):1}
+function parseSellerHistorical(raw){return raw.map(r=>{const order=String(r['Order ID']??r['ID Pesanan']??r['Order ID/Pesanan']??'').trim().replace(/\s+/g,'');const product=String(r['Product Name']??r['Nama Produk']??r['Produk']??'').trim();if(!order||!product)return null;const rawQty=toNum(r['Quantity']??r['Qty']??r['Jumlah']);const quantityReturn=toNum(r['Sku Quantity of return']??r['Return Qty']??r['Jumlah Retur']);const bundleMult=sellerBundleMultiplier(r);const qty=Math.max(0,rawQty-quantityReturn)*bundleMult;const omzet=toNum(r['SKU Subtotal After Discount']??r['SKU Subtotal Setelah Diskon']??r['Subtotal Produk']??r['Omzet Produk']??r['Total Jual']);const price=toNum(r['SKU Unit Original Price']??r['Harga Jual']??r['Harga'])||(rawQty?omzet/rawQty:0);const date=parseAnyDate(r['Paid Time']??r['Waktu Pembayaran']??r['Payment Time'])||parseAnyDate(r['Created Time']??r['Waktu Dibuat'])||parseAnyDate(r['Tanggal']);if(!date)return null;const variation=String(r['Variation']??r['Variasi']??'').trim(),sku=String(r['SKU ID']??r['SKU']??r['SKU ID Produk']??'').trim(),sellerSku=String(r['Seller SKU']??r['SKU Penjual']??'').trim();const key=['seller-audit-v4',order,sku,variation,product,date.slice(0,10),rawQty,quantityReturn,bundleMult,Math.round(omzet)].join('|');return {tanggal:date.slice(0,10),produk_id:null,qty:Math.round(qty),channel:'Online',harga:Math.round(price),hpp:0,laba:0,order_id:order,product_name:product,variation,sku_id:sku,seller_sku:sellerSku,quantity_return:quantityReturn,harga_asli:Math.round(price),omzet_produk:omzet,order_amount:toNum(r['Order Amount']??r['Jumlah Pesanan'])||omzet,biaya_platform:null,uang_bersih:null,modal_hpp:null,profit_online:null,source:'seller_center',purchase_channel:String(r['Purchase Channel']||'TikTok Shop'),order_channel:String(r['Order Channel']||'TikTok Shop'),created_time:date+'T00:00:00',paid_time:date+'T00:00:00',import_key:key};}).filter(Boolean)}
 function parseLegacyDatabase(wb){
   const names=wb.SheetNames.map(String), norm=s=>FFCore.norm(s), out=[];
   const hasOut=names.some(n=>norm(n)==='keluar resi'), hasCash=names.some(n=>norm(n)==='uang masuk');
@@ -386,7 +387,7 @@ async function parseOnlineOldFile(file){
   if(/\\.csv$/i.test(name)){
     const raw=readCSVText(await file.text());
     if(raw.some(looksSeller))return parseSellerHistorical(raw);
-    throw new Error(`CSV ${name} hanya untuk data TikTok asli; untuk aplikasi gunakan Excel STANDARD Familia Food.`);
+    throw new Error('CSV '+name+' tidak dikenali sebagai export Seller Center TikTok. Pastikan kolom Order ID, Product Name, Quantity, dan SKU Subtotal After Discount tersedia.');
   }
   const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
   const standard=parseFamiliaStandardWorkbook(wb);
@@ -729,18 +730,17 @@ function renderOnlineOldMonthTable(month){
 
 const ONLINE_LOCKED_HISTORY={10:16,12:7292,20:211,25:293,30:90,40:67,50:116};
 const ONLINE_LOCKED_TOTAL=8085;
-function auditStandardLockedRows(rows){
+function auditOnlineLockedRows(rows){
   const bySize={10:0,12:0,20:0,25:0,30:0,40:0,50:0};
-  let total=0,lockedRows=0;
+  let total=0,lockedRows=0,source='';
   for(const r of (rows||[])){
-    if(r.source!=='online_standard_product')continue;
+    if(r.source!=='online_standard_product'&&r.source!=='seller_center')continue;
     const m=FFCore.monthOf(r.tanggal)||'';
     if(m<'2026-01'||m>'2026-08')continue;
     lockedRows++;
-    const q=Number(r.qty||0); total+=q;
+    source=source||String(r.source||'');
+    const q=Math.round(Number(r.qty||0)); total+=q;
     let size=detectOnlinePackSize(r);
-    // Listing Tempura Aci/Naget tanpa angka isi tetap diperlakukan sebagai isi 12
-    // hanya bila bentuk legacy-nya jelas; ukuran 20/25/30/40/50 akan terdeteksi lebih dulu.
     if(!size){
       const n=onlineMatchText(r);
       if(/\btempura aci\b.*(?:eskrim|kotak|stik|bulat|lidah|mie|opal)\b/.test(n) ||
@@ -749,8 +749,8 @@ function auditStandardLockedRows(rows){
     if(ONLINE_LOCKED_HISTORY[size]!=null)bySize[size]+=q;
   }
   const all=[10,12,20,25,30,40,50].reduce((a,s)=>a+Number(bySize[s]||0),0);
-  return {bySize,total,all,lockedRows,expected:ONLINE_LOCKED_TOTAL,
-    ok:lockedRows===0 || all===ONLINE_LOCKED_TOTAL};
+  return {bySize,total,all,lockedRows,source,expected:ONLINE_LOCKED_TOTAL,
+    ok:lockedRows===0 || (all===ONLINE_LOCKED_TOTAL && total===ONLINE_LOCKED_TOTAL)};
 }
 function lockedAuditMessage(audit){
   if(!audit.lockedRows)return '';
@@ -780,7 +780,8 @@ async function refreshOnlineOldPreview(){
   const matchedRows=onlineOldPreviewRows.filter(x=>x.source==='Income + Pesanan');
   const matchedOrders=new Set(matchedRows.map(x=>x._order_id||'' ).filter(Boolean)).size;
   const hppKnown=onlineOldPreviewRows.filter(x=>x.hpp!=null).length;
-  const lockedAudit=isStandard?auditStandardLockedRows(onlineOldImportRows):{lockedRows:0,ok:true,all:0,bySize:{}};
+  const hasLockedSource=onlineOldImportRows.some(x=>x.source==='online_standard_product'||x.source==='seller_center');
+  const lockedAudit=hasLockedSource?auditOnlineLockedRows(onlineOldImportRows):{lockedRows:0,ok:true,all:0,bySize:{}};
   const lockedNotice=lockedAuditMessage(lockedAudit);
   $('onlineOldInfo').innerHTML=lockedNotice+'<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty semua listing <b>'+seller.toLocaleString('id-ID')+'</b> • '+(isStandard?'<b>Preview memakai HASIL RANGKUMAN REKAP_ONLINE, bukan detail listing.</b> Modal/HPP memakai HPP ONLINE resmi (Harga Online − Untung Online), dengan mapping Tempura Aci/Naget → master Naget berdasarkan ISI. Modal terukur <b>'+FFCore.rupiah(totalModal)+'</b> • Profit terukur <b>'+FFCore.rupiah(totalProfit)+'</b> • Bungkus Familia Food terpetakan <b>'+totalMapped.toLocaleString('id-ID')+'</b> • Produk lain di luar HPP <b>'+standardSummaries.reduce((a,x)=>a+Number(x.nonFamiliaQty||0),0).toLocaleString('id-ID')+'</b> • Produk Familia Food belum terpetakan <b>'+totalUnmapped.toLocaleString('id-ID')+'</b>.':'Order cocok <b>'+matchedOrders.toLocaleString('id-ID')+'</b> • Baris produk cocok <b>'+matchedRows.length.toLocaleString('id-ID')+'</b> • HPP Online terukur <b>'+hppKnown.toLocaleString('id-ID')+'</b> baris. Produk + Qty mengikuti data historis yang diimpor.')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>.</div>';
   renderOnlineOldMonthTabs(ms);
@@ -824,12 +825,22 @@ async function saveOnlineHistoricalRows(rows){
 $('onlineOldSave').onclick=async()=>{
   try{
     if(!onlineOldImportRows.length)return;
-    const standardLockedRows=onlineOldImportRows.filter(x=>x.source==='online_standard_product'&&String(FFCore.monthOf(x.tanggal)||'')>='2026-01'&&String(FFCore.monthOf(x.tanggal)||'')<='2026-08');
-    if(standardLockedRows.length){
-      const audit=auditStandardLockedRows(onlineOldImportRows);
+    const lockedRows=onlineOldImportRows.filter(x=>(x.source==='online_standard_product'||x.source==='seller_center')&&String(FFCore.monthOf(x.tanggal)||'')>='2026-01'&&String(FFCore.monthOf(x.tanggal)||'')<='2026-08');
+    if(lockedRows.length){
+      const audit=auditOnlineLockedRows(onlineOldImportRows);
       if(!audit.ok){
         $('onlineOldMsg').innerHTML=lockedAuditMessage(audit);
         return;
+      }
+      // CSV audit 8.085 menggantikan PRODUCT STANDARD lama 3.271.
+      // Finance STANDARD tetap dipertahankan; hanya detail produk lama Jan–Agustus yang dibersihkan.
+      const oldProduct=await supabaseClient.from('penjualan').select('id').eq('channel','Online').eq('source','online_standard_product').gte('tanggal','2026-01-01').lt('tanggal','2026-09-01');
+      if(oldProduct.error)throw oldProduct.error;
+      const ids=(oldProduct.data||[]).map(x=>x.id).filter(Boolean);
+      for(let i=0;i<ids.length;i+=100){
+        const batch=ids.slice(i,i+100);
+        const del=await supabaseClient.from('penjualan').delete().in('id',batch);
+        if(del.error)throw del.error;
       }
     }
     const result=await saveOnlineHistoricalRows(onlineOldImportRows);
