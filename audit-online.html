@@ -17,7 +17,7 @@ input[type=file]{padding:10px;border:1px dashed #8bb8a0;border-radius:8px;backgr
 <h1>🍀 Audit Online Familia Food</h1>
 <div class="box">
 <b>Tujuan:</b> memastikan data historis Online tidak menyamakan export Seller Center terbaru dengan data historis yang sudah dikunci.
-<p class="small">Halaman ini bersifat <b>READ-ONLY</b> terhadap Supabase. Upload CSV diproses lokal di browser dan tidak disimpan ke database.</p><div class="box" style="box-shadow:none;border:1px solid #dbe9df"><b>🟢 Kesimpulan sementara yang dapat dibuktikan:</b> 8.085 = audit langsung dari CSV terbaru. <b>5.928</b> adalah kunci historis lama yang belum memiliki sumber pembentuk yang dapat diverifikasi dari file yang tersedia. <b>3.271</b> adalah total file STANDARD, bukan total audit Seller Center.</div>
+<p class="small">Halaman ini bersifat <b>READ-ONLY</b> terhadap Supabase. Upload CSV diproses lokal di browser dan tidak disimpan ke database.</p><div class="box" style="box-shadow:none;border:1px solid #dbe9df"><b>🟢 Kesimpulan audit saat ini:</b> <b>8.085 bungkus</b> adalah hasil audit CSV TikTok Jan–Agustus 2026 setelah retur dan ekspansi paket. Angka <b>5.928</b> dan STANDARD <b>3.271</b> tidak lagi menjadi sumber angka produk keluar; setelah import audit, sumber produk keluar aplikasi adalah data <b>seller_center</b> yang sudah dikonversi ke bungkus.</div>
 </div>
 
 <div class="grid">
@@ -36,7 +36,7 @@ input[type=file]{padding:10px;border:1px dashed #8bb8a0;border-radius:8px;backgr
 </div>
 
 <div class="box">
-<h2>🔒 Data Historis yang Dikunci</h2><p class="small"><b>Status:</b> kunci 5.928 masih dipertahankan hanya sebagai baseline historis. Audit terbaru menemukan sumber Seller Center yang menghasilkan 8.085, tetapi belum ada dasar yang cukup untuk menyatakan bahwa seluruh 8.085 harus menggantikan baseline aplikasi.</p>
+<h2>🔒 Data Historis yang Dikunci</h2><p class="small"><b>Status:</b> audit final <b>8.085 bungkus</b> menjadi acuan produk keluar Jan–Agustus 2026. Data STANDARD lama <b>3.271</b> tidak boleh dicampur dengan data audit baru.</p>
 <table><thead><tr><th>Bentuk</th><th>Isi</th><th>Bungkus Audit Final</th></tr></thead><tbody id="lockedRows"></tbody>
 <tfoot><tr><th>Total</th><th>—</th><th>8.085</th></tr></tfoot></table>
 <p class="small">🟡 <b>Audit 22 September 2026:</b> CSV Seller Center terbaru menghasilkan <b>8.085 bungkus</b> untuk Tempura Aci Jan–Agustus 2026 dengan filter TikTok + Selesai. File STANDARD yang saat ini tersimpan hanya memuat <b>3.271 bungkus total</b>. Angka kunci <b>5.928</b> tidak dapat direkonstruksi dari dua sumber tersebut, sehingga <b>belum diganti otomatis</b>. Sumber historis pembentuk 5.928 belum tersedia di berkas yang sedang diaudit.</p>
@@ -103,21 +103,23 @@ async function allRows(table){
  return out;
 }
 async function runDbAudit(){
- const st=document.getElementById('dbStatus'),res=document.getElementById('dbResult');st.textContent='Membaca online_standard_product...';res.innerHTML='';
+ const st=document.getElementById('dbStatus'),res=document.getElementById('dbResult');st.textContent='Membaca penjualan Online Jan–Agustus 2026...';res.innerHTML='';
  try{
-   const rows=await allRows('online_standard_product');
-   const bySize={12:0,20:0,25:0,30:0,40:0},byMonth={},byShape={ESKRIM:0,STIK:0,KOTAK:0,BULAT:0,LIDAH:0,MIE:0};
+   const all=await allRows('penjualan');
+   const rows=all.filter(r=>String(r.channel||'').toLowerCase()==='online'&&String(r.tanggal||'')>='2026-01-01'&&String(r.tanggal||'')<'2026-09-01'&&['online_standard_product','seller_center'].includes(String(r.source||'')));
+   const bySize={10:0,12:0,20:0,25:0,30:0,40:0,50:0},byMonth={},byShape={ESKRIM:0,STIK:0,KOTAK:0,BULAT:0,LIDAH:0,MIE:0},bySource={online_standard_product:0,seller_center:0};
    let total=0,fam=0;
    for(const r of rows){
-     const q=num(r.bungkus??r.qty??r.jumlah??r.quantity);total+=q;
-     const s=Number(r._size??sizeOf({'Product Name':r.nama_produk??r.product_name,'Variation':r.variansi??r.variation,'Seller SKU':r.seller_sku,'SKU ID':r.sku_id}));
-     if(LOCKED_SIZE[s]!=null)bySize[s]+=q;
-     const m=String(r.bulan??r.periode??r.tanggal??'').slice(0,7);if(m)byMonth[m]=(byMonth[m]||0)+q;
-     const name=String(r.nama_produk??r.product_name??'');if(/tempura\s*aci/i.test(name)){fam++;const sh=shapeOf({'Product Name':name,'Variation':r.variansi??r.variation,'Seller SKU':r.seller_sku,'SKU ID':r.sku_id});if(sh&&s===12)byShape[sh]+=q;}
+     const q=Math.round(num(r.qty));total+=q;const src=String(r.source||'');if(bySource[src]!=null)bySource[src]+=q;
+     const proxy={'Product Name':r.product_name,'Variation':r.variation,'Seller SKU':r.seller_sku,'SKU ID':r.sku_id};
+     const s=sizeOf(proxy);if(LOCKED_SIZE[s]!=null)bySize[s]+=q;
+     const m=String(r.tanggal||'').slice(0,7);if(m)byMonth[m]=(byMonth[m]||0)+q;
+     const name=String(r.product_name||'');if(/tempura\s*aci/i.test(name)){fam++;const sh=shapeOf(proxy);if(sh&&s===12)byShape[sh]+=q;}
    }
-   const size12to40=Object.values(bySize).reduce((a,b)=>a+b,0);
-   st.innerHTML='✅ '+rows.length.toLocaleString('id-ID')+' baris terbaca. Total STANDARD = <b>'+total.toLocaleString('id-ID')+' bungkus</b>.';
-   res.innerHTML='<p class="'+(total===LOCKED_TOTAL?'ok':'bad')+'">'+(total===LOCKED_TOTAL?'SUMBER STANDARD sama dengan total terkunci.':'SUMBER STANDARD belum sama dengan 5.928; jangan menambal angka dengan angka buatan.')+'</p>'+
+   st.innerHTML='✅ '+rows.length.toLocaleString('id-ID')+' baris produk historis terbaca dari <b>penjualan</b>. Total = <b>'+total.toLocaleString('id-ID')+' bungkus</b>.';
+   const ok=total===LOCKED_TOTAL;
+   res.innerHTML='<p class="'+(ok?'ok':'bad')+'">'+(ok?'✅ DATA DATABASE cocok dengan audit final 8.085 bungkus.':'⚠️ DATABASE belum mencapai audit final 8.085 bungkus. Angka saat ini: '+total.toLocaleString('id-ID')+' bungkus.')+'</p>'+
+     '<p>Seller Center audit: <b>'+bySource.seller_center.toLocaleString('id-ID')+'</b> bungkus • STANDARD lama: <b>'+bySource.online_standard_product.toLocaleString('id-ID')+'</b> bungkus.</p>'+
      '<p>Listing terdeteksi Tempura Aci: <b>'+fam.toLocaleString('id-ID')+'</b> baris.</p>'+comparison(byShape,bySize)+
      '<h3>Per bulan</h3>'+renderTable(['Bulan','Bungkus'],Object.keys(byMonth).sort().map(m=>[m,byMonth[m].toLocaleString('id-ID')]));  
  }catch(e){st.innerHTML='<span class="bad">Gagal: '+esc(e.message)+'</span>';}
