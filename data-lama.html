@@ -508,33 +508,66 @@ function explicitOnlineProductCandidates(row){
   if(/\bcibay\b/.test(n))out.push('cibay');
   return [...new Set(out)];
 }
+function hppLockedOnlineFallback(row){
+  const n=onlineMatchText(row);
+  const size=detectOnlinePackSize(row);
+  if(/\b(tempura aci|naget)\b/.test(n) && (size===10 || size===12)) return 4000;
+  if(/\bcireng\s+isi\b/.test(n)) return 3500;
+  if(/\bcireng\s+biasa\b/.test(n)) return 3500;
+  if(/\bcibay\b/.test(n)) return 3500;
+  return null;
+}
 function findOnlineMasterProduct(row){
   const pid=String(row?.produk_id||'');
   if(pid){const p=productMasterRows.find(x=>String(x.id)===pid);if(p)return p;}
   const n=onlineMatchText(row);
   if(!n)return null;
+
   const exactName=normOnlineName(row?.product_name);
   const exact=productMasterRows.find(p=>normOnlineName(p.nama_produk)===exactName);
   if(exact)return exact;
+
   const aliases=explicitOnlineProductCandidates(row);
   for(const alias of aliases){
     const p=productMasterRows.find(x=>normOnlineName(x.nama_produk)===alias);
     if(p)return p;
   }
-  // Fallback berdasarkan ukuran: nama master kadang berbeda dari alias listing,
-  // tetapi tetap harus produk Naget/Tempura Aci dengan ukuran yang sama.
+
+  // Fallback berdasarkan ukuran listing, karena nama produk Seller Center
+  // sering lebih panjang daripada nama master aplikasi.
   const size=detectOnlinePackSize(row);
   if(size){
     const sizeRe=new RegExp('(?:^|\\s)(?:isi\\s*)?'+size+'(?:\\s*(?:pcs|bungkus))?(?:\\s|$)','i');
     const candidates=productMasterRows.filter(p=>{
       const pn=normOnlineName(p.nama_produk);
-      return /\\b(naget|tempura aci)\\b/.test(pn) && sizeRe.test(pn);
+      return /\b(naget|tempura aci)\b/.test(pn) && sizeRe.test(pn);
     });
     if(candidates.length===1)return candidates[0];
-    const preferred=candidates.find(p=>/naget/.test(normOnlineName(p.nama_produk)) && /(?:isi|pcs|bungkus)/.test(normOnlineName(p.nama_produk)));
+    const preferred=candidates.find(p=>{
+      const pn=normOnlineName(p.nama_produk);
+      return /\bnaget\b/.test(pn) && /(?:isi|pcs|bungkus)/.test(pn);
+    });
     if(preferred)return preferred;
     if(candidates.length)return candidates[0];
   }
+
+  return null;
+}
+function hppUnitFromRowAndMaster(row,p,h){
+  const productHppOnline=Number(p?.hpp_online);
+  if(Number.isFinite(productHppOnline)&&productHppOnline>0)return Math.trunc(productHppOnline);
+
+  const explicitHpp=Number(h?.hpp_online);
+  if(Number.isFinite(explicitHpp)&&explicitHpp>0)return Math.trunc(explicitHpp);
+
+  const onlinePrice=Number(h?.harga_online ?? p?.harga_online);
+  const profitOnline=Number(h?.untung_online);
+  if(Number.isFinite(onlinePrice)&&onlinePrice>0&&Number.isFinite(profitOnline)&&profitOnline>=0){
+    const calc=onlinePrice-profitOnline;
+    if(calc>0)return Math.trunc(calc);
+  }
+
+  // hpp_unit adalah HPP Offline/unit, jadi tidak dipakai sebagai HPP Online.
   return null;
 }
 function previewOnlineHpp(row){
@@ -542,35 +575,34 @@ function previewOnlineHpp(row){
     const p=findOnlineMasterProduct(row);
     const aliases=explicitOnlineProductCandidates(row).map(normOnlineName);
     let h=null;
+
     if(p) h=hppMasterRows.find(x=>String(x.produk_id)===String(p.id))||null;
     if(!h && p) h=hppMasterRows.find(x=>normOnlineName(x.nama_produk)===normOnlineName(p.nama_produk))||null;
     if(!h && aliases.length) h=hppMasterRows.find(x=>aliases.includes(normOnlineName(x.nama_produk)))||null;
-    if(h){
-      // HPP Online resmi = Harga Online - Untung Online.
-      if(h.untung_online!=null&&(h.harga_online!=null||(p&&p.harga_online!=null))){
-        const onlinePrice=Number(h.harga_online!=null?h.harga_online:p.harga_online);
-        const online=onlinePrice-Number(h.untung_online);
-        if(Number.isFinite(online)&&online>0)return Math.trunc(online);
-      }
-      if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Math.trunc(Number(h.hpp_online));
-      if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
-    }
-    // Last explicit fallback: resolve alias directly to the matching HPP row by name.
-    for(const alias of aliases){
-      const hit=hppMasterRows.find(x=>normOnlineName(x.nama_produk)===alias);
-      if(hit && hit.hpp_unit!=null && Number(hit.hpp_unit)>0) return Math.trunc(Number(hit.hpp_unit));
-    }
+
+    const fromMaster=hppUnitFromRowAndMaster(row,p,h);
+    if(fromMaster!=null)return fromMaster;
+
+    // Ukuran 10/12 sudah dikunci HPP Online Rp4.000/bungkus.
+    const locked=hppLockedOnlineFallback(row);
+    if(locked!=null)return locked;
   }catch(_){}
   return null;
 }
 async function ensureOnlineHppMaster(){
   try{
-    const pr=await supabaseClient.from('produk').select('id,nama_produk,harga_online');
+    // Ambil seluruh kolom agar tetap bisa memakai hpp_online bila tersedia
+    // di master Produk, tanpa bergantung pada satu nama kolom saja.
+    const pr=await supabaseClient.from('produk').select('*');
     if(pr.error)throw pr.error;
     productMasterRows=pr.data||[];
-    const hr=await supabaseClient.from('hpp').select('produk_id,hpp_unit,untung_online,harga_online');
+
+    const hr=await supabaseClient.from('hpp').select('*');
     if(hr.error)throw hr.error;
-    hppMasterRows=(hr.data||[]).map(h=>({...h,nama_produk:(productMasterRows.find(p=>String(p.id)===String(h.produk_id))||{}).nama_produk||''}));
+    hppMasterRows=(hr.data||[]).map(h=>({
+      ...h,
+      nama_produk:(productMasterRows.find(p=>String(p.id)===String(h.produk_id))||{}).nama_produk||''
+    }));
   }catch(e){
     productMasterRows=[];
     hppMasterRows=[];
