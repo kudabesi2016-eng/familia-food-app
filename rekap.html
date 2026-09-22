@@ -599,8 +599,7 @@ function onlineHpp(m){
       const lockedRows=(sales||[]).filter(x=>
         String(x.channel||'')==='Online' &&
         String(x.source||'')==='seller_center' &&
-        monthOfSaleRow(x)>='2026-01' &&
-        monthOfSaleRow(x)<='2026-08'
+        monthOfSaleRow(x)===m
       );
       if(lockedRows.length){
         const lockedQty=lockedRows.reduce((a,x)=>a+Math.trunc(Number(x.qty||0)),0);
