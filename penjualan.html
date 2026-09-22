@@ -208,7 +208,7 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
   </div>
 </div>
 </section><section class="penjualan-panel" data-panel="offline"><div class="card"><div class="cashhead"><div><h2 style="margin:0">🟢 Transaksi Offline</h2><div class="note">Tetap memakai struktur penjualan lama; pola HPP tidak diubah.</div></div></div>
-<div class="grid" style="margin-top:16px"><div class="field"><label>Tanggal</label><input id="tanggal" type="date"/></div><div class="field"><label>Nama Pelanggan</label><input id="pelanggan" placeholder="Contoh: Bu Euis" type="text"/></div><div class="field"><label>Produk</label><select id="produk"><option value="">Pilih Produk</option></select></div><div class="field"><label>Jumlah Terjual (Bungkus)</label><input id="qty" min="1" step="1" type="number" value="1"/></div><div class="field"><label>Channel Penjualan</label><select id="channel"><option>Offline</option></select></div><div class="field"><label>Harga Jual / Bungkus</label><input id="harga" min="0" readonly="" step="1" type="number"/></div><div class="field"><label>HPP / Bungkus</label><input id="hpp" min="0" readonly="" step="1" type="number"/></div></div>
+<div class="grid" style="margin-top:16px"><div class="field"><label>Tanggal</label><input id="tanggal" type="date"/></div><div class="field"><label>Nama Pelanggan</label><input id="pelanggan" list="ffCustomerList" placeholder="Contoh: Bu Euis" type="text"/><datalist id="ffCustomerList"></datalist></div><div class="field"><label>Produk</label><select id="produk"><option value="">Pilih Produk</option></select></div><div class="field"><label>Jumlah Terjual (Bungkus)</label><input id="qty" min="1" step="1" type="number" value="1"/></div><div class="field"><label>Channel Penjualan</label><select id="channel"><option>Offline</option></select></div><div class="field"><label>Harga Jual / Bungkus</label><input id="harga" min="0" readonly="" step="1" type="number"/></div><div class="field"><label>HPP / Bungkus</label><input id="hpp" min="0" readonly="" step="1" type="number"/></div></div>
 <div class="preview"><div class="box"><small>Harga Jual</small><strong id="pvHarga">Rp 0</strong></div><div class="box"><small>Total Omzet</small><strong id="pvOmzet">Rp 0</strong></div><div class="box"><small>Total Modal / HPP</small><strong id="pvHpp">Rp 0</strong></div><div class="box profit"><small>Profit</small><strong id="pvProfit">Rp 0</strong></div></div>
 <div class="actions"><button class="btn" id="save">+ Simpan Penjualan</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div><div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div></section><section class="penjualan-panel" data-panel="cash"><div class="card" id="onlineCashCard">
 <div class="cashhead">
@@ -263,6 +263,33 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="actions"><button class="btn blue" id="importSave">+ Simpan Data Online</button><button class="btn gray" id="importCancel">Batal</button></div><div id="importMsg"></div></div></div></section><script>
 const $=id=>document.getElementById(id);let products=[],sales=[],displaySales=[],editId=null,importRows=[];let stagedSellerRecords=[],stagedIncomeRecords=[],stagedSellerName='',stagedIncomeNames=[];
 let customerMap=JSON.parse(localStorage.getItem('ff_sale_customers_v1')||'{}');
+let customerMaster=[];
+async function loadCustomerMaster(){
+  try{
+    const r=await supabaseClient.from('ff_pelanggan').select('id,nama,status').eq('status','Aktif').order('nama',{ascending:true});
+    if(!r.error){
+      customerMaster=r.data||[];
+      $('ffCustomerList').innerHTML=customerMaster.map(x=>'<option value="'+esc(x.nama)+'"></option>').join('');
+      return;
+    }
+  }catch(e){}
+  const names=[...new Set(Object.values(customerMap).map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));
+  $('ffCustomerList').innerHTML=names.map(v=>'<option value="'+esc(v)+'"></option>').join('');
+}
+async function saveCustomerMaster(nama){
+  const name=String(nama||'').trim();
+  if(!name)return;
+  customerMap['last:'+name.toLowerCase()]=name;
+  localStorage.setItem('ff_sale_customers_v1',JSON.stringify(customerMap));
+  if(customerMaster.some(x=>normName(x.nama)===normName(name)))return;
+  try{
+    const r=await supabaseClient.from('ff_pelanggan').insert([{nama:name,status:'Aktif'}]).select('id,nama,status').single();
+    if(!r.error&&r.data){
+      customerMaster.push(r.data);
+      $('ffCustomerList').innerHTML=customerMaster.filter(x=>x.status==='Aktif').map(x=>'<option value="'+esc(x.nama)+'"></option>').join('');
+    }
+  }catch(e){}
+}
 const rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
 const today=()=>new Date().toISOString().slice(0,10);$('tanggal').value=today();
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -279,7 +306,7 @@ $('qty').addEventListener('input',updatePreview);$('harga').addEventListener('in
 async function loadHpp(){const p=selectedProduct();if(!p)return;$('harga').value=($('channel').value==='Online'?p.harga_online:p.harga_offline)||'';const r=await supabaseClient.from('hpp').select('*').eq('produk_id',p.id).maybeSingle();if(r.error)throw r.error;let nilaiHpp='';if(r.data){const h=r.data;nilaiHpp=Number(h.hpp_unit||0);if($('channel').value==='Online'&&h.harga_online!=null&&h.untung_online!=null)nilaiHpp=Number(h.harga_online)-Number(h.untung_online)}$('hpp').value=nilaiHpp!==''?Math.round(nilaiHpp):'';updatePreview();}
 $('produk').onchange=()=>loadHpp().catch(e=>msg('Gagal mengambil HPP: '+e.message,true));
 $('channel').onchange=()=>{const current=$('produk').value;renderProductOptions(current);loadHpp().catch(e=>msg('Gagal mengambil HPP: '+e.message,true));};
-$('save').onclick=async()=>{try{const p=selectedProduct(),tanggal=$('tanggal').value,qty=Number($('qty').value),harga=Number($('harga').value),hpp=Number($('hpp').value),channel=$('channel').value;if(!p||!tanggal||qty<=0||harga<0||hpp<0)return msg('Lengkapi data penjualan.',true);const hargaBulat=Math.round(harga),hppBulat=Math.round(hpp),total=qty*hargaBulat,hppTotal=qty*hppBulat,laba=total-hppTotal;const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,source:'manual',product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,profit_online:channel==='Online'?laba:null};let r=editId?await supabaseClient.from('penjualan').update(data).eq('id',editId):await supabaseClient.from('penjualan').insert([data]).select('id').single();if(r.error)throw r.error;const savedId=editId||(r.data&&r.data.id);if(savedId){const nama=$('pelanggan').value.trim();if(nama)customerMap[String(savedId)]=nama;else delete customerMap[String(savedId)];localStorage.setItem('ff_sale_customers_v1',JSON.stringify(customerMap));}msg(editId?'Penjualan diperbarui.':'Penjualan tersimpan.');editId=null;$('cancel').style.display='none';$('save').textContent='+ Simpan Penjualan';await load();}catch(e){console.error(e);msg('Gagal menyimpan: '+e.message,true)}};
+$('save').onclick=async()=>{try{const p=selectedProduct(),tanggal=$('tanggal').value,qty=Number($('qty').value),harga=Number($('harga').value),hpp=Number($('hpp').value),channel=$('channel').value;if(!p||!tanggal||qty<=0||harga<0||hpp<0)return msg('Lengkapi data penjualan.',true);const hargaBulat=Math.round(harga),hppBulat=Math.round(hpp),total=qty*hargaBulat,hppTotal=qty*hppBulat,laba=total-hppTotal;const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,source:'manual',product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,profit_online:channel==='Online'?laba:null};let r=editId?await supabaseClient.from('penjualan').update(data).eq('id',editId):await supabaseClient.from('penjualan').insert([data]).select('id').single();if(r.error)throw r.error;const savedId=editId||(r.data&&r.data.id);if(savedId){const nama=$('pelanggan').value.trim();if(nama){customerMap[String(savedId)]=nama;await saveCustomerMaster(nama);}else delete customerMap[String(savedId)];localStorage.setItem('ff_sale_customers_v1',JSON.stringify(customerMap));}msg(editId?'Penjualan diperbarui.':'Penjualan tersimpan.');editId=null;$('cancel').style.display='none';$('save').textContent='+ Simpan Penjualan';await load();}catch(e){console.error(e);msg('Gagal menyimpan: '+e.message,true)}};
 $('cancel').onclick=()=>{editId=null;$('cancel').style.display='none';$('save').textContent='+ Simpan Penjualan';$('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();};
 function parseCSV(text){const rows=[],row=[];let cell='',quote=false;for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'){if(quote&&next==='"'){cell+='"';i++;}else quote=!quote;}else if(ch===','&&!quote){row.push(cell);cell='';}else if((ch==='\n'||ch==='\r')&&!quote){if(ch==='\r'&&next==='\n')i++;row.push(cell);if(row.some(x=>String(x).trim()!==''))rows.push(row.slice());row.length=0;cell='';}else cell+=ch;}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
 function num(v){if(v===null||v===undefined||v==='')return null;let s=String(v).trim().replace(/\s/g,'');if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(/^[-+]?\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');return Number(s)||0;}
