@@ -296,10 +296,16 @@ async function savePurchase(){
     const d=await supabaseClient.from('ff_pembelian_item').insert(items);
     if(d.error){await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);$('purchaseStatus').textContent='Gagal item pembelian: '+d.error.message;return}
     const priceWarnings=await syncLastPurchasePrices(rows);
+    if(priceWarnings.length){
+      // Jangan tinggalkan header/item pembelian bila sinkronisasi harga bahan gagal.
+      // Hapus transaksi baru lalu pulihkan harga bahan dari pembelian terakhir yang masih ada.
+      await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);
+      try{await refreshMaterialLastPrices(rows.map(x=>x.bahan_id));}catch(e){console.warn('Gagal memulihkan harga bahan setelah rollback:',e);}
+      $('purchaseStatus').textContent='Pembelian dibatalkan karena harga bahan tidak berhasil disinkronkan: '+priceWarnings.join(', ')+'.';
+      return;
+    }
     state.purchase=await loadTable('ff_pembelian');
-    $('purchaseStatus').textContent=priceWarnings.length
-      ? 'Pembelian tersimpan, tetapi harga bahan gagal diperbarui: '+priceWarnings.join(', ')+'. Periksa kembali Bahan Baku/HPP.'
-      : 'Pembelian tersimpan dan harga bahan diperbarui ke harga beli terakhir.';
+    $('purchaseStatus').textContent='Pembelian tersimpan, harga bahan diperbarui, dan HPP siap membaca harga terbaru.';
 
   $('buyNote').value='';$('purchaseLines').innerHTML='';addPurchaseLine();renderPurchases();renderStats();
 }
