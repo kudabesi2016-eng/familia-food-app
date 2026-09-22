@@ -491,6 +491,22 @@ async function fetchAll(table, select='*'){
 
 
 /* =====================================================
+   FETCH AMAN
+   Jangan biarkan satu tabel yang lambat/gagal membuat
+   seluruh halaman Rekap berhenti di "Memuat...".
+===================================================== */
+async function fetchAllSafe(table, select='*', timeoutMs=15000){
+  return await Promise.race([
+    fetchAll(table,select),
+    new Promise((_,reject)=>setTimeout(
+      ()=>reject(new Error('Timeout membaca tabel '+table)),
+      timeoutMs
+    ))
+  ]);
+}
+
+
+/* =====================================================
    DATA CORE
 ===================================================== */
 
@@ -1158,58 +1174,49 @@ $('closeOnlineConnection').onclick = () => {
 
 async function init(){
 
-  try{
+  $('monthly').innerHTML = `
+    <tr>
+      <td colspan="6" class="empty">Memuat data Rekap...</td>
+    </tr>
+  `;
 
-    [
-      sales,
-      olds,
-      expenses,
-      products,
-      hpps
+  const jobs = [
+    ['penjualan', 'sales'],
+    ['data_lama', 'olds'],
+    ['pengeluaran', 'expenses'],
+    ['produk', 'products'],
+    ['hpp', 'hpps']
+  ];
 
-    ] = await Promise.all([
+  const results = await Promise.all(
+    jobs.map(async ([table,key]) => {
+      try{
+        return {key, rows:await fetchAllSafe(table)};
+      }catch(e){
+        console.error('Gagal membaca '+table,e);
+        return {key, rows:[], error:e.message};
+      }
+    })
+  );
 
-      fetchAll('penjualan'),
+  for(const r of results){
+    if(r.key==='sales') sales=r.rows;
+    if(r.key==='olds') olds=r.rows;
+    if(r.key==='expenses') expenses=r.rows;
+    if(r.key==='products') products=r.rows;
+    if(r.key==='hpps') hpps=r.rows;
+  }
 
-      fetchAll('data_lama'),
+  if(!['Offline','Online'].includes($('channel').value)){
+    $('channel').value='Online';
+  }
 
-      fetchAll('pengeluaran'),
+  renderMonthOptions();
+  render();
 
-      fetchAll('produk'),
-
-      fetchAll('hpp')
-
-    ]);
-
-
-    if(!['Offline','Online'].includes($('channel').value)) $('channel').value='Online';
-
-
-    renderMonthOptions();
-
-    render();
-
-
-  }catch(e){
-
-    $('monthly').innerHTML = `
-
-      <tr>
-
-        <td
-          colspan="6"
-          class="empty error"
-        >
-
-          Gagal memuat data:
-          ${FFCore.esc(e.message)}
-
-        </td>
-
-      </tr>
-
-    `;
-
+  const failed=results.filter(x=>x.error);
+  if(failed.length){
+    $('noticeText').innerHTML += '<br><b style="color:#b42318">Catatan:</b> beberapa data belum terbaca: '+failed.map(x=>FFCore.esc(x.key)).join(', ')+'. Klik <b>↻ Muat Ulang</b> untuk mencoba lagi.';
   }
 
 }
