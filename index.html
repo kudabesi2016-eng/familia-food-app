@@ -225,16 +225,6 @@ function dashboardOnlineHppUnit(row, productMaster, hppRows){
   }
   return null;
 }
-function auditSellerQtyFromImportKey(row){
-  const key=String(row?.import_key||'');
-  const parts=key.split('|');
-  if(parts[0]!=='seller-audit-v5'||parts.length<10)return null;
-  const rawQty=Number(parts[6]);
-  const returnQty=Number(parts[7]);
-  const bundleMult=Number(parts[8]);
-  if(!Number.isFinite(rawQty)||!Number.isFinite(returnQty)||!Number.isFinite(bundleMult)||bundleMult<=0)return null;
-  return Math.max(0,rawQty-returnQty)*bundleMult;
-}
 async function repairDashboardOnlineHpp(){
   const state=window.__FF_DASHBOARD_STATE, msg=document.getElementById('onlineHistoryAudit');
   if(!state||!Array.isArray(state.sales)){if(msg)msg.innerHTML='🔴 Data Dashboard belum siap. Muat ulang halaman.';return;}
@@ -246,35 +236,31 @@ async function repairDashboardOnlineHpp(){
     monthOf(x.tanggal||x.paid_time||x.created_time||'')<='2026-08'
   );
   const missing=rows.filter(x=>Number(x.qty||0)>0 && Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
-  if(!missing.length){if(msg)msg.innerHTML='🟢 Semua baris histori sudah memiliki Qty dan HPP.';return;}
+  if(!missing.length){if(msg)msg.innerHTML='🟢 Semua baris histori sudah memiliki HPP.';return;}
 
   let repaired=0;
   const failed=[],unresolved=[];
 
   for(const x of missing){
-    const auditedQty=auditSellerQtyFromImportKey(x);
     const unit=dashboardOnlineHppUnit(x,state.productMaster,state.hppRows);
-    if(auditedQty==null || unit==null){
-      unresolved.push(x);
-      continue;
-    }
+    const qty=Math.trunc(Number(x.qty)||0);
+    if(unit==null || qty<=0){unresolved.push(x);continue;}
 
-    const newQty=Math.trunc(auditedQty);
     const newHpp=Math.trunc(unit);
-    const newModal=Math.trunc(newQty*unit);
+    const newModal=Math.trunc(qty*unit);
 
     const upd=await supabaseClient.from('penjualan')
-      .update({qty:newQty,hpp:newHpp,modal_hpp:newModal})
+      .update({hpp:newHpp,modal_hpp:newModal})
       .eq('id',x.id)
-      .select('id,qty,hpp,modal_hpp')
+      .select('id,hpp,modal_hpp')
       .maybeSingle();
 
     if(upd.error){
       failed.push({id:x.id,reason:upd.error.message});
       continue;
     }
-    if(!upd.data || Number(upd.data.qty)!==newQty || Number(upd.data.hpp)!==newHpp || Number(upd.data.modal_hpp)!==newModal){
-      failed.push({id:x.id,reason:'UPDATE tidak menyimpan Qty/HPP/Modal sesuai nilai audit.'});
+    if(!upd.data || Number(upd.data.hpp)!==newHpp || Number(upd.data.modal_hpp)!==newModal){
+      failed.push({id:x.id,reason:'UPDATE tidak menyimpan HPP/Modal sesuai nilai master.'});
       continue;
     }
     repaired++;
@@ -298,11 +284,11 @@ async function repairDashboardOnlineHpp(){
 
   if(msg){
     if(stillMissing.length===0){
-      msg.innerHTML='✅ <b>Qty + HPP histori sudah tersimpan permanen.</b> '+repaired.toLocaleString('id-ID')+' baris diperbaiki dan diverifikasi ulang.';
+      msg.innerHTML='✅ <b>HPP historis sudah tersimpan permanen.</b> Semua baris keluar yang memiliki Qty sudah lolos verifikasi database.';
     }else if(failed.length){
-      msg.innerHTML='🔴 <b>Database menahan UPDATE Qty/HPP.</b> Masih '+stillMissing.length.toLocaleString('id-ID')+' baris.'+(detail?' '+detail+'.':'')+' Periksa policy/database.';
+      msg.innerHTML='🔴 <b>Database menahan UPDATE HPP.</b> Masih '+stillMissing.length.toLocaleString('id-ID')+' baris.'+(detail?' '+detail+'.':'')+' Tidak ada data yang dihapus.';
     }else{
-      msg.innerHTML='🟠 Masih ada '+stillMissing.length.toLocaleString('id-ID')+' baris tanpa Qty/HPP.'+(detail?' '+detail+'.':'')+' Baris tanpa sumber audit/master tidak disentuh.';
+      msg.innerHTML='🟠 Masih ada '+stillMissing.length.toLocaleString('id-ID')+' baris tanpa HPP.'+(detail?' '+detail+'.':'')+' Sumber HPP master belum ditemukan.';
     }
   }
   await loadDashboard();
