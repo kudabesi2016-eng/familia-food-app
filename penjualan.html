@@ -712,8 +712,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         modal_hpp:Math.round(total),
         profit_online:null,
         biaya_platform:null,
-        source:'online_batch',
-        catatan:r.jenis==='familia'?'Produk keluar online':'Produk dropship online'
+        source:'online_batch'
       }));
 
       const ins=await supabaseClient.from('penjualan').insert(newRows).select('id');
@@ -757,7 +756,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0));
     const note=byId('cashNote').value.trim();
     if(!tanggal||amount<=0){setCashMsg('Tanggal dan Uang Bersih wajib diisi.',true);return;}
-    const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,order_id:null,product_name:'Pencairan TikTok',variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:null,source:'online_pencairan',catatan:note||'Penerimaan Uang Online'};
+    const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,order_id:null,product_name:'Pencairan TikTok',variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:null,source:'online_pencairan'};
     supabaseClient.from('penjualan').insert([row]).select('id').single().then(async r=>{
       if(r.error){setCashMsg('Gagal menyimpan penerimaan: '+esc(r.error.message),true);return;}
       setCashMsg('Penerimaan Uang Online tersimpan: '+money(amount));
