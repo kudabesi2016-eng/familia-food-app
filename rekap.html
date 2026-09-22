@@ -412,18 +412,20 @@ td{
 
   </div>
 
-  <div class="card" style="margin-top:12px;display:none" id="onlineConnectionCard">
+  <div class="card" style="margin-top:12px" id="onlineConnectionCard">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
       <div>
-        <h3 style="margin:0" id="onlineConnectionTitle">🔗 Detail Rekap</h3>
-        <div class="history-note" id="onlineConnectionNote" style="margin-top:5px">Klik 👁 Lihat Data pada bulan untuk membuka rincian.</div>
+        <h3 style="margin:0" id="onlineConnectionTitle">📋 Detail Rekap</h3>
+        <div class="history-note" id="onlineConnectionNote" style="margin-top:5px">Pilih bulan di atas, lalu klik 👁 Lihat Data untuk membuka detail lengkap.</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span class="badge" id="onlineConnectionMode">🔵 Online</span>
-        <button class="btn gray" type="button" id="closeOnlineConnection">Tutup</button>
+        <button class="btn light" type="button" id="viewOnlineConnection">👁 Lihat Data</button>
       </div>
     </div>
-    <div id="onlineConnectionBody" style="margin-top:12px"></div>
+    <div id="onlineConnectionBody" style="margin-top:12px">
+      <div class="hint">Klik 👁 Lihat Data untuk menampilkan detail lengkap bulan yang dipilih.</div>
+    </div>
   </div>
 </main>
 
@@ -1014,9 +1016,6 @@ function renderMonthly(){
 
           <td>
             <b>${label(m)}</b>
-            <div style="margin-top:7px">
-              <button class="btn light viewbtn" type="button" onclick="viewOnlineMonth('${m}')">👁 Lihat Data</button>
-            </div>
           </td>
 
           <td>
@@ -1141,9 +1140,15 @@ $('channel').onchange =
 $('reload').onclick =
   init;
 
+$('viewOnlineConnection').onclick = () => {
+  viewOnlineMonth($('month').value);
+};
+
 $('closeOnlineConnection').onclick = () => {
-  const card=$('onlineConnectionCard');
-  if(card)card.style.display='none';
+  const body=$('onlineConnectionBody');
+  const note=$('onlineConnectionNote');
+  if(note)note.textContent='Detail ditutup. Klik 👁 Lihat Data untuk menampilkan rincian bulan yang dipilih.';
+  if(body)body.innerHTML='<div class="hint">Klik 👁 Lihat Data untuk membuka detail lengkap.</div>';
 };
 
 
