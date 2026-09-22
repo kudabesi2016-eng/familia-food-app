@@ -161,7 +161,8 @@ async function loadDashboard(){
 
     // ONLINE: STANDARD historis + transaksi online baru.
     const onlineFinanceRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_finance');
-    const onlineProductRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_product');
+    // Histori produk Online Jan–Agustus yang baru: source seller_center hasil audit CSV TikTok.
+    const onlineProductRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='seller_center' && monthOf(x.tanggal||x.paid_time||x.created_time||'')>='2026-01' && monthOf(x.tanggal||x.paid_time||x.created_time||'')<='2026-08');
     const onlineNew=sales.filter(x=>String(x.channel||'')==='Online' && !isHistoricalSource(x.source));
     const onlineBatchNew=onlineNew.filter(x=>String(x.source||'')==='online_batch');
     const onlineCashNew=onlineNew.filter(x=>String(x.source||'')==='online_pencairan');
@@ -191,7 +192,9 @@ async function loadDashboard(){
       if(Number(h.hpp_online)>0) return Math.round(Number(h.hpp_online));
       return Number(h.hpp_unit)>0 ? Math.round(Number(h.hpp_unit)) : 0;
     }
-    const onOldHpp=onlineProductRows.reduce((s,x)=>s+Math.round(num(x.qty))*onlineHppUnit(x),0);
+    const onOldHpp=(!onlineHistoricalQtyMismatch && !onlineHistoricalMissingHpp)
+      ? onlineHistoricalModalRaw
+      : 0;
     const onOldProfit=onOldNet-onOldHpp;
     // Transaksi Online baru memakai basis kas: Uang Bersih yang benar-benar cair.
     const onNewRevenue=onlineCashNew.reduce((s,x)=>s+Math.round(num(x.uang_bersih ?? x.omzet_produk)),0);
@@ -206,10 +209,12 @@ async function loadDashboard(){
     const onNet=onOldNet+onNewNet;
     const onHpp=onOldHpp+onNewHpp;
     const onProfit=onOldProfit+(onNewNet-onNewHpp);
-    const onlineHistoricalQtyLockedRows=onlineProductRows.filter(x=>{const m=String(x.tanggal||'').slice(0,7);return m>='2026-01'&&m<='2026-08';});
+    const onlineHistoricalQtyLockedRows=onlineProductRows;
     const onlineHistoricalQtyRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+Math.round(num(x.qty)),0);
-    const onlineHistoricalQtyMismatch=onlineFinanceRows.some(x=>{const m=String(x.tanggal||'').slice(0,7);return m>='2026-01'&&m<='2026-08';}) && onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
-    // Jan–Agustus 2026 memakai angka historis yang sudah dikunci.
+    const onlineHistoricalModalRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))),0);
+    const onlineHistoricalMissingHpp=onlineHistoricalQtyLockedRows.some(x=>Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
+    const onlineHistoricalQtyMismatch=onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
+    // Jan–Agustus 2026 memakai angka histori audit seller_center yang dikunci.
     const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
 
     // GABUNGAN: konsisten dengan dua channel.
@@ -223,7 +228,7 @@ async function loadDashboard(){
     setNumber('totalRevenue',totalRevenue);
     setNumber('totalOut',totalOut);
     setNumber('totalNet',totalNet);
-    if(onlineHistoricalQtyMismatch){
+    if(onlineHistoricalQtyMismatch || onlineHistoricalMissingHpp){
       document.getElementById('totalHpp').textContent='—';
       document.getElementById('totalProfit').textContent='—';
       const tm=document.getElementById('totalMargin');tm.textContent='—';tm.classList.remove('negative');
@@ -243,7 +248,7 @@ async function loadDashboard(){
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
     setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet);
-    if(onlineHistoricalQtyMismatch){
+    if(onlineHistoricalQtyMismatch || onlineHistoricalMissingHpp){
       document.getElementById('onHpp').textContent='—';
       document.getElementById('onProfit').textContent='—';
     }else{
@@ -251,8 +256,10 @@ async function loadDashboard(){
     }
     document.getElementById('onQty').textContent=onQty.toLocaleString('id-ID');
     document.getElementById('onlineHistoryAudit').innerHTML=onlineHistoricalQtyMismatch
-      ? '🔴 <b>Audit:</b> STANDARD terbaca '+onlineHistoricalQtyRaw.toLocaleString('id-ID')+' bungkus, sedangkan kunci historis adalah <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b>. Selisih <b>'+(onlineHistoricalQtyRaw-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+'</b>. Produk Keluar memakai angka kunci; HPP/Profit historis ditahan sampai STANDARD direkonsiliasi.'
-      : '🟢 <b>Audit:</b> STANDARD historis cocok dengan kunci '+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+' bungkus.';
+      ? '🔴 <b>Audit:</b> histori seller_center terbaca '+onlineHistoricalQtyRaw.toLocaleString('id-ID')+' bungkus, sedangkan kunci historis adalah <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b>. Selisih <b>'+(onlineHistoricalQtyRaw-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+'</b>. HPP/Profit historis ditahan.'
+      : (onlineHistoricalMissingHpp
+        ? '🟠 <b>Audit:</b> histori seller_center sudah cocok <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b> bungkus, tetapi ada baris tanpa HPP.'
+        : '🟢 <b>Audit:</b> histori seller_center cocok dengan kunci <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b> bungkus dan HPP terukur.');
     document.getElementById('newOnQty').textContent=onNewQty.toLocaleString('id-ID')+' bungkus';
     setNumber('newOnModal',onNewHpp);
     setNumber('newOnCash',onNewNet);
