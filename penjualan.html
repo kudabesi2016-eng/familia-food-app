@@ -658,7 +658,7 @@ window.viewPeriod=k=>{
   $('detailCard').scrollIntoView({behavior:'smooth',block:'start'});
 };
 window.editSale=async id=>{const s=sales.find(x=>x.id===id);if(!s)return;editId=id;$('tanggal').value=s.tanggal;$('pelanggan').value=customerNameForSale(s.id);$('produk').value=s.produk_id;$('qty').value=s.qty;$('channel').value=s.channel;$('harga').value=s.harga;$('hpp').value=Math.round(Number(s.hpp||0)/(Number(s.qty)||1));$('cancel').style.display='inline-block';$('save').textContent='Simpan Perubahan';updatePreview();scrollTo(0,0);};
-window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;if(!customerLinksReady&&$('pelanggan').value.trim())return msg('Pemetaan pelanggan belum terhubung. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.',true);const r=await supabaseClient.from('penjualan').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);await load();msg('Penjualan dihapus.')};
+window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=await supabaseClient.from('penjualan').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);await load();msg('Penjualan dihapus.')};
 (async()=>{try{await loadCustomerMaster();await loadProducts();await load()}catch(e){console.error(e);msg('Gagal memuat data: '+e.message,true)}})();
 </script><script>
 /* =========================================================
