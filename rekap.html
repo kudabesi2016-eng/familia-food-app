@@ -593,22 +593,57 @@ function ffOnlineHppUnit(row){
 
 function onlineHpp(m){
   try{
-    // Jan–Agustus 2026 wajib cocok dengan kunci 8.085 bungkus.
-    // Jangan hitung HPP/Profit dari sumber STANDARD yang masih tidak lengkap/salah.
-    const lockedTotal=5928;
+    // Histori Online Jan–Agustus 2026 memakai hasil audit CSV TikTok yang sudah
+    // disimpan sebagai source seller_center. Qty wajib total 8.085 bungkus.
     if(m>='2026-01' && m<='2026-08'){
-      const lockedSource=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_product' && monthOfSaleRow(x)>='2026-01' && monthOfSaleRow(x)<='2026-08');
-      const lockedRawQty=lockedSource.reduce((a,x)=>a+Math.trunc(Number(x.qty||0)),0);
-      if(lockedSource.length && lockedRawQty!==lockedTotal)return {known:false,total:0};
+      const lockedRows=(sales||[]).filter(x=>
+        String(x.channel||'')==='Online' &&
+        String(x.source||'')==='seller_center' &&
+        monthOfSaleRow(x)>='2026-01' &&
+        monthOfSaleRow(x)<='2026-08'
+      );
+      if(lockedRows.length){
+        const lockedQty=lockedRows.reduce((a,x)=>a+Math.trunc(Number(x.qty||0)),0);
+        const hasMissingHpp=lockedRows.some(x=>
+          x.modal_hpp==null &&
+          x.hpp==null
+        );
+        const lockedTotalAllMonths=(sales||[])
+          .filter(x=>
+            String(x.channel||'')==='Online' &&
+            String(x.source||'')==='seller_center' &&
+            monthOfSaleRow(x)>='2026-01' &&
+            monthOfSaleRow(x)<='2026-08'
+          )
+          .reduce((a,x)=>a+Math.trunc(Number(x.qty||0)),0);
+
+        if(lockedTotalAllMonths!==8085 || hasMissingHpp){
+          return {known:false,total:0};
+        }
+
+        const total=lockedRows.reduce((a,x)=>{
+          const modal=x.modal_hpp!=null
+            ? Number(x.modal_hpp)
+            : Number(x.qty||0)*Number(x.hpp||0);
+          return a+Math.trunc(modal||0);
+        },0);
+
+        return {known:true,total:Math.trunc(total)};
+      }
     }
-    // Historis Online STANDARD: Modal sudah dihitung dari PRODUK_ONLINE
-    // berdasarkan mapping Tempura Aci/Naget -> master Naget menurut ISI.
+
+    // STANDARD historis lama (bila masih ada sumber STANDARD di database).
     const standard=(sales||[]).filter(x=>
       String(x.channel||'')==='Online' &&
       String(x.source||'')==='online_standard_finance' &&
       monthOfSaleRow(x)===m
     );
-    const standardProducts=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_product' && monthOfSaleRow(x)===m);
+    const standardProducts=(sales||[]).filter(x=>
+      String(x.channel||'')==='Online' &&
+      String(x.source||'')==='online_standard_product' &&
+      monthOfSaleRow(x)===m
+    );
+
     if(standardProducts.length){
       const familiaRows=standardProducts.filter(ffIsFamiliaOnline);
       let total=0;
@@ -619,17 +654,21 @@ function onlineHpp(m){
       }
       if(familiaRows.length)return {known:true,total:Math.trunc(total)};
     }
+
     if(standard.length){
       const missing=standard.some(x=>x.modal_hpp==null);
       if(missing)return {known:false,total:0};
-      return {known:true,total:standard.reduce((a,x)=>a+Math.trunc(Number(x.modal_hpp||0)),0)};
+      return {
+        known:true,
+        total:standard.reduce((a,x)=>a+Math.trunc(Number(x.modal_hpp||0)),0)
+      };
     }
 
-    // Fallback untuk transaksi Online baru/historis lama yang bukan STANDARD.
+    // Fallback untuk transaksi Online baru/historis lain.
     const rows=FFCore.productSummary(m,'Online',data())||[];
     let total=0;
     for(const x of rows){
-      if(!x.hppKnown)return {known:false,total:0};
+      if(x.hppKnown===false)return {known:false,total:0};
       total+=Math.trunc(Number(x.hpp||0));
     }
     return {known:true,total};
@@ -637,7 +676,6 @@ function onlineHpp(m){
     return {known:false,total:0};
   }
 }
-
 
 function offlineHpp(m){
   try{
@@ -672,7 +710,7 @@ function updateChannelUI(){
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
     ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran Offline berasal dari tabel Pengeluaran pada bulan yang dipilih.<br>Uang Bersih = Pemasukan − Pengeluaran.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>'
-    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br><b>HPP/Profit historis Jan–Agustus hanya final bila sumber STANDARD cocok dengan kunci rincian 8.085 bungkus.</b><br>Profit = Uang Bersih − Modal.<br>';
+    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br>Profit = Uang Bersih − Modal.<br>';
 }
 
 /* =====================================================
