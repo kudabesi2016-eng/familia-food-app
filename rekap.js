@@ -734,28 +734,47 @@ function render(){
 
 
 /* =====================================================
-   EVENT
+   EVENT + STARTUP
 ===================================================== */
 
-$('month').onchange =
-  render;
+function showRuntimeError(e){
+  console.error('Rekap runtime error:',e);
+  const msg = e?.message || String(e || 'Kesalahan tidak diketahui');
+  const box=document.getElementById('onlineConnectionBody');
+  if(box){
+    box.innerHTML='<div class="notice" style="background:#fff4f2;border-color:#f3c2bc;color:#9f1239"><b>Rekap gagal dijalankan.</b><br>'+FF.esc(msg)+'</div>';
+  }
+  const tb=document.getElementById('monthly');
+  if(tb){
+    tb.innerHTML='<tr><td colspan="6" class="empty error"><b>Gagal menjalankan Rekap:</b><br>'+FF.esc(msg)+'</td></tr>';
+  }
+}
 
-$('channel').onchange =
-  render;
+async function bootRekap(){
+  try{
+    $('month').onchange = render;
+    $('channel').onchange = render;
+    $('reload').onclick = init;
+    $('viewOnlineConnection').onclick = () => viewOnlineMonth($('month').value);
+    $('closeOnlineConnection').onclick = () => {
+      const body=$('onlineConnectionBody');
+      const note=$('onlineConnectionNote');
+      if(note)note.textContent='Detail ditutup. Klik 👁 Lihat Data untuk menampilkan rincian bulan yang dipilih.';
+      if(body)body.innerHTML='<div class="hint">Klik 👁 Lihat Data untuk membuka detail lengkap.</div>';
+    };
+    await init();
+  }catch(e){
+    showRuntimeError(e);
+  }
+}
 
-$('reload').onclick =
-  init;
+window.addEventListener('error',e=>{
+  if(e?.error) showRuntimeError(e.error);
+});
 
-$('viewOnlineConnection').onclick = () => {
-  viewOnlineMonth($('month').value);
-};
-
-$('closeOnlineConnection').onclick = () => {
-  const body=$('onlineConnectionBody');
-  const note=$('onlineConnectionNote');
-  if(note)note.textContent='Detail ditutup. Klik 👁 Lihat Data untuk menampilkan rincian bulan yang dipilih.';
-  if(body)body.innerHTML='<div class="hint">Klik 👁 Lihat Data untuk membuka detail lengkap.</div>';
-};
+window.addEventListener('unhandledrejection',e=>{
+  showRuntimeError(e?.reason || 'Promise gagal');
+});
 
 
 /* =====================================================
@@ -816,4 +835,4 @@ async function init(){
    START
 ===================================================== */
 
-init();
+bootRekap();
