@@ -161,7 +161,7 @@ window.toggleMonth=function(m){const el=$('detail-'+m);if(!el)return;if(el.style
 function renderGrouped(){renderMonthlySummary()}
 function renderAll(){renderGrouped();renderOnlineMonthlySummary()}
 function onlineFinanceRowsForMonth(m){return onlineSalesAll.filter(x=>String(x.periode||'').slice(0,7)===m && String(x.source||'')==='online_standard_finance')}
-function onlineProductRowsForMonth(m){return onlineSalesAll.filter(x=>String(x.periode||'').slice(0,7)===m && String(x.source||'')==='online_standard_product')}
+function onlineProductRowsForMonth(m){return onlineSalesAll.filter(x=>String(x.periode||'').slice(0,7)===m && ['online_standard_product','seller_center'].includes(String(x.source||'')))}
 function onlineMonths(){
   const set=new Set();
   onlineSalesAll.forEach(x=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
@@ -838,24 +838,18 @@ async function saveOnlineHistoricalRows(rows){
   const QUERY_BATCH=75;
   const INSERT_BATCH=50;
   const existing=new Set();
-  const existingOrders=new Set();
   const keys=[...new Set(rows.map(x=>String(x.import_key||'')).filter(Boolean))];
-  const orders=[...new Set(rows.map(x=>String(x.order_id||'')).filter(Boolean))];
 
+  // Dedup hanya berdasarkan import_key. Satu Order ID TikTok dapat memiliki
+  // beberapa SKU/baris produk; jangan membuang baris lain hanya karena order_id sama.
   for(let i=0;i<keys.length;i+=QUERY_BATCH){
     const part=keys.slice(i,i+QUERY_BATCH);
-    const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('import_key',part);
+    const r=await supabaseClient.from('penjualan').select('import_key').in('import_key',part);
     if(r.error)throw r.error;
-    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key));if(x.order_id)existingOrders.add(String(x.order_id))});
-  }
-  for(let i=0;i<orders.length;i+=QUERY_BATCH){
-    const part=orders.slice(i,i+QUERY_BATCH);
-    const r=await supabaseClient.from('penjualan').select('import_key,order_id').in('order_id',part);
-    if(r.error)throw r.error;
-    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key));if(x.order_id)existingOrders.add(String(x.order_id))});
+    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key))});
   }
 
-  const rowsToSave=rows.filter(x=>!existing.has(String(x.import_key||'')) && !(x.order_id && existingOrders.has(String(x.order_id))));
+  const rowsToSave=rows.filter(x=>!existing.has(String(x.import_key||'')));
   for(let i=0;i<rowsToSave.length;i+=INSERT_BATCH){
     const batch=rowsToSave.slice(i,i+INSERT_BATCH);
     const r=await supabaseClient.from('penjualan').insert(batch);
