@@ -17,7 +17,7 @@ input[type=file]{padding:10px;border:1px dashed #8bb8a0;border-radius:8px;backgr
 <h1>🍀 Audit Online Familia Food</h1>
 <div class="box">
 <b>Tujuan:</b> memastikan data historis Online tidak menyamakan export Seller Center terbaru dengan data historis yang sudah dikunci.
-<p class="small">Halaman ini bersifat <b>READ-ONLY</b> terhadap Supabase. Upload CSV diproses lokal di browser dan tidak disimpan ke database.</p><div class="box" style="box-shadow:none;border:1px solid #dbe9df"><b>🟢 Kesimpulan audit saat ini:</b> <b>8.085 bungkus</b> adalah hasil audit CSV TikTok Jan–Agustus 2026 setelah retur dan ekspansi paket. Angka 5.928 dan STANDARD 3.271 adalah baseline lama dan tidak lagi menjadi sumber Produk Keluar; setelah import audit, sumber Produk Keluar aplikasi adalah data seller_center yang sudah dikonversi ke bungkus.</div>
+<p class="small">Halaman ini bersifat <b>READ-ONLY</b> terhadap Supabase. Upload CSV diproses lokal di browser dan tidak disimpan ke database.</p><div class="box" style="box-shadow:none;border:1px solid #dbe9df"><b>🟢 Kesimpulan audit saat ini:</b> <b>8.085 bungkus</b> adalah hasil audit CSV TikTok Jan–Agustus 2026 setelah retur dan ekspansi paket. Baseline lama dan dataset STANDARD pembanding tidak lagi menjadi sumber Produk Keluar; setelah import audit, sumber Produk Keluar aplikasi adalah data seller_center yang sudah dikonversi ke bungkus.</div>
 </div>
 
 <div class="grid">
@@ -36,10 +36,10 @@ input[type=file]{padding:10px;border:1px dashed #8bb8a0;border-radius:8px;backgr
 </div>
 
 <div class="box">
-<h2>🔒 Data Historis yang Dikunci</h2><p class="small"><b>Status:</b> audit final <b>8.085 bungkus</b> menjadi acuan produk keluar Jan–Agustus 2026. Data STANDARD lama <b>3.271</b> tidak boleh dicampur dengan data audit baru.</p>
+<h2>🔒 Data Historis yang Dikunci</h2><p class="small"><b>Status:</b> audit final <b>8.085 bungkus</b> menjadi acuan produk keluar Jan–Agustus 2026. Data STANDARD lama tidak boleh dicampur dengan data audit baru.</p>
 <table><thead><tr><th>Ukuran</th><th>Isi</th><th>Bungkus Audit Final</th></tr></thead><tbody id="lockedRows"></tbody>
 <tfoot><tr><th>Total</th><th>—</th><th>8.085</th></tr></tfoot></table>
-<p class="small">🟡 <b>Audit 22 September 2026:</b> CSV Seller Center terbaru menghasilkan <b>8.085 bungkus</b> untuk Tempura Aci Jan–Agustus 2026 dengan filter TikTok + Selesai. File STANDARD yang saat ini tersimpan hanya memuat <b>3.271 bungkus total</b>. Angka kunci lama 5.928 sudah tidak digunakan. Audit aktif memakai hasil CSV TikTok terbaru: <b>8.085 bungkus</b>.</p>
+<p class="small">🟡 <b>Audit 22 September 2026:</b> CSV Seller Center terbaru menghasilkan <b>8.085 bungkus</b> untuk Tempura Aci Jan–Agustus 2026 dengan filter TikTok + Selesai. File STANDARD adalah dataset pembanding lama. Angka kunci lama sudah tidak digunakan. Audit aktif memakai hasil CSV TikTok terbaru: <b>8.085 bungkus</b>.</p>
 </div>
 </div>
 
