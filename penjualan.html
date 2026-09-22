@@ -666,8 +666,11 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const dm=d?Math.round(Number(d.modal)||0):0;
     const unit=r.jenis==='familia'?h:dm;
     const qty=Math.max(1,Number(r.qty)||1);
-    tr.querySelector('.batch-unitcost').textContent=money(unit);
-    tr.querySelector('.batch-total').textContent=money(qty*unit);
+    const unitEl=tr.querySelector('.batch-unitcost');
+    const totalEl=tr.querySelector('.batch-total');
+    const modalMissing=r.jenis==='dropship' && (!d || dm<=0);
+    unitEl.textContent=modalMissing?'Belum diisi':money(unit);
+    totalEl.textContent=modalMissing?'—':money(qty*unit);
     tr.querySelector('.batch-produk').disabled=r.jenis!=='familia';
     tr.querySelector('.batch-drop').disabled=r.jenis!=='dropship';
   }
