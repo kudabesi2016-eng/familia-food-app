@@ -275,6 +275,20 @@ function renderPurchases(){
   $('purchaseRows').innerHTML=state.purchase.slice().sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))).map(p=>'<tr><td>'+esc(fmtDate(p.tanggal))+'</td><td>'+esc(supplierName(p.supplier_id))+'</td><td>'+rupiah(p.total)+'</td><td>'+esc(p.catatan||'-')+'</td><td><button class="btn danger" data-del-buy="'+esc(p.id)+'">Hapus</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pembelian.</td></tr>';
   document.querySelectorAll('[data-del-buy]').forEach(b=>b.onclick=()=>deletePurchase(b.dataset.delBuy));
 }
+async function syncLastPurchasePrices(rows){
+  const warnings=[];
+  for(const x of rows){
+    const id=Number(x.bahan_id);
+    const price=money(x.harga_beli);
+    if(!id || price<0)continue;
+    const r=await supabaseClient.from('bahan_baku').update({harga_beli:price}).eq('id',id);
+    if(r.error)warnings.push((window.bahan.find(b=>String(b.id)===String(id))||{}).nama_bahan||('ID '+id));
+    const local=window.bahan.find(b=>String(b.id)===String(id));
+    if(local)local.harga_beli=price;
+  }
+  return warnings;
+}
+
 async function savePurchase(){
   const tanggal=$('buyDate').value||today(),supplierId=$('buySupplier').value||null,catatan=$('buyNote').value.trim();
   const rows=[...document.querySelectorAll('#purchaseLines .line-row')].map(r=>({bahan_id:r.querySelector('.line-mat').value||null,qty:Number(r.querySelector('.line-qty').value)||0,harga_beli:money(r.querySelector('.line-price').value),subtotal:money(r.querySelector('.line-subtotal').value)})).filter(x=>x.qty>0&&x.harga_beli>=0&&x.bahan_id);
@@ -286,11 +300,15 @@ async function savePurchase(){
     const items=rows.map(x=>({pembelian_id:h.data.id,bahan_id:x.bahan_id?Number(x.bahan_id):null,nama_bahan:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).nama_bahan||'-',qty:x.qty,satuan:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).satuan||null,harga_beli:x.harga_beli,subtotal:x.subtotal}));
     const d=await supabaseClient.from('ff_pembelian_item').insert(items);
     if(d.error){await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);$('purchaseStatus').textContent='Gagal item pembelian: '+d.error.message;return}
+    const priceWarnings=await syncLastPurchasePrices(rows);
     state.purchase=await loadTable('ff_pembelian',LS.purchase);
+    $('purchaseStatus').textContent=priceWarnings.length
+      ? 'Pembelian tersimpan, tetapi harga bahan gagal diperbarui: '+priceWarnings.join(', ')+'.'
+      : 'Pembelian tersimpan dan harga bahan diperbarui ke harga beli terakhir.';
   }else{
     state.purchase.push({id:'local-'+Date.now(),tanggal,supplier_id:supplierId||null,total,catatan,items:rows});lsSet(LS.purchase,state.purchase);
   }
-  $('buyNote').value='';$('purchaseLines').innerHTML='';addPurchaseLine();$('purchaseStatus').textContent='Pembelian berhasil disimpan.';renderPurchases();renderStats();
+  $('buyNote').value='';$('purchaseLines').innerHTML='';addPurchaseLine();renderPurchases();renderStats();
 }
 async function deletePurchase(id){
   if(!confirm('Hapus pembelian ini?'))return;
