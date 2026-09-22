@@ -486,7 +486,6 @@ window.viewOnlineMonth=function(m){
   const card=$('onlineConnectionCard');
   if(!card)return;
   card.style.display='block';
-  card.scrollIntoView({behavior:'smooth',block:'start'});
   if($('channel').value==='Online'){
     renderOnlineConnection(m);
   }else{
@@ -496,7 +495,7 @@ window.viewOnlineMonth=function(m){
     const v=offlineFinance(m);
     const h=offlineHpp(m);
     if(title)title.textContent='🔗 Detail Rekap Offline • '+label(m);
-    if(note)note.innerHTML='Rincian untuk <b>'+FF.esc(label(m))+'</b>.';
+    if(note)note.innerHTML='Ringkasan untuk <b>'+FF.esc(label(m))+'</b>.';
     if(body)body.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><div class="stat"><small>Pemasukan</small><strong>'+money(v[0])+'</strong></div><div class="stat"><small>Pengeluaran</small><strong>'+money(v[1])+'</strong></div><div class="stat profit"><small>Uang Bersih</small><strong>'+money(v[2])+'</strong></div></div><div class="notice" style="margin-top:12px">Modal/HPP Offline: <b>'+(h.known?money(h.total):'Belum tersedia')+'</b><br>Profit: <b>'+(h.known?money(v[2]-h.total):'Belum tersedia')+'</b></div>';
   }
 };
@@ -510,11 +509,13 @@ function renderOnlineConnection(selectedMonth){
   const modeOnline=$('channel').value==='Online';
   const modeBadge=document.getElementById('onlineConnectionMode');
   if(modeBadge)modeBadge.textContent=modeOnline?'🔵 Online':'🟢 Offline';
+
   if(!modeOnline){
-    note.textContent='Channel sedang Offline. Detail hubungan Data Lama + Transaksi Online Baru ditampilkan saat Channel Online dipilih.';
-    body.innerHTML='<div class="hint">Pilih Channel Online untuk melihat hubungan Data Lama + Transaksi Online Baru.</div>';
+    note.textContent='Channel sedang Offline. Detail Offline ditampilkan berdasarkan bulan yang dipilih.';
+    body.innerHTML='<div class="hint">Pilih bulan untuk melihat ringkasan Offline.</div>';
     return;
   }
+
   if(!m){
     note.textContent='Belum ada bulan yang dipilih.';
     body.innerHTML='';
@@ -538,14 +539,16 @@ function renderOnlineConnection(selectedMonth){
   const oldHppKnown=totalHpp.known;
   const oldHpp=oldHppKnown?Math.max(0,totalHpp.total-newModal):null;
 
-  note.innerHTML='Bulan <b>'+esc(label(m))+'</b> menggabungkan <b>Data Lama</b> dan <b>Transaksi Online Baru</b>. Data lama tidak ditimpa; transaksi baru ditambahkan ke bulan yang sama.';
+  note.innerHTML='Bulan <b>'+esc(label(m))+'</b>. Data Lama ditampilkan sebagai ringkasan, sedangkan <b>👁 Lihat Data</b> hanya membuka rincian <b>Transaksi Online Baru</b>.';
 
   let list='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
   list+='<div class="stat"><small>📁 Data Lama Online</small><strong>'+histFinance.length.toLocaleString('id-ID')+' baris</strong><div class="hint" style="margin-top:8px">Pemasukan '+money(histRev)+'<br>Potongan '+money(histFee)+'<br>Uang Bersih '+money(histNet)+'<br>Modal '+(oldHppKnown?money(oldHpp):'—')+'</div></div>';
-  list+='<div class="stat profit"><small>🆕 Transaksi Online Baru</small><strong>'+newProducts.length.toLocaleString('id-ID')+' baris • '+newQty.toLocaleString('id-ID')+' bungkus</strong><div class="hint" style="margin-top:8px">Modal Produk Keluar '+money(newModal)+'<br>Penerimaan Uang '+money(newCashAmount)+'</div></div>';
+
+  list+='<div class="stat profit"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small>🆕 Transaksi Online Baru</small><strong>'+newProducts.length.toLocaleString('id-ID')+' baris • '+newQty.toLocaleString('id-ID')+' bungkus</strong></div><button class="btn light" type="button" id="viewNewOnlineDetail">👁 Lihat Data</button></div><div class="hint" style="margin-top:8px">Modal Produk Keluar '+money(newModal)+'<br>Penerimaan Uang '+money(newCashAmount)+'</div></div>';
   list+='</div>';
 
-  list+='<div class="tablewrap" style="margin-top:12px"><table style="min-width:850px"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Produk</th><th>Qty Bungkus</th><th>Modal / Bungkus</th><th>Total Modal</th></tr></thead><tbody>';
+  list+='<div id="newOnlineDetail" style="display:none;margin-top:12px"><div class="tablewrap"><table style="min-width:850px"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Produk</th><th>Qty Bungkus</th><th>Modal / Bungkus</th><th>Total Modal</th></tr></thead><tbody>';
+
   if(newProducts.length){
     list+=newProducts.map(x=>{
       const qty=Math.max(1,Math.round(Number(x.qty)||0));
@@ -556,8 +559,20 @@ function renderOnlineConnection(selectedMonth){
   }else{
     list+='<tr><td colspan="6" class="empty">Belum ada transaksi Online Baru pada '+esc(label(m))+'.</td></tr>';
   }
-  list+='</tbody></table></div>';
+
+  list+='</tbody></table></div></div>';
   body.innerHTML=list;
+
+  const detailBtn=document.getElementById('viewNewOnlineDetail');
+  const detailBox=document.getElementById('newOnlineDetail');
+
+  if(detailBtn&&detailBox){
+    detailBtn.onclick=()=>{
+      const open=detailBox.style.display!=='none';
+      detailBox.style.display=open?'none':'block';
+      detailBtn.textContent=open?'👁 Lihat Data':'▲ Tutup Data';
+    };
+  }
 }
 
 function renderMonthly(){
@@ -730,6 +745,10 @@ function render(){
   renderMonthly();
   renderNewOnlineMonthly();
 
+  // Detail mengikuti bulan/channel yang dipilih.
+  // Tombol 👁 Lihat Data hanya berlaku untuk Transaksi Online Baru.
+  viewOnlineMonth($('month').value);
+
 }
 
 
@@ -758,12 +777,10 @@ async function bootRekap(){
     const monthEl = $('month');
     const channelEl = $('channel');
     const reloadEl = $('reload');
-    const viewEl = $('viewOnlineConnection');
 
     if(monthEl) monthEl.onchange = render;
     if(channelEl) channelEl.onchange = render;
     if(reloadEl) reloadEl.onclick = init;
-    if(viewEl) viewEl.onclick = () => viewOnlineMonth(monthEl ? monthEl.value : '');
 
     await init();
   }catch(e){
