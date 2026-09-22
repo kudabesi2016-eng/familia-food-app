@@ -417,7 +417,7 @@ td{
       <h3 style="margin:0">🔗 Detail Hubungan Data Lama + Transaksi Online Baru</h3>
       <span class="badge" id="onlineConnectionMode">🔵 Online</span>
     </div>
-    <div class="history-note" id="onlineConnectionNote">Pilih bulan untuk melihat rincian data lama dan transaksi baru yang sudah masuk ke rekap.</div>
+    <div class="history-note" id="onlineConnectionNote">Pilih bulan untuk melihat rincian Data Lama dan Transaksi Online Baru. Untuk transaksi baru, uang yang dicatat sudah bersih setelah potongan.</div>
     <div id="onlineConnectionBody" style="margin-top:12px"></div>
   </div>
 </main>
@@ -563,19 +563,20 @@ function onlineFinance(m){
   const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
   const newCash=rows.filter(x=>String(x.source||'')==='online_pencairan');
 
-  const newGross=newProducts.reduce(
-    (a,x)=>a+Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0))),0
-  );
   const newNetKnown=newCash.length>0;
   const newNet=newCash.reduce(
     (a,x)=>a+Number(x.uang_bersih ?? x.omzet_produk ?? 0),0
   );
 
-  // Transaksi baru tetap tersambung ke histori. Bila penerimaan baru belum
-  // dicatat, jangan mengarang potongan/uang bersih.
-  const totalRev=histRev+newGross;
+  // TRANSAKSI ONLINE BARU:
+  // Nilai yang dicatat di "Penerimaan Uang Online" sudah merupakan
+  // UANG BERSIH setelah seluruh potongan online. Jadi tidak ada
+  // perhitungan potongan lagi untuk transaksi baru.
+  // Untuk rekap, nilai penerimaan baru diperlakukan sebagai pemasukan
+  // yang sudah bersih, lalu profit = uang bersih - modal.
+  const totalRev=histRev+(newNetKnown?newNet:0);
   const totalNet=histNet+(newNetKnown?newNet:0);
-  const totalFee=histFee+(newNetKnown?Math.max(0,newGross-newNet):0);
+  const totalFee=histFee;
   return [totalRev,totalFee,totalNet];
 }
 
@@ -750,7 +751,7 @@ function updateChannelUI(){
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
     ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran Offline berasal dari tabel Pengeluaran pada bulan yang dipilih.<br>Uang Bersih = Pemasukan − Pengeluaran.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>'
-    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br>Profit = Uang Bersih − Modal.<br>';
+    : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
 }
 
 /* =====================================================
