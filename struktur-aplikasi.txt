@@ -10,6 +10,12 @@ MENU:
 7. Rekap
 8. Data Lama
 9. Pengaturan
+10. Operasional
+   - Supplier
+   - Pembelian
+   - Pengeluaran
+   - Pelanggan
+   - Retur Penjualan
 
 
 DATABASE:
