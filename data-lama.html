@@ -508,15 +508,6 @@ function explicitOnlineProductCandidates(row){
   if(/\bcibay\b/.test(n))out.push('cibay');
   return [...new Set(out)];
 }
-function hppLockedOnlineFallback(row){
-  const n=onlineMatchText(row);
-  const size=detectOnlinePackSize(row);
-  if(/\b(tempura aci|naget)\b/.test(n) && (size===10 || size===12)) return 4000;
-  if(/\bcireng\s+isi\b/.test(n)) return 3500;
-  if(/\bcireng\s+biasa\b/.test(n)) return 3500;
-  if(/\bcibay\b/.test(n)) return 3500;
-  return null;
-}
 function findOnlineMasterProduct(row){
   const pid=String(row?.produk_id||'');
   if(pid){const p=productMasterRows.find(x=>String(x.id)===pid);if(p)return p;}
@@ -582,9 +573,6 @@ function previewOnlineHpp(row){
 
     const fromMaster=hppUnitFromRowAndMaster(row,p,h);
     if(fromMaster!=null)return fromMaster;
-
-    const locked=hppLockedOnlineFallback(row);
-    if(locked!=null)return locked;
   }catch(_){}
   return null;
 }
