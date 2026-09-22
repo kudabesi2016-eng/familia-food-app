@@ -26,3 +26,11 @@ hpp
 penjualan
 data_lama
 pengaturan
+
+
+DATABASE TAMBAHAN OPERASIONAL:
+ff_supplier
+ff_pelanggan
+ff_pembelian
+ff_pembelian_item
+ff_retur_penjualan
