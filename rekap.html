@@ -593,7 +593,7 @@ function ffOnlineHppUnit(row){
 
 function onlineHpp(m){
   try{
-    // Jan–Agustus 2026 wajib cocok dengan kunci 5.928 bungkus.
+    // Jan–Agustus 2026 wajib cocok dengan kunci 8.085 bungkus.
     // Jangan hitung HPP/Profit dari sumber STANDARD yang masih tidak lengkap/salah.
     const lockedTotal=5928;
     if(m>='2026-01' && m<='2026-08'){
@@ -672,7 +672,7 @@ function updateChannelUI(){
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
     ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran Offline berasal dari tabel Pengeluaran pada bulan yang dipilih.<br>Uang Bersih = Pemasukan − Pengeluaran.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>'
-    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br><b>HPP/Profit historis Jan–Agustus hanya final bila sumber STANDARD cocok dengan kunci rincian 5.928 bungkus.</b><br>Profit = Uang Bersih − Modal.<br>';
+    : 'Pemasukan berasal dari Data Lama Online STANDARD dan transaksi Online baru.<br>Potongan Online Shop berasal dari data STANDARD yang sudah diproses.<br>Uang Bersih adalah nilai yang diterima setelah potongan.<br><b>HPP/Profit historis Jan–Agustus hanya final bila sumber STANDARD cocok dengan kunci rincian 8.085 bungkus.</b><br>Profit = Uang Bersih − Modal.<br>';
 }
 
 /* =====================================================
