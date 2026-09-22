@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#087443">
 <title>Familia Food - Dashboard</title>
 <style>
 *{box-sizing:border-box}
@@ -49,7 +49,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
   .status{padding:12px;font-size:12px}
 }
 </style></style>
-</head>
+<link rel="stylesheet" href="android-shell.css"></head>
 <body>
 <div class="sidebar">
   <div class="logo">🍀 Familia Food</div>
@@ -505,5 +505,6 @@ refreshBtn.onclick=refreshDashboard;
 refreshBtn.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();refreshDashboard(event);}});
 loadDashboard();
 </script>
+<script src="android-shell.js" defer></script>
 </body>
 </html>
