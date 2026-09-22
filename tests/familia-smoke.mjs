@@ -72,6 +72,7 @@ assert(penjualan.includes("await loadCustomerMaster();"),'Customer master is not
 assert(penjualan.includes('ffCustomerList'),'POS customer datalist missing');
 assert(penjualan.includes('customerLinksReady'),'POS customer links must be database-backed');
 assert(!penjualan.includes('ff_sale_customers_v1'),'POS must not keep sale↔customer mapping only in localStorage');
+assert(penjualan.includes('await supabaseClient.from(\'penjualan\').update(oldSale)'), 'Editing a sale must rollback when customer mapping fails');
 
 const index=await read('index.html');
 assert(index.includes('const validExpenseRows='),'Dashboard expense validation missing');
@@ -83,6 +84,7 @@ assert(operational.includes("ff_pembelian_item"),'Purchase item table integratio
 assert(operational.includes("ff_retur_penjualan"),'Return table integration missing');
 assert(operational.includes('refreshMaterialLastPrices'),'Deleting a purchase must re-synchronize latest material price');
 assert(operational.includes('Pembelian dibatalkan karena harga bahan'),'Purchase must rollback when material-price synchronization fails');
+assert(operational.includes('Harga sebelumnya dipertahankan'),'Deleting a purchase must preserve material price if re-sync fails');
 assert(operational.includes('Qty retur melebihi qty penjualan'),'Return quantity guard missing');
 assert(!operational.includes('localStorage.setItem(LS.'),'Operational business data must not fall back to localStorage writes');
 
