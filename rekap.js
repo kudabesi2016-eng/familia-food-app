@@ -551,6 +551,9 @@ function renderOnlineConnection(selectedMonth){
   const newQty=newProducts.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
   const newModal=newProducts.reduce((a,x)=>a+Math.round(Number(x.modal_hpp??x.hpp??0)),0);
   const newCashAmount=newCash.reduce((a,x)=>a+Number(x.uang_bersih??x.omzet_produk??0),0);
+  const opsBuy=(purchases||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
+  const opsRet=(returns||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && String(x.channel||'')==='Online').reduce((a,x)=>a+Number(x.nominal||0),0);
+  const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.nominal||0),0);
 
   const totalHpp=hppForChannel(m);
   const oldHppKnown=totalHpp.known;
