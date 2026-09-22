@@ -23,6 +23,8 @@ const FF = window.FFCore || {
     (d?.olds||[]).forEach(x=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
     (d?.sales||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
     (d?.expenses||[]).forEach(x=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+    (d?.purchases||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+    (d?.returns||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
     return [...set].sort();
   },
   productSummary: () => []
@@ -39,6 +41,8 @@ let olds = [];
 let expenses = [];
 let products = [];
 let hpps = [];
+let purchases = [];
+let returns = [];
 
 
 
@@ -381,6 +385,8 @@ function months(){
     const m=String(x.periode||'').slice(0,7);
     if(/^\d{4}-\d{2}$/.test(m))set.add(m);
   });
+  (purchases||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m);});
+  (returns||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m);});
   try{FF.monthsOfData(data()).forEach(m=>set.add(m));}catch(e){}
   return [...set].sort();
 }
@@ -814,7 +820,9 @@ async function init(){
     ['data_lama', 'olds'],
     ['pengeluaran', 'expenses'],
     ['produk', 'products'],
-    ['hpp', 'hpps']
+    ['hpp', 'hpps'],
+    ['ff_pembelian', 'purchases'],
+    ['ff_retur_penjualan', 'returns']
   ];
 
   const results = await Promise.all(
@@ -834,6 +842,8 @@ async function init(){
     if(r.key==='expenses') expenses=r.rows;
     if(r.key==='products') products=r.rows;
     if(r.key==='hpps') hpps=r.rows;
+    if(r.key==='purchases') purchases=r.rows;
+    if(r.key==='returns') returns=r.rows;
   }
 
   if(!['Offline','Online'].includes($('channel').value)){
