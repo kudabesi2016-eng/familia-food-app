@@ -13,11 +13,11 @@ const requiredCommon = [
 
 const mustContain = {
   'operasional.html': [
-    'ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan',
+    'ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','ff_penjualan_pelanggan',
     'Pembelian Bahan Baku','Retur Penjualan','Pengeluaran'
   ],
   'penjualan.html': [
-    'ffCustomerList','loadCustomerMaster','saveCustomerMaster',
+    'ffCustomerList','loadCustomerMaster','saveCustomerMaster','saveCustomerLink','ff_penjualan_pelanggan',
     "source:'manual'","Jumlah Terjual (Bungkus)"
   ],
   'rekap.js': [
@@ -29,7 +29,7 @@ const mustContain = {
     'ff_pembelian','ff_retur_penjualan','ff_supplier'
   ],
   'SUPABASE-EXPANSION.sql': [
-    'ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan'
+    'ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','ff_penjualan_pelanggan'
   ]
 };
 
@@ -64,11 +64,14 @@ assert(count(rekap,'function data(){')===0,'Duplicate legacy function data() fou
 assert(count(rekap,'const data = () =>')===1,'Expected one rekap data() helper');
 assert(rekap.includes("newCash"),'Rekap new-online cash source missing');
 assert(rekap.includes("newModal"),'Rekap new-online modal calculation missing');
+assert(rekap.includes('purchases,\n  returns'),'Rekap data helper must pass purchases and returns into shared data context');
 
 const penjualan=await read('penjualan.html');
 assert(!penjualan.includes("supabaseClient.from('produk').select('id,nama_produk,hpp_offline"),'Forbidden hpp_offline select regression found in penjualan.html');
 assert(penjualan.includes("await loadCustomerMaster();"),'Customer master is not loaded at POS startup');
 assert(penjualan.includes('ffCustomerList'),'POS customer datalist missing');
+assert(penjualan.includes('customerLinksReady'),'POS customer links must be database-backed');
+assert(!penjualan.includes('ff_sale_customers_v1'),'POS must not keep sale↔customer mapping only in localStorage');
 
 const index=await read('index.html');
 assert(index.includes('const validExpenseRows='),'Dashboard expense validation missing');
@@ -78,6 +81,9 @@ const operational=await read('operasional.html');
 assert(operational.includes("update({harga_beli:price})"),'Purchase does not sync latest raw-material price');
 assert(operational.includes("ff_pembelian_item"),'Purchase item table integration missing');
 assert(operational.includes("ff_retur_penjualan"),'Return table integration missing');
+assert(operational.includes('refreshMaterialLastPrices'),'Deleting a purchase must re-synchronize latest material price');
+assert(operational.includes('Qty retur melebihi qty penjualan'),'Return quantity guard missing');
+assert(!operational.includes('localStorage.setItem(LS.'),'Operational business data must not fall back to localStorage writes');
 
 const dashboard=await read('index.html');
 assert(dashboard.includes('const ONLINE_LOCKED_TOTAL=8085;'),'Locked online quantity 8,085 missing');
@@ -90,6 +96,7 @@ for(const marker of ['HPP_FIXED_OFFLINE_BUNGKUS','"cireng isi": 2900','"cireng b
 }
 
 const sql=await read('SUPABASE-EXPANSION.sql');
+assert(sql.includes('ff_penjualan_pelanggan'),'Customer↔sale mapping table missing from expansion SQL');
 const forbidden = ['stok','mutasi_stok','multi_outlet','user_role','pembayaran'];
 for(const f of forbidden){
   assert(!new RegExp('create\\s+table[^;]*'+f,'i').test(sql),'Expansion SQL unexpectedly creates forbidden feature: '+f);
