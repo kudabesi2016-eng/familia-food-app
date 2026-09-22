@@ -521,6 +521,20 @@ function findOnlineMasterProduct(row){
     const p=productMasterRows.find(x=>normOnlineName(x.nama_produk)===alias);
     if(p)return p;
   }
+  // Fallback berdasarkan ukuran: nama master kadang berbeda dari alias listing,
+  // tetapi tetap harus produk Naget/Tempura Aci dengan ukuran yang sama.
+  const size=detectOnlinePackSize(row);
+  if(size){
+    const sizeRe=new RegExp('(?:^|\\s)(?:isi\\s*)?'+size+'(?:\\s*(?:pcs|bungkus))?(?:\\s|$)','i');
+    const candidates=productMasterRows.filter(p=>{
+      const pn=normOnlineName(p.nama_produk);
+      return /\\b(naget|tempura aci)\\b/.test(pn) && sizeRe.test(pn);
+    });
+    if(candidates.length===1)return candidates[0];
+    const preferred=candidates.find(p=>/naget/.test(normOnlineName(p.nama_produk)) && /(?:isi|pcs|bungkus)/.test(normOnlineName(p.nama_produk)));
+    if(preferred)return preferred;
+    if(candidates.length)return candidates[0];
+  }
   return null;
 }
 function previewOnlineHpp(row){
