@@ -236,63 +236,32 @@ async function repairDashboardOnlineHpp(){
     monthOf(x.tanggal||x.paid_time||x.created_time||'')<='2026-08'
   );
   const missing=rows.filter(x=>Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
-  if(!missing.length){
-    if(msg)msg.innerHTML='🟢 Semua baris histori sudah memiliki HPP.';
-    return;
-  }
+  if(!missing.length){if(msg)msg.innerHTML='🟢 Semua baris histori sudah memiliki HPP.';return;}
 
-  let repaired=0;
-  const unresolved=[];
-
+  const unresolved=[], failed=[];
   for(const x of missing){
     const unit=dashboardOnlineHppUnit(x,state.productMaster,state.hppRows);
     const qty=Math.trunc(Number(x.qty)||0);
-    if(unit==null || qty<=0){
-      unresolved.push(x);
-      continue;
-    }
+    if(unit==null || qty<=0){unresolved.push(x);continue;}
 
     const newHpp=Math.trunc(unit);
     const newModal=Math.trunc(qty*unit);
-
-    // Jalur 1: UPDATE biasa.
     const upd=await supabaseClient.from('penjualan')
       .update({hpp:newHpp,modal_hpp:newModal})
-      .eq('id',x.id);
-
-    if(upd.error)throw upd.error;
-
-    // Verifikasi SELECT. Bila UPDATE tidak benar-benar memengaruhi baris
-    // (misalnya karena policy UPDATE/RLS), gunakan jalur delete + insert
-    // dengan baris yang sama sehingga tidak membuat data baru yang berbeda.
-    const check=await supabaseClient.from('penjualan')
-      .select('*')
       .eq('id',x.id)
+      .select('id,hpp,modal_hpp')
       .maybeSingle();
 
-    const persisted=check.data && (
-      Number(check.data.modal_hpp||0)===newModal &&
-      Number(check.data.hpp||0)===newHpp
-    );
-
-    if(persisted){
-      repaired++;
+    if(upd.error){
+      failed.push({x,reason:upd.error.message});
       continue;
     }
-
-    // Jalur 2: replace baris yang sama melalui DELETE + INSERT.
-    const del=await supabaseClient.from('penjualan').delete().eq('id',x.id);
-    if(del.error)throw del.error;
-
-    const replacement={...x,hpp:newHpp,modal_hpp:newModal};
-    delete replacement.created_at;
-    const ins=await supabaseClient.from('penjualan').insert([replacement]);
-    if(ins.error)throw ins.error;
-
-    repaired++;
+    if(!upd.data || Number(upd.data.hpp)!==newHpp || Number(upd.data.modal_hpp)!==newModal){
+      failed.push({x,reason:'UPDATE tidak mengembalikan baris yang diperbarui. Periksa policy UPDATE/RLS Supabase.'});
+      continue;
+    }
   }
 
-  // Verifikasi final langsung dari database.
   const fresh=await fetchAll('penjualan');
   const freshRows=fresh.filter(x=>
     String(x.channel||'')==='Online' &&
@@ -301,23 +270,19 @@ async function repairDashboardOnlineHpp(){
     monthOf(x.tanggal||x.paid_time||x.created_time||'')<='2026-08'
   );
   const stillMissing=freshRows.filter(x=>Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
-
   const bySize={};
-  stillMissing.forEach(x=>{
-    const size=detectDashboardPackSize(x)||'tidak-terdeteksi';
-    bySize[size]=(bySize[size]||0)+1;
-  });
+  stillMissing.forEach(x=>{const sz=detectDashboardPackSize(x)||'tidak-terdeteksi';bySize[sz]=(bySize[sz]||0)+1;});
   const detail=Object.entries(bySize).map(([sz,n])=>'isi '+sz+': '+n+' baris').join(' • ');
 
   if(msg){
     if(stillMissing.length===0){
-      msg.innerHTML='✅ <b>HPP historis sudah tersimpan permanen.</b> '+repaired.toLocaleString('id-ID')+' baris diperbaiki dan diverifikasi ulang.';
+      msg.innerHTML='✅ <b>HPP historis sudah tersimpan permanen.</b> Semua baris lolos verifikasi database.';
+    }else if(failed.length){
+      msg.innerHTML='🔴 <b>Database menahan UPDATE HPP.</b> Masih '+stillMissing.length.toLocaleString('id-ID')+' baris tanpa HPP.'+(detail?' '+detail+'.':'')+' Periksa kolom dan policy UPDATE/RLS Supabase. Tidak ada data yang dihapus/diganti.';
     }else{
-      msg.innerHTML='🟠 <b>Masih ada '+stillMissing.length.toLocaleString('id-ID')+' baris tanpa HPP.</b> '+(detail||'')+
-        (unresolved.length?' Baris yang tidak punya sumber HPP master tidak disentuh.':'');
+      msg.innerHTML='🟠 Masih ada '+stillMissing.length.toLocaleString('id-ID')+' baris tanpa HPP.'+(detail?' '+detail+'.':'')+' Sumber HPP master belum ditemukan untuk baris tersebut.';
     }
   }
-
   await loadDashboard();
 }
 
