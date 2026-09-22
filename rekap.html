@@ -533,11 +533,11 @@ function onlineFinance(m){
     (a,x)=>a+Number(x.uang_bersih ?? x.omzet_produk ?? 0),0
   );
 
-  // Bila transaksi baru belum dicatat sebagai penerimaan uang, jangan mengarang
-  // nilai Uang Bersih; pemasukan tetap tampil dari produk, sedangkan net mengikuti 0.
+  // Transaksi baru tetap tersambung ke histori. Bila penerimaan baru belum
+  // dicatat, jangan mengarang potongan/uang bersih.
   const totalRev=histRev+newGross;
-  const totalNet=histNet+newNet;
-  const totalFee=histFee+Math.max(0,newGross-newNet);
+  const totalNet=histNet+(newNetKnown?newNet:0);
+  const totalFee=histFee+(newNetKnown?Math.max(0,newGross-newNet):0);
   return [totalRev,totalFee,totalNet];
 }
 
