@@ -1006,37 +1006,6 @@ async function runOnlineOldSave(){
 }
 $('onlineOldSave').onclick=runOnlineOldSave;
 
-  try{
-    if(!onlineOldImportRows.length)return;
-    const lockedRows=onlineOldImportRows.filter(x=>(x.source==='online_standard_product'||x.source==='seller_center')&&String(FFCore.monthOf(x.tanggal)||'')>='2026-01'&&String(FFCore.monthOf(x.tanggal)||'')<='2026-08');
-    if(lockedRows.length){
-      const audit=auditOnlineLockedRows(onlineOldImportRows);
-      if(!audit.ok){
-        $('onlineOldMsg').innerHTML=lockedAuditMessage(audit);
-        return;
-      }
-      // CSV audit 8.085 menggantikan PRODUCT STANDARD lama 3.271.
-      // Finance STANDARD tetap dipertahankan; hanya detail produk lama Jan–Agustus yang dibersihkan.
-      const oldProduct=await supabaseClient.from('penjualan').select('id').eq('channel','Online').in('source',['online_standard_product','seller_center']).gte('tanggal','2026-01-01').lt('tanggal','2026-09-01');
-      if(oldProduct.error)throw oldProduct.error;
-      const ids=(oldProduct.data||[]).map(x=>x.id).filter(Boolean);
-      for(let i=0;i<ids.length;i+=100){
-        const batch=ids.slice(i,i+100);
-        const del=await supabaseClient.from('penjualan').delete().in('id',batch);
-        if(del.error)throw del.error;
-      }
-    }
-    const result=await saveOnlineHistoricalRows(onlineOldImportRows);
-    $('onlineOldMsg').innerHTML='<div class="msg">Berhasil menyimpan <b>'+result.saved.toLocaleString('id-ID')+'</b> baris Online historis. '+result.duplicates.toLocaleString('id-ID')+' duplikat dilewati.</div>';
-    onlineOldImportRows=[];
-    await load();
-  }catch(e){
-    const msg=String(e?.message||e||'Gagal menyimpan');
-    $('onlineOldMsg').innerHTML='<div class="msg" style="color:#a22">Gagal menyimpan Online historis: '+FFCore.esc(msg)+'</div>';
-    console.error('saveOnlineHistoricalRows',e);
-  }
-};
-
 function fontSizeOf(it){const t=it.transform||[];return Math.max(Math.abs(Number(t[0])||0),Math.abs(Number(t[3])||0))}
 function cleanNumericColumn(items,minX,maxX){
   const nums=items.filter(it=>it.x>=minX&&it.x<maxX&&/^[\d.,]+$/.test(String(it.str||'').trim()));
