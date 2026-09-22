@@ -37,7 +37,7 @@ input[type=file]{padding:10px;border:1px dashed #8bb8a0;border-radius:8px;backgr
 
 <div class="box">
 <h2>🔒 Data Historis yang Dikunci</h2><p class="small"><b>Status:</b> audit final <b>8.085 bungkus</b> menjadi acuan produk keluar Jan–Agustus 2026. Data STANDARD lama <b>3.271</b> tidak boleh dicampur dengan data audit baru.</p>
-<table><thead><tr><th>Bentuk</th><th>Isi</th><th>Bungkus Audit Final</th></tr></thead><tbody id="lockedRows"></tbody>
+<table><thead><tr><th>Ukuran</th><th>Isi</th><th>Bungkus Audit Final</th></tr></thead><tbody id="lockedRows"></tbody>
 <tfoot><tr><th>Total</th><th>—</th><th>8.085</th></tr></tfoot></table>
 <p class="small">🟡 <b>Audit 22 September 2026:</b> CSV Seller Center terbaru menghasilkan <b>8.085 bungkus</b> untuk Tempura Aci Jan–Agustus 2026 dengan filter TikTok + Selesai. File STANDARD yang saat ini tersimpan hanya memuat <b>3.271 bungkus total</b>. Angka kunci lama 5.928 sudah tidak digunakan. Audit aktif memakai hasil CSV TikTok terbaru: <b>8.085 bungkus</b>.</p>
 </div>
@@ -150,7 +150,7 @@ document.getElementById('csvFile').addEventListener('change',e=>{
    }catch(err){st.innerHTML='<span class="bad">Gagal audit CSV: '+esc(err.message)+'</span>';}
  }});
 });
-document.getElementById('lockedRows').innerHTML=Object.entries(LOCKED_SHAPES).map(([k,v])=>'<tr><td>'+k+'</td><td>12 pcs</td><td>'+v.toLocaleString('id-ID')+'</td></tr>').join('');
+document.getElementById('lockedRows').innerHTML=Object.entries(LOCKED_SIZE).sort((a,b)=>Number(a[0])-Number(b[0])).map(([k,v])=>'<tr><td>Isi '+k+'</td><td>'+k+' pcs</td><td>'+v.toLocaleString('id-ID')+'</td></tr>').join('');
 runDbAudit();
 </script>
 </body></html>
