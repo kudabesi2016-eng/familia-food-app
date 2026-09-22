@@ -185,31 +185,28 @@ const rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
 const today=()=>new Date().toISOString().slice(0,10);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>Math.round(Number(v)||0);
-const LS={supplier:'ff_operasional_supplier_v1',purchase:'ff_operasional_purchase_v1',customer:'ff_operasional_customer_v1',ret:'ff_operasional_return_v1',expense:'ff_operasional_expense_v1'};
 const state={supplier:[],purchase:[],customer:[],ret:[],expense:[],tables:{}};
 let editSupplierId=null;
 
-function lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return []}}
-function lsSet(k,v){localStorage.setItem(k,JSON.stringify(v))}
 async function tableReady(name){
   const r=await supabaseClient.from(name).select('*').limit(1);
-  if(!r.error){state.tables[name]=true;return true}
-  state.tables[name]=false;return false;
+  state.tables[name]=!r.error;
+  return state.tables[name];
 }
-async function loadTable(name,lsKey){
-  if(state.tables[name]){
-    const r=await supabaseClient.from(name).select('*');
-    if(!r.error)return r.data||[];
-  }
-  return lsGet(lsKey);
+async function loadTable(name){
+  if(!state.tables[name])return [];
+  const r=await supabaseClient.from(name).select('*');
+  if(r.error)throw r.error;
+  return r.data||[];
 }
 function fmtDate(v){return v?String(v).slice(0,10):'-'}
 function schemaMessage(){
-  const missing=['ff_supplier','ff_pelanggan','ff_pembelian','ff_retur_penjualan'].filter(x=>state.tables[x]!==true);
+  const required=['ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','pengeluaran'];
+  const missing=required.filter(x=>state.tables[x]!==true);
   $('schemaNotice').className=missing.length?'notice':'notice ok';
   $('schemaNotice').innerHTML=missing.length
-    ? '⚠️ Modul tambahan aktif. Tabel baru belum lengkap: <b>'+missing.join(', ')+'</b>. Aplikasi tetap bisa dipakai; data modul yang belum tersambung database akan disimpan sementara di perangkat. Untuk penyimpanan database, jalankan <b>SUPABASE-EXPANSION.sql</b> satu kali di Supabase.'
-    : '✅ Modul tambahan terhubung ke database Supabase.';
+    ? '⚠️ Integrasi database belum lengkap: <b>'+missing.join(', ')+'</b>. Modul Operasional <b>tidak menyimpan data bisnis ke perangkat sebagai pengganti database</b>. Jalankan <b>SUPABASE-EXPANSION.sql</b> satu kali di Supabase, lalu muat ulang aplikasi.'
+    : '✅ Semua modul Operasional terhubung ke database Supabase. Data Supplier, Pembelian, Pengeluaran, Pelanggan, dan Retur memakai sumber data yang sama dengan Rekap/Dashboard.';
 }
 function supplierName(id){const x=state.supplier.find(s=>String(s.id)===String(id));return x?.nama||'-'}
 function materialOptions(selected=''){return '<option value="">Pilih bahan</option>'+window.bahan.map(b=>'<option value="'+esc(b.id)+'" '+(String(b.id)===String(selected)?'selected':'')+'>'+esc(b.nama_bahan)+'</option>').join('')}
@@ -254,21 +251,18 @@ async function editSupplier(id){
 }
 async function deleteSupplier(id){
   if(!confirm('Hapus supplier ini?'))return;
-  if(state.tables.ff_supplier){const r=await supabaseClient.from('ff_supplier').delete().eq('id',id);if(r.error){$('supplierStatus').textContent='Gagal: '+r.error.message;return}}
-  state.supplier=state.supplier.filter(x=>String(x.id)!==String(id));lsSet(LS.supplier,state.supplier);renderSuppliers();renderSupplierSelects();renderStats();
+  if(!state.tables.ff_supplier){$('supplierStatus').textContent='Database Supplier belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
+  const r=await supabaseClient.from('ff_supplier').delete().eq('id',id);
+  if(r.error){$('supplierStatus').textContent='Gagal: '+r.error.message;return}
+  state.supplier=await loadTable('ff_supplier');renderSuppliers();renderSupplierSelects();renderStats();
 }
 async function saveSupplier(){
   const data={nama:$('supNama').value.trim(),telepon:$('supTelp').value.trim(),alamat:$('supAlamat').value.trim(),catatan:$('supCatatan').value.trim(),status:'Aktif'};
   if(!data.nama){$('supplierStatus').textContent='Nama supplier wajib diisi.';return}
-  if(state.tables.ff_supplier){
-    let r=editSupplierId?await supabaseClient.from('ff_supplier').update(data).eq('id',editSupplierId):await supabaseClient.from('ff_supplier').insert([data]).select().single();
-    if(r.error){$('supplierStatus').textContent='Gagal: '+r.error.message;return}
-    state.supplier=await loadTable('ff_supplier',LS.supplier);
-  }else{
-    if(editSupplierId){state.supplier=state.supplier.map(x=>String(x.id)===String(editSupplierId)?{...x,...data}:x)}
-    else{const id='local-'+Date.now();state.supplier.push({id,...data})}
-    lsSet(LS.supplier,state.supplier);
-  }
+  if(!state.tables.ff_supplier){$('supplierStatus').textContent='Database Supplier belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
+  let r=editSupplierId?await supabaseClient.from('ff_supplier').update(data).eq('id',editSupplierId):await supabaseClient.from('ff_supplier').insert([data]).select().single();
+  if(r.error){$('supplierStatus').textContent='Gagal: '+r.error.message;return}
+  state.supplier=await loadTable('ff_supplier');
   resetSupplier();renderSuppliers();renderSupplierSelects();$('supplierStatus').textContent='Supplier berhasil disimpan.';renderStats();
 }
 function renderPurchases(){
@@ -290,6 +284,7 @@ async function syncLastPurchasePrices(rows){
 }
 
 async function savePurchase(){
+  if(!state.tables.ff_pembelian || !state.tables.ff_pembelian_item){$('purchaseStatus').textContent='Database Pembelian belum aktif lengkap. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
   const tanggal=$('buyDate').value||today(),supplierId=$('buySupplier').value||null,catatan=$('buyNote').value.trim();
   const rows=[...document.querySelectorAll('#purchaseLines .line-row')].map(r=>({bahan_id:r.querySelector('.line-mat').value||null,qty:Number(r.querySelector('.line-qty').value)||0,harga_beli:money(r.querySelector('.line-price').value),subtotal:money(r.querySelector('.line-subtotal').value)})).filter(x=>x.qty>0&&x.harga_beli>=0&&x.bahan_id);
   if(!rows.length){$('purchaseStatus').textContent='Minimal satu bahan harus dipilih.';return}
@@ -301,35 +296,63 @@ async function savePurchase(){
     const d=await supabaseClient.from('ff_pembelian_item').insert(items);
     if(d.error){await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);$('purchaseStatus').textContent='Gagal item pembelian: '+d.error.message;return}
     const priceWarnings=await syncLastPurchasePrices(rows);
-    state.purchase=await loadTable('ff_pembelian',LS.purchase);
+    state.purchase=await loadTable('ff_pembelian');
     $('purchaseStatus').textContent=priceWarnings.length
-      ? 'Pembelian tersimpan, tetapi harga bahan gagal diperbarui: '+priceWarnings.join(', ')+'.'
+      ? 'Pembelian tersimpan, tetapi harga bahan gagal diperbarui: '+priceWarnings.join(', ')+'. Periksa kembali Bahan Baku/HPP.'
       : 'Pembelian tersimpan dan harga bahan diperbarui ke harga beli terakhir.';
-  }else{
-    state.purchase.push({id:'local-'+Date.now(),tanggal,supplier_id:supplierId||null,total,catatan,items:rows});lsSet(LS.purchase,state.purchase);
-  }
+
   $('buyNote').value='';$('purchaseLines').innerHTML='';addPurchaseLine();renderPurchases();renderStats();
 }
+async function refreshMaterialLastPrices(bahanIds){
+  const ids=[...new Set((bahanIds||[]).map(Number).filter(Boolean))];
+  if(!ids.length)return [];
+  const items=await supabaseClient.from('ff_pembelian_item').select('bahan_id,harga_beli,pembelian_id').in('bahan_id',ids);
+  if(items.error)throw items.error;
+  const latest=new Map();
+  for(const x of (items.data||[])){
+    const key=String(x.bahan_id);
+    const cur=latest.get(key);
+    if(!cur || Number(x.pembelian_id)>Number(cur.pembelian_id))latest.set(key,x);
+  }
+  const warnings=[];
+  for(const id of ids){
+    const row=latest.get(String(id));
+    const price=row?money(row.harga_beli):0;
+    const r=await supabaseClient.from('bahan_baku').update({harga_beli:price}).eq('id',id);
+    if(r.error)warnings.push((window.bahan.find(b=>String(b.id)===String(id))||{}).nama_bahan||('ID '+id));
+    const local=window.bahan.find(b=>String(b.id)===String(id));
+    if(local)local.harga_beli=price;
+  }
+  return warnings;
+}
 async function deletePurchase(id){
+  if(!state.tables.ff_pembelian || !state.tables.ff_pembelian_item){$('purchaseStatus').textContent='Database Pembelian belum aktif lengkap.';return}
   if(!confirm('Hapus pembelian ini?'))return;
-  if(state.tables.ff_pembelian){const r=await supabaseClient.from('ff_pembelian').delete().eq('id',id);if(r.error){$('purchaseStatus').textContent='Gagal: '+r.error.message;return}}
-  state.purchase=state.purchase.filter(x=>String(x.id)!==String(id));lsSet(LS.purchase,state.purchase);renderPurchases();renderStats();
+  const oldItems=await supabaseClient.from('ff_pembelian_item').select('bahan_id').eq('pembelian_id',id);
+  if(oldItems.error){$('purchaseStatus').textContent='Gagal membaca item pembelian: '+oldItems.error.message;return}
+  const bahanIds=(oldItems.data||[]).map(x=>x.bahan_id);
+  const r=await supabaseClient.from('ff_pembelian').delete().eq('id',id);
+  if(r.error){$('purchaseStatus').textContent='Gagal: '+r.error.message;return}
+  let warnings=[];
+  try{warnings=await refreshMaterialLastPrices(bahanIds)}catch(e){warnings=['Sinkronisasi harga bahan gagal: '+(e.message||e)]}
+  state.purchase=await loadTable('ff_pembelian');
+  renderPurchases();renderStats();
+  $('purchaseStatus').textContent=warnings.length
+    ? 'Pembelian dihapus, tetapi sebagian harga bahan perlu diperiksa: '+warnings.join(', ')
+    : 'Pembelian dihapus dan harga bahan dikembalikan ke pembelian terakhir yang masih ada.';
 }
 function renderExpenses(){
   const m=today().slice(0,7);const rows=state.expense.filter(x=>String(x.periode||'').slice(0,7)===m);
   $('expenseRows').innerHTML=rows.slice().sort((a,b)=>String(b.periode).localeCompare(String(a.periode))).map(x=>'<tr><td>'+esc(x.periode)+'</td><td>'+esc(x.kategori||'-')+'</td><td>'+esc(x.keterangan||'-')+'</td><td>'+rupiah(x.nominal)+'</td></tr>').join('')||'<tr><td colspan="4" class="empty">Belum ada pengeluaran bulan ini.</td></tr>';
 }
 async function saveExpense(){
+  if(!state.tables.pengeluaran){$('expenseStatus').textContent='Database Pengeluaran belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
   const d=$('expDate').value||today(),data={periode:d.slice(0,7),kategori:$('expCategory').value,keterangan:$('expNote').value.trim(),nominal:money($('expNominal').value)};
   if(data.nominal<=0){$('expenseStatus').textContent='Nominal harus lebih dari 0.';return}
   const r=await supabaseClient.from('pengeluaran').insert([data]);
-  if(r.error){
-    state.expense.push({id:'local-'+Date.now(),...data});lsSet(LS.expense,state.expense);
-    $('expenseStatus').textContent='Database pengeluaran belum bisa ditulis; tersimpan sementara di perangkat.';
-  }else{
-    $('expenseStatus').textContent='Pengeluaran berhasil disimpan ke database.';
-    state.expense=await loadTable('pengeluaran',LS.expense);
-  }
+  if(r.error){$('expenseStatus').textContent='Gagal menyimpan pengeluaran: '+r.error.message;return}
+  $('expenseStatus').textContent='Pengeluaran berhasil disimpan ke database.';
+  state.expense=await loadTable('pengeluaran');
   $('expNominal').value='';$('expNote').value='';renderExpenses();renderStats();
 }
 function renderCustomers(){
@@ -339,8 +362,10 @@ function renderCustomers(){
 async function saveCustomer(){
   const data={nama:$('cusNama').value.trim(),telepon:$('cusTelp').value.trim(),alamat:$('cusAlamat').value.trim(),catatan:$('cusCatatan').value.trim(),status:'Aktif'};
   if(!data.nama){$('customerStatus').textContent='Nama pelanggan wajib diisi.';return}
-  if(state.tables.ff_pelanggan){const r=await supabaseClient.from('ff_pelanggan').insert([data]);if(r.error){$('customerStatus').textContent='Gagal: '+r.error.message;return}state.customer=await loadTable('ff_pelanggan',LS.customer)}
-  else{state.customer.push({id:'local-'+Date.now(),...data});lsSet(LS.customer,state.customer)}
+  if(!state.tables.ff_pelanggan){$('customerStatus').textContent='Database Pelanggan belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
+  const r=await supabaseClient.from('ff_pelanggan').insert([data]);
+  if(r.error){$('customerStatus').textContent='Gagal: '+r.error.message;return}
+  state.customer=await loadTable('ff_pelanggan');
   $('cusNama').value='';$('cusTelp').value='';$('cusAlamat').value='';$('cusCatatan').value='';$('customerStatus').textContent='Pelanggan berhasil disimpan.';renderCustomers();renderStats();
 }
 async function deleteCustomer(id){
@@ -349,19 +374,26 @@ async function deleteCustomer(id){
   state.customer=state.customer.filter(x=>String(x.id)!==String(id));lsSet(LS.customer,state.customer);renderCustomers();renderStats();
 }
 function renderReturnSales(){
-  $('retSale').innerHTML='<option value="">Pilih transaksi</option>'+state.sales.slice(0,100).map(s=>'<option value="'+esc(s.id)+'">'+esc(fmtDate(s.tanggal))+' • '+esc(s.product_name||s.nama_produk||'-')+' • '+(Number(s.qty)||0)+' bungkus</option>').join('');
+  const channel=$('retChannel').value;
+  const rows=state.sales.filter(s=>!channel || String(s.channel||'')===channel).slice(0,100);
+  $('retSale').innerHTML='<option value="">Pilih transaksi '+esc(channel)+'</option>'+rows.map(s=>'<option value="'+esc(s.id)+'">'+esc(fmtDate(s.tanggal))+' • '+esc(s.product_name||s.nama_produk||'-')+' • '+(Number(s.qty)||0)+' bungkus</option>').join('');
 }
 function renderReturns(){
   $('returnRows').innerHTML=state.ret.slice().sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))).map(x=>'<tr><td>'+esc(fmtDate(x.tanggal))+'</td><td>'+esc(x.channel||'-')+'</td><td>'+esc(x.nama_produk||'-')+'</td><td>'+esc(x.qty)+'</td><td>'+rupiah(x.nominal)+'</td><td>'+esc(x.alasan||'-')+'</td></tr>').join('')||'<tr><td colspan="6" class="empty">Belum ada retur.</td></tr>';
 }
 async function saveReturn(){
+  if(!state.tables.ff_retur_penjualan){$('returnStatus').textContent='Database Retur belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
   const sale=state.sales.find(x=>String(x.id)===String($('retSale').value));
-  const data={tanggal:$('retDate').value||today(),penjualan_id:sale?.id?Number(sale.id):null,channel:$('retChannel').value,produk_id:sale?.produk_id?Number(sale.produk_id):null,nama_produk:sale?.product_name||sale?.nama_produk||'Produk tidak diketahui',qty:Math.max(1,Number($('retQty').value)||1),nominal:money($('retNominal').value),alasan:$('retReason').value.trim()};
+  const qty=Math.max(1,Number($('retQty').value)||1);
+  const existing=state.ret.filter(x=>String(x.penjualan_id)===String(sale?.id));
+  const already=existing.reduce((a,x)=>a+Math.max(0,Number(x.qty)||0),0);
+  const saleQty=Math.max(0,Number(sale?.qty)||0);
+  const data={tanggal:$('retDate').value||today(),penjualan_id:sale?.id?Number(sale.id):null,channel:$('retChannel').value,produk_id:sale?.produk_id?Number(sale.produk_id):null,nama_produk:sale?.product_name||sale?.nama_produk||'Produk tidak diketahui',qty,nominal:money($('retNominal').value),alasan:$('retReason').value.trim()};
   if(!sale){$('returnStatus').textContent='Pilih transaksi penjualan.';return}
-  if(state.tables.ff_retur_penjualan){
-    const r=await supabaseClient.from('ff_retur_penjualan').insert([data]);if(r.error){$('returnStatus').textContent='Gagal: '+r.error.message;return}
-    state.ret=await loadTable('ff_retur_penjualan',LS.ret);
-  }else{state.ret.push({id:'local-'+Date.now(),...data});lsSet(LS.ret,state.ret)}
+  if(qty>saleQty-already){$('returnStatus').textContent='Qty retur melebihi qty penjualan yang belum diretur. Sisa boleh diretur: '+Math.max(0,saleQty-already)+' bungkus.';return}
+  const r=await supabaseClient.from('ff_retur_penjualan').insert([data]);
+  if(r.error){$('returnStatus').textContent='Gagal: '+r.error.message;return}
+  state.ret=await loadTable('ff_retur_penjualan');
   $('retReason').value='';$('retNominal').value='';$('retQty').value=1;$('returnStatus').textContent='Retur berhasil dicatat.';renderReturns();renderStats();
 }
 function renderStats(){
@@ -376,16 +408,17 @@ async function init(){
   const names=['ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','pengeluaran'];
   for(const n of names)await tableReady(n);
   schemaMessage();
-  state.supplier=await loadTable('ff_supplier',LS.supplier);
-  state.purchase=await loadTable('ff_pembelian',LS.purchase);
-  state.customer=await loadTable('ff_pelanggan',LS.customer);
-  state.ret=await loadTable('ff_retur_penjualan',LS.ret);
-  state.expense=await loadTable('pengeluaran',LS.expense);
+  state.supplier=await loadTable('ff_supplier');
+  state.purchase=await loadTable('ff_pembelian');
+  state.customer=await loadTable('ff_pelanggan');
+  state.ret=await loadTable('ff_retur_penjualan');
+  state.expense=await loadTable('pengeluaran');
   const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,product_name,harga,channel').order('tanggal',{ascending:false}).limit(100);
   state.sales=sr.error?[]:(sr.data||[]);
   renderSuppliers();renderSupplierSelects();renderPurchases();renderExpenses();renderCustomers();renderReturnSales();renderReturns();renderStats();await loadMaterials();
 }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+$('retChannel').onchange=renderReturnSales;
 $('saveSupplier').onclick=saveSupplier;$('cancelSupplier').onclick=resetSupplier;$('addPurchaseLine').onclick=()=>addPurchaseLine();$('savePurchase').onclick=savePurchase;$('saveExpense').onclick=saveExpense;$('saveCustomer').onclick=saveCustomer;$('saveReturn').onclick=saveReturn;
 init().catch(e=>{$('schemaNotice').className='notice';$('schemaNotice').textContent='Gagal memuat modul operasional: '+(e.message||e)});
 </script>
