@@ -759,21 +759,11 @@ async function bootRekap(){
     const channelEl = $('channel');
     const reloadEl = $('reload');
     const viewEl = $('viewOnlineConnection');
-    const closeEl = $('closeOnlineConnection');
 
     if(monthEl) monthEl.onchange = render;
     if(channelEl) channelEl.onchange = render;
     if(reloadEl) reloadEl.onclick = init;
     if(viewEl) viewEl.onclick = () => viewOnlineMonth(monthEl ? monthEl.value : '');
-
-    // Tombol Tutup memang opsional di Detail Rekap.
-    // Jangan hentikan seluruh halaman kalau tombol tersebut tidak ada.
-    if(closeEl) closeEl.onclick = () => {
-      const body=$('onlineConnectionBody');
-      const note=$('onlineConnectionNote');
-      if(note)note.textContent='Detail ditutup. Klik 👁 Lihat Data untuk menampilkan rincian bulan yang dipilih.';
-      if(body)body.innerHTML='<div class="hint">Klik 👁 Lihat Data untuk membuka detail lengkap.</div>';
-    };
 
     await init();
   }catch(e){
