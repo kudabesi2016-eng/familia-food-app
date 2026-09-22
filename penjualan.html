@@ -121,7 +121,15 @@
   #onlineBatchTable select,#onlineBatchTable input{max-width:100%;min-height:38px}
   .batch-toolbar{position:static!important}
 
-</style></style></head><body>
+</style></style><style id="kasir-fix">
+/* Override aturan responsive lama agar kartu kasir tetap tampil utuh */
+#onlineBatchTable td[colspan="9"]{display:block!important}
+@media(max-width:700px){
+  #onlineBatchTable td[colspan="9"]{display:block!important;width:100%!important}
+  #onlineBatchTable td[colspan="9"] .kasir-line{display:grid!important}
+}
+</style>
+</head><body>
 <aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="nav">
 <a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a class="active" href="penjualan.html">💰 Penjualan</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
 </nav></aside><main><div class="top"><div><h1>💰 Penjualan</h1><div class="sub">Penjualan Offline + Transaksi Online Baru + Penerimaan Uang Online.</div></div><span class="badge">Familia Food</span></div><div class="penjualan-tabs" id="penjualanTabs"><button class="penjualan-tab active" data-tab="onlineNew" type="button">1. 📦 Transaksi Online Baru</button><button class="penjualan-tab" data-tab="offline" type="button">2. 🟢 Transaksi Offline</button><button class="penjualan-tab" data-tab="cash" type="button">3. 💰 Penerimaan Uang Online</button><button class="penjualan-tab" data-tab="dropship" type="button">4. 📦 Master Produk Dropship</button><button class="penjualan-tab" data-tab="oldOnline" type="button">5. 📁 Rekap Data Lama Online</button><button class="penjualan-tab" data-tab="oldOffline" type="button">6. 📁 Rekap Data Lama Offline</button><button class="penjualan-tab" data-tab="import" type="button">7. 📥 Import Penjualan Online</button></div><section class="penjualan-panel active" data-panel="onlineNew"><div class="card" id="onlineNewCard">
