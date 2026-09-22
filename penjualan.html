@@ -89,7 +89,7 @@
 <th>#</th>
 <th>Tanggal</th>
 <th>Jenis</th>
-<th>Produk Keluar</th>
+<th>Produk Naget / Produk Dropship</th>
 <th>Produk Dropship</th>
 <th>Jumlah (Bungkus)</th>
 <th>HPP / Modal per Bungkus</th>
@@ -130,7 +130,7 @@
 </div>
 <div class="card" id="onlineNewProfitCard">
   <h3 style="margin:0 0 8px">📊 Profit Online Baru</h3>
-  <div class="note">Profit dihitung dari Uang Bersih yang sudah dicairkan dikurangi HPP Naget/Tempura dan Modal Produk Dropship yang sudah dicatat.</div>
+  <div class="note">Profit dihitung dari Uang Bersih yang sudah dicairkan dikurangi HPP Naget dan Modal Produk Dropship yang sudah dicatat.</div>
   <div class="summary" style="margin-top:12px">
     <div class="stat">HPP/Modal Produk Keluar<b id="newOnlineModal">Rp 0</b></div>
     <div class="stat">Uang Bersih Diterima<b id="newOnlineCash">Rp 0</b></div>
@@ -511,10 +511,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   function familiaProducts(){
-    return (window.products||[]).filter(p=>{
-      const n=String(p.nama_produk||'').trim().toLowerCase();
-      return /^naget\s*(10|12|20|25|30|40|50)/i.test(n) || n.includes('tempura aci') || n.startsWith('tempura');
-    });
+    return (window.products||[]).filter(p=>/^naget\s*(10|12|20|25|30|40|50)/i.test(String(p.nama_produk||'').trim()));
   }
   function productById(id){return (window.products||[]).find(p=>String(p.id)===String(id));}
   function hppForProduct(p){
@@ -533,7 +530,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     return '<option value="">Pilih Dropship</option>'+dropRows().map((x,i)=>'<option value="'+i+'">'+esc(x.name)+' — '+(Number(x.modal)>0?money(x.modal)+'/bungkus':'Modal belum diisi')+'</option>').join('');
   }
   function familiaOptions(){
-    return '<option value="">Pilih Produk Keluar</option>'+familiaProducts().map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nama_produk)+' ('+esc(p.isi_per_bungkus||'')+' pcs)</option>').join('');
+    return '<option value="">Pilih Naget</option>'+familiaProducts().map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nama_produk)+' ('+esc(p.isi_per_bungkus||'')+' pcs)</option>').join('');
   }
 
   let rows=[];
@@ -547,7 +544,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     return `<tr data-row="${r.id}">
       <td>${idx+1}</td>
       <td><input class="batch-date" type="date" value="${esc(r.tanggal)}"></td>
-      <td><select class="batch-type"><option value="familia" ${r.jenis==='familia'?'selected':''}>Naget/Tempura</option><option value="dropship" ${r.jenis==='dropship'?'selected':''}>Dropship</option></select></td>
+      <td><select class="batch-type"><option value="familia" ${r.jenis==='familia'?'selected':''}>Naget</option><option value="dropship" ${r.jenis==='dropship'?'selected':''}>Dropship</option></select></td>
       <td><select class="batch-produk" ${r.jenis==='dropship'?'disabled':''}>${familiaOptions()}</select></td>
       <td><select class="batch-drop" ${r.jenis==='familia'?'disabled':''}>${dropSelectOptions()}</select></td>
       <td><input class="batch-qty" type="number" min="1" step="1" value="${Math.max(1,Number(r.qty)||1)}"></td>
@@ -636,7 +633,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         laba:0,
         order_id:null,
         product_name:r.jenis==='familia'?p.nama_produk:(d?.name||'Produk Dropship'),
-        variation:r.jenis==='familia'?'Naget/Tempura':'Dropship',
+        variation:r.jenis==='familia'?'Naget':'Dropship',
         omzet_produk:0,
         uang_bersih:null,
         modal_hpp:Math.round(total),
