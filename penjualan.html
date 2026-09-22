@@ -575,7 +575,8 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   function familiaProducts(){
     return (window.products||[]).filter(p=>{
       const n=String(p.nama_produk||'').trim().toLowerCase();
-      return /^naget\s*(10|12|20|25|30|40|50)/i.test(n) || n.includes('tempura aci') || n.startsWith('tempura');
+      // Semua produk Naget, termasuk format "Naget isi 10/12", serta semua Tempura Aci.
+      return n.startsWith('naget') || n.includes('tempura aci') || n.startsWith('tempura');
     });
   }
   function productById(id){return (window.products||[]).find(p=>String(p.id)===String(id));}
