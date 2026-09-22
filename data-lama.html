@@ -834,6 +834,17 @@ $('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files
 $('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
 renderOnlineOldFileQueue();
 async function saveOnlineHistoricalRows(rows){
+  // Sebelum disimpan, petakan HPP resmi berdasarkan master Produk/HPP.
+  // Qty tetap BUNGKUS hasil audit; hpp = HPP/unit online resmi.
+  const prepared=(rows||[]).map(x=>{
+    const unit=previewOnlineHpp(x);
+    if(unit!=null){
+      const qty=Number(x.qty||0);
+      return {...x,hpp:Math.trunc(unit),modal_hpp:Math.trunc(qty*unit),profit_online:null};
+    }
+    return x;
+  });
+  rows=prepared;
   // Gunakan batch kecil agar URL query .in() tidak terlalu panjang dan POST tidak rapuh.
   const QUERY_BATCH=75;
   const INSERT_BATCH=50;
