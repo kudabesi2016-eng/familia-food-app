@@ -25,7 +25,7 @@
 <div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></details></div>
 
 
-<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Upload <b>CSV TikTok asli</b> untuk audit produk keluar Jan–Agustus 2026, atau <b>Excel STANDARD Familia Food</b>. CSV TikTok akan dikonversi otomatis menjadi <b>bungkus audit</b> setelah retur dan ekspansi paket 2/3/6. Data audit harus menghasilkan <b>8.085 bungkus</b> sebelum dapat disimpan.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>CSV TikTok asli atau Excel STANDARD.</b> Untuk mengganti histori produk lama dengan audit terbaru, gunakan CSV TikTok Jan–Agustus 2026. Beberapa file boleh dipilih; data yang sama tidak akan digandakan.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button class="btn" id="onlineOldSave">+ Simpan Data Lama Online</button><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
+<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Upload <b>CSV TikTok asli</b> untuk audit produk keluar Jan–Agustus 2026, atau <b>Excel STANDARD Familia Food</b>. CSV TikTok akan dikonversi otomatis menjadi <b>bungkus audit</b> setelah retur dan ekspansi paket 2/3/6. Data audit harus menghasilkan <b>8.085 bungkus</b> sebelum dapat disimpan.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>CSV TikTok asli atau Excel STANDARD.</b> Untuk mengganti histori produk lama dengan audit terbaru, gunakan CSV TikTok Jan–Agustus 2026. Beberapa file boleh dipilih; data yang sama tidak akan digandakan.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button type="button" class="btn" id="onlineOldSave" style="position:relative;z-index:20;pointer-events:auto">+ Simpan Data Lama Online</button><div id="onlineOldSaveStatus" class="hint" style="margin-top:8px"></div><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
 
 <div class="card"><details><summary>✍️ Tambah Manual</summary><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
 <div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></details></div>
@@ -910,6 +910,10 @@ async function refreshOnlineOldPreview(){
   renderOnlineOldMonthTabs(ms);
   renderOnlineOldMonthTable(onlineOldActiveMonth);
   $('onlineOldPreview').style.display='block';
+  const saveBtn=$('onlineOldSave');
+  if(saveBtn)saveBtn.disabled=false;
+  const saveStatus=$('onlineOldSaveStatus');
+  if(saveStatus)saveStatus.innerHTML='Preview siap. Tombol simpan aktif setelah audit 8.085 bungkus.';
 }
 $('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files);await refreshOnlineOldPreview();e.target.value='';}catch(err){$('onlineOldInfo').innerHTML='<div class="msg" style="color:#a22">'+FFCore.esc(err.message||err)+'</div>';$('onlineOldPreview').style.display='block'}};
 $('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
@@ -950,7 +954,58 @@ async function saveOnlineHistoricalRows(rows){
   return {saved:rowsToSave.length,duplicates:rows.length-rowsToSave.length};
 }
 
-$('onlineOldSave').onclick=async()=>{
+async function runOnlineOldSave(){
+  const btn=$('onlineOldSave');
+  const status=$('onlineOldSaveStatus');
+  const msgBox=$('onlineOldMsg');
+  if(!onlineOldImportRows.length){
+    status.innerHTML='<span style="color:#a22;font-weight:bold">Tidak ada data preview yang siap disimpan.</span>';
+    return;
+  }
+  btn.disabled=true;
+  status.innerHTML='<span style="color:#087443;font-weight:bold">⏳ Memeriksa audit dan menyiapkan penyimpanan...</span>';
+  try{
+    const lockedRows=onlineOldImportRows.filter(x=>
+      (x.source==='online_standard_product'||x.source==='seller_center') &&
+      String(FFCore.monthOf(x.tanggal)||'')>='2026-01' &&
+      String(FFCore.monthOf(x.tanggal)||'')<='2026-08'
+    );
+    if(lockedRows.length){
+      const audit=auditOnlineLockedRows(onlineOldImportRows);
+      if(!audit.ok){
+        status.innerHTML='<span style="color:#a22;font-weight:bold">⛔ Penyimpanan dihentikan: audit histori belum cocok dengan kunci 8.085 bungkus.</span>';
+        msgBox.innerHTML=lockedAuditMessage(audit);
+        msgBox.scrollIntoView({behavior:'smooth',block:'center'});
+        return;
+      }
+      status.innerHTML='<span style="color:#087443;font-weight:bold">✅ Audit 8.085 bungkus lolos. Mengganti detail produk Online Jan–Agustus...</span>';
+      const oldProduct=await supabaseClient.from('penjualan').select('id').eq('channel','Online').in('source',['online_standard_product','seller_center']).gte('tanggal','2026-01-01').lt('tanggal','2026-09-01');
+      if(oldProduct.error)throw oldProduct.error;
+      const ids=(oldProduct.data||[]).map(x=>x.id).filter(Boolean);
+      for(let i=0;i<ids.length;i+=100){
+        const batch=ids.slice(i,i+100);
+        const del=await supabaseClient.from('penjualan').delete().in('id',batch);
+        if(del.error)throw del.error;
+      }
+    }
+    status.innerHTML='<span style="color:#087443;font-weight:bold">⏳ Menyimpan data historis Online...</span>';
+    const result=await saveOnlineHistoricalRows(onlineOldImportRows);
+    msgBox.innerHTML='<div class="msg">Berhasil menyimpan <b>'+result.saved.toLocaleString('id-ID')+'</b> baris Online historis. '+result.duplicates.toLocaleString('id-ID')+' duplikat dilewati.</div>';
+    status.innerHTML='<span style="color:#087443;font-weight:bold">✅ Penyimpanan selesai.</span>';
+    onlineOldImportRows=[];
+    await load();
+  }catch(e){
+    const m=String(e?.message||e||'Gagal menyimpan');
+    msgBox.innerHTML='<div class="msg" style="color:#a22">Gagal menyimpan Online historis: '+FFCore.esc(m)+'</div>';
+    status.innerHTML='<span style="color:#a22;font-weight:bold">❌ Penyimpanan gagal. Pesan error ditampilkan di bawah.</span>';
+    msgBox.scrollIntoView({behavior:'smooth',block:'center'});
+    console.error('saveOnlineHistoricalRows',e);
+  }finally{
+    btn.disabled=false;
+  }
+}
+$('onlineOldSave').onclick=runOnlineOldSave;
+
   try{
     if(!onlineOldImportRows.length)return;
     const lockedRows=onlineOldImportRows.filter(x=>(x.source==='online_standard_product'||x.source==='seller_center')&&String(FFCore.monthOf(x.tanggal)||'')>='2026-01'&&String(FFCore.monthOf(x.tanggal)||'')<='2026-08');
