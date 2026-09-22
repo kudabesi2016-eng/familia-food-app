@@ -310,7 +310,7 @@ td{
         <label>Channel</label>
         <select id="channel">
           <option value="Offline">Offline</option>
-          <option value="Online">Online</option>
+          <option value="Online" selected>Online</option>
         </select>
       </div>
 
@@ -413,7 +413,10 @@ td{
   </div>
 
   <div class="card" style="margin-top:12px" id="onlineConnectionCard">
-    <h3 style="margin:0 0 8px">🔗 Detail Hubungan Data Lama + Transaksi Online Baru</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <h3 style="margin:0">🔗 Detail Hubungan Data Lama + Transaksi Online Baru</h3>
+      <span class="badge" id="onlineConnectionMode">🔵 Online</span>
+    </div>
     <div class="history-note" id="onlineConnectionNote">Pilih bulan untuk melihat rincian data lama dan transaksi baru yang sudah masuk ke rekap.</div>
     <div id="onlineConnectionBody" style="margin-top:12px"></div>
   </div>
@@ -870,9 +873,12 @@ function renderOnlineConnection(){
   if(!body||!note)return;
 
   const m=$('month').value;
-  if($('channel').value!=='Online'){
-    note.textContent='Mode Offline dipilih. Detail hubungan data lama + transaksi baru khusus Online.';
-    body.innerHTML='<div class="hint">Pilih Channel Online untuk melihat rincian ini.</div>';
+  const modeOnline=$('channel').value==='Online';
+  const modeBadge=document.getElementById('onlineConnectionMode');
+  if(modeBadge)modeBadge.textContent=modeOnline?'🔵 Online':'🟢 Offline';
+  if(!modeOnline){
+    note.textContent='Channel sedang Offline. Detail hubungan Data Lama + Transaksi Online Baru ditampilkan saat Channel Online dipilih.';
+    body.innerHTML='<div class="hint">Pilih Channel Online untuk melihat hubungan Data Lama + Transaksi Online Baru.</div>';
     return;
   }
   if(!m){
