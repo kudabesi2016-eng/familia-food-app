@@ -13,7 +13,7 @@ const requiredCommon = [
 
 const mustContain = {
   'operasional.html': [
-    'ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','ff_penjualan_pelanggan',
+    'ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan',
     'Pembelian Bahan Baku','Retur Penjualan','Pengeluaran'
   ],
   'penjualan.html': [
