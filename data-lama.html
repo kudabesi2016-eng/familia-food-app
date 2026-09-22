@@ -384,9 +384,13 @@ async function parseFamiliaStandardWorkbook(wb){
 }
 async function parseOnlineOldFile(file){
   const name=String(file.name||'');
-  if(/\\.csv$/i.test(name)){
-    const raw=readCSVText(await file.text());
-    if(raw.some(looksSeller))return parseSellerHistorical(raw);
+  if(/\.csv$/i.test(name)){
+    const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:false,raw:false});
+    const first=wb.SheetNames[0];
+    const raw=first?XLSX.utils.sheet_to_json(wb.Sheets[first],{defval:'',raw:false}):[];
+    if(Array.isArray(raw)&&raw.some(looksSeller))return parseSellerHistorical(raw);
+    const manual=readCSVText(await file.text());
+    if(Array.isArray(manual)&&manual.some(looksSeller))return parseSellerHistorical(manual);
     throw new Error('CSV '+name+' tidak dikenali sebagai export Seller Center TikTok. Pastikan kolom Order ID, Product Name, Quantity, dan SKU Subtotal After Discount tersedia.');
   }
   const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
@@ -404,17 +408,16 @@ function renderOnlineOldFileQueue(){
 async function addOnlineOldFiles(fileList){
   const files=Array.from(fileList||[]);
   if(!files.length)return;
-  // File baru ditambahkan ke antrian; file sebelumnya tidak diganti.
   for(const f of files){
     const duplicate=onlineOldQueuedFiles.some(x=>x.name===f.name&&x.size===f.size&&x.lastModified===f.lastModified);
     if(duplicate)continue;
-    onlineOldQueuedFiles.push(f);
     const rows=await parseOnlineOldFile(f);
+    if(!Array.isArray(rows))throw new Error('Hasil pembacaan file tidak berbentuk daftar baris.');
+    onlineOldQueuedFiles.push(f);
     onlineOldImportRows.push(...rows);
   }
-  // Deduplicate seluruh antrian berdasarkan import_key.
   const seen=new Set();
-  onlineOldImportRows=onlineOldImportRows.filter(x=>{const k=String(x.import_key||'');if(seen.has(k))return false;seen.add(k);return true;});
+  onlineOldImportRows=(Array.isArray(onlineOldImportRows)?onlineOldImportRows:[]).filter(x=>{const k=String(x.import_key||'');if(seen.has(k))return false;seen.add(k);return true;});
   renderOnlineOldFileQueue();
 }
 function previewMoney(v){return v==null?'—':FFCore.rupiah(Math.trunc(Number(v)||0))}
