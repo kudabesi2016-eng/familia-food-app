@@ -172,7 +172,27 @@
 <button class="btn" id="batchSave" type="button">+ Simpan Semua Produk Keluar</button>
 </div>
 <div id="batchMsg"></div>
-</div></section><section class="penjualan-panel" data-panel="offline"><div class="card"><div class="cashhead"><div><h2 style="margin:0">🟢 Transaksi Offline</h2><div class="note">Tetap memakai struktur penjualan lama; pola HPP tidak diubah.</div></div></div>
+</div>
+<div class="card" id="onlineBatchHistoryCard">
+  <div class="cashhead">
+    <div>
+      <h2 style="margin:0">📋 Riwayat Transaksi Online Baru</h2>
+      <div class="note">Di sini bro bisa mengecek semua Produk Keluar Online Baru yang sudah disimpan.</div>
+    </div>
+    <button class="btn gray" id="batchHistoryRefresh" type="button">↻ Refresh</button>
+  </div>
+  <div class="tablewrap" style="margin-top:12px">
+    <table style="min-width:900px">
+      <thead>
+        <tr><th>Tanggal</th><th>Jenis</th><th>Produk</th><th>Qty Bungkus</th><th>Modal / Bungkus</th><th>Total Modal</th><th>Aksi</th></tr>
+      </thead>
+      <tbody id="onlineBatchHistoryRows">
+        <tr><td colspan="7">Memuat riwayat...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</section><section class="penjualan-panel" data-panel="offline"><div class="card"><div class="cashhead"><div><h2 style="margin:0">🟢 Transaksi Offline</h2><div class="note">Tetap memakai struktur penjualan lama; pola HPP tidak diubah.</div></div></div>
 <div class="grid" style="margin-top:16px"><div class="field"><label>Tanggal</label><input id="tanggal" type="date"/></div><div class="field"><label>Nama Pelanggan</label><input id="pelanggan" placeholder="Contoh: Bu Euis" type="text"/></div><div class="field"><label>Produk</label><select id="produk"><option value="">Pilih Produk</option></select></div><div class="field"><label>Jumlah Terjual (Bungkus)</label><input id="qty" min="1" step="1" type="number" value="1"/></div><div class="field"><label>Channel Penjualan</label><select id="channel"><option>Offline</option></select></div><div class="field"><label>Harga Jual / Bungkus</label><input id="harga" min="0" readonly="" step="1" type="number"/></div><div class="field"><label>HPP / Bungkus</label><input id="hpp" min="0" readonly="" step="1" type="number"/></div></div>
 <div class="preview"><div class="box"><small>Harga Jual</small><strong id="pvHarga">Rp 0</strong></div><div class="box"><small>Total Omzet</small><strong id="pvOmzet">Rp 0</strong></div><div class="box"><small>Total Modal / HPP</small><strong id="pvHpp">Rp 0</strong></div><div class="box profit"><small>Profit</small><strong id="pvProfit">Rp 0</strong></div></div>
 <div class="actions"><button class="btn" id="save">+ Simpan Penjualan</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div><div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div></section><section class="penjualan-panel" data-panel="cash"><div class="card" id="onlineCashCard">
@@ -754,6 +774,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       setMsg(`${newRows.length} baris produk tersimpan • ${totalQty} bungkus • Total HPP/Modal ${money(totalModal)}. Profit akan dihitung dari Uang Bersih yang dicatat pada Penerimaan Uang Online.`);
       rows=[];addRows(1);
       if(typeof load==='function')await load();
+      await refreshOnlineBatchHistory();
       await refreshNewOnlineProfit();
     }catch(e){
       console.error(e);
@@ -774,6 +795,40 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     });
     rows.forEach(r=>refreshRow(r.id));
     updateSummary();
+  }
+  async function refreshOnlineBatchHistory(){
+    const tb=byId('onlineBatchHistoryRows');
+    if(!tb)return;
+    tb.innerHTML='<tr><td colspan="7">Memuat riwayat...</td></tr>';
+    try{
+      const r=await supabaseClient
+        .from('penjualan')
+        .select('id,tanggal,product_name,variation,qty,modal_hpp,hpp,source')
+        .eq('channel','Online')
+        .eq('source','online_batch')
+        .order('tanggal',{ascending:false})
+        .order('id',{ascending:false})
+        .limit(200);
+      if(r.error)throw r.error;
+      const data=r.data||[];
+      tb.innerHTML=data.length?data.map(x=>{
+        const qty=Math.max(1,Number(x.qty)||1);
+        const total=Math.round(Number(x.modal_hpp??x.hpp??0));
+        const unit=qty?Math.round(total/qty):0;
+        return '<tr>'+
+          '<td>'+esc(x.tanggal||'-')+'</td>'+
+          '<td>'+esc(x.variation||'Naget')+'</td>'+
+          '<td>'+esc(x.product_name||'-')+'</td>'+
+          '<td>'+qty.toLocaleString('id-ID')+'</td>'+
+          '<td>'+money(unit)+'</td>'+
+          '<td>'+money(total)+'</td>'+
+          '<td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td>'+
+        '</tr>';
+      }).join(''):'<tr><td colspan="7">Belum ada transaksi online baru.</td></tr>';
+    }catch(e){
+      console.error(e);
+      tb.innerHTML='<tr><td colspan="7">Gagal memuat riwayat: '+esc(e.message||e)+'</td></tr>';
+    }
   }
   async function refreshNewOnlineProfit(){
     try{
@@ -811,6 +866,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     byId('batchAdd10')?.addEventListener('click',()=>addRows(10));
     byId('batchClear')?.addEventListener('click',()=>{rows=[];addRows(1);setMsg('');});
     byId('batchSave')?.addEventListener('click',saveBatch);
+    byId('batchHistoryRefresh')?.addEventListener('click',refreshOnlineBatchHistory);
     byId('cashSave')?.addEventListener('click',saveCash);
     byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
     byId('dropAdd')?.addEventListener('click',()=>{
@@ -856,12 +912,24 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       if(tr && e.target.closest('.batch-del')){
         const id=Number(tr.dataset.row);rows=rows.filter(r=>r.id!==id);if(!rows.length)rows.push(emptyRow());renderRows();return;
       }
+      const historyDel=e.target.closest?.('[data-batch-history-del]');
+      if(historyDel){
+        const id=Number(historyDel.dataset.batchHistoryDel);
+        if(id && confirm('Hapus transaksi online baru ini?')){
+          const r=await supabaseClient.from('penjualan').delete().eq('id',id);
+          if(r.error){alert('Gagal menghapus: '+r.error.message);return;}
+          await refreshOnlineBatchHistory();
+          await refreshNewOnlineProfit();
+          if(typeof load==='function')await load();
+        }
+        return;
+      }
       const edit=e.target.closest?.('[data-drop-edit]');
       const del=e.target.closest?.('[data-drop-del]');
       if(edit){const i=Number(edit.dataset.dropEdit),list=dropRows();if(list[i]){byId('dropName').value=list[i].name;byId('dropModal').value=list[i].modal;byId('dropName').focus();}}
       if(del){const i=Number(del.dataset.dropDel),list=dropRows();if(list[i]&&confirm('Hapus master dropship ini?')){list.splice(i,1);saveDrops(list);renderDropMaster();}}
     });
-    setTimeout(()=>{ensureSellerCenterDropship();renderDropMaster();refreshNewOnlineProfit();},500);
+    setTimeout(()=>{ensureSellerCenterDropship();renderDropMaster();refreshOnlineBatchHistory();refreshNewOnlineProfit();},500);
   }
   window.addEventListener('load',async ()=>{
     try{
