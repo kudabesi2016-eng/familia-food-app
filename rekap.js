@@ -371,10 +371,6 @@ function updateChannelUI(){
     : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
 }
 
-function data(){
-  return {sales,olds,expenses,products,hpps,purchases,returns};
-}
-
 /* =====================================================
    BULAN
 ===================================================== */
