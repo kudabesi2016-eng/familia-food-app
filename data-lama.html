@@ -198,7 +198,7 @@ function onlineMonthDetail(m){
   const rows=Object.values(grouped).sort((a,b)=>b.qty-a.qty);
   h+='<div class="mini-detail"><h4>📦 Produk Online per Bulan</h4><div class="tablewrap"><table><thead><tr><th>Produk / Listing</th><th>Variasi</th><th>Bungkus</th></tr></thead><tbody>';
   if(!ready){
-    h+='<tr><td colspan="3">⛔ Detail produk disembunyikan sampai sumber STANDARD cocok dengan kunci 5.928 bungkus.</td></tr>';
+    h+='<tr><td colspan="3">⛔ Detail produk disembunyikan sampai audit TikTok cocok dengan kunci 8.085 bungkus.</td></tr>';
   }else{
     rows.forEach(x=>{h+='<tr><td>'+esc(x.produk)+'</td><td>'+esc(x.variation||'—')+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td></tr>'});
     if(!rows.length)h+='<tr><td colspan="3">Belum ada detail produk.</td></tr>';
