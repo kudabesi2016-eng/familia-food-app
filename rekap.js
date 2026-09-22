@@ -109,7 +109,9 @@ const data = () => ({
   olds,
   expenses,
   products,
-  hpps
+  hpps,
+  purchases,
+  returns
 });
 
 
