@@ -876,7 +876,7 @@ $('onlineOldSave').onclick=async()=>{
       }
       // CSV audit 8.085 menggantikan PRODUCT STANDARD lama 3.271.
       // Finance STANDARD tetap dipertahankan; hanya detail produk lama Jan–Agustus yang dibersihkan.
-      const oldProduct=await supabaseClient.from('penjualan').select('id').eq('channel','Online').eq('source','online_standard_product').gte('tanggal','2026-01-01').lt('tanggal','2026-09-01');
+      const oldProduct=await supabaseClient.from('penjualan').select('id').eq('channel','Online').in('source',['online_standard_product','seller_center']).gte('tanggal','2026-01-01').lt('tanggal','2026-09-01');
       if(oldProduct.error)throw oldProduct.error;
       const ids=(oldProduct.data||[]).map(x=>x.id).filter(Boolean);
       for(let i=0;i<ids.length;i+=100){
