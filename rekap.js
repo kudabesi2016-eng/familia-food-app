@@ -371,6 +371,10 @@ function updateChannelUI(){
     : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
 }
 
+function data(){
+  return {sales,olds,expenses,products,hpps,purchases,returns};
+}
+
 /* =====================================================
    BULAN
 ===================================================== */
@@ -517,8 +521,15 @@ function renderOnlineConnection(selectedMonth){
   if(modeBadge)modeBadge.textContent=modeOnline?'🔵 Online':'🟢 Offline';
 
   if(!modeOnline){
-    note.textContent='Channel sedang Offline. Detail Offline ditampilkan berdasarkan bulan yang dipilih.';
-    body.innerHTML='<div class="hint">Pilih bulan untuk melihat ringkasan Offline.</div>';
+    const opsBuy=(purchases||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
+    const opsRet=(returns||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && String(x.channel||'')==='Offline').reduce((a,x)=>a+Number(x.nominal||0),0);
+    const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.nominal||0),0);
+    note.innerHTML='Bulan <b>'+esc(label(m))+'</b>. Ringkasan Offline tetap memakai rumus penjualan Familia Food. Informasi Operasional ditampilkan terpisah.';
+    body.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'+
+      '<div class="stat"><small>🛒 Pembelian Bahan Baku</small><strong>'+money(opsBuy)+'</strong></div>'+
+      '<div class="stat"><small>💸 Pengeluaran</small><strong>'+money(opsExp)+'</strong></div>'+
+      '<div class="stat"><small>↩️ Retur Offline</small><strong>'+money(opsRet)+'</strong></div>'+
+      '</div>';
     return;
   }
 
@@ -547,7 +558,12 @@ function renderOnlineConnection(selectedMonth){
 
   note.innerHTML='Bulan <b>'+esc(label(m))+'</b>. Data Lama ditampilkan sebagai ringkasan, sedangkan <b>👁 Lihat Data</b> hanya membuka rincian <b>Transaksi Online Baru</b>.';
 
-  let list='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+  let list='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+  list+='<div class="stat"><small>🛒 Pembelian Bahan Baku</small><strong>'+money(opsBuy)+'</strong></div>';
+  list+='<div class="stat"><small>💸 Pengeluaran</small><strong>'+money(opsExp)+'</strong></div>';
+  list+='<div class="stat"><small>↩️ Retur Online</small><strong>'+money(opsRet)+'</strong></div>';
+  list+='</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">';
+
   list+='<div class="stat"><small>📁 Data Lama Online</small><strong>'+histFinance.length.toLocaleString('id-ID')+' baris</strong><div class="hint" style="margin-top:8px">Pemasukan '+money(histRev)+'<br>Potongan '+money(histFee)+'<br>Uang Bersih '+money(histNet)+'<br>Modal '+(oldHppKnown?money(oldHpp):'—')+'</div></div>';
 
   list+='<div class="stat profit"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small>🆕 Transaksi Online Baru</small><strong>'+newProducts.length.toLocaleString('id-ID')+' baris • '+newQty.toLocaleString('id-ID')+' bungkus</strong></div><button class="btn light" type="button" id="viewNewOnlineDetail">👁 Lihat Data</button></div><div class="hint" style="margin-top:8px">Modal Produk Keluar '+money(newModal)+'<br>Penerimaan Uang '+money(newCashAmount)+'</div></div>';
