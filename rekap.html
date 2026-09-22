@@ -412,12 +412,17 @@ td{
 
   </div>
 
-  <div class="card" style="margin-top:12px" id="onlineConnectionCard">
+  <div class="card" style="margin-top:12px;display:none" id="onlineConnectionCard">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-      <h3 style="margin:0">🔗 Detail Hubungan Data Lama + Transaksi Online Baru</h3>
-      <span class="badge" id="onlineConnectionMode">🔵 Online</span>
+      <div>
+        <h3 style="margin:0" id="onlineConnectionTitle">🔗 Detail Rekap</h3>
+        <div class="history-note" id="onlineConnectionNote" style="margin-top:5px">Klik 👁 Lihat Data pada bulan untuk membuka rincian.</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge" id="onlineConnectionMode">🔵 Online</span>
+        <button class="btn gray" type="button" id="closeOnlineConnection">Tutup</button>
+      </div>
     </div>
-    <div class="history-note" id="onlineConnectionNote">Pilih bulan untuk melihat rincian Data Lama dan Transaksi Online Baru. Untuk transaksi baru, uang yang dicatat sudah bersih setelah potongan.</div>
     <div id="onlineConnectionBody" style="margin-top:12px"></div>
   </div>
 </main>
@@ -869,12 +874,31 @@ function renderNewOnlineMonthly(){
   }).join('');
 }
 
-function renderOnlineConnection(){
+window.viewOnlineMonth=function(m){
+  const card=$('onlineConnectionCard');
+  if(!card)return;
+  card.style.display='block';
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+  if($('channel').value==='Online'){
+    renderOnlineConnection(m);
+  }else{
+    const title=$('onlineConnectionTitle');
+    const note=$('onlineConnectionNote');
+    const body=$('onlineConnectionBody');
+    const v=offlineFinance(m);
+    const h=offlineHpp(m);
+    if(title)title.textContent='🔗 Detail Rekap Offline • '+label(m);
+    if(note)note.innerHTML='Rincian untuk <b>'+FFCore.esc(label(m))+'</b>.';
+    if(body)body.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><div class="stat"><small>Pemasukan</small><strong>'+money(v[0])+'</strong></div><div class="stat"><small>Pengeluaran</small><strong>'+money(v[1])+'</strong></div><div class="stat profit"><small>Uang Bersih</small><strong>'+money(v[2])+'</strong></div></div><div class="notice" style="margin-top:12px">Modal/HPP Offline: <b>'+(h.known?money(h.total):'Belum tersedia')+'</b><br>Profit: <b>'+(h.known?money(v[2]-h.total):'Belum tersedia')+'</b></div>';
+  }
+};
+
+function renderOnlineConnection(selectedMonth){
   const body=$('onlineConnectionBody');
   const note=$('onlineConnectionNote');
   if(!body||!note)return;
 
-  const m=$('month').value;
+  const m=selectedMonth||$('month').value;
   const modeOnline=$('channel').value==='Online';
   const modeBadge=document.getElementById('onlineConnectionMode');
   if(modeBadge)modeBadge.textContent=modeOnline?'🔵 Online':'🟢 Offline';
@@ -990,6 +1014,9 @@ function renderMonthly(){
 
           <td>
             <b>${label(m)}</b>
+            <div style="margin-top:7px">
+              <button class="btn light viewbtn" type="button" onclick="viewOnlineMonth('${m}')">👁 Lihat Data</button>
+            </div>
           </td>
 
           <td>
@@ -1097,7 +1124,6 @@ function render(){
 
   renderMonthly();
   renderNewOnlineMonthly();
-  renderOnlineConnection();
 
 }
 
@@ -1114,6 +1140,11 @@ $('channel').onchange =
 
 $('reload').onclick =
   init;
+
+$('closeOnlineConnection').onclick = () => {
+  const card=$('onlineConnectionCard');
+  if(card)card.style.display='none';
+};
 
 
 /* =====================================================
