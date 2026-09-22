@@ -45,6 +45,40 @@ jobs:
 
           test -f www/index.html
 
+      - name: Syntax check web scripts
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile, sys
+
+          failed = False
+          for p in sorted(Path('.').glob('*.js')):
+              r = subprocess.run(['node', '--check', str(p)], capture_output=True, text=True)
+              if r.returncode:
+                  failed = True
+                  print(f'FAIL JS {p}:')
+                  print(r.stderr)
+
+          for p in sorted(Path('.').glob('*.html')):
+              text = p.read_text(encoding='utf-8')
+              for i, m in enumerate(re.finditer(r'<script(?![^>]*\\bsrc=)[^>]*>([\\s\\S]*?)</script>', text, re.I), start=1):
+                  code = m.group(1)
+                  if not code.strip():
+                      continue
+                  tmp = Path(tempfile.gettempdir()) / f'ff_{p.stem}_{i}.js'
+                  tmp.write_text(code, encoding='utf-8')
+                  r = subprocess.run(['node', '--check', str(tmp)], capture_output=True, text=True)
+                  if r.returncode:
+                      failed = True
+                      print(f'FAIL INLINE {p} script #{i}:')
+                      print(r.stderr)
+
+          if failed:
+              sys.exit(1)
+          print('All JS and inline HTML scripts passed syntax check.')
+          PY
+
       - name: Add Android platform
         run: npx cap add android
 
