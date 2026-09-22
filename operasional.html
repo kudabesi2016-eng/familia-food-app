@@ -295,13 +295,22 @@ async function savePurchase(){
     const items=rows.map(x=>({pembelian_id:h.data.id,bahan_id:x.bahan_id?Number(x.bahan_id):null,nama_bahan:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).nama_bahan||'-',qty:x.qty,satuan:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).satuan||null,harga_beli:x.harga_beli,subtotal:x.subtotal}));
     const d=await supabaseClient.from('ff_pembelian_item').insert(items);
     if(d.error){await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);$('purchaseStatus').textContent='Gagal item pembelian: '+d.error.message;return}
+    const previousPrices={};
+    for(const x of rows){
+      const b=window.bahan.find(z=>String(z.id)===String(x.bahan_id));
+      if(b)previousPrices[String(x.bahan_id)]=money(b.harga_beli);
+    }
     const priceWarnings=await syncLastPurchasePrices(rows);
     if(priceWarnings.length){
-      // Jangan tinggalkan header/item pembelian bila sinkronisasi harga bahan gagal.
-      // Hapus transaksi baru lalu pulihkan harga bahan dari pembelian terakhir yang masih ada.
       await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);
-      try{await refreshMaterialLastPrices(rows.map(x=>x.bahan_id));}catch(e){console.warn('Gagal memulihkan harga bahan setelah rollback:',e);}
+      for(const x of rows){
+        const oldPrice=previousPrices[String(x.bahan_id)];
+        if(oldPrice==null)continue;
+        const rr=await supabaseClient.from('bahan_baku').update({harga_beli:oldPrice}).eq('id',Number(x.bahan_id));
+        if(rr.error)console.warn('Gagal memulihkan harga bahan setelah rollback',x.bahan_id,rr.error);
+      }
       $('purchaseStatus').textContent='Pembelian dibatalkan karena harga bahan tidak berhasil disinkronkan: '+priceWarnings.join(', ')+'.';
+      await loadMaterials();
       return;
     }
     state.purchase=await loadTable('ff_pembelian');
@@ -323,7 +332,8 @@ async function refreshMaterialLastPrices(bahanIds){
   const warnings=[];
   for(const id of ids){
     const row=latest.get(String(id));
-    const price=row?money(row.harga_beli):0;
+    if(!row)continue;
+    const price=money(row.harga_beli);
     const r=await supabaseClient.from('bahan_baku').update({harga_beli:price}).eq('id',id);
     if(r.error)warnings.push((window.bahan.find(b=>String(b.id)===String(id))||{}).nama_bahan||('ID '+id));
     const local=window.bahan.find(b=>String(b.id)===String(id));
@@ -336,16 +346,33 @@ async function deletePurchase(id){
   if(!confirm('Hapus pembelian ini?'))return;
   const oldItems=await supabaseClient.from('ff_pembelian_item').select('bahan_id').eq('pembelian_id',id);
   if(oldItems.error){$('purchaseStatus').textContent='Gagal membaca item pembelian: '+oldItems.error.message;return}
-  const bahanIds=(oldItems.data||[]).map(x=>x.bahan_id);
+  const bahanIds=[...new Set((oldItems.data||[]).map(x=>Number(x.bahan_id)).filter(Boolean))];
+  const previous={};
+  for(const idBahan of bahanIds){
+    const b=window.bahan.find(x=>String(x.id)===String(idBahan));
+    if(b)previous[String(idBahan)]=money(b.harga_beli);
+  }
   const r=await supabaseClient.from('ff_pembelian').delete().eq('id',id);
   if(r.error){$('purchaseStatus').textContent='Gagal: '+r.error.message;return}
   let warnings=[];
-  try{warnings=await refreshMaterialLastPrices(bahanIds)}catch(e){warnings=['Sinkronisasi harga bahan gagal: '+(e.message||e)]}
+  try{
+    warnings=await refreshMaterialLastPrices(bahanIds);
+  }catch(e){
+    warnings=['Sinkronisasi harga bahan gagal: '+(e.message||e)];
+  }
+  if(warnings.length){
+    for(const idBahan of bahanIds){
+      if(previous[String(idBahan)]==null)continue;
+      const rr=await supabaseClient.from('bahan_baku').update({harga_beli:previous[String(idBahan)]}).eq('id',idBahan);
+      if(rr.error)console.warn('Gagal memulihkan harga bahan',idBahan,rr.error);
+    }
+    $('purchaseStatus').textContent='Pembelian sudah dihapus, tetapi sinkronisasi harga bahan gagal. Harga sebelumnya dipertahankan; cek Bahan Baku.';
+  }else{
+    $('purchaseStatus').textContent='Pembelian dihapus dan harga bahan mengikuti pembelian terakhir yang masih ada.';
+  }
   state.purchase=await loadTable('ff_pembelian');
+  await loadMaterials();
   renderPurchases();renderStats();
-  $('purchaseStatus').textContent=warnings.length
-    ? 'Pembelian dihapus, tetapi sebagian harga bahan perlu diperiksa: '+warnings.join(', ')
-    : 'Pembelian dihapus dan harga bahan dikembalikan ke pembelian terakhir yang masih ada.';
 }
 function renderExpenses(){
   const m=today().slice(0,7);const rows=state.expense.filter(x=>String(x.periode||'').slice(0,7)===m);
