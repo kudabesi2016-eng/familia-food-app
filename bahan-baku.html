@@ -252,7 +252,23 @@
         min-width: 750px;
       }
     }
-  </style>
+  <style id="familia-mobile">
+@media(max-width:700px){
+  .sidebar{position:sticky!important;top:0;z-index:100;width:100%!important;height:auto!important;padding:8px 10px!important}
+  .logo{font-size:17px!important;margin:0 0 7px!important;text-align:left!important}
+  .menu{display:flex!important;overflow-x:auto!important;gap:5px;scrollbar-width:none}
+  .menu a{flex:0 0 auto;margin:0!important;padding:8px 10px!important;font-size:11px!important;white-space:nowrap}
+  .content{margin-left:0!important;padding:10px!important}
+  .header{align-items:flex-start!important;flex-direction:column}
+  h1{font-size:22px}
+  .card{padding:12px!important;border-radius:12px!important;overflow-x:auto}
+  table{min-width:650px}
+  .modal{padding:10px!important}
+  .modal-box{padding:14px!important;border-radius:12px!important}
+  .modal-actions{display:grid;grid-template-columns:1fr}
+  .modal-actions button{width:100%}
+}
+</style></style>
 </head>
 
 <body>
