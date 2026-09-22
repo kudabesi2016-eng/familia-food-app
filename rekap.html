@@ -548,7 +548,7 @@ const data = () => ({
 
 const money = n => {
 
-  return FFCore.rupiah(
+  return FF.rupiah(
     Number(n) || 0
   );
 
@@ -580,7 +580,7 @@ const label = m => {
 ===================================================== */
 
 function monthOfSaleRow(x){
-  return FFCore.monthOf(x.tanggal||x.paid_time||x.created_time||'') || String(x.periode||'').slice(0,7);
+  return FF.monthOf(x.tanggal||x.paid_time||x.created_time||'') || String(x.periode||'').slice(0,7);
 }
 
 function offlineFinance(m){
@@ -766,7 +766,7 @@ function onlineHpp(m){
 
 function offlineHpp(m){
   try{
-    const rows=FFCore.productSummary(m,'Offline',data())||[];
+    const rows=FF.productSummary(m,'Offline',data())||[];
     let total=0;
     for(const x of rows){
       if(x.hppKnown===false)return {known:false,total:0};
@@ -814,7 +814,7 @@ function months(){
     const m=String(x.periode||'').slice(0,7);
     if(/^\d{4}-\d{2}$/.test(m))set.add(m);
   });
-  try{FFCore.monthsOfData(data()).forEach(m=>set.add(m));}catch(e){}
+  try{FF.monthsOfData(data()).forEach(m=>set.add(m));}catch(e){}
   return [...set].sort();
 }
 
@@ -929,7 +929,7 @@ window.viewOnlineMonth=function(m){
     const v=offlineFinance(m);
     const h=offlineHpp(m);
     if(title)title.textContent='🔗 Detail Rekap Offline • '+label(m);
-    if(note)note.innerHTML='Rincian untuk <b>'+FFCore.esc(label(m))+'</b>.';
+    if(note)note.innerHTML='Rincian untuk <b>'+FF.esc(label(m))+'</b>.';
     if(body)body.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><div class="stat"><small>Pemasukan</small><strong>'+money(v[0])+'</strong></div><div class="stat"><small>Pengeluaran</small><strong>'+money(v[1])+'</strong></div><div class="stat profit"><small>Uang Bersih</small><strong>'+money(v[2])+'</strong></div></div><div class="notice" style="margin-top:12px">Modal/HPP Offline: <b>'+(h.known?money(h.total):'Belum tersedia')+'</b><br>Profit: <b>'+(h.known?money(v[2]-h.total):'Belum tersedia')+'</b></div>';
   }
 };
@@ -1239,7 +1239,7 @@ async function init(){
 
   const failed=results.filter(x=>x.error);
   if(failed.length){
-    $('noticeText').innerHTML += '<br><b style="color:#b42318">Catatan:</b> beberapa data belum terbaca: '+failed.map(x=>FFCore.esc(x.key)).join(', ')+'. Klik <b>↻ Muat Ulang</b> untuk mencoba lagi.';
+    $('noticeText').innerHTML += '<br><b style="color:#b42318">Catatan:</b> beberapa data belum terbaca: '+failed.map(x=>FF.esc(x.key)).join(', ')+'. Klik <b>↻ Muat Ulang</b> untuk mencoba lagi.';
   }
 
 }
