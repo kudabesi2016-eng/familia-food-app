@@ -116,6 +116,17 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
     </div>
   </div>
 
+  <div class="channel">
+    <div class="channel-head"><h2>🧾 Operasional</h2><span class="badge">Bulan berjalan • tidak mengubah rumus laba</span></div>
+    <div class="channel-grid">
+      <div class="mini"><small>Pembelian Bahan Baku</small><b id="opPurchase">Rp 0</b></div>
+      <div class="mini"><small>Pengeluaran</small><b id="opExpense">Rp 0</b></div>
+      <div class="mini"><small>Retur Penjualan</small><b id="opReturn">Rp 0</b></div>
+      <div class="mini"><small>Supplier Aktif</small><b id="opSupplier">0</b></div>
+    </div>
+    <div class="note">Ringkasan operasional ditampilkan terpisah supaya tidak mengganti perhitungan Rekap Offline/Online yang sudah dikunci.</div>
+  </div>
+
   <div class="section"><h2>Akses Cepat</h2><div class="quick">
     <a href="penjualan.html">💰 POS / Penjualan</a><a href="operasional.html">🧾 Operasional</a><a href="rekap.html">📊 Rekap + Lihat Data</a><a href="produk.html">📦 Produk</a><a href="hpp.html">🧮 HPP</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
   </div></div>
@@ -325,20 +336,32 @@ async function loadDashboard(){
   document.getElementById('statusText').textContent='Memuat data dari database...';
   try{
     const results=await Promise.allSettled([
-      fetchAll('produk'),fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran'),fetchAll('produk'),fetchAll('hpp')
+      fetchAll('produk'),fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran'),fetchAll('produk'),fetchAll('hpp'),
+      fetchAll('ff_pembelian'),fetchAll('ff_retur_penjualan'),fetchAll('ff_supplier')
     ]);
-    const [rp,rs,rd,re,rprod,rhpp]=results;
+    const [rp,rs,rd,re,rprod,rhpp,rpurchase,rreturn,rsupplier]=results;
     const errors=[];
     const products=rp.status==='fulfilled'?rp.value:[]; if(rp.status!=='fulfilled') errors.push('Produk');
     const sales=rs.status==='fulfilled'?rs.value:[]; if(rs.status!=='fulfilled') errors.push('Penjualan');
     const old=rd.status==='fulfilled'?rd.value:[]; if(rd.status!=='fulfilled') errors.push('Data Lama');
     const expenseRows=re.status==='fulfilled'?re.value:[]; if(re.status!=='fulfilled') errors.push('Pengeluaran');
     const productMaster=rprod.status==='fulfilled'?rprod.value:[]; if(rprod.status!=='fulfilled') errors.push('Produk/HPP');
-    const hppRows=rhpp.status==='fulfilled'?rhpp.value:[]; if(rhpp.status!=='fulfilled') errors.push('Produk/HPP');
+    const hppRows=rhpp.status==='fulfilled'?rhpp.value:[];
+    const purchaseRows=rpurchase.status==='fulfilled'?rpurchase.value:[];
+    const returnRows=rreturn.status==='fulfilled'?rreturn.value:[];
+    const supplierRows=rsupplier.status==='fulfilled'?rsupplier.value:[];
+ if(rhpp.status!=='fulfilled') errors.push('Produk/HPP');
 
     window.__FF_DASHBOARD_STATE={sales,productMaster,hppRows};
 
     const activeProducts=products.filter(active).length;
+    const currentMonth=new Date().toISOString().slice(0,7);
+    const opPurchase=purchaseRows.filter(x=>String(x.tanggal||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.total)),0);
+    const opExpense=validExpenseRows.filter(x=>String(x.periode||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    const opReturn=returnRows.filter(x=>String(x.tanggal||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    const opSupplier=supplierRows.filter(active).length;
+
+
 
     // OFFLINE: Data Lama + transaksi baru.
     const offOld=old;
@@ -433,6 +456,10 @@ async function loadDashboard(){
       const tm=document.getElementById('totalMargin');tm.textContent=pct(totalMargin);tm.classList.toggle('negative',totalMargin<0);
     }
     document.getElementById('totalProduk').textContent=activeProducts.toLocaleString('id-ID');
+    document.getElementById('opPurchase').textContent=rupiah(opPurchase);
+    document.getElementById('opExpense').textContent=rupiah(opExpense);
+    document.getElementById('opReturn').textContent=rupiah(opReturn);
+    document.getElementById('opSupplier').textContent=opSupplier.toLocaleString('id-ID');
     document.getElementById('totalPenjualan').textContent=sales.filter(x=>!isHistoricalSource(x.source)).length.toLocaleString('id-ID');
 
     document.getElementById('offOldCount').textContent=offOld.length.toLocaleString('id-ID')+' baris';
