@@ -47,7 +47,7 @@
   #onlineBatchTable td:nth-child(2)::before{content:"Tanggal"}
   #onlineBatchTable td:nth-child(3)::before{content:"Jenis"}
   #onlineBatchTable td:nth-child(4),#onlineBatchTable td:nth-child(5){grid-column:1/-1}
-  #onlineBatchTable td:nth-child(4)::before{content:"Produk Naget / Tempura"}
+  #onlineBatchTable td:nth-child(4)::before{content:"Produk Keluar"}
   #onlineBatchTable td:nth-child(5)::before{content:"Produk Dropship"}
   #onlineBatchTable td:nth-child(6)::before{content:"Jumlah Bungkus"}
   #onlineBatchTable td:nth-child(7)::before{content:"HPP / Modal per Bungkus"}
@@ -73,7 +73,7 @@
 <div class="cashhead">
 <div>
 <h2 style="margin:0">📦 Transaksi Online Baru — Input Cepat</h2>
-<div class="note">Tidak perlu No. Resi. Cukup catat <b>produk yang keluar</b> dan jumlah bungkus. HPP Naget/Tempura diambil otomatis dari HPP Online Familia Food. Produk Dropship memakai modal dari Master Dropship.</div>
+<div class="note">Tidak perlu No. Resi. Cukup pilih <b>Produk Keluar</b>, isi <b>Jumlah Bungkus</b>, lalu simpan. HPP produk Familia diambil otomatis dari HPP Online; Dropship memakai modal dari Master Dropship.</div>
 </div>
 </div>
 <div class="batch-toolbar" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -89,7 +89,7 @@
 <th>#</th>
 <th>Tanggal</th>
 <th>Jenis</th>
-<th>Produk Naget/Tempura</th>
+<th>Produk Keluar</th>
 <th>Produk Dropship</th>
 <th>Jumlah (Bungkus)</th>
 <th>HPP / Modal per Bungkus</th>
@@ -511,7 +511,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   function familiaProducts(){
-    return (window.products||[]).filter(p=>/^naget\s*(10|12|20|25|30|40|50)/i.test(String(p.nama_produk||'')));
+    return (window.products||[]).filter(p=>{
+      const n=String(p.nama_produk||'').trim().toLowerCase();
+      return /^naget\s*(10|12|20|25|30|40|50)/i.test(n) || n.includes('tempura aci') || n.startsWith('tempura');
+    });
   }
   function productById(id){return (window.products||[]).find(p=>String(p.id)===String(id));}
   function hppForProduct(p){
@@ -530,7 +533,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     return '<option value="">Pilih Dropship</option>'+dropRows().map((x,i)=>'<option value="'+i+'">'+esc(x.name)+' — '+(Number(x.modal)>0?money(x.modal)+'/bungkus':'Modal belum diisi')+'</option>').join('');
   }
   function familiaOptions(){
-    return '<option value="">Pilih Naget</option>'+familiaProducts().map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nama_produk)+' ('+esc(p.isi_per_bungkus||'')+' pcs)</option>').join('');
+    return '<option value="">Pilih Produk Keluar</option>'+familiaProducts().map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nama_produk)+' ('+esc(p.isi_per_bungkus||'')+' pcs)</option>').join('');
   }
 
   let rows=[];
@@ -611,7 +614,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         const q=Math.max(1,Math.round(Number(r.qty)||0));
         if(r.jenis==='familia'){
           const p=productById(r.produkId), h=hppForProduct(p);
-          if(!p)errors.push(`Baris ${i+1}: pilih produk Naget/Tempura`);
+          if(!p)errors.push(`Baris ${i+1}: pilih Produk Keluar`);
           else if(h<=0)errors.push(`Baris ${i+1}: HPP Online ${p.nama_produk} belum tersedia`);
           else valid.push({r,p,h,q,total:q*h});
         }else{
