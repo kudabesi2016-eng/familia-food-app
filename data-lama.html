@@ -918,16 +918,33 @@ async function refreshOnlineOldPreview(){
 $('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files);await refreshOnlineOldPreview();e.target.value='';}catch(err){$('onlineOldInfo').innerHTML='<div class="msg" style="color:#a22">'+FFCore.esc(err.message||err)+'</div>';$('onlineOldPreview').style.display='block'}};
 $('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
 renderOnlineOldFileQueue();
+function normalizeSellerAuditQty(row){
+  if(String(row?.source||'')!=='seller_center')return Math.trunc(Number(row?.qty)||0);
+  const key=String(row?.import_key||'');
+  const parts=key.split('|');
+  // seller-audit-v5|order|sku|variation|product|date|rawQty|returnQty|bundleMult|omzet
+  if(parts[0]==='seller-audit-v5' && parts.length>=10){
+    const rawQty=Number(parts[6]);
+    const returnQty=Number(parts[7]);
+    const bundleMult=Number(parts[8]);
+    if(Number.isFinite(rawQty)&&Number.isFinite(returnQty)&&Number.isFinite(bundleMult)&&bundleMult>0){
+      return Math.max(0,rawQty-returnQty)*bundleMult;
+    }
+  }
+  return Math.trunc(Number(row?.qty)||0);
+}
 async function saveOnlineHistoricalRows(rows){
   // Sebelum disimpan, petakan HPP resmi berdasarkan master Produk/HPP.
-  // Qty tetap BUNGKUS hasil audit; hpp = HPP/unit online resmi.
+  // Qty SELLER AUDIT selalu dihitung ulang dari import_key agar tidak pernah menjadi 0
+  // akibat data lama/duplikat; unit tetap BUNGKUS hasil audit.
   const prepared=(rows||[]).map(x=>{
+    const auditQty=normalizeSellerAuditQty(x);
     const unit=previewOnlineHpp(x);
+    const base={...x,qty:auditQty};
     if(unit!=null){
-      const qty=Number(x.qty||0);
-      return {...x,hpp:Math.trunc(unit),modal_hpp:Math.trunc(qty*unit),profit_online:null};
+      return {...base,hpp:Math.trunc(unit),modal_hpp:Math.trunc(auditQty*unit),profit_online:null};
     }
-    return x;
+    return base;
   });
   rows=prepared;
   // Gunakan batch kecil agar URL query .in() tidak terlalu panjang dan POST tidak rapuh.
