@@ -79,7 +79,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Profit</small><b id="onProfit">Rp 0</b></div>
       <div class="mini"><small>Produk Keluar Historis (Kunci)</small><b id="onQty">0</b></div>
     </div>
-    <div class="note">Online historis memakai <b>5.928 bungkus</b> sebagai kunci Produk Keluar Jan–Agustus 2026. Sumber STANDARD tetap ditampilkan untuk audit; HPP/Profit historis hanya dianggap final bila sumber cocok dengan kunci.<br><span id="onlineHistoryAudit">Memeriksa rekonsiliasi…</span></div>
+    <div class="note">Online historis memakai <b>8.085 bungkus</b> sebagai kunci Produk Keluar Jan–Agustus 2026. Sumber STANDARD tetap ditampilkan untuk audit; HPP/Profit historis hanya dianggap final bila sumber cocok dengan kunci.<br><span id="onlineHistoryAudit">Memeriksa rekonsiliasi…</span></div>
     <div class="channel-grid" style="margin-top:12px">
       <div class="mini"><small>Online Baru — Produk Keluar</small><b id="newOnQty">0 bungkus</b></div>
       <div class="mini"><small>Online Baru — HPP/Modal</small><b id="newOnModal">Rp 0</b></div>
@@ -100,8 +100,8 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
 <script>
 const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
 const num=n=>Number(n)||0;
-const ONLINE_LOCKED_HISTORY={12:5597,20:192,25:78,30:38,40:23};
-const ONLINE_LOCKED_TOTAL=5928;
+const ONLINE_LOCKED_HISTORY={10:16,12:7292,20:211,25:293,30:90,40:67,50:116};
+const ONLINE_LOCKED_TOTAL=8085;
 const colorValue=(el,v,formatted=rupiah(v))=>{el.textContent=formatted;el.classList.toggle('negative',v<0)};
 const pct=(v)=>{const t=(Number(v)||0).toFixed(2)+'%';return t};
 async function fetchAll(table, select='*'){
