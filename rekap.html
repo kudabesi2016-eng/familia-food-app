@@ -412,8 +412,10 @@ td{
 
   </div>
 
-  <div class="card" style="margin-top:12px">
-    <div class="history-note">ℹ️ Rekap Online menampilkan gabungan data historis TikTok dan transaksi Online baru pada tabel 6 kolom di atas. Saat ini belum ada transaksi Online baru (<code>online_batch</code>), sehingga tidak dibuat tabel kosong terpisah.</div>
+  <div class="card" style="margin-top:12px" id="onlineConnectionCard">
+    <h3 style="margin:0 0 8px">🔗 Detail Hubungan Data Lama + Transaksi Online Baru</h3>
+    <div class="history-note" id="onlineConnectionNote">Pilih bulan untuk melihat rincian data lama dan transaksi baru yang sudah masuk ke rekap.</div>
+    <div id="onlineConnectionBody" style="margin-top:12px"></div>
   </div>
 </main>
 
@@ -862,6 +864,62 @@ function renderNewOnlineMonthly(){
   }).join('');
 }
 
+function renderOnlineConnection(){
+  const body=$('onlineConnectionBody');
+  const note=$('onlineConnectionNote');
+  if(!body||!note)return;
+
+  const m=$('month').value;
+  if($('channel').value!=='Online'){
+    note.textContent='Mode Offline dipilih. Detail hubungan data lama + transaksi baru khusus Online.';
+    body.innerHTML='<div class="hint">Pilih Channel Online untuk melihat rincian ini.</div>';
+    return;
+  }
+  if(!m){
+    note.textContent='Belum ada bulan yang dipilih.';
+    body.innerHTML='';
+    return;
+  }
+
+  const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===m);
+  const histFinance=rows.filter(x=>String(x.source||'')==='online_standard_finance');
+  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
+  const newCash=rows.filter(x=>String(x.source||'')==='online_pencairan');
+
+  const histRev=histFinance.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+  const histFee=histFinance.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
+  const histNet=histFinance.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+
+  const newQty=newProducts.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
+  const newModal=newProducts.reduce((a,x)=>a+Math.round(Number(x.modal_hpp??x.hpp??0)),0);
+  const newCashAmount=newCash.reduce((a,x)=>a+Number(x.uang_bersih??x.omzet_produk??0),0);
+
+  const totalHpp=hppForChannel(m);
+  const oldHppKnown=totalHpp.known;
+  const oldHpp=oldHppKnown?Math.max(0,totalHpp.total-newModal):null;
+
+  note.innerHTML='Bulan <b>'+esc(label(m))+'</b> menggabungkan <b>Data Lama</b> dan <b>Transaksi Online Baru</b>. Data lama tidak ditimpa; transaksi baru ditambahkan ke bulan yang sama.';
+
+  let list='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+  list+='<div class="stat"><small>📁 Data Lama Online</small><strong>'+histFinance.length.toLocaleString('id-ID')+' baris</strong><div class="hint" style="margin-top:8px">Pemasukan '+money(histRev)+'<br>Potongan '+money(histFee)+'<br>Uang Bersih '+money(histNet)+'<br>Modal '+(oldHppKnown?money(oldHpp):'—')+'</div></div>';
+  list+='<div class="stat profit"><small>🆕 Transaksi Online Baru</small><strong>'+newProducts.length.toLocaleString('id-ID')+' baris • '+newQty.toLocaleString('id-ID')+' bungkus</strong><div class="hint" style="margin-top:8px">Modal Produk Keluar '+money(newModal)+'<br>Penerimaan Uang '+money(newCashAmount)+'</div></div>';
+  list+='</div>';
+
+  list+='<div class="tablewrap" style="margin-top:12px"><table style="min-width:850px"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Produk</th><th>Qty Bungkus</th><th>Modal / Bungkus</th><th>Total Modal</th></tr></thead><tbody>';
+  if(newProducts.length){
+    list+=newProducts.map(x=>{
+      const qty=Math.max(1,Math.round(Number(x.qty)||0));
+      const total=Math.round(Number(x.modal_hpp??x.hpp??0));
+      const unit=qty?Math.round(total/qty):0;
+      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(x.variation||'Naget')+'</td><td>'+esc(x.product_name||'-')+'</td><td>'+qty.toLocaleString('id-ID')+'</td><td>'+money(unit)+'</td><td>'+money(total)+'</td></tr>';
+    }).join('');
+  }else{
+    list+='<tr><td colspan="6" class="empty">Belum ada transaksi Online Baru pada '+esc(label(m))+'.</td></tr>';
+  }
+  list+='</tbody></table></div>';
+  body.innerHTML=list;
+}
+
 function renderMonthly(){
 
   const ms =
@@ -1031,6 +1089,7 @@ function render(){
 
   renderMonthly();
   renderNewOnlineMonthly();
+  renderOnlineConnection();
 
 }
 
