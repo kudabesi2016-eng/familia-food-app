@@ -82,6 +82,7 @@ assert(operational.includes("update({harga_beli:price})"),'Purchase does not syn
 assert(operational.includes("ff_pembelian_item"),'Purchase item table integration missing');
 assert(operational.includes("ff_retur_penjualan"),'Return table integration missing');
 assert(operational.includes('refreshMaterialLastPrices'),'Deleting a purchase must re-synchronize latest material price');
+assert(operational.includes('Pembelian dibatalkan karena harga bahan'),'Purchase must rollback when material-price synchronization fails');
 assert(operational.includes('Qty retur melebihi qty penjualan'),'Return quantity guard missing');
 assert(!operational.includes('localStorage.setItem(LS.'),'Operational business data must not fall back to localStorage writes');
 
