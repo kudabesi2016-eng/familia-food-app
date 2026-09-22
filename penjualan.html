@@ -6,7 +6,7 @@
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5faf7;color:#26352d}.sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid #dce8e1;padding:20px 14px}.brand{font-size:20px;font-weight:700;color:var(--brand-color,#087443);margin:4px 8px 22px}.nav a{display:block;text-decoration:none;color:#315247;padding:11px 12px;border-radius:9px;margin:4px 0}.nav a:hover,.nav a.active{background:#eaf6ef;color:var(--brand-color,#087443);font-weight:600}main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 8px;color:var(--brand-color,#087443)}.sub{color:#6d7e76;margin-bottom:20px}.card{background:#fff;border:1px solid #dce8e1;border-radius:14px;padding:20px;margin-bottom:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.badge{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;background:#eef7f1;color:var(--brand-color,#087443);font-weight:bold;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.preview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.preview .box{background:#f7fbf8;border:1px solid #e2eee6;border-radius:12px;padding:14px}.preview small{display:block;color:#667;margin-bottom:5px}.preview strong{font-size:20px}.profit{background:#eef7f1!important}.note{font-size:13px;color:#68736d;margin-top:8px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #ccd5cf;border-radius:9px;background:#fff}.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.btn:disabled{opacity:.5;cursor:not-allowed}.btn{border:0;border-radius:9px;padding:11px 17px;background:var(--brand-color,#087443);color:#fff;cursor:pointer;font-weight:700}.btn.gray{background:#777}.btn.blue{background:#2563eb}.msg{margin-top:12px;padding:10px;border-radius:8px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;margin-top:8px;min-width:1250px}th{background:var(--brand-color,#087443);color:#fff;padding:10px;text-align:left;white-space:nowrap}td{padding:9px;border-bottom:1px solid #e5e5e5;vertical-align:top}.mini{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}.edit{background:#eaf5ee;color:var(--brand-color,#087443)}.del{background:#fdecec;color:#a22}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.stat{background:#f0f8f3;padding:16px;border-radius:12px}.stat b{font-size:21px;display:block;margin-top:6px}.importbox{border:2px dashed #cbded2;border-radius:12px;padding:18px;background:#fbfefc}.import-preview{display:none}.import-preview.show{display:block}.warn{background:#fff8df;border:1px solid #f0df9b;padding:12px;border-radius:9px;color:#6b5a16;margin-top:12px}.ok{background:#eef7f1;border:1px solid #cde7d7;padding:12px;border-radius:9px;color:#166534;margin-top:12px}.bad{background:#fdecec;border:1px solid #f4caca;padding:12px;border-radius:9px;color:#991b1b;margin-top:12px}.small{font-size:12px;color:#68736d}.modal-input{width:110px;padding:6px;border:1px solid #ccd5cf;border-radius:6px}@media(max-width:850px){.sidebar{position:static;width:auto;padding:14px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}main{margin-left:0;padding:16px}.grid,.summary,.preview{grid-template-columns:1fr}}
 .viewbtn{background:#eef7f1;color:var(--brand-color,#087443);font-weight:700}.import-compact{padding:4px 0}.import-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.import-stats>div{background:#f7fbf8;border:1px solid #e2eee6;border-radius:10px;padding:11px}.import-stats small{display:block;color:#667;margin-bottom:4px}.import-stats b{font-size:15px}.upload-tabs{display:flex;gap:8px;margin-bottom:14px}.upload-tab{flex:1;border:1px solid #cbded2;background:#f7fbf8;color:#315247;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}.upload-tab.active{background:#eaf6ef;color:var(--brand-color,#087443);border-color:#9fc9af}.upload-panel{display:none}.upload-panel.active{display:block}.import-preview{display:none}.import-preview.show{display:block}.import-recap{margin-top:16px}.import-detail{display:none;margin-top:16px}.import-detail.show{display:block}.import-recap table,.import-detail table{min-width:1100px}.clickrow{cursor:pointer}@media(max-width:900px){.import-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.import-stats{grid-template-columns:1fr}}.camera-modal{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}.camera-modal.open{display:flex}.camera-box{width:min(560px,100%);background:#fff;border-radius:16px;padding:14px}.camera-box video{width:100%;border-radius:12px;background:#111;aspect-ratio:3/4;object-fit:cover}.camera-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.camera-actions button{flex:1;min-width:130px}.camera-note{font-size:12px;color:#666;margin:8px 0}
-.batch-toolbar .btn{white-space:nowrap}.batch-count{font-weight:700}.batch-total{font-weight:800}.batch-del{background:#fdecec;color:#b91c1c}.batch-date,.batch-type,.batch-produk,.batch-drop,.batch-qty{min-width:120px}.batch-date{min-width:135px}.batch-produk,.batch-drop{min-width:190px}
+.batch-toolbar .btn{white-space:nowrap}.batch-count{font-weight:700}.batch-total{font-weight:800}.batch-del{background:#fdecec;color:#b91c1c}.batch-date,.batch-type,.batch-produk,.batch-drop,.batch-qty{min-width:120px}.batch-date{min-width:135px}.batch-produk,.batch-drop{min-width:190px}.batch-drop-search{width:100%;min-width:0;margin-bottom:5px;padding:9px;border:1px solid #ccd5cf;border-radius:8px;background:#fff;font-size:13px}.batch-drop-search:focus{outline:none;border-color:#087443}
 </style><style>
 .penjualan-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 14px;position:sticky;top:0;z-index:20;background:#f7faf8;padding:8px 0;border-bottom:1px solid #dfe9e3}
 .penjualan-tab{border:1px solid #d6e6dc;background:#fff;color:#176b46;border-radius:10px;padding:10px 13px;font-weight:700;cursor:pointer;font-size:13px}
@@ -595,9 +595,17 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   function dropRows(){return loadDrops();}
-  function dropSelectOptions(){
-    return '<option value="">Pilih Dropship</option>'+dropRows().map((x,i)=>'<option value="'+i+'">'+esc(x.name)+' — '+(Number(x.modal)>0?money(x.modal)+'/bungkus':'Modal belum diisi')+'</option>').join('');
+  function dropSelectOptions(query='',selectedIndex=''){
+    const q=norm(query);
+    return '<option value="">Pilih Dropship</option>'+dropRows().map((x,i)=>{
+      const name=String(x.name||'');
+      const match=!q||norm(name).includes(q)||String(i)===String(selectedIndex);
+      if(!match)return '';
+      const selected=String(i)===String(selectedIndex)?' selected':'';
+      return '<option value="'+i+'"'+selected+'>'+esc(name)+' — '+(Number(x.modal)>0?money(x.modal)+'/bungkus':'Modal belum diisi')+'</option>';
+    }).join('');
   }
+
   function familiaOptions(){
     return '<option value="">Pilih Naget / Tempura Aci</option>'+familiaProducts().map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nama_produk)+' ('+esc(p.isi_per_bungkus||'')+' pcs)</option>').join('');
   }
@@ -617,7 +625,11 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
           <div class="kasir-field date"><span>Tanggal</span><input class="batch-date" type="date" value="${esc(r.tanggal)}"></div>
           <div class="kasir-field type"><span>Jenis</span><select class="batch-type"><option value="familia" ${r.jenis==='familia'?'selected':''}>Naget</option><option value="dropship" ${r.jenis==='dropship'?'selected':''}>Dropship</option></select></div>
           <div class="kasir-field product"><span>Produk</span><select class="batch-produk" ${r.jenis==='dropship'?'disabled':''}>${familiaOptions()}</select></div>
-          <div class="kasir-field drop"><span>Produk Dropship</span><select class="batch-drop" ${r.jenis==='familia'?'disabled':''}>${dropSelectOptions()}</select></div>
+          <div class="kasir-field drop">
+            <span>Produk Dropship</span>
+            <input class="batch-drop-search" type="text" placeholder="🔎 Cari produk dropship..." autocomplete="off" ${r.jenis==='familia'?'disabled':''}>
+            <select class="batch-drop" ${r.jenis==='familia'?'disabled':''}>${dropSelectOptions('',r.dropIndex)}</select>
+          </div>
           <div class="kasir-field qty"><span>Qty Bungkus</span><input class="batch-qty" type="number" min="1" step="1" value="${Math.max(1,Number(r.qty)||1)}"></div>
           <div class="kasir-cost"><span>Modal</span><b class="batch-unitcost">Rp 0</b></div>
           <div class="kasir-cost"><span>Total</span><b class="batch-total">Rp 0</b></div>
@@ -639,7 +651,14 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     tr.querySelector('.batch-date').value=r.tanggal;
     tr.querySelector('.batch-type').value=r.jenis;
     tr.querySelector('.batch-produk').value=r.produkId||'';
-    tr.querySelector('.batch-drop').value=r.dropIndex===''?'':String(r.dropIndex);
+    const dropSel=tr.querySelector('.batch-drop');
+    const dropSearch=tr.querySelector('.batch-drop-search');
+    dropSel.value=r.dropIndex===''?'':String(r.dropIndex);
+    if(dropSearch){
+      const d=r.dropIndex!==''?dropRows()[Number(r.dropIndex)]:null;
+      dropSearch.value=d?String(d.name||''):'';
+      dropSearch.disabled=r.jenis!=='dropship';
+    }
     tr.querySelector('.batch-qty').value=Math.max(1,Number(r.qty)||1);
     const p=productById(r.produkId);
     const h=r.jenis==='familia'?hppForProduct(p):0;
@@ -733,7 +752,13 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const list=dropRows();
     const tb=byId('dropMasterRows');
     if(tb)tb.innerHTML=list.length?list.map((x,i)=>`<tr><td>${esc(x.name)}<div class="small">ID Seller Center: ${esc(x.seller_id||'-')}</div></td><td>${Number(x.modal)>0?money(x.modal):'<span style="color:#a16207">Belum diisi</span>'}</td><td><button type="button" class="mini edit" data-drop-edit="${i}">Edit</button> <button type="button" class="mini del" data-drop-del="${i}">Hapus</button></td></tr>`).join(''):'<tr><td colspan="3">Belum ada master dropship.</td></tr>';
-    document.querySelectorAll('.batch-drop').forEach(sel=>{const cur=sel.value;sel.innerHTML=dropSelectOptions();if(cur)sel.value=cur;});
+    document.querySelectorAll('.batch-drop').forEach(sel=>{
+      const cur=sel.value;
+      const tr=sel.closest('tr[data-row]');
+      const search=tr?.querySelector('.batch-drop-search')?.value||'';
+      sel.innerHTML=dropSelectOptions(search,cur);
+      if(cur)sel.value=cur;
+    });
     rows.forEach(r=>refreshRow(r.id));
     updateSummary();
   }
@@ -784,6 +809,15 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     document.addEventListener('input',e=>{
       const tr=e.target.closest?.('tr[data-row]');if(!tr)return;
       const r=getRowObj(Number(tr.dataset.row));if(!r)return;
+      if(e.target.classList.contains('batch-drop-search')){
+        const search=e.target.value||'';
+        const sel=tr.querySelector('.batch-drop');
+        if(sel){
+          sel.innerHTML=dropSelectOptions(search,r.dropIndex);
+          if(r.dropIndex!=='')sel.value=String(r.dropIndex);
+        }
+        return;
+      }
       syncFromDOM(r.id);
     });
     document.addEventListener('change',e=>{
