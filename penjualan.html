@@ -982,6 +982,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     // Setelah master selesai dibaca, baris aktif dirender ulang agar pilihan produk muncul.
     init();
     try{
+      await loadCustomerMaster();
       await loadProducts();
       renderRows();
       await refreshOnlineBatchHistory();
