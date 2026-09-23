@@ -97,6 +97,12 @@ assert(shellCss.includes('body.ff-android .sidebar{display:none!important}'),'An
 assert(shellCss.includes('.ff-mobile-bottom'),'Android shell bottom navigation missing');
 assert(shellJs.includes("['operasional.html','🧾','Operasional']"),'Android quick navigation must include Operasional');
 assert(shellJs.includes("ai-agent.html"),'Android drawer must include Agen AI');
+const ai=await read('ai-agent.html');
+assert(ai.includes('href="index.html" aria-label="Kembali ke Beranda"') || ai.includes('href="index.html" class="btn"'),'Agen AI must provide a direct Beranda link');
+assert(ai.includes('Agen AI terhubung ke aplikasi'),'Agen AI health status UI missing');
+assert(shellJs.includes("const fallbackLinks="),'Android shell must have a fallback navigation when a page has no sidebar');
+assert(shellJs.includes("['index.html','🏠 Beranda']"),'Android fallback navigation must include Beranda');
+assert(shellJs.includes('class="ff-mobile-home"') || shellJs.includes('ff-mobile-home'),'Android topbar must expose a direct Home button');
 assert(shellJs.includes("document.addEventListener('DOMContentLoaded',boot,{once:true})"),'Android shell DOM boot hook missing');
 assert(shellJs.includes('prepareMobileTables'),'Android shell must prepare tables for mobile cards');
 assert(shellJs.includes('MutationObserver'),'Android shell must re-process dynamically rendered table rows');
