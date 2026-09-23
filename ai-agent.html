@@ -5,47 +5,150 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Agen AI — Familia Food</title>
 <link rel="stylesheet" href="android-shell.css">
-<link rel="stylesheet" href="style.css">
+<style>
+:root{
+  --ai-green:#087443;
+  --ai-green-dark:#065d35;
+  --ai-soft:#eaf6ef;
+  --ai-bg:#f6f9f7;
+  --ai-card:#fff;
+  --ai-line:#dce8e1;
+  --ai-text:#20352b;
+  --ai-muted:#6f7d76;
+}
+html,body{margin:0;padding:0;background:var(--ai-bg);color:var(--ai-text);}
+body.ff-android .ai-page{
+  width:100%!important;
+  max-width:760px!important;
+  margin:0 auto!important;
+  padding:12px 12px 108px!important;
+  box-sizing:border-box!important;
+}
+body.ff-android .ai-card{
+  background:var(--ai-card)!important;
+  border:1px solid var(--ai-line)!important;
+  border-radius:16px!important;
+  box-shadow:0 2px 10px rgba(20,67,42,.05)!important;
+  box-sizing:border-box!important;
+}
+body.ff-android .ai-head{
+  padding:15px!important;
+}
+.ai-brandrow{
+  display:flex;align-items:center;gap:11px;min-width:0;
+}
+.ai-icon{
+  width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;
+  border-radius:13px;background:var(--ai-soft);font-size:25px;
+}
+.ai-title{font-size:20px;font-weight:800;line-height:1.15;}
+.ai-subtitle{margin-top:3px;font-size:12px;color:var(--ai-muted);line-height:1.35;}
+.ai-status{
+  margin-top:12px;padding:10px 11px;border-radius:11px;
+  background:#f7faf8;border:1px solid var(--ai-line);
+  font-size:12px;line-height:1.4;
+}
+.ai-status.ok{background:var(--ai-soft);border-color:#cfe6d9;color:#245b40;}
+.ai-chat-card{margin-top:10px;padding:13px!important;}
+.ai-example{font-size:12px;font-weight:800;margin-bottom:8px;}
+.ai-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.ai-chip{
+  min-height:34px!important;padding:7px 10px!important;border:1px solid #cfe1d6!important;
+  border-radius:999px!important;background:#fff!important;color:var(--ai-green)!important;
+  font-size:11px!important;font-weight:800!important;box-shadow:none!important;
+}
+.ai-chat{display:flex;flex-direction:column;gap:8px;min-width:0;}
+.ai-empty{
+  padding:10px 11px;border:1px dashed #cbdad2;border-radius:11px;
+  background:#fafcfb;color:var(--ai-muted);font-size:12px;line-height:1.45;
+}
+.ai-message{
+  padding:11px 12px;border-radius:13px;line-height:1.5;
+  border:1px solid var(--ai-line);font-size:13px;box-sizing:border-box;
+  overflow-wrap:anywhere;word-break:break-word;
+}
+.ai-message.user{background:var(--ai-soft);}
+.ai-message.assistant{background:#fff;}
+.ai-role{font-size:11px;font-weight:800;color:#476057;margin-bottom:4px;}
+.ai-body{white-space:pre-wrap;}
+.ai-form{margin-top:10px;}
+.ai-form textarea{
+  display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;
+  box-sizing:border-box!important;min-height:78px!important;height:auto!important;
+  padding:11px 12px!important;border:1px solid #cbdad2!important;border-radius:12px!important;
+  background:#fff!important;color:var(--ai-text)!important;font-size:14px!important;
+  line-height:1.4!important;resize:vertical!important;outline:none!important;
+}
+.ai-form textarea:focus{border-color:#63a883!important;box-shadow:0 0 0 3px rgba(8,116,67,.10)!important;}
+.ai-actions{display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:8px;margin-top:8px;}
+body.ff-android .ai-actions button{
+  width:100%!important;min-width:0!important;min-height:44px!important;
+  padding:10px 10px!important;border-radius:11px!important;font-size:13px!important;
+}
+.ai-primary{background:var(--ai-green)!important;color:#fff!important;border:1px solid var(--ai-green)!important;}
+.ai-secondary{background:#fff!important;color:#355247!important;border:1px solid #cddbd3!important;}
+.ai-help{margin-top:10px;padding:13px!important;}
+.ai-help-title{font-size:13px;font-weight:800;}
+.ai-help ul{margin:8px 0 0;padding-left:19px;}
+.ai-help li{margin:5px 0;font-size:12px;line-height:1.35;}
+.ai-readonly{
+  margin-top:10px;padding:9px 10px;border-radius:10px;
+  background:#f7faf8;border:1px solid var(--ai-line);
+  color:#5e7168;font-size:11px;line-height:1.4;
+}
+@media(max-width:420px){
+  .ai-actions{grid-template-columns:1fr 96px;}
+  .ai-title{font-size:19px;}
+}
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 </head>
 <body>
-<main class="main" style="max-width:900px;margin:0 auto;padding:18px 16px 110px">
-  <section class="card" style="padding:18px">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <div style="font-size:30px">🤖</div>
-      <div style="min-width:0;flex:1">
-        <h1 style="margin:0">Agen AI Familia Food</h1>
-        <p style="margin:4px 0 0;color:#6f7d76">Asisten usaha untuk membaca data dan membantu analisis.</p>
+<main class="main ai-page">
+  <section class="card ai-card ai-head">
+    <div class="ai-brandrow">
+      <div class="ai-icon">🤖</div>
+      <div style="min-width:0">
+        <div class="ai-title">Agen AI</div>
+        <div class="ai-subtitle">Asisten usaha Familia Food untuk membaca dan menjelaskan data.</div>
       </div>
-      <a href="index.html" class="btn" style="margin-left:auto;min-width:116px;text-align:center;text-decoration:none;white-space:nowrap">🏠 Beranda</a>
     </div>
-    <div id="aiStatus" class="notice" style="margin-top:14px">Menyiapkan Agen AI...</div>
+    <div id="aiStatus" class="ai-status">Menyiapkan Agen AI...</div>
   </section>
 
-  <section class="card" style="padding:16px;margin-top:12px">
-    <div id="aiChat" aria-live="polite">
-      <div class="notice ok">Contoh: “Berapa profit saya?”, “Berapa profit Online Januari?”, “Produk apa yang paling banyak terjual?”, atau “Apa pengeluaran terbesar bulan ini?”</div>
+  <section class="card ai-card ai-chat-card">
+    <div class="ai-example">Pertanyaan cepat</div>
+    <div class="ai-chips">
+      <button class="ai-chip" type="button" data-q="Berapa profit saya?">Profit</button>
+      <button class="ai-chip" type="button" data-q="Berapa profit Online Januari?">Profit Online</button>
+      <button class="ai-chip" type="button" data-q="Produk apa yang paling banyak terjual?">Produk terlaris</button>
+      <button class="ai-chip" type="button" data-q="Apa pengeluaran terbesar bulan ini?">Pengeluaran</button>
     </div>
-    <form id="aiForm" style="margin-top:12px">
-      <textarea id="aiInput" rows="3" placeholder="Tulis pertanyaan tentang usaha Familia Food..." required></textarea>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:9px">
-        <button class="btn" type="submit">🤖 Tanya Agen AI</button>
-        <button class="btn" type="button" id="aiClear">Bersihkan</button>
+
+    <div id="aiChat" class="ai-chat" aria-live="polite">
+      <div class="ai-empty">Tulis pertanyaan di bawah. Agen AI membaca data usaha dalam mode read-only.</div>
+    </div>
+
+    <form id="aiForm" class="ai-form">
+      <textarea id="aiInput" rows="3" placeholder="Contoh: Berapa profit saya?" required></textarea>
+      <div class="ai-actions">
+        <button class="btn ai-primary" type="submit">🤖 Tanya Agen AI</button>
+        <button class="btn ai-secondary" type="button" id="aiClear">Bersihkan</button>
       </div>
     </form>
   </section>
 
-  <section class="card" style="padding:16px;margin-top:12px">
-    <b>Yang bisa dibantu</b>
+  <section class="card ai-card ai-help">
+    <div class="ai-help-title">Yang bisa dibantu</div>
     <ul>
-      <li>Membaca penjualan Offline dan Online.</li>
-      <li>Menganalisis HPP, modal, profit, dan pengeluaran.</li>
-      <li>Membantu membaca pembelian, supplier, pelanggan, dan retur.</li>
-      <li>Menjelaskan angka usaha dengan bahasa sederhana.</li>
-      <li>Memberi peringatan/anomali berdasarkan data yang tersedia.</li>
+      <li>Penjualan Offline dan Online.</li>
+      <li>HPP, modal, profit, dan pengeluaran.</li>
+      <li>Produk terlaris serta ringkasan angka usaha.</li>
+      <li>Peringatan sederhana berdasarkan data yang tersedia.</li>
     </ul>
-    <div class="notice" style="margin-top:10px">Agen AI tahap pertama bersifat <b>read-only</b>. Ia tidak mengubah database.</div>
+    <div class="ai-readonly">🔒 <b>Read-only:</b> Agen AI tidak mengubah database.</div>
   </section>
 </main>
 <script src="android-shell.js"></script>
@@ -70,8 +173,8 @@
   function rupiah(v){return 'Rp '+Math.round(Number(v)||0).toLocaleString('id-ID');}
   function add(role,text){
     const d=document.createElement('div');
-    d.style.cssText='padding:12px;margin:8px 0;border-radius:12px;line-height:1.5;background:'+(role==='user'?'#eaf6ef':'#fff')+';border:1px solid #dce8e1';
-    d.innerHTML='<b>'+(role==='user'?'Anda':'🤖 Agen AI')+'</b><div style="margin-top:4px;white-space:pre-wrap">'+esc(text)+'</div>';
+    d.className='ai-message '+(role==='user'?'user':'assistant');
+    d.innerHTML='<div class="ai-role">'+(role==='user'?'Anda':'🤖 Agen AI')+'</div><div class="ai-body">'+esc(text)+'</div>';
     $('aiChat').appendChild(d);
     d.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
@@ -314,9 +417,16 @@
   });
 
   $('aiClear').onclick=()=>{
-    $('aiChat').innerHTML='<div class="notice ok">Percakapan dibersihkan.</div>';
+    $('aiChat').innerHTML='<div class="ai-empty">Percakapan dibersihkan. Tulis pertanyaan baru di bawah.</div>';
     history.length=0;
   };
+
+  document.querySelectorAll('.ai-chip').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      $('aiInput').value=btn.dataset.q||'';
+      $('aiInput').focus();
+    });
+  });
 
   startup();
 })();
