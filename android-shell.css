@@ -1,97 +1,187 @@
-/* Familia Food - Android-first shell */
+/* Familia Food — Android-first shell, polished mobile POS */
 :root{
   --ff-brand:#087443;
   --ff-brand-dark:#065d35;
-  --ff-soft:#eaf6ef;
-  --ff-bg:#f5faf7;
+  --ff-brand-soft:#eaf6ef;
+  --ff-bg:#f5f8f6;
+  --ff-card:#ffffff;
   --ff-line:#dce8e1;
   --ff-text:#20352b;
+  --ff-muted:#6f7d76;
 }
-.ff-mobile-topbar,.ff-mobile-drawer,.ff-mobile-overlay,.ff-mobile-bottom{display:none}
+
+/* Safe fallback: even when the shell script is delayed/blocked,
+   the old desktop sidebar must never occupy the whole phone screen. */
 @media(max-width:900px){
-  body.ff-android{
+  body{
     overflow-x:hidden;
     background:var(--ff-bg)!important;
-    padding-top:58px!important;
-    padding-bottom:74px!important;
   }
-  body.ff-android .sidebar{display:none!important}
-  body.ff-android main,
-  body.ff-android .main,
-  body.ff-android .content{
+
+  body .sidebar{
+    position:sticky!important;
+    top:0!important;
+    left:auto!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:56px!important;
+    margin:0!important;
+    padding:7px 10px!important;
+    z-index:4000!important;
+    display:block!important;
+    background:#fff!important;
+    color:var(--ff-text)!important;
+    border:0!important;
+    border-bottom:1px solid var(--ff-line)!important;
+    box-shadow:0 2px 12px rgba(10,50,30,.07)!important;
+    overflow:hidden!important;
+  }
+
+  body .sidebar .logo,
+  body .sidebar .brand{
+    color:var(--ff-brand)!important;
+    font-size:16px!important;
+    line-height:20px!important;
+    margin:0 0 5px!important;
+    padding:0 3px!important;
+    text-align:left!important;
+  }
+
+  body .sidebar .menu,
+  body .sidebar .nav{
+    display:flex!important;
+    flex-direction:row!important;
+    gap:5px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    white-space:nowrap!important;
+    padding:0 0 2px!important;
+    margin:0!important;
+    scrollbar-width:none;
+  }
+
+  body .sidebar .menu::-webkit-scrollbar,
+  body .sidebar .nav::-webkit-scrollbar{display:none}
+
+  body .sidebar a,
+  body .sidebar a.menu{
+    flex:0 0 auto!important;
+    min-height:38px!important;
+    margin:0!important;
+    padding:8px 10px!important;
+    border-radius:9px!important;
+    background:#f3f7f5!important;
+    color:#315247!important;
+    font-size:11px!important;
+    font-weight:700!important;
+    text-decoration:none!important;
+  }
+
+  body .sidebar a.active{
+    background:var(--ff-brand)!important;
+    color:#fff!important;
+  }
+
+  body main,
+  body .main,
+  body .content{
     margin-left:0!important;
     width:100%!important;
     max-width:none!important;
     padding:12px!important;
   }
-  body.ff-android .header,
-  body.ff-android .top{
-    margin-bottom:12px!important;
-  }
-  body.ff-android h1,
-  body.ff-android .header h1,
-  body.ff-android .top h1{
+
+  body h1,
+  body .header h1,
+  body .top h1{
     font-size:21px!important;
     line-height:1.25!important;
   }
-  body.ff-android .sub,
-  body.ff-android .subtitle{
+
+  body .sub,
+  body .subtitle{
     font-size:12px!important;
     line-height:1.45!important;
   }
-  body.ff-android .card{
+
+  body .card{
     border-radius:14px!important;
-    box-shadow:0 2px 8px rgba(20,67,42,.05)!important;
+    box-shadow:0 2px 10px rgba(20,67,42,.05)!important;
   }
-  body.ff-android button,
-  body.ff-android .btn,
-  body.ff-android input,
-  body.ff-android select{
+
+  body button,
+  body .btn,
+  body input,
+  body select{
     min-height:42px;
     font-size:14px;
   }
-  body.ff-android .tablewrap{
+
+  body .tablewrap{
     -webkit-overflow-scrolling:touch;
   }
+
+  body.ff-android{
+    padding-top:60px!important;
+    padding-bottom:76px!important;
+  }
+
+  body.ff-android .sidebar{display:none!important}
 
   .ff-mobile-topbar{
     display:flex;
     position:fixed;
     left:0;right:0;top:0;
-    height:58px;
+    height:60px;
     z-index:5000;
     align-items:center;
-    justify-content:space-between;
     gap:10px;
-    padding:8px 10px;
-    background:#fff;
-    border-bottom:1px solid var(--ff-line);
-    box-shadow:0 2px 10px rgba(10,50,30,.08);
+    padding:8px 11px calc(8px + env(safe-area-inset-top));
+    background:linear-gradient(135deg,var(--ff-brand),#0b8a4e);
+    color:#fff;
+    box-shadow:0 3px 16px rgba(4,70,38,.22);
   }
+
+  .ff-mobile-menu{
+    flex:0 0 42px;
+    width:42px!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0!important;
+    border:1px solid rgba(255,255,255,.24)!important;
+    border-radius:12px!important;
+    background:rgba(255,255,255,.13)!important;
+    color:#fff!important;
+    font-size:21px!important;
+    font-weight:800;
+    box-shadow:none!important;
+  }
+
   .ff-mobile-brand{
     display:flex;
     align-items:center;
-    gap:7px;
+    gap:8px;
     min-width:0;
-    color:var(--ff-brand);
-    font-size:16px;
+    color:#fff;
+    font-size:17px;
     font-weight:800;
+    letter-spacing:.1px;
   }
+
+  .ff-mobile-brand span:first-child{
+    width:28px;
+    height:28px;
+    display:grid;
+    place-items:center;
+    background:rgba(255,255,255,.15);
+    border-radius:9px;
+    font-size:18px;
+  }
+
   .ff-mobile-brand span:last-child{
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
-  }
-  .ff-mobile-menu{
-    width:42px!important;
-    min-height:42px!important;
-    padding:0!important;
-    border:0;
-    border-radius:11px;
-    background:var(--ff-soft);
-    color:var(--ff-brand);
-    font-size:20px!important;
-    font-weight:800;
   }
 
   .ff-mobile-drawer{
@@ -100,69 +190,93 @@
     left:0;
     top:0;
     bottom:0;
-    width:min(305px,86vw);
+    width:min(330px,88vw);
     z-index:5002;
-    background:#fff;
-    box-shadow:8px 0 30px rgba(0,0,0,.18);
+    background:#f7faf8;
+    color:var(--ff-text);
     transform:translateX(-105%);
-    transition:transform .18s ease;
+    transition:transform .2s ease;
     overflow:auto;
-    padding:16px 14px 90px;
+    padding:0 12px calc(96px + env(safe-area-inset-bottom));
+    box-shadow:10px 0 34px rgba(0,0,0,.2);
+    -webkit-overflow-scrolling:touch;
   }
+
   body.ff-menu-open .ff-mobile-drawer{transform:translateX(0)}
+
   .ff-mobile-drawer-head{
+    position:sticky;
+    top:0;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    margin-bottom:12px;
-    padding:4px 4px 10px;
-    border-bottom:1px solid var(--ff-line);
+    min-height:68px;
+    margin:0 -12px 9px;
+    padding:10px 14px;
+    background:linear-gradient(135deg,var(--ff-brand),#0b8a4e);
+    color:#fff;
+    box-shadow:0 3px 12px rgba(4,70,38,.16);
   }
+
   .ff-mobile-drawer-title{
-    color:var(--ff-brand);
+    color:#fff;
     font-weight:800;
     font-size:18px;
   }
+
   .ff-mobile-close{
-    border:0;
-    background:#f1f5f3;
-    color:#30463b;
-    border-radius:10px;
-    width:40px;
+    border:0!important;
+    background:rgba(255,255,255,.14)!important;
+    color:#fff!important;
+    border-radius:10px!important;
+    width:40px!important;
+    height:40px!important;
     min-height:40px!important;
-    font-size:18px!important;
+    font-size:22px!important;
+    padding:0!important;
   }
+
   .ff-mobile-drawer .nav,
   .ff-mobile-drawer .menu{
     display:block!important;
     overflow:visible!important;
+    padding:4px 0!important;
   }
+
   .ff-mobile-drawer a{
     display:flex!important;
     align-items:center;
-    min-height:46px;
-    padding:10px 12px!important;
+    min-height:48px;
+    padding:11px 13px!important;
     margin:4px 0!important;
-    border-radius:11px!important;
-    color:#28473a!important;
+    border-radius:12px!important;
+    color:#27473a!important;
+    background:#fff!important;
+    border:1px solid #e5eee9!important;
     font-size:14px!important;
     text-decoration:none;
+    box-shadow:0 1px 4px rgba(20,67,42,.035);
   }
+
   .ff-mobile-drawer a.active{
-    background:var(--ff-soft)!important;
+    background:var(--ff-brand-soft)!important;
     color:var(--ff-brand)!important;
+    border-color:#cfe6d9!important;
     font-weight:800!important;
   }
+
   .ff-mobile-overlay{
     position:fixed;
     inset:0;
     z-index:5001;
-    background:rgba(0,0,0,.34);
+    background:rgba(12,26,20,.45);
     opacity:0;
     pointer-events:none;
-    transition:opacity .18s ease;
+    transition:opacity .2s ease;
     display:block;
+    backdrop-filter:blur(1px);
   }
+
   body.ff-menu-open .ff-mobile-overlay{
     opacity:1;
     pointer-events:auto;
@@ -173,41 +287,53 @@
     grid-template-columns:repeat(5,1fr);
     position:fixed;
     left:0;right:0;bottom:0;
-    height:66px;
+    min-height:70px;
     z-index:4999;
-    background:#fff;
+    background:rgba(255,255,255,.97);
     border-top:1px solid var(--ff-line);
-    box-shadow:0 -3px 14px rgba(10,50,30,.08);
+    box-shadow:0 -4px 18px rgba(10,50,30,.09);
     padding:5px 4px calc(5px + env(safe-area-inset-bottom));
+    backdrop-filter:blur(12px);
   }
+
   .ff-mobile-bottom a{
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:2px;
+    gap:3px;
     min-width:0;
-    border-radius:10px;
-    color:#718078;
+    border-radius:11px;
+    color:#728078;
     text-decoration:none;
     font-size:10px;
     font-weight:700;
   }
+
   .ff-mobile-bottom a.active{
     color:var(--ff-brand);
-    background:var(--ff-soft);
+    background:var(--ff-brand-soft);
   }
+
+  .ff-mobile-bottom a:nth-child(2){
+    color:#fff;
+    background:var(--ff-brand);
+    margin:2px 4px;
+    box-shadow:0 4px 10px rgba(8,116,67,.22);
+  }
+
   .ff-mobile-bottom .ico{font-size:18px;line-height:1}
 
-  /* POS mobile: tombol/tab lebih ringkas dan area kasir lebih mudah disentuh */
+  /* POS mobile */
   body.ff-android #onlineNewCard h2,
   body.ff-android #onlineCashCard h2,
   body.ff-android .penjualan-panel h2{
     font-size:17px!important;
   }
+
   body.ff-android .penjualan-tabs{
     position:sticky!important;
-    top:58px!important;
+    top:60px!important;
     z-index:120!important;
     margin:0 -12px 10px!important;
     padding:7px 12px!important;
@@ -215,11 +341,13 @@
     backdrop-filter:blur(8px);
     border-bottom:1px solid var(--ff-line)!important;
   }
+
   body.ff-android .penjualan-tab{
     min-height:38px!important;
     padding:8px 10px!important;
     font-size:11px!important;
   }
+
   body.ff-android #onlineNewCard .actions{
     position:sticky;
     bottom:74px;
@@ -231,11 +359,18 @@
     border-radius:12px;
     backdrop-filter:blur(8px);
   }
+
   body.ff-android #batchSave{
     min-height:46px!important;
     font-size:14px!important;
   }
+
   body.ff-android #onlineBatchTable td{
     min-height:42px!important;
   }
+}
+
+/* Large-screen behavior remains unchanged. */
+@media(min-width:901px){
+  .ff-mobile-topbar,.ff-mobile-drawer,.ff-mobile-overlay,.ff-mobile-bottom{display:none!important}
 }
