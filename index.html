@@ -376,6 +376,23 @@ async function loadDashboard(){
     const offNet=offRevenue-offExpense;
     const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
 
+    // HPP Offline memakai sumber per bulan yang sama dengan Rekap Offline.
+    // Jika satu bulan belum memiliki mapping HPP, Profit Offline tetap ditampilkan
+    // sebagai "—" agar Dashboard tidak menyebut Uang Bersih sebagai Profit.
+    const dashboardData={sales,olds:offOld,expenses:expenseRows,products:productMaster,hpps:hppRows};
+    const offlineMonths=FF.monthsOfData(dashboardData);
+    let offHpp=0,offHppKnown=true;
+    offlineMonths.forEach(m=>{
+      try{
+        const f=FF.financeFor(m,'Offline',dashboardData);
+        if(!f.hppKnown) offHppKnown=false;
+        else offHpp+=Math.round(Number(f.hpp)||0);
+      }catch(e){
+        offHppKnown=false;
+      }
+    });
+    const offProfit=offHppKnown ? offNet-offHpp : null;
+
     // ONLINE: STANDARD historis + transaksi online baru.
     const onlineFinanceRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_finance');
     // Histori produk Online Jan–Agustus yang baru: source seller_center hasil audit CSV TikTok.
@@ -415,10 +432,9 @@ async function loadDashboard(){
     const onlineHistoricalMissingHpp=onlineHistoricalQtyLockedRows.some(x=>Number(x.qty||0)>0 && Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
     const onlineHistoricalQtyMismatch=onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
 
-    const onOldHpp=(!onlineHistoricalQtyMismatch && !onlineHistoricalMissingHpp)
-      ? onlineHistoricalModalRaw
-      : 0;
-    const onOldProfit=onOldNet-onOldHpp;
+    const onHistoricalHppKnown=!onlineHistoricalQtyMismatch && !onlineHistoricalMissingHpp;
+    const onOldHpp=onHistoricalHppKnown ? onlineHistoricalModalRaw : 0;
+    const onOldProfit=onHistoricalHppKnown ? onOldNet-onOldHpp : null;
     // Transaksi Online baru memakai basis kas: Uang Bersih yang benar-benar cair.
     const onNewRevenue=onlineCashNew.reduce((s,x)=>s+Math.round(num(x.uang_bersih ?? x.omzet_produk)),0);
     const onNewNet=onNewRevenue;
@@ -439,14 +455,16 @@ async function loadDashboard(){
     const totalRevenue=offRevenue+onRevenue;
     const totalOut=offExpense+onFee;
     const totalNet=(offRevenue-offExpense)+onNet;
-    const totalHpp=onHpp;
-    const totalProfit=offNet+onProfit;
-    const totalMargin=totalNet?totalProfit/totalNet*100:0;
+    const overallHppKnown=offHppKnown && onHistoricalHppKnown;
+    const totalHpp=overallHppKnown ? offHpp+onHpp : null;
+    const overallProfitKnown=overallHppKnown;
+    const totalProfit=overallProfitKnown ? (offProfit + onProfit) : null;
+    const totalMargin=totalProfit!=null && totalNet ? totalProfit/totalNet*100 : 0;
 
     setNumber('totalRevenue',totalRevenue);
     setNumber('totalOut',totalOut);
     setNumber('totalNet',totalNet);
-    if(onlineHistoricalQtyMismatch || onlineHistoricalMissingHpp){
+    if(!overallHppKnown){
       document.getElementById('totalHpp').textContent='—';
       document.getElementById('totalProfit').textContent='—';
       const tm=document.getElementById('totalMargin');tm.textContent='—';tm.classList.remove('negative');
@@ -464,13 +482,13 @@ async function loadDashboard(){
 
     document.getElementById('offOldCount').textContent=offOld.length.toLocaleString('id-ID')+' baris';
     document.getElementById('offNewCount').textContent=offNew.length.toLocaleString('id-ID');
-    setNumber('offRevenue',offRevenue); setNumber('offExpense',offExpense); setNumber('offNet',offNet); setNumber('offProfit',offNet);
+    setNumber('offRevenue',offRevenue); setNumber('offExpense',offExpense); setNumber('offNet',offNet); if(offProfit==null){document.getElementById('offProfit').textContent='—';}else{setNumber('offProfit',offProfit);}
     document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
     setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet);
-    if(onlineHistoricalQtyMismatch || onlineHistoricalMissingHpp){
+    if(!onHistoricalHppKnown){
       document.getElementById('onHpp').textContent='—';
       document.getElementById('onProfit').textContent='—';
     }else{
