@@ -6,12 +6,13 @@
 <title>Agen AI — Familia Food</title>
 <link rel="stylesheet" href="android-shell.css">
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
 </head>
 <body>
 <main class="main" style="max-width:900px;margin:0 auto;padding:18px 16px 110px">
   <section class="card" style="padding:18px">
-    <div style="display:flex;align-items:center;gap:10px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div style="font-size:30px">🤖</div>
       <div style="min-width:0;flex:1">
         <h1 style="margin:0">Agen AI Familia Food</h1>
@@ -19,12 +20,12 @@
       </div>
       <a href="index.html" class="btn" style="margin-left:auto;min-width:116px;text-align:center;text-decoration:none;white-space:nowrap">🏠 Beranda</a>
     </div>
-    <div id="aiStatus" class="notice" style="margin-top:14px">Memeriksa koneksi Agen AI...</div>
+    <div id="aiStatus" class="notice" style="margin-top:14px">Menyiapkan Agen AI...</div>
   </section>
 
   <section class="card" style="padding:16px;margin-top:12px">
     <div id="aiChat" aria-live="polite">
-      <div class="notice ok">Contoh pertanyaan: “Berapa penjualan bulan ini?”, “Produk apa yang paling banyak terjual?”, “Berapa profit Online Januari?”, atau “Apa pengeluaran terbesar bulan ini?”</div>
+      <div class="notice ok">Contoh: “Berapa profit saya?”, “Berapa profit Online Januari?”, “Produk apa yang paling banyak terjual?”, atau “Apa pengeluaran terbesar bulan ini?”</div>
     </div>
     <form id="aiForm" style="margin-top:12px">
       <textarea id="aiInput" rows="3" placeholder="Tulis pertanyaan tentang usaha Familia Food..." required></textarea>
@@ -44,7 +45,7 @@
       <li>Menjelaskan angka usaha dengan bahasa sederhana.</li>
       <li>Memberi peringatan/anomali berdasarkan data yang tersedia.</li>
     </ul>
-    <div class="notice" style="margin-top:10px">Agen AI tahap pertama bersifat <b>read-only</b>. Ia tidak boleh mengubah produk, HPP, penjualan, pembelian, atau pengeluaran tanpa alur konfirmasi terpisah.</div>
+    <div class="notice" style="margin-top:10px">Agen AI tahap pertama bersifat <b>read-only</b>. Ia tidak mengubah database.</div>
   </section>
 </main>
 <script src="android-shell.js"></script>
@@ -53,13 +54,28 @@
   const $=id=>document.getElementById(id);
   const history=[];
   const endpoint=(window.FF_AI_ENDPOINT||'https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai');
+
+  function esc(v){
+    return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function norm(v){return String(v??'').trim().toLowerCase().replace(/\s+/g,' ');}
+  function monthOf(v){
+    const m=String(v??'').match(/^(\d{4})-(\d{1,2})/);
+    return m?m[1]+'-'+String(Number(m[2])).padStart(2,'0'):'';
+  }
+  function monthLabel(m){
+    if(!/^\d{4}-\d{2}$/.test(m))return m||'-';
+    return new Date(m+'-01T00:00:00Z').toLocaleDateString('id-ID',{month:'long',year:'numeric',timeZone:'UTC'});
+  }
+  function rupiah(v){return 'Rp '+Math.round(Number(v)||0).toLocaleString('id-ID');}
   function add(role,text){
     const d=document.createElement('div');
     d.style.cssText='padding:12px;margin:8px 0;border-radius:12px;line-height:1.5;background:'+(role==='user'?'#eaf6ef':'#fff')+';border:1px solid #dce8e1';
-    d.innerHTML='<b>'+ (role==='user'?'Anda':'🤖 Agen AI') +'</b><div style="margin-top:4px;white-space:pre-wrap">'+String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</div>';
+    d.innerHTML='<b>'+(role==='user'?'Anda':'🤖 Agen AI')+'</b><div style="margin-top:4px;white-space:pre-wrap">'+esc(text)+'</div>';
     $('aiChat').appendChild(d);
     d.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
+
   let aiSessionPromise=null;
   async function ensureAiSession(){
     if(aiSessionPromise)return aiSessionPromise;
@@ -72,37 +88,237 @@
     })().catch(e=>{aiSessionPromise=null;throw e});
     return aiSessionPromise;
   }
-  async function check(){
+
+  async function fetchAll(table,select='*'){
+    let result=[],start=0;
+    while(true){
+      const r=await supabaseClient.from(table).select(select).range(start,start+999);
+      if(r.error)throw r.error;
+      const rows=r.data||[];
+      result.push(...rows);
+      if(rows.length<1000)break;
+      start+=1000;
+    }
+    return result;
+  }
+
+  const data={sales:[],olds:[],expenses:[],products:[],hpps:[]};
+
+  async function loadData(){
+    const jobs=[
+      ['penjualan','sales'],['data_lama','olds'],['pengeluaran','expenses'],
+      ['produk','products'],['hpp','hpps']
+    ];
+    const results=await Promise.all(jobs.map(async([table,key])=>[key,await fetchAll(table)]));
+    for(const [key,rows] of results)data[key]=rows;
+  }
+
+  function resolveHpp(name){
+    const raw=norm(name);
+    const aliases={
+      'naget isi 10':'naget 10','naget isi 12':'naget 12','naget isi 20':'naget 20',
+      'naget isi 25+ saus':'naget 25+ saus','naget isi 30':'naget 30','naget isi 40':'naget 40',
+      'naget isi 50':'naget 50','cireng isi 10':'cireng isi','cireng isi':'cireng isi',
+      'cireng biasa':'cireng biasa','cibay isi 10':'cibay','cibay':'cibay'
+    };
+    const target=aliases[raw]||raw;
+    const p=data.products.find(x=>norm(x.nama_produk)===target);
+    if(!p)return null;
+    const h=data.hpps.find(x=>String(x.produk_id)===String(p.id));
+    const unit=Number(h?.hpp_unit||0);
+    return unit>0?unit:null;
+  }
+
+  function expenseMonth(x){
+    const p=String(x?.periode??'').trim();
+    return /^\d{4}-\d{2}$/.test(p)?p:monthOf(x?.tanggal);
+  }
+
+  function latestMonth(){
+    const set=new Set();
+    data.sales.forEach(x=>{const m=monthOf(x.tanggal);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+    data.olds.forEach(x=>{const m=monthOf(x.periode);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+    data.expenses.forEach(x=>{const m=expenseMonth(x);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+    return [...set].sort().pop()||new Date().toISOString().slice(0,7);
+  }
+
+  function requestedMonth(q){
+    const s=norm(q);
+    const ym=s.match(/\b(20\d{2})[-\/]?(0?[1-9]|1[0-2])\b/);
+    if(ym)return ym[1]+'-'+String(Number(ym[2])).padStart(2,'0');
+    const names=['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'];
+    const y=new Date().getFullYear();
+    for(let i=0;i<names.length;i++)if(s.includes(names[i]))return y+'-'+String(i+1).padStart(2,'0');
+    return latestMonth();
+  }
+
+  function calcMonth(m){
+    const oldOff=data.olds.filter(x=>monthOf(x.periode)===m);
+    const newOff=data.sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m);
+    const ex=data.expenses.filter(x=>expenseMonth(x)===m);
+
+    let offlineRev=oldOff.reduce((a,x)=>a+Number(x.nominal||x.omzet||0),0);
+    let offlineModal=0,offlineHppKnown=true;
+    for(const x of oldOff){
+      const qty=Number(x.catatan||0);
+      const h=resolveHpp(x.jenis);
+      if(qty>0&&!h)offlineHppKnown=false;
+      if(h)offlineModal+=qty*h;
+    }
+    for(const x of newOff){
+      const qty=Number(x.qty||0);
+      offlineRev+=Number(x.omzet_produk??(qty*Number(x.harga||0)));
+      const modal=x.modal_hpp!=null?Number(x.modal_hpp):(x.hpp!=null?qty*Number(x.hpp):(resolveHpp(x.product_name)||0)*qty);
+      const known=x.modal_hpp!=null||x.hpp!=null||!!resolveHpp(x.product_name);
+      if(qty>0&&!known)offlineHppKnown=false;
+      offlineModal+=modal;
+    }
+    const offlineExpense=ex.reduce((a,x)=>a+Number(x.nominal||0),0);
+    const offlineNet=offlineRev-offlineExpense;
+    const offlineProfit=offlineHppKnown?offlineNet-offlineModal:null;
+
+    const onlineFin=data.sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&x.source==='online_standard_finance');
+    const seller=data.sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&x.source==='seller_center');
+    const onlineNew=data.sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&x.source==='online_batch');
+    const cash=data.sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&x.source==='online_pencairan');
+    const histRev=onlineFin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+    const histNet=onlineFin.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+    const histFee=onlineFin.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
+    const newNet=cash.reduce((a,x)=>a+Number(x.uang_bersih??x.omzet_produk??0),0);
+    const onlineRevenue=histRev+newNet;
+    const onlineNet=histNet+newNet;
+    let onlineModal=0,onlineHppKnown=true;
+    for(const x of seller){
+      const modal=x.modal_hpp!=null?Number(x.modal_hpp):Number(x.qty||0)*Number(x.hpp||0);
+      if(Number(x.qty||0)>0&&modal<=0)onlineHppKnown=false;
+      onlineModal+=modal;
+    }
+    for(const x of onlineNew){
+      const modal=x.modal_hpp!=null?Number(x.modal_hpp):Number(x.qty||0)*Number(x.hpp||0);
+      if(Number(x.qty||0)>0&&modal<=0)onlineHppKnown=false;
+      onlineModal+=modal;
+    }
+    const onlineProfit=onlineHppKnown?onlineNet-onlineModal:null;
+    const combinedProfit=(offlineProfit!=null&&onlineProfit!=null)?offlineProfit+onlineProfit:null;
+
+    const byProduct=new Map();
+    const addQty=(name,qty)=>{
+      const key=norm(name||'-');
+      const g=byProduct.get(key)||{name:name||'-',qty:0};
+      g.qty+=Number(qty||0);byProduct.set(key,g);
+    };
+    oldOff.forEach(x=>addQty(x.jenis,Number(x.catatan||0)));
+    newOff.forEach(x=>addQty(x.product_name,Number(x.qty||0)));
+    seller.forEach(x=>addQty(x.product_name,Number(x.qty||0)));
+    onlineNew.forEach(x=>addQty(x.product_name,Number(x.qty||0)));
+
+    const expenseByCategory=new Map();
+    ex.forEach(x=>{
+      const k=x.kategori||x.keterangan||'Lainnya';
+      expenseByCategory.set(k,(expenseByCategory.get(k)||0)+Number(x.nominal||0));
+    });
+    const biggestExpense=[...expenseByCategory.entries()].sort((a,b)=>b[1]-a[1])[0]||null;
+
+    return {
+      month:m,label:monthLabel(m),
+      offline:{revenue:offlineRev,expense:offlineExpense,net:offlineNet,modal:offlineModal,profit:offlineProfit},
+      online:{revenue:onlineRevenue,fee:histFee,net:onlineNet,modal:onlineModal,profit:onlineProfit,sellerQty:seller.reduce((a,x)=>a+Number(x.qty||0),0)},
+      combined:{revenue:offlineRev+onlineRevenue,net:offlineNet+onlineNet,profit:combinedProfit},
+      topProduct:[...byProduct.values()].sort((a,b)=>b.qty-a.qty)[0]||null,
+      biggestExpense,
+      expenseTotal:offlineExpense
+    };
+  }
+
+  function localAnswer(q){
+    const s=norm(q);
+    const m=requestedMonth(q);
+    const c=calcMonth(m);
+
+    const isOnline=/online|tiktok|seller center|seller_center/.test(s);
+    const isOffline=/offline/.test(s);
+    if(/profit|laba|keuntungan/.test(s)){
+      const x=isOnline?c.online:(isOffline?c.offline:c.combined);
+      const name=isOnline?'Online':isOffline?'Offline':'gabungan Offline + Online';
+      const p=x.profit;
+      return p==null
+        ? 'Profit '+name+' untuk '+c.label+' belum bisa dihitung karena sebagian modal/HPP belum tersedia.'
+        : 'Profit '+name+' bulan '+c.label+' adalah '+rupiah(p)+'.\nPemasukan/uang bersih: '+rupiah(x.net)+' dan modal/HPP: '+rupiah(x.modal)+'.';
+    }
+    if(/pengeluaran terbesar|biaya terbesar/.test(s)){
+      return c.biggestExpense
+        ? 'Pengeluaran terbesar bulan '+c.label+' adalah kategori '+c.biggestExpense[0]+' sebesar '+rupiah(c.biggestExpense[1])+'.'
+        : 'Belum ada data pengeluaran untuk '+c.label+'.';
+    }
+    if(/berapa pengeluaran|total pengeluaran/.test(s)){
+      return 'Total pengeluaran yang terbaca untuk '+c.label+' adalah '+rupiah(c.expenseTotal)+'.';
+    }
+    if(/produk.*(paling banyak|terlaris|terbanyak)|paling banyak.*produk/.test(s)){
+      return c.topProduct
+        ? 'Produk dengan jumlah terjual terbanyak pada '+c.label+' adalah '+c.topProduct.name+' sebanyak '+Math.round(c.topProduct.qty).toLocaleString('id-ID')+' bungkus.'
+        : 'Belum ada data penjualan produk untuk '+c.label+'.';
+    }
+    if(/penjualan|pemasukan|omzet/.test(s)){
+      const x=isOnline?c.online:(isOffline?c.offline:c.combined);
+      const name=isOnline?'Online':isOffline?'Offline':'gabungan';
+      return 'Untuk '+name+' bulan '+c.label+', pemasukan tercatat '+rupiah(x.revenue)+' dan uang bersih '+rupiah(x.net)+'.';
+    }
+    return 'Saya sudah terhubung ke data Familia Food dalam mode read-only. Coba tanya: “Berapa profit saya?”, “Berapa profit Online Januari?”, “Produk apa yang paling banyak terjual?”, atau “Apa pengeluaran terbesar bulan ini?”.';
+  }
+
+  async function tryRemote(q){
+    const session=await ensureAiSession();
+    const r=await fetch(endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+      body:JSON.stringify({message:q,history})
+    });
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Endpoint AI belum aktif');
+    return String(data.answer||data.output_text||'');
+  }
+
+  async function startup(){
     try{
-      await ensureAiSession();
-      const session=await ensureAiSession(); const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({message:'__healthcheck__',history:[]})});
-      $('aiStatus').className='notice ok';
-      $('aiStatus').innerHTML='✅ Agen AI terhubung ke aplikasi. Mode: read-only.';
-      return r.ok;
+      await loadData();
+      try{
+        await tryRemote('__healthcheck__');
+        $('aiStatus').className='notice ok';
+        $('aiStatus').innerHTML='✅ Agen AI terhubung ke server dan data Familia Food. Mode: read-only.';
+      }catch(e){
+        $('aiStatus').className='notice ok';
+        $('aiStatus').innerHTML='✅ Agen AI aktif membaca data Familia Food. Mode: data usaha read-only.';
+      }
     }catch(e){
       $('aiStatus').className='notice';
-      $('aiStatus').innerHTML='🟡 Struktur Agen AI sudah ada, tetapi koneksi belum aktif. Pastikan Anonymous Sign-ins Supabase dan OPENAI_API_KEY sudah disiapkan.';
-      return false;
+      $('aiStatus').innerHTML='🟡 Data Agen AI belum dapat dibaca. Cek koneksi Supabase.';
+      console.error(e);
     }
   }
+
   $('aiForm').addEventListener('submit',async e=>{
     e.preventDefault();
-    const q=$('aiInput').value.trim(); if(!q)return;
-    add('user',q); history.push({role:'user',content:q}); $('aiInput').value='';
-    const b=e.submitter; if(b)b.disabled=true;
+    const q=$('aiInput').value.trim();if(!q)return;
+    add('user',q);history.push({role:'user',content:q});$('aiInput').value='';
+    const b=e.submitter;if(b)b.disabled=true;
     try{
-      const session=await ensureAiSession();
-      const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({message:q,history})});
-      const data=await r.json().catch(()=>({}));
-      if(!r.ok)throw new Error(data.error||'Endpoint AI belum aktif');
-      const answer=String(data.answer||data.output_text||'Agen AI tidak mengembalikan jawaban.');
-      history.push({role:'assistant',content:answer}); add('assistant',answer);
+      let answer='';
+      try{ answer=await tryRemote(q); }catch(_){ answer=localAnswer(q); }
+      if(!answer)answer=localAnswer(q);
+      history.push({role:'assistant',content:answer});
+      add('assistant',answer);
     }catch(err){
-      add('assistant','Agen AI belum aktif atau belum mendapat akses data. Pastikan Anonymous Sign-ins Supabase aktif dan OPENAI_API_KEY sudah disimpan sebagai secret Edge Function. Tidak ada API key OpenAI yang disimpan di APK/browser.');
+      add('assistant','Agen AI gagal membaca data. Silakan coba lagi.');
+      console.error(err);
     }finally{if(b)b.disabled=false;}
   });
-  $('aiClear').onclick=()=>{$('aiChat').innerHTML='<div class="notice ok">Percakapan dibersihkan.</div>';history.length=0};
-  check();
+
+  $('aiClear').onclick=()=>{
+    $('aiChat').innerHTML='<div class="notice ok">Percakapan dibersihkan.</div>';
+    history.length=0;
+  };
+
+  startup();
 })();
 </script>
 </body>
