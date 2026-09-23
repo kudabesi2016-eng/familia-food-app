@@ -80,43 +80,6 @@ function buildSnapshot(month, q, data){
 
   const oldOffline=olds.filter(x=>monthOf(x.periode)===month);
   const newOffline=sales.filter(x=>x.channel==="Offline" && monthOf(x.tanggal)===month);
-  const onlineHist=sales.filter(x=>x.channel==="Online" && monthOf(x.tanggal)===month && x.source==="online_standard_finance");
-  const onlineSeller=sales.filter(x=>x.channel==="Online" && monthOf(x.tanggal)===month && x.source==="seller_center");
-  const onlineNew=sales.filter(x=>x.channel==="Online" && monthOf(x.tanggal)===month && x.source==="online_batch");
-  const onlineCash=sales.filter(x=>x.channel==="Online" && monthOf(x.tanggal)===month && x.source==="online_pencairan");
-
-  const offlineRevenue=oldOffline.reduce((a,x)=>a+n(x.omzet ?? x.nominal),0)+newOffline.reduce((a,x)=>a+(n(x.omzet_produk ?? (n(x.qty)*n(x.harga)))),0);
-  const monthExpenses=expenses.filter(x=>monthOf(x.periode)===month);
-  const offlineExpense=monthExpenses.reduce((a,x)=>a+n(x.nominal),0);
-  const offlineNet=offlineRevenue-offlineExpense;
-  let offlineModal=0, offlineHppKnown=true;
-  const offlineProducts=new Map();
-  for(const x of oldOffline){
-    const qty=n(x.catatan);
-    const name=x.jenis || x.product_name || "-";
-    const unit=resolveHpp(name);
-    if(qty>0 && !unit) offlineHppKnown=false;
-    if(unit) offlineModal+=qty*unit;
-    const key=norm(name);
-    const g=offlineProducts.get(key)||{name,qty:0,revenue:0,modal:0,modalKnown:true};
-    g.qty+=qty; g.revenue+=n(x.omzet ?? x.nominal);
-    if(unit) g.modal+=qty*unit; else if(qty>0) g.modalKnown=false;
-    offlineProducts.set(key,g);
-  }
-  for(const x of newOffline){
-    const qty=n(x.qty);
-    const name=x.product_name || "-";
-    const modal=x.modal_hpp!=null ? n(x.modal_hpp) : (x.hpp!=null ? qty*n(x.hpp) : (resolveHpp(name)||0)*qty);
-    const known=x.modal_hpp!=null || x.hpp!=null || !!resolveHpp(name);
-    if(qty>0 && !known) offlineHppKnown=false;
-    offlineModal+=modal;
-    const key=norm(name);
-    const g=offlineProducts.get(key)||{name,qty:0,revenue:0,modal:0,modalKnown:true};
-    g.qty+=qty; g.revenue+=n(x.omzet_produk ?? qty*n(x.harga));
-    g.modal+=modal; if(!known)g.modalKnown=false;
-    offlineProducts.set(key,g);
-  }
-
   const histRev=onlineHist.reduce((a,x)=>a+n(x.omzet_produk),0);
   const histFee=onlineHist.reduce((a,x)=>a+n(x.biaya_platform),0);
   const histNet=onlineHist.reduce((a,x)=>a+n(x.uang_bersih),0);
@@ -125,6 +88,16 @@ function buildSnapshot(month, q, data){
   const onlineNet=histNet+newNet;
   let onlineModal=0, onlineHppKnown=true;
   const onlineProducts=new Map();
+
+  // Audit terkunci: data Seller Center Jan–Agustus 2026 wajib berjumlah 8.085 bungkus.
+  const lockedSellerAll=sales.filter(x=>
+    x.channel==="Online" && x.source==="seller_center" &&
+    monthOf(x.tanggal)>="2026-01" && monthOf(x.tanggal)<="2026-08"
+  );
+  const lockedSellerTotal=lockedSellerAll.reduce((a,x)=>a+Math.trunc(n(x.qty)),0);
+  const lockedSellerHasRows=lockedSellerAll.length>0;
+  const lockedSellerAuditOk=!lockedSellerHasRows || lockedSellerTotal===8085;
+
   for(const x of onlineSeller){
     const qty=n(x.qty), modal=x.modal_hpp!=null?n(x.modal_hpp):qty*n(x.hpp);
     if(qty>0 && modal<=0) onlineHppKnown=false;
@@ -143,6 +116,10 @@ function buildSnapshot(month, q, data){
     g.qty+=qty; g.modal+=modal; if(qty>0&&modal<=0)g.modalKnown=false;
     onlineProducts.set(key,g);
   }
+  if(month>="2026-01" && month<="2026-08" && lockedSellerHasRows && !lockedSellerAuditOk){
+    onlineHppKnown=false;
+  }
+
   const onlineProfit=onlineHppKnown ? onlineNet-onlineModal : null;
   const offlineProfit=offlineHppKnown ? offlineNet-offlineModal : null;
 
@@ -230,11 +207,12 @@ Deno.serve(async req=>{
   if(req.method==="OPTIONS") return new Response("ok",{headers:cors});
   if(req.method!=="POST") return json({error:"Method not allowed"},405);
   try{
-    if(!OPENAI_KEY) return json({error:"OPENAI_API_KEY belum diset di Supabase Edge Function."},503);
     const body=await req.json();
     const message=String(body?.message||"").trim();
     if(!message)return json({error:"Pertanyaan kosong"},400);
+    // Healthcheck harus benar-benar zero-cost: tidak membutuhkan OpenAI API key.
     if(message==="__healthcheck__") return json({ok:true,mode:"read-only",source:"familia_food_snapshot"});
+    if(!OPENAI_KEY) return json({error:"OPENAI_API_KEY belum diset di Supabase Edge Function."},503);
 
     const month=requestedMonth(message);
     const db=await makeDb(req);
