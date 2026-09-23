@@ -463,7 +463,8 @@ body.ff-android .ai-card{
       const note=expenseNoteFromQuery(q)||expensePlainNote(row)||'Pengeluaran';
       if(!nominal||nominal<=0)return {intent:true,error:'Nominal pengeluaran belum jelas.'};
       if(!channel)return {intent:true,error:'Channel pengeluaran belum disebutkan. Gunakan Online atau Offline.'};
-      return {intent:true,action:{kind:'update-expense',id,row,data:{tanggal:extractDate(q),periode:extractDate(q).slice(0,7),kategori,keterangan:'['+channel+'] '+note,nominal}}};
+      const tanggal=extractDate(q)||row.tanggal||((String(row.periode||'')+'-01').slice(0,10));
+      return {intent:true,action:{kind:'update-expense',id,row,data:{tanggal,periode:tanggal.slice(0,7),kategori,keterangan:'['+channel+'] '+note,nominal}}};
     }
 
     const channel=extractChannel(q);
