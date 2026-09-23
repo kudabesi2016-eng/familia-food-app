@@ -404,7 +404,7 @@ async function saveCustomer(){
 async function deleteCustomer(id){
   if(!confirm('Hapus pelanggan ini?'))return;
   if(state.tables.ff_pelanggan){const r=await supabaseClient.from('ff_pelanggan').delete().eq('id',id);if(r.error){$('customerStatus').textContent='Gagal: '+r.error.message;return}}
-  state.customer=state.customer.filter(x=>String(x.id)!==String(id));lsSet(LS.customer,state.customer);renderCustomers();renderStats();
+  state.customer=state.customer.filter(x=>String(x.id)!==String(id));renderCustomers();renderStats();
 }
 function renderReturnSales(){
   const channel=$('retChannel').value;
