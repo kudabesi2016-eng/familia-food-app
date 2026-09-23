@@ -102,6 +102,8 @@ assert(shellJs.includes('MutationObserver'),'Android shell must re-process dynam
 assert(shellCss.includes('table.ff-mobile-table td::before'),'Mobile table labels must be visible without horizontal scrolling');
 assert(shellCss.includes('flex-wrap:wrap!important'),'Mobile tabs must wrap instead of horizontal scrolling');
 assert(shellCss.includes('overflow:visible!important'),'Mobile table containers must not require horizontal scrolling');
+assert(shellCss.includes('grid-template-columns:repeat(2,minmax(0,1fr))!important'),'Professional mobile dashboard must use compact 2-column KPI cards');
+assert(shellCss.includes('PROFESSIONAL MOBILE POS V2'),'Professional mobile POS shell marker missing');
 
 const dashboard=await read('index.html');
 assert(dashboard.includes('const ONLINE_LOCKED_TOTAL=8085;'),'Locked online quantity 8,085 missing');
