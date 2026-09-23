@@ -56,7 +56,19 @@
 
     const sidebar=document.querySelector('.sidebar');
     const navLinks=sidebar ? [...sidebar.querySelectorAll('a[href]')] : [];
-    if(!navLinks.length) return;
+    const fallbackLinks=[
+      ['index.html','🏠 Beranda'],
+      ['penjualan.html','💰 Kasir'],
+      ['produk.html','📦 Produk'],
+      ['bahan-baku.html','🧱 Bahan Baku'],
+      ['resep.html','🧾 Resep'],
+      ['hpp.html','🧮 HPP'],
+      ['rekap.html','📊 Rekap'],
+      ['operasional.html','⚙️ Operasional'],
+      ['data-lama.html','🗂 Data Lama'],
+      ['pengaturan.html','⚙️ Pengaturan'],
+      ['ai-agent.html','🤖 Agen AI']
+    ];
 
     const current=(location.pathname.split('/').pop() || 'index.html').toLowerCase();
 
@@ -65,8 +77,8 @@
     top.setAttribute('role','banner');
     top.innerHTML=
       '<button class="ff-mobile-menu" id="ffMenuOpen" type="button" aria-label="Buka menu">☰</button>'+
-      '<div class="ff-mobile-brand"><span>🍀</span><span>Familia Food</span></div>'+
-      '<div aria-hidden="true" style="width:42px"></div>';
+      '<a class="ff-mobile-brand" href="index.html" aria-label="Kembali ke Beranda"><span>🍀</span><span>Familia Food</span></a>'+
+      '<a class="ff-mobile-home" href="index.html" aria-label="Kembali ke Beranda">🏠</a>';
 
     const overlay=document.createElement('div');
     overlay.className='ff-mobile-overlay';
@@ -85,21 +97,25 @@
     nav.className='nav';
     nav.setAttribute('aria-label','Navigasi utama');
 
-    navLinks.forEach(a=>{
-      const x=a.cloneNode(true);
-      const href=(x.getAttribute('href')||'').split('?')[0].toLowerCase();
-      const file=href.split('/').pop()||'index.html';
-      x.classList.toggle('active',file===current);
-      x.addEventListener('click',()=>document.body.classList.remove('ff-menu-open'));
-      nav.appendChild(x);
-    });
-
-    const aiLink=document.createElement('a');
-    aiLink.href='ai-agent.html';
-    aiLink.textContent='🤖 Agen AI';
-    aiLink.className=current==='ai-agent.html'?'active':'';
-    aiLink.addEventListener('click',()=>document.body.classList.remove('ff-menu-open'));
-    nav.appendChild(aiLink);
+    if(navLinks.length){
+      navLinks.forEach(a=>{
+        const x=a.cloneNode(true);
+        const href=(x.getAttribute('href')||'').split('?')[0].toLowerCase();
+        const file=href.split('/').pop()||'index.html';
+        x.classList.toggle('active',file===current);
+        x.addEventListener('click',()=>document.body.classList.remove('ff-menu-open'));
+        nav.appendChild(x);
+      });
+    }else{
+      fallbackLinks.forEach(([href,label])=>{
+        const x=document.createElement('a');
+        x.href=href;
+        x.textContent=label;
+        x.className=href.toLowerCase()===current?'active':'';
+        x.addEventListener('click',()=>document.body.classList.remove('ff-menu-open'));
+        nav.appendChild(x);
+      });
+    }
 
     drawer.appendChild(nav);
 
