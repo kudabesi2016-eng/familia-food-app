@@ -80,7 +80,13 @@ grant select, insert, update, delete on table
   public.ff_penjualan_pelanggan
 to anon, authenticated, service_role;
 
-grant usage, select on all sequences in schema public
+grant usage, select on sequence
+  public.ff_supplier_id_seq,
+  public.ff_pelanggan_id_seq,
+  public.ff_pembelian_id_seq,
+  public.ff_pembelian_item_id_seq,
+  public.ff_retur_penjualan_id_seq,
+  public.ff_penjualan_pelanggan_id_seq
 to anon, authenticated, service_role;
 
 -- Mapping pelanggan↔penjualan adalah tabel tambahan; tabel penjualan inti tetap tidak diubah.
