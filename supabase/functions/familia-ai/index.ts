@@ -178,6 +178,8 @@ function buildSnapshot(month, q, data){
     kualitas_data:{
       hpp_offline_tersedia:offlineHppKnown,
       hpp_online_tersedia:onlineHppKnown,
+      audit_online_seller_center_8085_bungkus: lockedSellerAuditOk,
+      total_online_seller_center_jan_agustus_2026: lockedSellerTotal,
       produk_master:products.length,
       bahan_baku: data.materials?.length || undefined
     }
