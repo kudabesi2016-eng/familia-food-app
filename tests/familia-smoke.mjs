@@ -97,6 +97,11 @@ assert(shellCss.includes('body.ff-android .sidebar{display:none!important}'),'An
 assert(shellCss.includes('.ff-mobile-bottom'),'Android shell bottom navigation missing');
 assert(shellJs.includes("['operasional.html','🧾','Operasional']"),'Android quick navigation must include Operasional');
 assert(shellJs.includes("document.addEventListener('DOMContentLoaded',boot,{once:true})"),'Android shell DOM boot hook missing');
+assert(shellJs.includes('prepareMobileTables'),'Android shell must prepare tables for mobile cards');
+assert(shellJs.includes('MutationObserver'),'Android shell must re-process dynamically rendered table rows');
+assert(shellCss.includes('table.ff-mobile-table td::before'),'Mobile table labels must be visible without horizontal scrolling');
+assert(shellCss.includes('flex-wrap:wrap!important'),'Mobile tabs must wrap instead of horizontal scrolling');
+assert(shellCss.includes('overflow:visible!important'),'Mobile table containers must not require horizontal scrolling');
 
 const dashboard=await read('index.html');
 assert(dashboard.includes('const ONLINE_LOCKED_TOTAL=8085;'),'Locked online quantity 8,085 missing');
