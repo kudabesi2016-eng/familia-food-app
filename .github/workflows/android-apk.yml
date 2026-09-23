@@ -50,6 +50,9 @@ jobs:
       - name: Deep integration smoke tests
         run: node tests/familia-smoke.mjs
 
+      - name: AI agent structure test
+        run: node tests/ai-agent-smoke.mjs
+
       - name: Live Supabase integration test
         run: node tests/supabase-live.mjs
 
