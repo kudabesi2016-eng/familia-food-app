@@ -10,6 +10,34 @@
     return window.innerWidth<=900;
   }
 
+  function prepareMobileTables(){
+    if(!isMobile()) return;
+    document.querySelectorAll('table:not(.ff-mobile-table)').forEach(table=>{
+      if(table.classList.contains('ff-no-mobile-stack')) return;
+      const headers=[...table.querySelectorAll('thead th')].map(th=>String(th.textContent||'').trim());
+      if(!headers.length) return;
+      table.classList.add('ff-mobile-table');
+      [...table.querySelectorAll('tbody tr, tfoot tr')].forEach(row=>{
+        [...row.children].forEach((cell,i)=>{
+          if(cell.tagName!=='TD') return;
+          if(cell.hasAttribute('colspan')) return;
+          const label=headers[i]||headers[headers.length-1]||'';
+          cell.setAttribute('data-label',label);
+        });
+      });
+    });
+  }
+
+  function watchMobileTables(){
+    prepareMobileTables();
+    let timer=null;
+    const observer=new MutationObserver(()=>{
+      clearTimeout(timer);
+      timer=setTimeout(prepareMobileTables,80);
+    });
+    observer.observe(document.body,{childList:true,subtree:true});
+  }
+
   function setup(){
     if(!document.body || !isMobile()) return;
     if(document.body.dataset.androidShell==='1') return;
@@ -101,6 +129,8 @@
     window.addEventListener('resize',()=>{
       if(!isMobile()) close();
     });
+
+    watchMobileTables();
   }
 
   function boot(){
