@@ -7,6 +7,7 @@ if(!ai.includes('Agen AI Familia Food')) throw new Error('AI page missing');
 if(!ai.includes('Tanya Agen AI')) throw new Error('AI form missing');
 if(!ai.includes('signInAnonymously')) throw new Error('AI page must establish an authenticated anonymous session');
 if(!ai.includes('Authorization')) throw new Error('AI page must send session authorization');
+if(!ai.includes("message:'__healthcheck__'")) throw new Error('AI healthcheck request missing');
 if(!fn.includes('OPENAI_API_KEY')) throw new Error('AI server secret missing');
 if(!fn.includes('SUPABASE_PUBLISHABLE_KEYS')) throw new Error('AI data adapter missing Supabase publishable key');
 if(!fn.includes('buildSnapshot')) throw new Error('AI business snapshot missing');
