@@ -1,8 +1,19 @@
 const {readFile}=await import('node:fs/promises');
 const ai=await readFile('ai-agent.html','utf8');
 const fn=await readFile('supabase/functions/familia-ai/index.ts','utf8');
+const arch=await readFile('AI-AGENT-ARCHITECTURE.md','utf8');
+
 if(!ai.includes('Agen AI Familia Food')) throw new Error('AI page missing');
 if(!ai.includes('Tanya Agen AI')) throw new Error('AI form missing');
+if(!ai.includes('signInAnonymously')) throw new Error('AI page must establish an authenticated anonymous session');
+if(!ai.includes('Authorization')) throw new Error('AI page must send session authorization');
 if(!fn.includes('OPENAI_API_KEY')) throw new Error('AI server secret missing');
-if(fn.includes('SUPABASE_SERVICE_ROLE_KEY')) throw new Error('AI function must not expose service role by default');
+if(!fn.includes('SUPABASE_PUBLISHABLE_KEYS')) throw new Error('AI data adapter missing Supabase publishable key');
+if(!fn.includes('buildSnapshot')) throw new Error('AI business snapshot missing');
+if(!fn.includes('online_baru_sudah_net')) throw new Error('Online net rule missing');
+if(!fn.includes('8085')) throw new Error('Locked 8,085 online packs rule missing');
+if(!fn.includes('Bearer')) throw new Error('AI endpoint auth check missing');
+if(/\.from\(['"][^'"]+['"]\)\.(insert|update|upsert|delete)\(/.test(fn)) throw new Error('AI agent must remain read-only');
+if(fn.includes('SUPABASE_SERVICE_ROLE_KEY')) throw new Error('AI function must not use service role directly');
+if(!arch.includes('read-only')) throw new Error('AI architecture document missing read-only rule');
 console.log('AI_AGENT_STRUCTURE_PASS');
