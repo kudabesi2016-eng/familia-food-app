@@ -96,6 +96,7 @@ assert(shellCss.includes('body .sidebar{'),'Android shell must provide a safe mo
 assert(shellCss.includes('body.ff-android .sidebar{display:none!important}'),'Android shell must hide desktop sidebar when active');
 assert(shellCss.includes('.ff-mobile-bottom'),'Android shell bottom navigation missing');
 assert(shellJs.includes("['operasional.html','🧾','Operasional']"),'Android quick navigation must include Operasional');
+assert(shellJs.includes("ai-agent.html"),'Android drawer must include Agen AI');
 assert(shellJs.includes("document.addEventListener('DOMContentLoaded',boot,{once:true})"),'Android shell DOM boot hook missing');
 assert(shellJs.includes('prepareMobileTables'),'Android shell must prepare tables for mobile cards');
 assert(shellJs.includes('MutationObserver'),'Android shell must re-process dynamically rendered table rows');
