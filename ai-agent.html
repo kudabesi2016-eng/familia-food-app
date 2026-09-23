@@ -51,7 +51,7 @@
 (function(){
   const $=id=>document.getElementById(id);
   const history=[];
-  const endpoint=(window.FF_AI_ENDPOINT||'supabase/functions/v1/familia-ai');
+  const endpoint=(window.FF_AI_ENDPOINT||'https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai');
   function add(role,text){
     const d=document.createElement('div');
     d.style.cssText='padding:12px;margin:8px 0;border-radius:12px;line-height:1.5;background:'+(role==='user'?'#eaf6ef':'#fff')+';border:1px solid #dce8e1';
