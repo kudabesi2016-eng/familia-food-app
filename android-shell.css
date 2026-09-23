@@ -374,3 +374,156 @@
 @media(min-width:901px){
   .ff-mobile-topbar,.ff-mobile-drawer,.ff-mobile-overlay,.ff-mobile-bottom{display:none!important}
 }
+
+
+/* Mobile rule: no horizontal swipe for tabs or tables.
+   Tables become stacked cards, while tabs/buttons wrap to new lines. */
+@media(max-width:900px){
+  body.ff-android .tablewrap{
+    overflow:visible!important;
+    width:100%!important;
+  }
+
+  body.ff-android table.ff-mobile-table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    border-collapse:separate!important;
+    border-spacing:0!important;
+    table-layout:auto!important;
+  }
+
+  body.ff-android table.ff-mobile-table thead{
+    position:absolute!important;
+    width:1px!important;
+    height:1px!important;
+    padding:0!important;
+    margin:-1px!important;
+    overflow:hidden!important;
+    clip:rect(0 0 0 0)!important;
+    white-space:nowrap!important;
+    border:0!important;
+  }
+
+  body.ff-android table.ff-mobile-table tbody,
+  body.ff-android table.ff-mobile-table tfoot{
+    display:block!important;
+    width:100%!important;
+  }
+
+  body.ff-android table.ff-mobile-table tr{
+    display:block!important;
+    width:100%!important;
+    margin:0 0 9px!important;
+    padding:3px 0!important;
+    background:#fff!important;
+    border:1px solid var(--ff-line)!important;
+    border-radius:12px!important;
+    box-shadow:0 1px 5px rgba(20,67,42,.04)!important;
+  }
+
+  body.ff-android table.ff-mobile-table td{
+    display:grid!important;
+    grid-template-columns:minmax(88px,40%) minmax(0,1fr)!important;
+    gap:10px!important;
+    width:100%!important;
+    min-width:0!important;
+    padding:9px 11px!important;
+    border-bottom:1px solid #edf2ef!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+    vertical-align:top!important;
+  }
+
+  body.ff-android table.ff-mobile-table td:last-child{
+    border-bottom:0!important;
+  }
+
+  body.ff-android table.ff-mobile-table td::before{
+    content:attr(data-label);
+    color:#6b7972;
+    font-size:11px;
+    font-weight:800;
+    line-height:1.35;
+    text-transform:uppercase;
+  }
+
+  body.ff-android table.ff-mobile-table td[colspan]{
+    display:block!important;
+  }
+
+  body.ff-android table.ff-mobile-table td[colspan]::before{
+    content:none!important;
+  }
+
+  body.ff-android table.ff-mobile-table td input,
+  body.ff-android table.ff-mobile-table td select,
+  body.ff-android table.ff-mobile-table td button,
+  body.ff-android table.ff-mobile-table td .btn{
+    max-width:100%!important;
+  }
+
+  /* Never make a tab row horizontally scrollable. */
+  body.ff-android .tabs,
+  body.ff-android .penjualan-tabs,
+  body.ff-android .tablist,
+  body.ff-android .filter-tabs{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    overflow:visible!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    white-space:normal!important;
+    gap:7px!important;
+  }
+
+  body.ff-android .tab,
+  body.ff-android .penjualan-tab,
+  body.ff-android .tabs button{
+    flex:1 1 calc(50% - 7px)!important;
+    min-width:0!important;
+    max-width:none!important;
+    white-space:normal!important;
+    line-height:1.2!important;
+    text-align:center!important;
+  }
+
+  body.ff-android .penjualan-tabs{
+    position:sticky!important;
+    top:60px!important;
+  }
+
+  /* Fallback navigation also wraps instead of becoming a horizontal scroller. */
+  body.ff-android .sidebar .menu,
+  body.ff-android .sidebar .nav{
+    flex-wrap:wrap!important;
+    overflow:visible!important;
+    white-space:normal!important;
+  }
+
+  /* Pages that do not initialize the Android shell immediately must still
+     never create a sideways-scroll layout. */
+  body.ff-android,
+  body.ff-android main,
+  body.ff-android .main,
+  body.ff-android .content{
+    max-width:100%!important;
+    overflow-x:hidden!important;
+  }
+}
+
+@media(max-width:420px){
+  body.ff-android table.ff-mobile-table td{
+    grid-template-columns:minmax(80px,38%) minmax(0,1fr)!important;
+    gap:8px!important;
+    padding:8px 9px!important;
+  }
+
+  body.ff-android .tab,
+  body.ff-android .penjualan-tab,
+  body.ff-android .tabs button{
+    flex-basis:100%!important;
+  }
+}
