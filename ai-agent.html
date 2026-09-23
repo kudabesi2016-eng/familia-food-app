@@ -74,7 +74,7 @@
   async function check(){
     try{
       await ensureAiSession();
-      const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'__healthcheck__',history:[]})});
+      const session=await ensureAiSession(); const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({message:'__healthcheck__',history:[]})});
       $('aiStatus').className='notice ok';
       $('aiStatus').innerHTML='✅ Agen AI terhubung ke aplikasi. Mode: read-only.';
       return r.ok;
