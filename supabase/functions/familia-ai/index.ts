@@ -234,6 +234,7 @@ Deno.serve(async req=>{
     const body=await req.json();
     const message=String(body?.message||"").trim();
     if(!message)return json({error:"Pertanyaan kosong"},400);
+    if(message==="__healthcheck__") return json({ok:true,mode:"read-only",source:"familia_food_snapshot"});
 
     const month=requestedMonth(message);
     const db=await makeDb(req);
