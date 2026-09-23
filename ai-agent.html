@@ -268,7 +268,7 @@ body.ff-android .ai-card{
 
   function cleanProductKey(v){
     return norm(v)
-      .replace(/\bisi\b/g,' ')
+      .replace(/\b(masukkan|input|catat|simpan|transaksi|tambah|jual|penjualan|offline|online|tiktok|sebanyak|qty|jumlah|bungkus|pack|paket|isi)\b/g,' ')
       .replace(/[^a-z0-9]+/g,' ')
       .replace(/\s+/g,' ')
       .trim();
@@ -314,19 +314,22 @@ body.ff-android .ai-card{
 
   function extractDate(q){
     const m=String(q).match(/(?:tanggal|tgl|pada)\s*(\d{1,2})[\/-](\d{1,2})(?:[\/-](20\d{2}))?/i);
-    if(!m)return todayLocal();
+    if(!m)return null;
     const y=m[3]||String(new Date().getFullYear());
     return y+'-'+String(Number(m[2])).padStart(2,'0')+'-'+String(Number(m[1])).padStart(2,'0');
   }
 
   function extractMoney(q){
-    const s=String(q).replace(/rp\.?/gi,'');
-    const m=s.match(/(\d+(?:[\.,]\d+)?)\s*(juta|jt|ribu|rb|k)?\b/i);
-    if(!m)return null;
-    let v=Number(m[1].replace(/\./g,'').replace(',','.'));
+    const s=String(q);
+    const matches=[...s.matchAll(/(?:rp\.?\s*)?(\d{1,3}(?:[\.,]\d{3})+|\d+(?:[\.,]\d+)?)\s*(juta|jt|ribu|rb|k)?\b/gi)];
+    if(!matches.length)return null;
+    const m=matches[matches.length-1];
+    let raw=m[1];
     const unit=(m[2]||'').toLowerCase();
-    if(unit==='juta'||unit==='jt')v*=1000000;
-    else if(unit==='ribu'||unit==='rb'||unit==='k')v*=1000;
+    let v;
+    if(unit==='juta'||unit==='jt')v=Number(raw.replace(',','.'))*1000000;
+    else if(unit==='ribu'||unit==='rb'||unit==='k')v=Number(raw.replace(',','.'))*1000;
+    else v=Number(raw.replace(/\./g,'').replace(',','.'));
     return Number.isFinite(v)&&v>0?Math.round(v):null;
   }
 
@@ -389,7 +392,7 @@ body.ff-android .ai-card{
     return {intent:true,action:{kind:'add-sale',details}};
   }
 
-  function expenseCategory(q){
+  function explicitExpenseCategory(q){
     const s=norm(q);
     const explicit=s.match(/kategori\s*[:=]?\s*(bahan baku|operasional|gaji|alat\s*&?\s*perlengkapan|retur|lainnya)/i);
     if(explicit){
@@ -401,18 +404,21 @@ body.ff-android .ai-card{
       if(v.includes('retur'))return 'Retur';
       return 'Lainnya';
     }
-    for(const c of ['Bahan Baku','Operasional','Gaji','Alat & Perlengkapan','Retur','Lainnya']){
+    for(const c of ['Bahan Baku','Operasional','Gaji','Alat & Perlengkapan','Retur']){
       if(s.includes(c.toLowerCase()))return c;
     }
-    return 'Lainnya';
+    return null;
+  }
+  function expenseCategory(q){
+    return explicitExpenseCategory(q)||'Lainnya';
   }
 
   function expenseNoteFromQuery(q){
     let s=norm(q);
-    s=s.replace(/\b(catat|input|masukkan|tambah|simpan|pengeluaran|biaya|expense)\b/g,' ');
+    s=s.replace(/\b(catat|input|masukkan|tambah|simpan|pengeluaran|biaya|expense|edit|ubah|ganti|perbarui|perbaiki|hapus|delete|transaksi|id|nomor|no|menjadi|jadi)\b/g,' ');
     s=s.replace(/\b(online|offline|tiktok)\b/g,' ');
     s=s.replace(/kategori\s*[:=]?\s*(bahan baku|operasional|gaji|alat\s*&?\s*perlengkapan|retur|lainnya)/g,' ');
-    s=s.replace(/(?:rp\s*)?\d+(?:[\.,]\d+)?\s*(?:juta|jt|ribu|rb|k)?\b/g,' ');
+    s=s.replace(/(?:rp\.?\s*)?\d+(?:[\.,]\d+)?\s*(?:juta|jt|ribu|rb|k)?\b/g,' ');
     s=s.replace(/(?:tanggal|tgl|pada)\s*\d{1,2}[\/-]\d{1,2}(?:[\/-]20\d{2})?/g,' ');
     return s.replace(/\s+/g,' ').trim();
   }
@@ -425,6 +431,16 @@ body.ff-android .ai-card{
   function expensePlainNote(x){
     return String(x?.keterangan||'').replace(/^\[(Online|Offline)\]\s*/i,'').trim();
   }
+  function inferExpenseCategory(q){
+    const s=norm(q);
+    if(/gas|listrik|air|transport|ongkir|iklan|admin|internet|telepon|sewa|operasional/.test(s))return 'Operasional';
+    if(/aci|tepung|plastik|mie|lumpia|stik|bumbu|bahan baku/.test(s))return 'Bahan Baku';
+    if(/gaji|upah/.test(s))return 'Gaji';
+    if(/alat|mesin|timbangan|sealer|rak|perlengkapan/.test(s))return 'Alat & Perlengkapan';
+    if(/retur/.test(s))return 'Retur';
+    return null;
+  }
+
 
   function parseExpenseAction(q){
     const s=norm(q);
@@ -443,7 +459,7 @@ body.ff-android .ai-card{
 
       const channel=extractChannel(q)||expenseChannelFromNote(row);
       const nominal=extractMoney(q)??Number(row.nominal||0);
-      const kategori=expenseCategory(q)||row.kategori||'Lainnya';
+      const kategori=explicitExpenseCategory(q)||inferExpenseCategory(q)||row.kategori||'Lainnya';
       const note=expenseNoteFromQuery(q)||expensePlainNote(row)||'Pengeluaran';
       if(!nominal||nominal<=0)return {intent:true,error:'Nominal pengeluaran belum jelas.'};
       if(!channel)return {intent:true,error:'Channel pengeluaran belum disebutkan. Gunakan Online atau Offline.'};
@@ -454,7 +470,7 @@ body.ff-android .ai-card{
     if(!channel)return {intent:true,error:'Untuk pengeluaran, sebutkan channel Online atau Offline.'};
     const nominal=extractMoney(q);
     if(!nominal)return {intent:true,error:'Nominal pengeluaran belum jelas. Contoh: “catat pengeluaran Offline gas Rp100.000”.'};
-    const tanggal=extractDate(q);
+    const tanggal=extractDate(q)||todayLocal();
     const kategori=expenseCategory(q);
     const note=expenseNoteFromQuery(q)||'Pengeluaran';
     return {intent:true,action:{kind:'add-expense',data:{tanggal,periode:tanggal.slice(0,7),kategori,keterangan:'['+channel+'] '+note,nominal}}};
