@@ -166,7 +166,7 @@ body.ff-android .ai-card{
   const data={sales:[],olds:[],expenses:[],products:[],hpps:[],materials:[],recipes:[],purchases:[],purchaseItems:[],suppliers:[],customers:[],returns:[]};
 
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function norm(v){return String(v??'').trim().toLowerCase().replace(/s+/g,' ');}
+  function norm(v){return String(v??'').trim().toLowerCase().replace(/\s+/g,' ');}
   function nowTime(){return new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit'}).format(new Date());}
   function todayLocal(){
     const d=new Date(),p=n=>String(n).padStart(2,'0');
@@ -368,7 +368,7 @@ body.ff-android .ai-card{
     const s=norm(q);
     const isDelete=/\b(hapus|delete|hapuskan|batalkan)\b/.test(s) && /\b(transaksi|penjualan)\b/.test(s);
     const isEdit=/\b(edit|ubah|ganti|perbarui|perbaiki)\b/.test(s) && /\b(transaksi|penjualan)\b/.test(s);
-    const isAdd=/\b(masukkan|input|catat|simpan|tambah|jual)\b/.test(s) && !isDelete && !isEdit;
+    const isAdd=/\b(masukkan|input|catat|simpan|tambah|jual)\b/.test(s) && !/\b(pengeluaran|biaya)\b/.test(s) && !isDelete && !isEdit;
     if(!isDelete&&!isEdit&&!isAdd)return null;
 
     const id=extractId(q);
@@ -461,7 +461,7 @@ body.ff-android .ai-card{
   }
 
   function parseAction(q){
-    return parseSaleAction(q) || parseExpenseAction(q);
+    return parseExpenseAction(q) || parseSaleAction(q);
   }
 
   function describeAction(action){
