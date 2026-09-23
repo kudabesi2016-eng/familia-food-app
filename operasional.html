@@ -316,7 +316,8 @@ async function savePurchase(){
     state.purchase=await loadTable('ff_pembelian');
     $('purchaseStatus').textContent='Pembelian tersimpan, harga bahan diperbarui, dan HPP siap membaca harga terbaru.';
 
-  $('buyNote').value='';$('purchaseLines').innerHTML='';addPurchaseLine();renderPurchases();renderStats();
+    $('buyNote').value='';$('purchaseLines').innerHTML='';addPurchaseLine();renderPurchases();renderStats();
+  }
 }
 async function refreshMaterialLastPrices(bahanIds){
   const ids=[...new Set((bahanIds||[]).map(Number).filter(Boolean))];
