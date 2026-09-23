@@ -19,7 +19,6 @@ create table if not exists public.ff_pelanggan (
   alamat text,
   catatan text,
   status text not null default 'Aktif',
-  status text not null default 'Aktif',
   created_at timestamptz not null default now()
 );
 
