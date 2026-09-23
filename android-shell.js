@@ -12,7 +12,7 @@
 
   function prepareMobileTables(){
     if(!isMobile()) return;
-    document.querySelectorAll('table:not(.ff-mobile-table)').forEach(table=>{
+    document.querySelectorAll('table').forEach(table=>{
       if(table.classList.contains('ff-no-mobile-stack')) return;
       const headers=[...table.querySelectorAll('thead th')].map(th=>String(th.textContent||'').trim());
       if(!headers.length) return;
