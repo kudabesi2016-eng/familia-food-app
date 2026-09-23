@@ -71,6 +71,8 @@ let supplierId = null;
 let customerId = null;
 let purchaseId = null;
 let saleId = null;
+let returnId = null;
+let expenseId = null;
 
 try {
   const supplier = await request('ff_supplier',{
@@ -124,6 +126,8 @@ try {
     }
   });
   if(!Array.isArray(returns) || !returns.length) throw new Error('Return insert returned no row');
+  returnId = returns[0]?.id ?? null;
+  if(returnId == null) throw new Error('Return insert returned no id');
 
   const sales = await request('penjualan?select=id&limit=1');
   saleId = sales?.[0]?.id ?? null;
@@ -147,13 +151,23 @@ try {
   });
   if(!Array.isArray(expenses) || !expenses.length) throw new Error('Expense insert returned no row');
 
-  const expenseId = expenses[0]?.id;
+  expenseId = expenses[0]?.id;
   if(expenseId == null) throw new Error('Expense insert returned no id');
   await request('pengeluaran?id=eq.'+encodeURIComponent(String(expenseId)),{method:'DELETE'});
+  expenseId = null;
 
   console.log('SUPABASE_LIVE_PASS');
   console.log('Writes tested: supplier, customer, purchase, purchase item, return, customer-sale mapping'+(saleId?'':' (skipped: no existing sale)'), 'and expense');
 } finally {
+  if(expenseId){
+    try { await request('pengeluaran?id=eq.'+encodeURIComponent(String(expenseId)),{method:'DELETE'}); } catch(e) { console.error('Cleanup expense failed:',e.message); }
+  }
+  if(returnId){
+    try { await request('ff_retur_penjualan?id=eq.'+encodeURIComponent(String(returnId)),{method:'DELETE'}); } catch(e) { console.error('Cleanup return failed:',e.message); }
+  }
+  if(saleId){
+    try { await request('ff_penjualan_pelanggan?penjualan_id=eq.'+encodeURIComponent(String(saleId)),{method:'DELETE'}); } catch(e) { console.error('Cleanup customer-sale link failed:',e.message); }
+  }
   if(purchaseId){
     try { await request('ff_pembelian?id=eq.'+encodeURIComponent(String(purchaseId)),{method:'DELETE'}); } catch(e) { console.error('Cleanup purchase failed:',e.message); }
   }
