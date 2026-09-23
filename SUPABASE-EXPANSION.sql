@@ -19,6 +19,7 @@ create table if not exists public.ff_pelanggan (
   alamat text,
   catatan text,
   status text not null default 'Aktif',
+  status text not null default 'Aktif',
   created_at timestamptz not null default now()
 );
 
@@ -64,10 +65,24 @@ create table if not exists public.ff_penjualan_pelanggan (
 );
 
 create index if not exists ff_pelanggan_map_pelanggan_idx on public.ff_penjualan_pelanggan(pelanggan_id);
-
 create index if not exists ff_pembelian_tanggal_idx on public.ff_pembelian(tanggal);
 create index if not exists ff_pembelian_item_pembelian_idx on public.ff_pembelian_item(pembelian_id);
 create index if not exists ff_retur_tanggal_idx on public.ff_retur_penjualan(tanggal);
 
--- Mapping pelanggan↔penjualan adalah tabel tambahan; tabel penjualan inti tetap tidak diubah.\n-- Sengaja tidak mengubah struktur produk, bahan_baku, resep, hpp, penjualan,
+-- Familia Food saat ini memakai Supabase client langsung tanpa login.
+-- Beri akses Data API ke role yang dipakai client dan tooling Supabase.
+grant select, insert, update, delete on table
+  public.ff_supplier,
+  public.ff_pelanggan,
+  public.ff_pembelian,
+  public.ff_pembelian_item,
+  public.ff_retur_penjualan,
+  public.ff_penjualan_pelanggan
+to anon, authenticated, service_role;
+
+grant usage, select on all sequences in schema public
+to anon, authenticated, service_role;
+
+-- Mapping pelanggan↔penjualan adalah tabel tambahan; tabel penjualan inti tetap tidak diubah.
+-- Sengaja tidak mengubah struktur produk, bahan_baku, resep, hpp, penjualan,
 -- data_lama, pengeluaran, atau pengaturan yang sudah dipakai Familia Food.
