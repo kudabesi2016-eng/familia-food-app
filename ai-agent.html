@@ -6,7 +6,7 @@
 <title>Agen AI — Familia Food</title>
 <link rel="stylesheet" href="android-shell.css">
 <link rel="stylesheet" href="style.css">
-<script src="supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js"></script>
 </head>
 <body>
 <main class="main" style="max-width:900px;margin:0 auto;padding:18px 16px 110px">
@@ -59,15 +59,28 @@
     $('aiChat').appendChild(d);
     d.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
+  let aiSessionPromise=null;
+  async function ensureAiSession(){
+    if(aiSessionPromise)return aiSessionPromise;
+    aiSessionPromise=(async()=>{
+      const current=await supabaseClient.auth.getSession();
+      if(current?.data?.session?.access_token)return current.data.session;
+      const r=await supabaseClient.auth.signInAnonymously();
+      if(r.error)throw r.error;
+      return r.data.session;
+    })().catch(e=>{aiSessionPromise=null;throw e});
+    return aiSessionPromise;
+  }
   async function check(){
     try{
-      const r=await fetch(endpoint,{method:'OPTIONS'});
+      await ensureAiSession();
+      const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'__healthcheck__',history:[]})});
       $('aiStatus').className='notice ok';
-      $('aiStatus').innerHTML='✅ Agen AI siap digunakan.';
+      $('aiStatus').innerHTML='✅ Agen AI terhubung ke aplikasi. Mode: read-only.';
       return r.ok;
     }catch(e){
       $('aiStatus').className='notice';
-      $('aiStatus').innerHTML='🟡 Tampilan Agen AI sudah siap. Endpoint AI belum diaktifkan di Supabase.';
+      $('aiStatus').innerHTML='🟡 Struktur Agen AI sudah ada, tetapi koneksi belum aktif. Pastikan Anonymous Sign-ins Supabase dan OPENAI_API_KEY sudah disiapkan.';
       return false;
     }
   }
@@ -77,13 +90,14 @@
     add('user',q); history.push({role:'user',content:q}); $('aiInput').value='';
     const b=e.submitter; if(b)b.disabled=true;
     try{
-      const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history})});
+      const session=await ensureAiSession();
+      const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({message:q,history})});
       const data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Endpoint AI belum aktif');
       const answer=String(data.answer||data.output_text||'Agen AI tidak mengembalikan jawaban.');
       history.push({role:'assistant',content:answer}); add('assistant',answer);
     }catch(err){
-      add('assistant','Agen AI belum aktif. Struktur aplikasi sudah siap; endpoint AI perlu diaktifkan di Supabase dan secret model disimpan di server, bukan di APK/browser.');
+      add('assistant','Agen AI belum aktif atau belum mendapat akses data. Pastikan Anonymous Sign-ins Supabase aktif dan OPENAI_API_KEY sudah disimpan sebagai secret Edge Function. Tidak ada API key OpenAI yang disimpan di APK/browser.');
     }finally{if(b)b.disabled=false;}
   });
   $('aiClear').onclick=()=>{$('aiChat').innerHTML='<div class="notice ok">Percakapan dibersihkan.</div>';history.length=0};
