@@ -224,14 +224,34 @@ body.ff-android .ai-card{
   }
 
   function resolveProduct(q){
-    const s=norm(q).replace(/\bisi\b/g,' ').replace(/\s+/g,' ').trim();
-    const matches=data.products.filter(p=>{
-      const n=norm(p.nama_produk).replace(/\bisi\b/g,' ').replace(/\s+/g,' ').trim();
-      return n && s.includes(n);
-    }).sort((a,b)=>norm(b.nama_produk).length-norm(a.nama_produk).length);
-    return matches[0]||null;
-  }
+    const raw=norm(q);
+    const cleaned=raw
+      .replace(/\b(masukkan|input|catat|simpan|transaksi|tambah|jual|penjualan|offline|online|tiktok|sebanyak|qty|jumlah)\b/g,' ')
+      .replace(/\bisi\b/g,' ')
+      .replace(/\b(bungkus|pack|paket)\b/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
 
+    const exact=data.products.find(p=>{
+      const n=norm(p.nama_produk).replace(/\bisi\b/g,' ').replace(/\s+/g,' ').trim();
+      return n && new RegExp('(^|\\\\s)'+n.replace(/[.*+?^{}()|[\\]\\\\]/g,'\\\\$&')+'($|\\\\s)','i').test(cleaned);
+    });
+    if(exact)return exact;
+
+    // Khusus produk Naget: izinkan kata "isi", channel, dan kata pengantar
+    // berada di posisi mana pun selama varian angkanya jelas.
+    const nagetMatch=raw.match(/\\bnaget\\b(?:\\s+(?:isi)?)?\\s*(10|12|20|25|30|40|50)\\b/i);
+    if(nagetMatch){
+      const variant=nagetMatch[1];
+      const target=data.products.find(p=>{
+        const n=norm(p.nama_produk);
+        return n===('naget '+variant) || (variant==='25' && n==='naget 25+saus');
+      });
+      if(target)return target;
+    }
+
+    return null;
+  }
   function parseDate(q){
     const m=String(q).match(/(?:tanggal|tgl)\s*(\d{1,2})[\/-](\d{1,2})(?:[\/-](20\d{2}))?/i);
     if(!m)return todayLocal();
