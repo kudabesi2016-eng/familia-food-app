@@ -380,11 +380,11 @@ async function loadDashboard(){
     // Jika satu bulan belum memiliki mapping HPP, Profit Offline tetap ditampilkan
     // sebagai "—" agar Dashboard tidak menyebut Uang Bersih sebagai Profit.
     const dashboardData={sales,olds:offOld,expenses:expenseRows,products:productMaster,hpps:hppRows};
-    const offlineMonths=FF.monthsOfData(dashboardData);
+    const offlineMonths=FFCore.monthsOfData(dashboardData);
     let offHpp=0,offHppKnown=true;
     offlineMonths.forEach(m=>{
       try{
-        const f=FF.financeFor(m,'Offline',dashboardData);
+        const f=FFCore.financeFor(m,'Offline',dashboardData);
         if(!f.hppKnown) offHppKnown=false;
         else offHpp+=Math.round(Number(f.hpp)||0);
       }catch(e){
