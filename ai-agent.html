@@ -240,7 +240,7 @@ body.ff-android .ai-card{
 
     // Khusus produk Naget: izinkan kata "isi", channel, dan kata pengantar
     // berada di posisi mana pun selama varian angkanya jelas.
-    const nagetMatch=raw.match(/\\bnaget\\b(?:\\s+(?:isi)?)?\\s*(10|12|20|25|30|40|50)\\b/i);
+    const nagetMatch=raw.match(/\bnaget\b(?:\s+(?:isi)?)?\s*(10|12|20|25|30|40|50)\b/i);
     if(nagetMatch){
       const variant=nagetMatch[1];
       const target=data.products.find(p=>{
