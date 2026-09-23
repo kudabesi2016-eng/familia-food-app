@@ -36,7 +36,7 @@ function requestedMonth(q){
   return now.toISOString().slice(0,7);
 }
 
-async function makeDb(){
+async function makeDb(req){
   const url=Deno.env.get("SUPABASE_URL");
   let key="";
   try {
@@ -44,8 +44,10 @@ async function makeDb(){
     key=map.default || "";
   } catch {}
   if(!key) key=Deno.env.get("SUPABASE_ANON_KEY") || "";
+  const auth=req.headers.get("Authorization") || "";
+  if(!/^Bearer\s+\S+/i.test(auth)) throw new Error("Sesi Agen AI belum terautentikasi.");
   if(!url || !key) throw new Error("Konfigurasi Supabase Edge Function belum lengkap.");
-  return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  return createClient(url,key,{global:{headers:{Authorization:auth}},auth:{persistSession:false,autoRefreshToken:false}});
 }
 
 async function read(db, table, select="*", filterFn=null, limit=5000){
@@ -234,7 +236,7 @@ Deno.serve(async req=>{
     if(!message)return json({error:"Pertanyaan kosong"},400);
 
     const month=requestedMonth(message);
-    const db=await makeDb();
+    const db=await makeDb(req);
     const data=await getData(db,month);
     const snapshot=buildSnapshot(month,message,data);
     const history=Array.isArray(body?.history)?body.history.slice(-6):[];
