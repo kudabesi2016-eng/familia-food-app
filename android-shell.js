@@ -39,7 +39,16 @@
   }
 
   function setup(){
-    if(!document.body || !isMobile()) return;
+    if(!document.body) return;
+    const baseSidebar=document.querySelector('.sidebar .nav, .sidebar .menu');
+    if(baseSidebar && !baseSidebar.querySelector('a[href="ai-agent.html"]')){
+      const link=document.createElement('a');
+      link.href='ai-agent.html';
+      link.textContent='🤖 Agen AI';
+      if((location.pathname.split('/').pop()||'index.html').toLowerCase()==='ai-agent.html') link.classList.add('active');
+      baseSidebar.appendChild(link);
+    }
+    if(!isMobile()) return;
     if(document.body.dataset.androidShell==='1') return;
 
     document.body.dataset.androidShell='1';
