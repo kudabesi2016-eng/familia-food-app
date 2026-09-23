@@ -12,6 +12,8 @@ on:
       - "*.css"
       - "tests/**"
       - "SUPABASE-EXPANSION.sql"
+      - "supabase/functions/**"
+      - "AI-AGENT-ARCHITECTURE.md"
 
 jobs:
   build-android:
