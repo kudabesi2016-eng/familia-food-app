@@ -50,6 +50,9 @@ jobs:
       - name: Deep integration smoke tests
         run: node tests/familia-smoke.mjs
 
+      - name: Live Supabase integration test
+        run: node tests/supabase-live.mjs
+
       - name: Syntax check web scripts
         shell: bash
         run: |
