@@ -163,7 +163,7 @@ body.ff-android .ai-card{
   const $=id=>document.getElementById(id);
   const history=[];
   const endpoint=(window.FF_AI_ENDPOINT||'https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai');
-  const data={sales:[],olds:[],expenses:[],products:[],hpps:[],materials:[],recipes:[],purchases:[],purchaseItems:[],suppliers:[],customers:[],returns:[]};
+  const data={sales:[],olds:[],expenses:[],products:[],hpps:[],materials:[],recipes:[],purchases:[],purchaseItems:[],suppliers:[],customers:[],returns:[],settings:[]};
 
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function norm(v){return String(v??'').trim().toLowerCase().replace(/\s+/g,' ');}
@@ -213,7 +213,7 @@ body.ff-android .ai-card{
     const jobs=[
       ['penjualan','sales'],['data_lama','olds'],['pengeluaran','expenses'],['produk','products'],['hpp','hpps'],
       ['bahan_baku','materials'],['resep','recipes'],['ff_pembelian','purchases'],['ff_pembelian_item','purchaseItems'],
-      ['ff_supplier','suppliers'],['ff_pelanggan','customers'],['ff_retur_penjualan','returns']
+      ['ff_supplier','suppliers'],['ff_pelanggan','customers'],['ff_retur_penjualan','returns'],['pengaturan','settings']
     ];
     const results=await Promise.all(jobs.map(async([table,key])=>[key,await fetchAll(table)]));
     for(const [key,rows] of results)data[key]=rows;
@@ -472,7 +472,7 @@ body.ff-android .ai-card{
     const nominal=extractMoney(q);
     if(!nominal)return {intent:true,error:'Nominal pengeluaran belum jelas. Contoh: “catat pengeluaran Offline gas Rp100.000”.'};
     const tanggal=extractDate(q)||todayLocal();
-    const kategori=expenseCategory(q);
+    const kategori=explicitExpenseCategory(q)||inferExpenseCategory(q)||'Lainnya';
     const note=expenseNoteFromQuery(q)||'Pengeluaran';
     return {intent:true,action:{kind:'add-expense',data:{tanggal,periode:tanggal.slice(0,7),kategori,keterangan:'['+channel+'] '+note,nominal}}};
   }
