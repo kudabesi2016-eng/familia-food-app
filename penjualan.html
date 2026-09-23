@@ -358,7 +358,7 @@ $('save').onclick=async()=>{
       oldSale=prev.data||null;
     }
     const hargaBulat=Math.round(harga),hppBulat=Math.round(hpp),total=qty*hargaBulat,hppTotal=qty*hppBulat,laba=total-hppTotal;
-    const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,source:'manual',product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,profit_online:channel==='Online'?laba:null};
+    const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,total,source:'manual',product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,uang_bersih:channel==='Online'?total:total,biaya_platform:channel==='Online'?0:0,profit_online:channel==='Online'?laba:null};
     let r=wasEdit
       ? await supabaseClient.from('penjualan').update(data).eq('id',editId)
       : await supabaseClient.from('penjualan').insert([data]).select('id').single();
@@ -559,7 +559,7 @@ $('processOnline').onclick=async()=>{try{$('importInfo').innerHTML='<div class="
 $('resetOnline').onclick=()=>{stagedSellerRecords=[];stagedIncomeRecords=[];stagedSellerName='';stagedIncomeNames=[];importRows=[];$('sellerFile').value='';$('incomeFiles').value='';$('saveFrom').value='';$('saveTo').value='';$('importPreview').classList.remove('show');$('importDetailCard').classList.remove('show');$('importInfo').innerHTML='';$('importMsg').innerHTML='';updateStagedStatus();activateUploadTab('seller');};
 $('closeImportDetail').onclick=()=>{$('importDetailCard').classList.remove('show');};
 $('importCancel').onclick=()=>{$('resetOnline').click();};
-$('importSave').onclick=async()=>{if(!importRows.length)return;const unique=[];const seen=new Set();for(const r of importRows){if(!r.order_id||!r.import_key)continue;if(!seen.has(r.import_key)){seen.add(r.import_key);unique.push(r)}}try{const keys=unique.map(x=>x.import_key).filter(Boolean);let existing=new Set();for(let i=0;i<keys.length;i+=500){const chunk=keys.slice(i,i+500);const q=await supabaseClient.from('penjualan').select('import_key').in('import_key',chunk);if(q.error)throw q.error;(q.data||[]).forEach(x=>existing.add(x.import_key));}const toInsert=unique.filter(x=>!existing.has(x.import_key)).map(r=>({tanggal:r.tanggal,produk_id:r.produk_id,qty:r.qty,channel:'Online',harga:r.harga,hpp:r.modal_hpp||0,laba:r.profit_online||0,order_id:r.order_id,product_name:r.product_name,variation:r.variation,sku_id:r.sku_id,seller_sku:r.seller_sku,quantity_return:r.quantity_return,harga_asli:r.harga_asli,omzet_produk:r.omzet_produk,order_amount:r.order_amount,biaya_platform:r.biaya_platform,uang_bersih:r.uang_bersih,modal_hpp:r.modal_hpp,profit_online:r.profit_online,source:r.source||'seller_center',purchase_channel:r.purchase_channel,order_channel:r.order_channel,created_time:r.created_time,paid_time:r.paid_time,import_key:r.import_key}));for(let i=0;i<toInsert.length;i+=200){const r=await supabaseClient.from('penjualan').insert(toInsert.slice(i,i+200));if(r.error)throw r.error;}$('importMsg').innerHTML=`<div class="ok">Berhasil menyimpan <b>${toInsert.length.toLocaleString('id-ID')}</b> baris. ${unique.length-toInsert.length} baris dilewati karena sudah pernah diimpor.</div>`;importRows=[];$('resetOnline').click();await load();}catch(e){$('importMsg').innerHTML=`<div class="bad">Gagal menyimpan: ${esc(e.message)}<br>Pastikan SQL migrasi sudah dijalankan di Supabase.</div>`;}};
+$('importSave').onclick=async()=>{if(!importRows.length)return;const unique=[];const seen=new Set();for(const r of importRows){if(!r.order_id||!r.import_key)continue;if(!seen.has(r.import_key)){seen.add(r.import_key);unique.push(r)}}try{const keys=unique.map(x=>x.import_key).filter(Boolean);let existing=new Set();for(let i=0;i<keys.length;i+=500){const chunk=keys.slice(i,i+500);const q=await supabaseClient.from('penjualan').select('import_key').in('import_key',chunk);if(q.error)throw q.error;(q.data||[]).forEach(x=>existing.add(x.import_key));}const toInsert=unique.filter(x=>!existing.has(x.import_key)).map(r=>({tanggal:r.tanggal,produk_id:r.produk_id,qty:r.qty,channel:'Online',harga:r.harga,hpp:r.modal_hpp||0,laba:r.profit_online||0,order_id:r.order_id,product_name:r.product_name,variation:r.variation,sku_id:r.sku_id,seller_sku:r.seller_sku,quantity_return:r.quantity_return,harga_asli:r.harga_asli,omzet_produk:r.omzet_produk,order_amount:r.order_amount,biaya_platform:r.biaya_platform,uang_bersih:r.uang_bersih,modal_hpp:r.modal_hpp,total:Number(r.omzet_produk ?? r.uang_bersih ?? ((Number(r.qty)||0)*(Number(r.harga)||0))),profit_online:r.profit_online,source:r.source||'seller_center',purchase_channel:r.purchase_channel,order_channel:r.order_channel,created_time:r.created_time,paid_time:r.paid_time,import_key:r.import_key}));for(let i=0;i<toInsert.length;i+=200){const r=await supabaseClient.from('penjualan').insert(toInsert.slice(i,i+200));if(r.error)throw r.error;}$('importMsg').innerHTML=`<div class="ok">Berhasil menyimpan <b>${toInsert.length.toLocaleString('id-ID')}</b> baris. ${unique.length-toInsert.length} baris dilewati karena sudah pernah diimpor.</div>`;importRows=[];$('resetOnline').click();await load();}catch(e){$('importMsg').innerHTML=`<div class="bad">Gagal menyimpan: ${esc(e.message)}<br>Pastikan SQL migrasi sudah dijalankan di Supabase.</div>`;}};
 async function fetchAllPenjualan(){
   const all=[]; const pageSize=1000;
   for(let from=0;;from+=pageSize){
@@ -879,6 +879,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         variation:r.jenis==='familia'?'Naget':'Dropship',
         omzet_produk:0,
         uang_bersih:null,
+        total:0,
         modal_hpp:Math.round(total),
         profit_online:null,
         biaya_platform:null,
@@ -967,7 +968,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0));
     const note=byId('cashNote').value.trim();
     if(!tanggal||amount<=0){setCashMsg('Tanggal dan Uang Bersih wajib diisi.',true);return;}
-    const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,order_id:null,product_name:'Pencairan TikTok',variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:null,source:'online_pencairan'};
+    const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,total:amount,order_id:null,product_name:'Pencairan TikTok',variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:0,source:'online_pencairan'};
     supabaseClient.from('penjualan').insert([row]).select('id').single().then(async r=>{
       if(r.error){setCashMsg('Gagal menyimpan penerimaan: '+esc(r.error.message),true);return;}
       setCashMsg('Penerimaan Uang Online tersimpan: '+money(amount));
