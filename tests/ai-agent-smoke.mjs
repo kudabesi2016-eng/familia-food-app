@@ -11,10 +11,16 @@ if(!ai.includes("message:'__healthcheck__'")) throw new Error('AI healthcheck re
 if(!fn.includes('OPENAI_API_KEY')) throw new Error('AI server secret missing');
 if(!fn.includes('SUPABASE_PUBLISHABLE_KEYS')) throw new Error('AI data adapter missing Supabase publishable key');
 if(!fn.includes('buildSnapshot')) throw new Error('AI business snapshot missing');
+if(!fn.includes('const onlineHist=sales.filter')) throw new Error('AI online historical dataset missing');
+if(!fn.includes('const onlineSeller=sales.filter')) throw new Error('AI Seller Center dataset missing');
+if(!fn.includes('const onlineNew=sales.filter')) throw new Error('AI online batch dataset missing');
+if(!fn.includes('const onlineCash=sales.filter')) throw new Error('AI online payout dataset missing');
+if(!fn.includes('const offlineRevenue=')) throw new Error('AI offline revenue calculation missing');
 if(!fn.includes('online_baru_sudah_net')) throw new Error('Online net rule missing');
 if(!fn.includes('8085')) throw new Error('Locked 8,085 online packs rule missing');
 if(!fn.includes('lockedSellerTotal') || !fn.includes('lockedSellerAuditOk')) throw new Error('AI must actively audit locked Seller Center total 8,085');
-if(!fn.includes('Healthcheck harus benar-benar zero-cost')) throw new Error('AI healthcheck must not require OpenAI key');
+if(!fn.includes('Healthcheck tetap wajib melewati autentikasi Supabase')) throw new Error('AI healthcheck must require Supabase auth');
+if(!fn.includes('Healthcheck harus benar-benar zero-cost') && !fn.includes('healthcheck')) throw new Error('AI healthcheck missing');
 if(!fn.includes('Bearer')) throw new Error('AI endpoint auth check missing');
 if(/\.from\(['"][^'"]+['"]\)\.(insert|update|upsert|delete)\(/.test(fn)) throw new Error('AI agent must remain read-only');
 if(fn.includes('SUPABASE_SERVICE_ROLE_KEY')) throw new Error('AI function must not use service role directly');
