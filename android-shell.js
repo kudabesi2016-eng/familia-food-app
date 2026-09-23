@@ -85,6 +85,13 @@
       nav.appendChild(x);
     });
 
+    const aiLink=document.createElement('a');
+    aiLink.href='ai-agent.html';
+    aiLink.textContent='🤖 Agen AI';
+    aiLink.className=current==='ai-agent.html'?'active':'';
+    aiLink.addEventListener('click',()=>document.body.classList.remove('ff-menu-open'));
+    nav.appendChild(aiLink);
+
     drawer.appendChild(nav);
 
     const bottom=document.createElement('nav');
