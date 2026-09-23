@@ -38,8 +38,33 @@ const expansionTables = [
   'ff_pembelian_item','ff_retur_penjualan','ff_penjualan_pelanggan'
 ];
 
-for(const table of coreTables) await readTable(table);
-for(const table of expansionTables) await readTable(table);
+async function probeTable(table){
+  try{
+    await request(table+'?select=*&limit=1');
+    return {table,status:'OK'};
+  }catch(e){
+    return {table,status:'MISSING_OR_BLOCKED',error:e.message};
+  }
+}
+
+const coreStatus = [];
+for(const table of coreTables) coreStatus.push(await probeTable(table));
+
+const expansionStatus = [];
+for(const table of expansionTables) expansionStatus.push(await probeTable(table));
+
+console.log('CORE_TABLE_STATUS', JSON.stringify(coreStatus.map(x=>({table:x.table,status:x.status}))));
+console.log('EXPANSION_TABLE_STATUS', JSON.stringify(expansionStatus.map(x=>({table:x.table,status:x.status}))));
+
+const coreBad = coreStatus.filter(x=>x.status!=='OK');
+const expansionBad = expansionStatus.filter(x=>x.status!=='OK');
+
+if(coreBad.length){
+  throw new Error('Core Supabase tables are not all reachable: '+coreBad.map(x=>x.table+' ['+x.error+']').join('; '));
+}
+if(expansionBad.length){
+  throw new Error('Expansion tables are not all ready. Run SUPABASE-EXPANSION.sql first: '+expansionBad.map(x=>x.table).join(', '));
+}
 
 const suffix = Date.now().toString();
 let supplierId = null;
@@ -125,10 +150,8 @@ try {
   const expenseId = expenses[0]?.id;
   if(expenseId == null) throw new Error('Expense insert returned no id');
   await request('pengeluaran?id=eq.'+encodeURIComponent(String(expenseId)),{method:'DELETE'});
-  
+
   console.log('SUPABASE_LIVE_PASS');
-  console.log('Core tables reachable:', coreTables.join(', '));
-  console.log('Expansion tables reachable:', expansionTables.join(', '));
   console.log('Writes tested: supplier, customer, purchase, purchase item, return, customer-sale mapping'+(saleId?'':' (skipped: no existing sale)'), 'and expense');
 } finally {
   if(purchaseId){
