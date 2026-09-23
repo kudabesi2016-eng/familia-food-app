@@ -90,6 +90,13 @@ assert(operational.includes('Harga sebelumnya dipertahankan'),'Deleting a purcha
 assert(operational.includes('Qty retur melebihi qty penjualan'),'Return quantity guard missing');
 assert(!operational.includes('localStorage.setItem(LS.'),'Operational business data must not fall back to localStorage writes');
 assert(!operational.includes('lsSet('),'Operational module must not use legacy localStorage business-data writer');
+const shellCss=await read('android-shell.css');
+const shellJs=await read('android-shell.js');
+assert(shellCss.includes('body .sidebar{'),'Android shell must provide a safe mobile sidebar fallback');
+assert(shellCss.includes('body.ff-android .sidebar{display:none!important}'),'Android shell must hide desktop sidebar when active');
+assert(shellCss.includes('.ff-mobile-bottom'),'Android shell bottom navigation missing');
+assert(shellJs.includes("['operasional.html','🧾','Operasional']"),'Android quick navigation must include Operasional');
+assert(shellJs.includes("document.addEventListener('DOMContentLoaded',boot,{once:true})"),'Android shell DOM boot hook missing');
 
 const dashboard=await read('index.html');
 assert(dashboard.includes('const ONLINE_LOCKED_TOTAL=8085;'),'Locked online quantity 8,085 missing');
