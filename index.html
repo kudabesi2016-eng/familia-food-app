@@ -91,7 +91,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Profit</small><b id="offProfit">Rp 0</b></div>
       <div class="mini"><small>Produk Keluar</small><b id="offQty">0</b></div>
     </div>
-    <div class="note">Offline: Uang Bersih = Pemasukan − Pengeluaran. Profit = Uang Bersih − HPP Offline yang terukur. Jika HPP histori belum terpetakan, Profit ditampilkan “—” agar tidak salah menyebut Uang Bersih sebagai Profit.</div>
+    <div class="note">Offline: Uang Bersih = Pemasukan − Pengeluaran. Profit Terukur = Uang Bersih − HPP yang sudah memiliki master. <span id="offlineHppAudit">Memeriksa kelengkapan HPP histori…</span></div>
   </div>
 
   <div class="channel">
@@ -374,7 +374,7 @@ async function loadDashboard(){
     // sama seperti Rekap/Data Lama. Baris tanpa periode valid tidak boleh masuk total.
     const offExpense=validExpenseRows.reduce((s,x)=>s+Math.round(num(x.nominal)),0);
     const offNet=offRevenue-offExpense;
-    const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+    const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty ?? x.catatan)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
 
     // HPP Offline memakai sumber per bulan yang sama dengan Rekap Offline.
     // Jika satu bulan belum memiliki mapping HPP, Profit Offline tetap ditampilkan
@@ -386,12 +386,15 @@ async function loadDashboard(){
       try{
         const f=FFCore.financeFor(m,'Offline',dashboardData);
         if(!f.hppKnown) offHppKnown=false;
-        else offHpp+=Math.round(Number(f.hpp)||0);
+        offHpp+=Math.round(Number(f.hpp)||0);
       }catch(e){
         offHppKnown=false;
       }
     });
-    const offProfit=offHppKnown ? offNet-offHpp : null;
+    // Tampilkan modal/HPP yang benar-benar terukur meskipun masih ada produk
+    // histori yang belum mempunyai master HPP. Profit tetap diberi status
+    // "Terukur" dan tidak dipaksa menjadi angka penuh.
+    const offProfit=offNet-offHpp;
 
     // ONLINE: STANDARD historis + transaksi online baru.
     const onlineFinanceRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_finance');
@@ -455,24 +458,18 @@ async function loadDashboard(){
     const totalRevenue=offRevenue+onRevenue;
     const totalOut=offExpense+onFee;
     const totalNet=(offRevenue-offExpense)+onNet;
+    const totalHpp=(offHpp+onHpp);
     const overallHppKnown=offHppKnown && onHistoricalHppKnown;
-    const totalHpp=overallHppKnown ? offHpp+onHpp : null;
-    const overallProfitKnown=overallHppKnown;
-    const totalProfit=overallProfitKnown ? (offProfit + onProfit) : null;
-    const totalMargin=totalProfit!=null && totalNet ? totalProfit/totalNet*100 : 0;
+    const overallProfitKnown=true;
+    const totalProfit=(offProfit + (onProfit ?? 0));
+    const totalMargin=totalNet?totalProfit/totalNet*100:0;
 
     setNumber('totalRevenue',totalRevenue);
     setNumber('totalOut',totalOut);
     setNumber('totalNet',totalNet);
-    if(!overallHppKnown){
-      document.getElementById('totalHpp').textContent='—';
-      document.getElementById('totalProfit').textContent='—';
-      const tm=document.getElementById('totalMargin');tm.textContent='—';tm.classList.remove('negative');
-    }else{
-      setNumber('totalHpp',totalHpp);
-      setNumber('totalProfit',totalProfit);
-      const tm=document.getElementById('totalMargin');tm.textContent=pct(totalMargin);tm.classList.toggle('negative',totalMargin<0);
-    }
+    setNumber('totalHpp',totalHpp);
+    setNumber('totalProfit',totalProfit);
+    const tm=document.getElementById('totalMargin');tm.textContent=pct(totalMargin);tm.classList.toggle('negative',totalMargin<0);
     document.getElementById('totalProduk').textContent=activeProducts.toLocaleString('id-ID');
     document.getElementById('opPurchase').textContent=rupiah(opPurchase);
     document.getElementById('opExpense').textContent=rupiah(opExpense);
@@ -482,8 +479,10 @@ async function loadDashboard(){
 
     document.getElementById('offOldCount').textContent=offOld.length.toLocaleString('id-ID')+' baris';
     document.getElementById('offNewCount').textContent=offNew.length.toLocaleString('id-ID');
-    setNumber('offRevenue',offRevenue); setNumber('offExpense',offExpense); setNumber('offNet',offNet); if(offProfit==null){document.getElementById('offProfit').textContent='—';}else{setNumber('offProfit',offProfit);}
+    setNumber('offRevenue',offRevenue); setNumber('offExpense',offExpense); setNumber('offNet',offNet); setNumber('offProfit',offProfit);
     document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
+    const offlineAudit=document.getElementById('offlineHppAudit');
+    if(offlineAudit){offlineAudit.textContent=offHppKnown ? '✅ HPP histori Offline lengkap.' : '🟠 Sebagian HPP histori belum punya master; angka yang tampil adalah HPP/Profit Terukur.';}
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
