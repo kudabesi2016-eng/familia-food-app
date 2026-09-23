@@ -89,6 +89,7 @@ assert(operational.includes('Pembelian dibatalkan karena harga bahan'),'Purchase
 assert(operational.includes('Harga sebelumnya dipertahankan'),'Deleting a purchase must preserve material price if re-sync fails');
 assert(operational.includes('Qty retur melebihi qty penjualan'),'Return quantity guard missing');
 assert(!operational.includes('localStorage.setItem(LS.'),'Operational business data must not fall back to localStorage writes');
+assert(!operational.includes('lsSet('),'Operational module must not use legacy localStorage business-data writer');
 
 const dashboard=await read('index.html');
 assert(dashboard.includes('const ONLINE_LOCKED_TOTAL=8085;'),'Locked online quantity 8,085 missing');
