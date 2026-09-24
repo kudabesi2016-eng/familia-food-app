@@ -20,6 +20,18 @@ for(const file of htmlFiles){
     const target=path.join(root,link);
     if(!fs.existsSync(target)) fail(file+' references missing page: '+link);
   }
+  let stylePos=0;
+  while(true){
+    const start=text.indexOf('<style',stylePos);
+    if(start<0) break;
+    const openEnd=text.indexOf('>',start);
+    if(openEnd<0){ fail('Unclosed <style> tag in '+file); break; }
+    const close=text.indexOf('</style>',openEnd+1);
+    if(close<0){ fail('Missing </style> tag in '+file); break; }
+    if(text.slice(openEnd+1,close).includes('<style')) fail('Nested <style> block in '+file);
+    stylePos=close+8;
+  }
+
   const scripts=[...text.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/gi)];
   for(const [,attrs,body] of scripts){
     if(!body.trim() || /src\s*=/.test(attrs)) continue;
