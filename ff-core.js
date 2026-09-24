@@ -81,7 +81,7 @@
   }
   function onlineIncomeRows(sales, month){
     return (sales || []).filter(x => x.channel === 'Online' && monthOf(x.tanggal) === month && (
-      x.source === 'income_tiktok_pesanan' || x.source === 'online_historical_finance' || x.source === 'online_historical_import'
+      x.source === 'income_tiktok_pesanan' || x.source === 'online_historical_finance' || x.source === 'online_historical_import' || x.source === 'online_standard_finance'
     )).map(x => ({
       source:x.source, channel:'Online', tanggal:monthOf(x.tanggal), product_id:x.produk_id,
       product_name:x.product_name || '-', qty:Number(x.qty || 0), revenue:Number(x.omzet_produk || 0),
