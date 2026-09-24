@@ -118,8 +118,17 @@ assert(dashboard.includes('const onNewFee=0;'),'New-online fee must remain zero 
 assert(dashboard.includes('const onNewProfit=onNewNet-onNewHpp;'),'New-online profit formula regression');
 
 const hpp=await read('hpp.html');
-for(const marker of ['HPP_FIXED_OFFLINE_BUNGKUS','"cireng isi": 2900','"cireng biasa": 2425','"cibay": 2900']) {
-  assert(hpp.includes(marker),'Locked HPP marker missing: '+marker);
+assert(hpp.includes('function hitungHppReal('),'HPP calculator must calculate HPP from actual modal and production quantity');
+assert(hpp.includes('id="biayaProduksi"'),'HPP calculator must accept actual production overhead');
+assert(hpp.includes('hpp_unit: hppOfflinePack'),'Master HPP must be saved from calculator result');
+for(const forbiddenHpp of [
+  'HPP_FIXED_OFFLINE_BUNGKUS',
+  'HPP_FIXED_ONLINE_BUNGKUS',
+  'HPP_NAGET_OFFLINE_PER_PCS',
+  'HPP_NAGET_ONLINE_PACKING',
+  'NAGET_SIZE_PRICES'
+]){
+  assert(!hpp.includes(forbiddenHpp),'HPP calculator must not hardcode HPP/price: '+forbiddenHpp);
 }
 
 const sql=await read('SUPABASE-EXPANSION.sql');
