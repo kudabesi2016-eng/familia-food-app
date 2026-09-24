@@ -36,6 +36,9 @@ for(const table of requiredTables){
   if(!ai.includes("'"+table+"'") && !ai.includes('"'+table+'"')) fail('Agen AI missing Supabase table reference: '+table);
 }
 
+const core=read('ff-core.js');
+if(!core.includes("online_standard_finance")) fail('Shared reporting core must recognize online_standard_finance historical source');
+
 const supa=read('supabase.js');
 if(!/SUPABASE_URL\s*=\s*["']https:\/\/[^"']+\.supabase\.co["']/.test(supa)) fail('Supabase URL is missing/invalid');
 if(!/SUPABASE_KEY\s*=\s*["'][^"']+["']/.test(supa)) fail('Supabase publishable key is missing');
