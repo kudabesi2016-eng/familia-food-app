@@ -382,13 +382,14 @@ value="Rp0"
 
 <div class="box">
 
-<label>Biaya Produksi / Overhead</label>
+<label>Biaya Produksi / Overhead Aktual</label>
 
 <input
-type="text"
+type="number"
 id="biayaProduksi"
-readonly
-value="Rp0"
+min="0"
+step="0.01"
+placeholder="Masukkan biaya produksi / overhead aktual"
 >
 
 </div>
@@ -595,39 +596,9 @@ let totalBiayaBahan = 0;
 let jumlahHasilProduksi = 0;
 
 
-/*
-  Biaya overhead per bungkus
-  mengikuti pola HPP lama Familia Food.
-
-  Nilai ini bukan harga bahan.
-  Ini adalah bagian biaya produksi yang
-  sebelumnya melekat pada HPP masing-masing produk.
-*/
-
-const HPP_NAGET_OFFLINE_PER_PCS = 359.36363636;
-const HPP_NAGET_ONLINE_PACKING = 1000;
-
-const NAGET_SIZE_PRICES = {
-  10: { offline: 4000, online: 5000 },
-  12: { offline: 4500, online: 6000 },
-  20: { offline: null, online: 10000 },
-  25: { offline: null, online: 15000 },
-  30: { offline: null, online: 15000 },
-  40: { offline: null, online: 20000 },
-  50: { offline: null, online: 25000 }
-};
-
-const HPP_FIXED_OFFLINE_BUNGKUS = {
-  "cireng isi": 2900,
-  "cireng biasa": 2425,
-  "cibay": 2900
-};
-
-const HPP_FIXED_ONLINE_BUNGKUS = {
-  "cireng isi": 3500,
-  "cireng biasa": 3500,
-  "cibay": 3500
-};
+/* HPP dan harga jual tidak ditentukan oleh konstanta.
+   HPP selalu berasal dari hasil kalkulator aktual.
+   Harga jual tetap boleh ditentukan/diedit pengguna. */
 
 function namaKunciProduk(nama){
   return String(nama || "").toLowerCase().replace(/\s+/g," ").trim();
@@ -657,28 +628,12 @@ function getNagetBaseProduct(){
          produkData.find(p => namaKunciProduk(p.nama_produk) === "naget") || null;
 }
 
-function targetHppOfflineBungkus(){
-  if(isNagetSelection()){
-    return HPP_NAGET_OFFLINE_PER_PCS * getIsiProduk();
-  }
-  const key = namaKunciProduk(produkTerpilih?.nama_produk);
-  return HPP_FIXED_OFFLINE_BUNGKUS[key] ?? 0;
-}
-
-function targetHppOnlineBungkus(){
-  if(isNagetSelection()){
-    return targetHppOfflineBungkus() + HPP_NAGET_ONLINE_PACKING;
-  }
-  return HPP_FIXED_ONLINE_BUNGKUS[namaKunciProduk(produkTerpilih?.nama_produk)] ?? 0;
-}
-
-function defaultJumlahProduksiPcs(){
-  if(isNagetSelection() || namaKunciProduk(produkTerpilih?.nama_produk).startsWith("naget")) return 2500;
-  const key = namaKunciProduk(produkTerpilih?.nama_produk);
-  if(key === "cireng isi" || key === "cireng isi 10") return 400;
-  if(key === "cireng biasa") return 100;
-  if(key === "cibay") return 100;
-  return 0;
+function hitungHppReal(totalModal, jumlahProduksiPcs, isiBungkus){
+  const pcs = Number(jumlahProduksiPcs || 0);
+  const isi = Number(isiBungkus || 0);
+  const modal = Number(totalModal || 0);
+  const jumlahBungkus = isi > 0 ? pcs / isi : 0;
+  return jumlahBungkus > 0 ? modal / jumlahBungkus : 0;
 }
 
 
@@ -928,27 +883,11 @@ return harga * jumlah;
 
 
 /* =========================
-   TENTUKAN HASIL PRODUKSI
-========================= */
-
-function tentukanJumlahProduksi(){
-  return defaultJumlahProduksiPcs();
-}
-
-
-/* =========================
-   HITUNG OVERHEAD SEBAGAI PENYESUAI HPP TERKUNCI
+   BIAYA PRODUKSI / OVERHEAD AKTUAL
 ========================= */
 
 function hitungBiayaProduksi(){
-  if(!produkTerpilih || jumlahHasilProduksi <= 0) return 0;
-
-  const isi = getIsiProduk();
-  const targetPack = targetHppOfflineBungkus();
-  if(!targetPack) return 0;
-
-  const targetTotalModal = targetPack * (jumlahHasilProduksi / isi);
-  return targetTotalModal - totalBiayaBahan;
+  return Math.max(0, Number(document.getElementById("biayaProduksi").value || 0));
 }
 
 
@@ -1092,18 +1031,14 @@ function hitungSemua(){
   if(!produkTerpilih) return;
 
   const inputJumlah = document.getElementById("jumlahProduksi");
-  let nilaiManual = Number(inputJumlah.value || 0);
-  if(nilaiManual <= 0) {
-    nilaiManual = tentukanJumlahProduksi();
-    inputJumlah.value = nilaiManual || "";
-  }
+  const nilaiManual = Number(inputJumlah.value || 0);
   jumlahHasilProduksi = nilaiManual;
 
   const isi = getIsiProduk();
-  const hppOfflinePack = targetHppOfflineBungkus();
-  const hppOnlinePack = targetHppOnlineBungkus();
   const biayaProduksi = hitungBiayaProduksi();
   const totalModal = totalBiayaBahan + biayaProduksi;
+  const hppOfflinePack = hitungHppReal(totalModal, jumlahHasilProduksi, isi);
+  const hppOnlinePack = hppOfflinePack;
 
   const hppOfflinePcs = isi > 0 ? hppOfflinePack / isi : 0;
   const hppOnlinePcs = isi > 0 ? hppOnlinePack / isi : 0;
@@ -1114,7 +1049,6 @@ function hitungSemua(){
   const untungOffline = hargaOffline > 0 ? hargaOffline - hppOfflinePack : 0;
   const untungOnline = hargaOnline > 0 ? hargaOnline - hppOnlinePack : 0;
 
-  document.getElementById("biayaProduksi").value = rupiah(biayaProduksi);
   document.getElementById("hasilProduksi").textContent = rupiah(biayaProduksi);
   document.getElementById("hasilModal").textContent = rupiah(totalModal);
   document.getElementById("hasilHpp").textContent = rupiah(hppOfflinePcs);
@@ -1146,9 +1080,8 @@ document.getElementById("isiBungkusSelect").addEventListener("change", function(
     produkTerpilih = variant;
   }
 
-  const harga = NAGET_SIZE_PRICES[size] || {offline:null, online:null};
-  document.getElementById("hargaOffline").value = harga.offline ?? "";
-  document.getElementById("hargaOnline").value = harga.online ?? "";
+  document.getElementById("hargaOffline").value = variant?.harga_offline ?? "";
+  document.getElementById("hargaOnline").value = variant?.harga_online ?? "";
 
   // Resep Naget selalu mengambil resep dasar Naget 10.
   const base = getNagetBaseProduct();
@@ -1167,7 +1100,7 @@ document.getElementById("produkSelect").addEventListener("change", async functio
     document.getElementById("recipeBody").innerHTML = '<tr><td colspan="5" class="empty">Pilih produk terlebih dahulu.</td></tr>';
     document.getElementById("jumlahProduksi").value = "";
     document.getElementById("totalBahan").value = "Rp0";
-    document.getElementById("biayaProduksi").value = "Rp0";
+    document.getElementById("biayaProduksi").value = "";
     document.getElementById("hargaOffline").value = "";
     document.getElementById("hargaOnline").value = "";
     document.getElementById("hasilBahan").textContent = "Rp0";
@@ -1191,9 +1124,8 @@ document.getElementById("produkSelect").addEventListener("change", async functio
     const base = getNagetBaseProduct();
     resepProduk = base ? resepData.filter(r => String(r.produk_id) === String(base.id)) : [];
 
-    const harga = NAGET_SIZE_PRICES[10];
-    document.getElementById("hargaOffline").value = harga.offline;
-    document.getElementById("hargaOnline").value = harga.online;
+    document.getElementById("hargaOffline").value = produkTerpilih?.harga_offline ?? "";
+    document.getElementById("hargaOnline").value = produkTerpilih?.harga_online ?? "";
   } else {
     document.getElementById("isiBungkusSelect").disabled = true;
     produkTerpilih = cariProduk(id);
@@ -1230,6 +1162,13 @@ document.getElementById(
 hitungSemua
 );
 
+document.getElementById(
+"biayaProduksi"
+).addEventListener(
+"input",
+hitungSemua
+);
+
 
 /* =========================
    SIMPAN HPP
@@ -1248,10 +1187,10 @@ async function(){
 
   jumlahHasilProduksi = Number(document.getElementById("jumlahProduksi").value || 0);
   const isi = getIsiProduk();
-  const hppOfflinePack = targetHppOfflineBungkus();
-  const hppOnlinePack = targetHppOnlineBungkus();
   const biayaProduksi = hitungBiayaProduksi();
   const totalModal = totalBiayaBahan + biayaProduksi;
+  const hppOfflinePack = hitungHppReal(totalModal, jumlahHasilProduksi, isi);
+  const hppOnlinePack = hppOfflinePack;
   const hargaOffline = Number(document.getElementById("hargaOffline").value || 0);
   const hargaOnline = Number(document.getElementById("hargaOnline").value || 0);
 
@@ -1280,11 +1219,12 @@ async function(){
     biaya_produksi: biayaProduksi,
     jumlah_batch: jumlahHasilProduksi,
     total_modal: totalModal,
-    hpp_unit: Math.round(hppOfflinePack),
+    hpp_unit: hppOfflinePack,
+    hpp_per_pcs: isi > 0 ? hppOfflinePack / isi : null,
     harga_offline: hargaOffline > 0 ? hargaOffline : null,
     harga_online: hargaOnline > 0 ? hargaOnline : null,
-    untung_offline: untungOffline !== null ? Math.round(untungOffline) : null,
-    untung_online: untungOnline !== null ? Math.round(untungOnline) : null
+    untung_offline: untungOffline !== null ? untungOffline : null,
+    untung_online: untungOnline !== null ? untungOnline : null
   };
 
   let error;
@@ -1313,7 +1253,7 @@ async function(){
   produkTerpilih.harga_offline = updateProduk.harga_offline;
   produkTerpilih.harga_online = updateProduk.harga_online;
 
-  tampilkanStatus("HPP " + produkTerpilih.nama_produk + " berhasil disimpan.","success");
+  tampilkanStatus("HPP " + produkTerpilih.nama_produk + " disimpan dari hasil kalkulator aktual.","success");
 }
 );
 
