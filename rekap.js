@@ -369,7 +369,7 @@ function updateChannelUI(){
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran Offline berasal dari tabel Pengeluaran pada bulan yang dipilih.<br>Uang Bersih = Pemasukan − Pengeluaran.<br>Modal menggunakan HPP Offline apabila tersedia.<br>Profit = Uang Bersih − Modal.<br>'
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran Offline berasal dari tabel Pengeluaran pada bulan yang dipilih.<br>Uang Bersih = Pemasukan − Pengeluaran.<br>Profit = Uang Bersih.<br>Margin = Profit ÷ Pemasukan × 100%.<br>HPP tetap ditampilkan bila tersedia.'
     : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
 }
 
@@ -399,75 +399,38 @@ function months(){
 ===================================================== */
 
 function renderCards(){
-
-  const m =
-    $('month').value;
-
-  const v =
-    finance(m);
-
+  const m=$('month').value;
+  const offline=$('channel').value==='Offline';
+  const v=finance(m);
   if(!v){
-
-    $('rev').textContent = 'Rp 0';
-    $('out').textContent = 'Rp 0';
-    $('net').textContent = 'Rp 0';
-    $('hpp').textContent = '—';
-    $('profit').textContent = '—';
-
+    $('rev').textContent='Rp 0';
+    $('out').textContent='Rp 0';
+    $('net').textContent='Rp 0';
+    $('hpp').textContent='—';
+    $('profit').textContent='—';
     return;
-
   }
-
-
-  const h =
-    hppForChannel(m);
-
-
-  $('rev').textContent =
-    money(v[0]);
-
-  $('out').textContent =
-    money(v[1]);
-
-  $('net').textContent =
-    money(v[2]);
-
-
+  const h=hppForChannel(m);
+  $('rev').textContent=money(v[0]);
+  $('out').textContent=money(v[1]);
+  $('net').textContent=money(v[2]);
+  if(offline){
+    const profit=v[2];
+    const margin=v[0]>0?(profit/v[0])*100:0;
+    $('hpp').textContent=h.known?money(h.total):'—';
+    $('profit').innerHTML=`${money(profit)}<div class="hint" style="margin-top:4px">Margin ${margin.toFixed(2)}%</div>`;
+    return;
+  }
   if(h.known){
-
-    const profit =
-      v[2] - h.total;
-
-    const margin =
-      v[2]
-        ? (profit / v[2]) * 100
-        : 0;
-
-
-    $('hpp').textContent =
-      money(h.total);
-
-
-    $('profit').innerHTML =
-
-      `${money(profit)}
-       `;
-
+    const profit=v[2]-h.total;
+    const margin=v[2]?(profit/v[2])*100:0;
+    $('hpp').textContent=money(h.total);
+    $('profit').innerHTML=`${money(profit)}<div class="hint" style="margin-top:4px">Margin ${margin.toFixed(2)}%</div>`;
   }else{
-
-    $('hpp').textContent =
-      '—';
-
-    $('profit').innerHTML =
-
-      `<span class="hint">
-        Modal belum tersedia
-       </span>`;
-
+    $('hpp').textContent='—';
+    $('profit').innerHTML='<span class="hint">Modal belum tersedia</span>';
   }
-
 }
-
 
 /* =====================================================
    RENDER TABEL
@@ -642,16 +605,10 @@ function renderMonthly(){
           : null;
 
 
-      const profit =
-        modal !== null
-          ? v[2] - modal
-          : null;
-
-
-      const margin =
-        profit !== null && Number(v[2]) > 0
-          ? (profit / Number(v[2])) * 100
-          : 0;
+      const offline = $('channel').value === 'Offline';
+      const profit = offline ? v[2] : (modal !== null ? v[2] - modal : null);
+      const marginBase = offline ? Number(v[0]) : Number(v[2]);
+      const margin = profit !== null && marginBase > 0 ? (profit / marginBase) * 100 : 0;
 
 
       return `
@@ -691,7 +648,7 @@ function renderMonthly(){
 
                 ? `
                   <b>${money(profit)}</b>
-                  
+                  <div class="hint" style="margin-top:4px">Margin ${margin.toFixed(2)}%</div>
                 `
 
                 : `
