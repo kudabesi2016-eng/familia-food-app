@@ -210,7 +210,19 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 </section><section class="penjualan-panel" data-panel="offline"><div class="card"><div class="cashhead"><div><h2 style="margin:0">🟢 Transaksi Offline</h2><div class="note">Tetap memakai struktur penjualan lama; pola HPP tidak diubah.</div></div></div>
 <div class="grid" style="margin-top:16px"><div class="field"><label>Tanggal</label><input id="tanggal" type="date"/></div><div class="field"><label>Nama Pelanggan</label><input id="pelanggan" list="ffCustomerList" placeholder="Contoh: Bu Euis" type="text"/><datalist id="ffCustomerList"></datalist></div><div class="field"><label>Produk</label><select id="produk"><option value="">Pilih Produk</option></select></div><div class="field"><label>Jumlah Terjual (Bungkus)</label><input id="qty" min="1" step="1" type="number" value="1"/></div><div class="field"><label>Channel Penjualan</label><select id="channel"><option>Offline</option></select></div><div class="field"><label>Harga Jual / Bungkus</label><input id="harga" min="0" readonly="" step="1" type="number"/></div><div class="field"><label>HPP / Bungkus</label><input id="hpp" min="0" readonly="" step="1" type="number"/></div></div>
 <div class="preview"><div class="box"><small>Harga Jual</small><strong id="pvHarga">Rp 0</strong></div><div class="box"><small>Total Omzet</small><strong id="pvOmzet">Rp 0</strong></div><div class="box"><small>Total Modal / HPP</small><strong id="pvHpp">Rp 0</strong></div><div class="box profit"><small>Profit</small><strong id="pvProfit">Rp 0</strong></div></div>
-<div class="actions"><button class="btn" id="save">+ Simpan Penjualan</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div><div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div></section><section class="penjualan-panel" data-panel="cash"><div class="card" id="onlineCashCard">
+<div class="actions"><button class="btn" id="save">+ Simpan Penjualan</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div>
+<div class="card" id="offlineHistoryCard" style="border:2px solid #cfe4d7">
+  <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <div><h2 style="margin:0">📋 Riwayat Transaksi Offline</h2><div class="note">Data berasal langsung dari transaksi Offline yang tersimpan. Setiap transaksi bisa diedit atau dihapus.</div></div>
+    <button class="btn gray" id="offlineHistoryRefresh" type="button">↻ Refresh</button>
+  </div>
+  <div class="tablewrap" style="margin-top:12px">
+    <table style="min-width:950px">
+      <thead><tr><th>Tanggal</th><th>Produk</th><th>Qty Bungkus</th><th>Harga/Bungkus</th><th>Total</th><th>HPP/Modal</th><th>Profit</th><th>Aksi</th></tr></thead>
+      <tbody id="offlineHistoryRows"><tr><td colspan="8">Memuat riwayat...</td></tr></tbody>
+    </table>
+  </div>
+</div><div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div></section><section class="penjualan-panel" data-panel="cash"><div class="card" id="onlineCashCard">
 <div class="cashhead">
 <div>
 <h2 style="margin:0">💰 Penerimaan Uang Online</h2>
@@ -248,7 +260,7 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="field" style="align-self:end"><button class="btn" id="dropAdd" type="button">+ Tambah / Update</button></div>
 </div>
 <div class="actions" style="margin-top:10px"><button class="btn light" id="dropMasterViewBtn" type="button">👁 Lihat Data</button></div><div class="tablewrap" id="dropMasterData" style="margin-top:12px;display:none"><table style="min-width:700px"><thead><tr><th>Produk Dropship</th><th>Modal / Bungkus</th><th>Aksi</th></tr></thead><tbody id="dropMasterRows"><tr><td colspan="3">Belum ada master dropship.</td></tr></tbody></table></div>
-</div></section><section class="penjualan-panel" data-panel="oldOnline"><div class="card tab-card" id="oldOnlineCard"><h2>📁 Rekap Data Lama Online</h2><div class="note" id="recapNote">Bagian ini khusus data lama Seller Center/TikTok yang sudah terkunci. Transaksi Online baru memakai input produk + jumlah + Penerimaan Uang.</div><div class="tablewrap"><table><thead><tr><th>Periode</th><th>Pemasukan</th><th>Potongan TikTok</th><th>Uang Bersih</th><th>Profit</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="rows"><tr><td colspan="7">Belum ada penjualan online.</td></tr></tbody></table></div></div></section><section class="penjualan-panel" data-panel="oldOffline"><div class="card tab-card" id="oldOfflineCard"><h2>📁 Rekap Data Lama Offline</h2><div class="note">Ringkasan data lama Offline. Detail dibuka saat bro menekan 👁 Lihat Data.</div><div class="tablewrap"><table><thead><tr><th>Periode</th><th>Pemasukan</th><th>Pengeluaran</th><th>Profit</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="offlineOldRows"><tr><td><b>September 2026</b></td><td>Rp 240.000</td><td>Rp 0</td><td class="offline-profit">Rp 240.000</td><td>100.00%</td><td><button class="mini viewbtn offline-view-btn" data-label="September 2026" data-period="2026-09" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Agustus 2026</b></td><td>Rp 7.938.500</td><td>Rp 9.671.700</td><td class="offline-profit">Rp -1.733.200</td><td>-21.83%</td><td><button class="mini viewbtn offline-view-btn" data-label="Agustus 2026" data-period="2026-08" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Juli 2026</b></td><td>Rp 24.366.500</td><td>Rp 32.997.500</td><td class="offline-profit">Rp -8.631.000</td><td>-35.42%</td><td><button class="mini viewbtn offline-view-btn" data-label="Juli 2026" data-period="2026-07" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Juni 2026</b></td><td>Rp 21.577.000</td><td>Rp 26.517.000</td><td class="offline-profit">Rp -4.940.000</td><td>-22.89%</td><td><button class="mini viewbtn offline-view-btn" data-label="Juni 2026" data-period="2026-06" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Mei 2026</b></td><td>Rp 17.767.500</td><td>Rp 20.462.800</td><td class="offline-profit">Rp -2.695.300</td><td>-15.17%</td><td><button class="mini viewbtn offline-view-btn" data-label="Mei 2026" data-period="2026-05" type="button">👁 Lihat Data</button></td></tr><tr><td><b>April 2026</b></td><td>Rp 22.110.700</td><td>Rp 27.758.500</td><td class="offline-profit">Rp -5.647.800</td><td>-25.54%</td><td><button class="mini viewbtn offline-view-btn" data-label="April 2026" data-period="2026-04" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Maret 2026</b></td><td>Rp 27.881.100</td><td>Rp 26.182.325</td><td class="offline-profit">Rp 1.698.775</td><td>6.09%</td><td><button class="mini viewbtn offline-view-btn" data-label="Maret 2026" data-period="2026-03" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Februari 2026</b></td><td>Rp 33.617.200</td><td>Rp 29.586.000</td><td class="offline-profit">Rp 4.031.200</td><td>11.99%</td><td><button class="mini viewbtn offline-view-btn" data-label="Februari 2026" data-period="2026-02" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Januari 2026</b></td><td>Rp 26.541.100</td><td>Rp 26.102.300</td><td class="offline-profit">Rp 438.800</td><td>1.65%</td><td><button class="mini viewbtn offline-view-btn" data-label="Januari 2026" data-period="2026-01" type="button">👁 Lihat Data</button></td></tr></tbody></table></div></div><div class="card" id="offlineHistoryDetailCard" style="display:none"><div class="cashhead"><div><h3 id="offlineHistoryDetailTitle" style="margin:0">Detail Data Lama Offline</h3></div><button class="btn gray" id="closeOfflineHistoryDetail" type="button">Tutup</button></div><div class="notice" id="offlineHistoryDetailBody" style="margin-top:12px"></div></div></section><section class="penjualan-panel" data-panel="import"><div class="card"><div class="cashhead"><div><h2 style="margin:0">📥 Import Penjualan Online</h2>
+</div></section><section class="penjualan-panel" data-panel="oldOnline"><div class="card tab-card" id="oldOnlineCard"><h2>📁 Rekap Data Lama Online</h2><div class="note" id="recapNote">Bagian ini khusus data lama Seller Center/TikTok yang sudah terkunci. Transaksi Online baru memakai input produk + jumlah + Penerimaan Uang.</div><div class="tablewrap"><table><thead><tr><th>Periode</th><th>Pemasukan</th><th>Potongan TikTok</th><th>Uang Bersih</th><th>Profit</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="rows"><tr><td colspan="7">Belum ada penjualan online.</td></tr></tbody></table></div></div></section><section class="penjualan-panel" data-panel="oldOffline"><div class="card tab-card" id="oldOfflineCard"><h2>📁 Rekap Data Lama Offline</h2><div class="note">Ringkasan data lama Offline. Detail dibuka saat bro menekan 👁 Lihat Data.</div><div class="tablewrap"><table><thead><tr><th>Periode</th><th>Pemasukan</th><th>Pengeluaran</th><th>Profit</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="offlineOldRows"><tr><td><b>Agustus 2026</b></td><td>Rp 7.938.500</td><td>Rp 9.671.700</td><td class="offline-profit">Rp -1.733.200</td><td>-21.83%</td><td><button class="mini viewbtn offline-view-btn" data-label="Agustus 2026" data-period="2026-08" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Juli 2026</b></td><td>Rp 24.366.500</td><td>Rp 32.997.500</td><td class="offline-profit">Rp -8.631.000</td><td>-35.42%</td><td><button class="mini viewbtn offline-view-btn" data-label="Juli 2026" data-period="2026-07" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Juni 2026</b></td><td>Rp 21.577.000</td><td>Rp 26.517.000</td><td class="offline-profit">Rp -4.940.000</td><td>-22.89%</td><td><button class="mini viewbtn offline-view-btn" data-label="Juni 2026" data-period="2026-06" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Mei 2026</b></td><td>Rp 17.767.500</td><td>Rp 20.462.800</td><td class="offline-profit">Rp -2.695.300</td><td>-15.17%</td><td><button class="mini viewbtn offline-view-btn" data-label="Mei 2026" data-period="2026-05" type="button">👁 Lihat Data</button></td></tr><tr><td><b>April 2026</b></td><td>Rp 22.110.700</td><td>Rp 27.758.500</td><td class="offline-profit">Rp -5.647.800</td><td>-25.54%</td><td><button class="mini viewbtn offline-view-btn" data-label="April 2026" data-period="2026-04" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Maret 2026</b></td><td>Rp 27.881.100</td><td>Rp 26.182.325</td><td class="offline-profit">Rp 1.698.775</td><td>6.09%</td><td><button class="mini viewbtn offline-view-btn" data-label="Maret 2026" data-period="2026-03" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Februari 2026</b></td><td>Rp 33.617.200</td><td>Rp 29.586.000</td><td class="offline-profit">Rp 4.031.200</td><td>11.99%</td><td><button class="mini viewbtn offline-view-btn" data-label="Februari 2026" data-period="2026-02" type="button">👁 Lihat Data</button></td></tr><tr><td><b>Januari 2026</b></td><td>Rp 26.541.100</td><td>Rp 26.102.300</td><td class="offline-profit">Rp 438.800</td><td>1.65%</td><td><button class="mini viewbtn offline-view-btn" data-label="Januari 2026" data-period="2026-01" type="button">👁 Lihat Data</button></td></tr></tbody></table></div></div><div class="card" id="offlineHistoryDetailCard" style="display:none"><div class="cashhead"><div><h3 id="offlineHistoryDetailTitle" style="margin:0">Detail Data Lama Offline</h3></div><button class="btn gray" id="closeOfflineHistoryDetail" type="button">Tutup</button></div><div class="notice" id="offlineHistoryDetailBody" style="margin-top:12px"></div></div></section><section class="penjualan-panel" data-panel="import"><div class="card"><div class="cashhead"><div><h2 style="margin:0">📥 Import Penjualan Online</h2>
 <div class="note">Upload <b>file asli Seller Center</b> sekali, lalu tambahkan Excel Income TikTok bertahap. Tentukan <b>rentang tanggal yang ingin disimpan</b>.</div></div></div>
 <div class="importbox" style="margin-top:15px">
 <div class="upload-tabs"><button class="upload-tab active" id="tabSeller" type="button">📦 Upload Seller Center</button><button class="upload-tab" id="tabIncome" type="button">💰 Upload Income TikTok</button></div>
@@ -334,6 +346,7 @@ function normName(v){return String(v??'').toLowerCase().trim().replace(/\s+/g,' 
 function nagetVariant(p){const n=normName(p?.nama_produk);const m=n.match(/^naget\s*(?:isi\s*)?(10|12|20|25|30|40|50)(?:\D|$)/);return m?Number(m[1]):null;}
 function productsForChannel(){return products;}
 function renderProductOptions(keepId=''){const list=productsForChannel();$('produk').innerHTML='<option value="">Pilih Produk</option>'+list.map(p=>`<option value="${p.id}">${esc(p.nama_produk)} (${p.isi_per_bungkus||''} pcs)</option>`).join('');if(keepId)$('produk').value=String(keepId);}
+document.getElementById('offlineHistoryRefresh')?.addEventListener('click',refreshOfflineHistory);
 async function loadProducts(){const [r,h]=await Promise.all([supabaseClient.from('produk').select('*').order('id',{ascending:true}),supabaseClient.from('hpp').select('*')]);if(r.error)throw r.error;if(h.error)throw h.error;products=r.data||[];window.products=products;window.importHppRows=h.data||[];renderProductOptions();}
 function importHppFor(r){const pid=r?.produk_id;if(pid==null)return null;const h=(window.importHppRows||[]).find(x=>String(x.produk_id)===String(pid));if(!h)return null;if(h.hpp_online!=null&&Number.isFinite(Number(h.hpp_online)))return Number(h.hpp_online);if(h.harga_online!=null&&h.untung_online!=null){const v=Number(h.harga_online)-Number(h.untung_online);if(Number.isFinite(v)&&v>=0)return v;}if(h.hpp_unit!=null&&Number.isFinite(Number(h.hpp_unit)))return Number(h.hpp_unit);return null;}
 function selectedProduct(){return products.find(p=>String(p.id)===$('produk').value)}
@@ -643,6 +656,7 @@ async function load(){
   const completeProfit=online.filter(s=>s.computed_profit!=null);
   const l=completeProfit.reduce((a,s)=>a+s.computed_profit,0);
   $('sQty').textContent=q.toLocaleString('id-ID');$('sOmzet').textContent=rupiah(o);$('sProfit').textContent=online.length&&completeProfit.length===online.length?rupiah(l):'—';if($('sNet'))$('sNet').textContent=b?rupiah(b):'Rp 0';
+  await refreshOfflineHistory();
 }
 window.viewPeriod=k=>{
   const g=window.salesGroups?.[k];if(!g)return;
@@ -666,6 +680,40 @@ window.viewPeriod=k=>{
   $('detailCard').scrollIntoView({behavior:'smooth',block:'start'});
 };
 window.editSale=async id=>{const s=sales.find(x=>x.id===id);if(!s)return;editId=id;$('tanggal').value=s.tanggal;$('pelanggan').value=customerNameForSale(s.id);$('produk').value=s.produk_id;$('qty').value=s.qty;$('channel').value=s.channel;$('harga').value=s.harga;$('hpp').value=Math.round(Number(s.hpp||0)/(Number(s.qty)||1));$('cancel').style.display='inline-block';$('save').textContent='Simpan Perubahan';updatePreview();scrollTo(0,0);};
+async function refreshOfflineHistory(){
+  const tb=$('offlineHistoryRows'); if(!tb)return;
+  tb.innerHTML='<tr><td colspan="8">Memuat riwayat...</td></tr>';
+  try{
+    const r=await supabaseClient.from('penjualan')
+      .select('id,tanggal,product_name,qty,harga,total,modal_hpp,hpp,laba,produk_id,channel,source')
+      .eq('channel','Offline')
+      .order('tanggal',{ascending:false})
+      .order('id',{ascending:false})
+      .limit(500);
+    if(r.error)throw r.error;
+    const data=r.data||[];
+    tb.innerHTML=data.length?data.map(x=>{
+      const q=Math.max(1,Number(x.qty)||1);
+      const total=Math.round(Number(x.total||0));
+      const modal=Math.round(Number(x.modal_hpp??x.hpp??0));
+      const profit=Number(x.laba)!=null?Math.round(Number(x.laba)):total-modal;
+      const unit=Math.round(total/q);
+      return '<tr>'+
+        '<td>'+esc(x.tanggal||'-')+'</td>'+
+        '<td>'+esc(x.product_name||'-')+'</td>'+
+        '<td>'+q.toLocaleString('id-ID')+'</td>'+
+        '<td>'+rupiah(unit)+'</td>'+
+        '<td>'+rupiah(total)+'</td>'+
+        '<td>'+rupiah(modal)+'</td>'+
+        '<td>'+rupiah(profit)+'</td>'+
+        '<td><button class="mini edit" type="button" data-off-edit="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-off-del="'+x.id+'">🗑 Hapus</button></td>'+
+      '</tr>';
+    }).join(''):'<tr><td colspan="8">Belum ada transaksi Offline.</td></tr>';
+  }catch(e){
+    console.error(e);
+    tb.innerHTML='<tr><td colspan="8">Gagal memuat riwayat: '+esc(e.message||e)+'</td></tr>';
+  }
+}
 window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=await supabaseClient.from('penjualan').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);await load();msg('Penjualan dihapus.')};
 (async()=>{try{await loadCustomerMaster();await loadProducts();await load()}catch(e){console.error(e);msg('Gagal memuat data: '+e.message,true)}})();
 </script><script>
@@ -1031,6 +1079,24 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       syncFromDOM(r.id);
     });
     document.addEventListener('click',async e=>{
+    const offDel=e.target.closest?.('[data-off-del]');
+    const offEdit=e.target.closest?.('[data-off-edit]');
+    if(offDel){
+      const id=Number(offDel.dataset.offDel);
+      if(id && confirm('Hapus transaksi Offline ini?')){
+        const r=await supabaseClient.from('penjualan').delete().eq('id',id);
+        if(r.error){alert('Gagal menghapus: '+r.error.message);return;}
+        await load();
+        await refreshOfflineHistory();
+        msg('Transaksi Offline dihapus.');
+      }
+      return;
+    }
+    if(offEdit){
+      const id=Number(offEdit.dataset.offEdit);
+      if(id) await window.editSale(id);
+      return;
+    }
       const tr=e.target.closest?.('tr[data-row]');
       if(tr && e.target.closest('.batch-del')){
         const id=Number(tr.dataset.row);rows=rows.filter(r=>r.id!==id);if(!rows.length)rows.push(emptyRow());renderRows();return;
