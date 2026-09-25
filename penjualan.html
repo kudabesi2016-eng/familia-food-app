@@ -222,7 +222,37 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
       <tbody id="offlineHistoryRows"><tr><td colspan="8">Memuat riwayat...</td></tr></tbody>
     </table>
   </div>
-</div><div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div></section><section class="penjualan-panel" data-panel="cash"><div class="card" id="onlineCashCard">
+</div>
+<div class="card" id="offlineExpenseCard" style="border:2px solid #cfe4d7">
+  <div class="cashhead">
+    <div>
+      <h2 style="margin:0">💸 Pengeluaran Offline</h2>
+      <div class="note">Isi pengeluaran usaha di sini. Data otomatis masuk tabel <b>Pengeluaran</b> dan dipakai dalam Hasil Bersih Offline di Dashboard + Rekap.</div>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:16px">
+    <div class="field"><label>Tanggal</label><input id="offlineExpenseDate" type="date"/></div>
+    <div class="field"><label>Kategori</label><select id="offlineExpenseCategory"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
+    <div class="field"><label>Nominal</label><input id="offlineExpenseNominal" type="number" min="0" step="1" placeholder="Contoh 500000"/></div>
+    <div class="field"><label>Keterangan</label><input id="offlineExpenseNote" type="text" placeholder="Contoh: beli tepung tapioka"/></div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="offlineExpenseSave" type="button">+ Simpan Pengeluaran</button>
+    <button class="btn gray" id="offlineExpenseReset" type="button">Reset</button>
+  </div>
+  <div id="offlineExpenseMsg"></div>
+  <div class="preview" style="margin-top:12px">
+    <div class="box"><small>Pengeluaran Bulan Berjalan</small><strong id="offlineExpenseMonthTotal">Rp 0</strong></div>
+    <div class="box"><small>Jumlah Data Terbaru</small><strong id="offlineExpenseCount">0</strong></div>
+  </div>
+  <div class="tablewrap" style="margin-top:12px">
+    <table style="min-width:850px">
+      <thead><tr><th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th>Nominal</th><th>Aksi</th></tr></thead>
+      <tbody id="offlineExpenseRows"><tr><td colspan="5">Memuat pengeluaran...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+<div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div></section><section class="penjualan-panel" data-panel="cash"><div class="card" id="onlineCashCard">
 <div class="cashhead">
 <div>
 <h2 style="margin:0">💰 Penerimaan Uang Online</h2>
@@ -1012,6 +1042,65 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     }catch(e){ console.warn('refreshNewOnlineProfit',e); }
   }
 
+  async function refreshOfflineExpenses(){
+    const tb=byId('offlineExpenseRows');
+    if(!tb)return;
+    tb.innerHTML='<tr><td colspan="5">Memuat pengeluaran...</td></tr>';
+    try{
+      const r=await supabaseClient.from('pengeluaran')
+        .select('id,tanggal,periode,kategori,keterangan,nominal')
+        .order('tanggal',{ascending:false})
+        .order('id',{ascending:false})
+        .limit(30);
+      if(r.error)throw r.error;
+      const rows=r.data||[];
+      const nowMonth=today().slice(0,7);
+      const monthRows=rows.filter(x=>String(x.periode||x.tanggal||'').slice(0,7)===nowMonth);
+      const monthTotal=monthRows.reduce((a,x)=>a+Math.round(Number(x.nominal)||0),0);
+      const totalEl=byId('offlineExpenseMonthTotal');if(totalEl)totalEl.textContent=money(monthTotal);
+      const countEl=byId('offlineExpenseCount');if(countEl)countEl.textContent=String(monthRows.length);
+      tb.innerHTML=rows.length?rows.map(x=>'<tr>'+
+        '<td>'+esc(x.tanggal||x.periode||'-')+'</td>'+
+        '<td>'+esc(x.kategori||'-')+'</td>'+
+        '<td>'+esc(x.keterangan||'-')+'</td>'+
+        '<td>'+money(x.nominal)+'</td>'+
+        '<td><button class="mini del" type="button" data-off-exp-del="'+x.id+'">🗑 Hapus</button></td>'+
+      '</tr>').join(''):'<tr><td colspan="5">Belum ada data pengeluaran.</td></tr>';
+    }catch(e){
+      console.error('refreshOfflineExpenses',e);
+      tb.innerHTML='<tr><td colspan="5">Gagal memuat pengeluaran: '+esc(e.message||e)+'</td></tr>';
+    }
+  }
+
+  function resetOfflineExpense(){
+    const d=byId('offlineExpenseDate');if(d)d.value=today();
+    const c=byId('offlineExpenseCategory');if(c)c.value='Bahan Baku';
+    const n=byId('offlineExpenseNominal');if(n)n.value='';
+    const k=byId('offlineExpenseNote');if(k)k.value='';
+    const m=byId('offlineExpenseMsg');if(m)m.innerHTML='';
+  }
+
+  async function saveOfflineExpense(){
+    const tanggal=byId('offlineExpenseDate')?.value||today();
+    const kategori=byId('offlineExpenseCategory')?.value||'Lainnya';
+    const nominal=Math.max(0,Math.round(Number(byId('offlineExpenseNominal')?.value)||0));
+    const keterangan=(byId('offlineExpenseNote')?.value||'').trim();
+    const out=byId('offlineExpenseMsg');
+    if(nominal<=0){out.innerHTML='<div class="bad">Nominal pengeluaran wajib lebih dari 0.</div>';return;}
+    if(!keterangan){out.innerHTML='<div class="bad">Keterangan pengeluaran wajib diisi.</div>';return;}
+    try{
+      const row={periode:tanggal.slice(0,7),tanggal,kategori,keterangan,nominal};
+      const r=await supabaseClient.from('pengeluaran').insert([row]).select('id').single();
+      if(r.error)throw r.error;
+      out.innerHTML='<div class="ok">Pengeluaran berhasil disimpan dan langsung masuk Rekap Offline.</div>';
+      resetOfflineExpense();
+      await refreshOfflineExpenses();
+      if(typeof load==='function')await load();
+    }catch(e){
+      out.innerHTML='<div class="bad">Gagal menyimpan pengeluaran: '+esc(e.message||e)+'</div>';
+    }
+  }
+
   function saveCash(){
     const tanggal=byId('cashTanggal').value;
     const amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0));
@@ -1044,6 +1133,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     });
     byId('cashSave')?.addEventListener('click',saveCash);
     byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashMarketplace').value='TikTok Shop';byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
+    byId('offlineExpenseDate') && (byId('offlineExpenseDate').value=today());
+    byId('offlineExpenseSave')?.addEventListener('click',saveOfflineExpense);
+    byId('offlineExpenseReset')?.addEventListener('click',resetOfflineExpense);
+    refreshOfflineExpenses();
     byId('dropAdd')?.addEventListener('click',()=>{
       const name=byId('dropName').value.trim();const modal=Math.max(0,Math.round(Number(byId('dropModal').value)||0));
       if(!name||modal<=0){alert('Isi nama produk dan modal dropship.');return;}
@@ -1104,6 +1197,17 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       const tr=e.target.closest?.('tr[data-row]');
       if(tr && e.target.closest('.batch-del')){
         const id=Number(tr.dataset.row);rows=rows.filter(r=>r.id!==id);if(!rows.length)rows.push(emptyRow());renderRows();return;
+      }
+      const offExpDel=e.target.closest?.('[data-off-exp-del]');
+      if(offExpDel){
+        const id=Number(offExpDel.dataset.offExpDel);
+        if(id && confirm('Hapus data pengeluaran ini?')){
+          const r=await supabaseClient.from('pengeluaran').delete().eq('id',id);
+          if(r.error){alert('Gagal menghapus pengeluaran: '+r.error.message);return;}
+          await refreshOfflineExpenses();
+          if(typeof load==='function')await load();
+        }
+        return;
       }
       const historyDel=e.target.closest?.('[data-batch-history-del]');
       if(historyDel){
