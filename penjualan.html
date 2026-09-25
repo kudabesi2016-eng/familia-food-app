@@ -862,7 +862,10 @@ function renderOfflineHistoryDate(dateKey){
   if(!g||!detailWrap||!detailTb)return;
   const dateLabel=/^\d{4}-\d{2}-\d{2}$/.test(dateKey)?new Date(dateKey+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'Tanpa tanggal';
   if(title)title.textContent='Detail Transaksi • '+dateLabel;
-  detailTb.innerHTML=g.rows.sort((a,b)=>Number(b.id||0)-Number(a.id||0)).map(x=>{
+  detailTb.innerHTML=g.rows.slice().sort((a,b)=>{
+    const ad=String(a._tanggal||a.tanggal||a.periode||'');const bd=String(b._tanggal||b.tanggal||b.periode||'');
+    return bd.localeCompare(ad)||Number(b.id||0)-Number(a.id||0);
+  }).map(x=>{
     if(x._jenis==='Pengeluaran'){
       const nominal=Math.round(Number(x.nominal)||0),note=[x.kategori,x.keterangan].filter(Boolean).join(' — ');
       return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#9a3412">Pengeluaran</b></td><td>'+esc(note||'-')+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(nominal)+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(-nominal)+'</td><td><button class="mini del" type="button" data-off-exp-del="'+x.id+'">🗑 Hapus</button></td></tr>';
@@ -1200,7 +1203,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     if(!g||!wrap||!tb)return;
     const dateLabel=/^\d{4}-\d{2}-\d{2}$/.test(dateKey)?new Date(dateKey+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'Tanpa tanggal';
     if(title)title.textContent='Detail Transaksi Online • '+dateLabel;
-    tb.innerHTML=g.rows.sort((a,b)=>Number(b.id||0)-Number(a.id||0)).map(x=>{
+    tb.innerHTML=g.rows.slice().sort((a,b)=>{
+      const ad=String(a.tanggal||'');const bd=String(b.tanggal||'');
+      return bd.localeCompare(ad)||Number(b.id||0)-Number(a.id||0);
+    }).map(x=>{
       const q=Math.max(1,Number(x.qty)||1),total=Math.round(Number(x.modal_hpp??x.hpp??0)),unit=q?Math.round(total/q):0;
       return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(x.variation||'Naget')+'</td><td>'+esc(x.product_name||'-')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+money(unit)+'</td><td>'+money(total)+'</td><td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
     }).join('');
@@ -1280,7 +1286,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     if(!wrap||!tb||!g)return;
     const label=/^\d{4}-\d{2}$/.test(key)?new Date(Number(key.slice(0,4)),Number(key.slice(5,7))-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):key;
     if(title)title.textContent='Detail Pengeluaran • '+label;
-    tb.innerHTML=g.rows.length?g.rows.map(x=>'<tr>'+
+    tb.innerHTML=g.rows.length?g.rows.slice().sort((a,b)=>{
+      const ad=String(a.tanggal||a.periode||'');const bd=String(b.tanggal||b.periode||'');
+      return bd.localeCompare(ad)||Number(b.id||0)-Number(a.id||0);
+    }).map(x=>'<tr>'+
       '<td>'+esc(x.tanggal||x.periode||'-')+'</td>'+
       '<td>'+esc(x.kategori||'-')+'</td>'+
       '<td>'+esc(x.keterangan||'-')+'</td>'+
