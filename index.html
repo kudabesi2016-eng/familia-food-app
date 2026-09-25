@@ -95,19 +95,20 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
   </div>
 
   <div class="channel">
-    <div class="channel-head"><h2>📱 Online</h2><span class="badge">Audit TikTok + Transaksi Baru</span></div>
+    <div class="channel-head"><h2>📱 Online</h2><span class="badge">Audit TikTok + Shopee + Transaksi Baru</span></div>
     <div class="channel-grid">
       <div class="mini"><small>Baris Income Historis</small><b id="onIncomeRows">0</b></div>
       <div class="mini"><small>Detail Produk Historis</small><b id="onProductRows">0</b></div>
-      <div class="mini"><small>Pemasukan</small><b id="onRevenue">Rp 0</b></div>
+      <div class="mini"><small>Pemasukan / Penerimaan</small><b id="onRevenue">Rp 0</b></div>
       <div class="mini"><small>Potongan Online Shop</small><b id="onFee">Rp 0</b></div>
       <div class="mini"><small>Uang Bersih</small><b id="onNet">Rp 0</b></div>
+      <div class="mini"><small>Penerimaan Shopee</small><b id="onShopeeCash">Rp 0</b></div>
       <div class="mini"><small>HPP / Modal</small><b id="onHpp">Rp 0</b></div>
       <div class="mini"><small>Biaya Online Lainnya</small><b id="onOtherCost">Rp 0</b></div>
       <div class="mini"><small>Profit Final</small><b id="onProfit">Rp 0</b></div>
       <div class="mini"><small>Produk Keluar Historis (Kunci)</small><b id="onQty">0</b></div>
     </div>
-    <div class="note">Online historis memakai <b>8.085 bungkus</b> hasil audit TikTok sebagai kunci Produk Keluar Jan–Agustus 2026. Baris dengan Qty 0 adalah retur penuh dan tidak dihitung sebagai produk keluar/HPP.<br><b>Profit Final Online = Uang Bersih − HPP Produk Keluar − Biaya Online Lainnya.</b><br><span id="onlineHistoryAudit">Memeriksa rekonsiliasi…</span></div>
+    <div class="note">Online historis memakai <b>8.085 bungkus</b> hasil audit TikTok sebagai kunci Produk Keluar Jan–Agustus 2026. Penerimaan Shopee dicatat sebagai <b>Uang Bersih</b> karena nominal Rp4.000.000 sudah dianggap net dan tidak ditambah potongan lagi.<br><b>Profit Final Online = Uang Bersih − HPP Produk Keluar − Biaya Online Lainnya.</b><br><span id="onlineHistoryAudit">Memeriksa rekonsiliasi…</span></div>
     <div class="channel-grid" style="margin-top:12px">
       <div class="mini"><small>Online Baru — Produk Keluar</small><b id="newOnQty">0 bungkus</b></div>
       <div class="mini"><small>Online Baru — HPP/Modal</small><b id="newOnModal">Rp 0</b></div>
@@ -448,6 +449,9 @@ async function loadDashboard(){
     const onOldProfit=onOldNet-onOldHpp;
     // Transaksi Online baru memakai basis kas: Uang Bersih yang benar-benar cair.
     const onNewRevenue=onlineCashNew.reduce((s,x)=>s+Math.round(num(x.uang_bersih ?? x.omzet_produk)),0);
+    const onShopeeCash=onlineCashNew
+      .filter(x=>String(x.purchase_channel||x.order_channel||'').toLowerCase()==='shopee' || /shopee/i.test(String(x.product_name||'')))
+      .reduce((s,x)=>s+Math.round(num(x.uang_bersih ?? x.omzet_produk)),0);
     const onNewNet=onNewRevenue;
     const onNewFee=0;
     const onNewHpp=onlineBatchNew.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? x.hpp)),0);
@@ -501,7 +505,7 @@ async function loadDashboard(){
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
-    setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet);
+    setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet); setNumber('onShopeeCash',onShopeeCash);
     setNumber('onHpp',onHpp);
     setNumber('onOtherCost',onOtherCost);
     setNumber('onProfit',onProfit);
