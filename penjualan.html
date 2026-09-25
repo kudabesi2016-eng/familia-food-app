@@ -213,10 +213,13 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="actions"><button class="btn" id="save">+ Simpan Penjualan</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div>
 <div class="card" id="offlineHistoryCard" style="border:2px solid #cfe4d7">
   <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div><h2 style="margin:0">📋 Riwayat Transaksi Offline</h2><div class="note">Semua <b>Penjualan</b> dan <b>Pengeluaran</b> Offline tampil di satu riwayat. Data tersimpan langsung di database.</div></div>
-    <button class="btn gray" id="offlineHistoryRefresh" type="button">↻ Refresh</button>
+    <div><h2 style="margin:0">📋 Riwayat Transaksi Offline</h2><div class="note">Semua <b>Penjualan</b> dan <b>Pengeluaran</b> Offline tersimpan di database. Tekan <b>Klik Data</b> untuk menampilkan riwayat.</div></div>
+    <div class="actions" style="margin:0">
+      <button class="btn" id="offlineHistoryViewBtn" type="button">👁 Klik Data</button>
+      <button class="btn gray" id="offlineHistoryRefresh" type="button">↻ Refresh</button>
+    </div>
   </div>
-  <div class="tablewrap" style="margin-top:12px">
+  <div class="tablewrap" id="offlineHistoryDataWrap" style="margin-top:12px;display:none">
     <table style="min-width:1050px">
       <thead><tr><th>Tanggal</th><th>Jenis</th><th>Keterangan</th><th>Qty Bungkus</th><th>Nominal</th><th>HPP/Modal</th><th>Dampak Kas</th><th>Aksi</th></tr></thead>
       <tbody id="offlineHistoryRows"><tr><td colspan="8">Memuat riwayat...</td></tr></tbody>
@@ -381,6 +384,17 @@ function nagetVariant(p){const n=normName(p?.nama_produk);const m=n.match(/^nage
 function productsForChannel(){return products;}
 function renderProductOptions(keepId=''){const list=productsForChannel();$('produk').innerHTML='<option value="">Pilih Produk</option>'+list.map(p=>`<option value="${p.id}">${esc(p.nama_produk)} (${p.isi_per_bungkus||''} pcs)</option>`).join('');if(keepId)$('produk').value=String(keepId);}
 document.getElementById('offlineHistoryRefresh')?.addEventListener('click',refreshOfflineHistory);
+(function(){
+  const btn=document.getElementById('offlineHistoryViewBtn');
+  const wrap=document.getElementById('offlineHistoryDataWrap');
+  if(!btn||!wrap)return;
+  btn.addEventListener('click',async()=>{
+    const show=wrap.style.display==='none';
+    if(show) await refreshOfflineHistory();
+    wrap.style.display=show?'block':'none';
+    btn.textContent=show?'✖ Tutup Data':'👁 Klik Data';
+  });
+})();
 async function loadProducts(){const [r,h]=await Promise.all([supabaseClient.from('produk').select('*').order('id',{ascending:true}),supabaseClient.from('hpp').select('*')]);if(r.error)throw r.error;if(h.error)throw h.error;products=r.data||[];window.products=products;window.importHppRows=h.data||[];renderProductOptions();}
 function importHppFor(r){const pid=r?.produk_id;if(pid==null)return null;const h=(window.importHppRows||[]).find(x=>String(x.produk_id)===String(pid));if(!h)return null;if(h.hpp_online!=null&&Number.isFinite(Number(h.hpp_online)))return Number(h.hpp_online);if(h.harga_online!=null&&h.untung_online!=null){const v=Number(h.harga_online)-Number(h.untung_online);if(Number.isFinite(v)&&v>=0)return v;}if(h.hpp_unit!=null&&Number.isFinite(Number(h.hpp_unit)))return Number(h.hpp_unit);return null;}
 function selectedProduct(){return products.find(p=>String(p.id)===$('produk').value)}
