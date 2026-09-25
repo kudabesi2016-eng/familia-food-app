@@ -373,7 +373,9 @@ async function loadDashboard(){
     // Pengeluaran Offline: hanya baris pengeluaran dengan periode YYYY-MM yang valid,
     // sama seperti Rekap/Data Lama. Baris tanpa periode valid tidak boleh masuk total.
     const offExpense=validExpenseRows.reduce((s,x)=>s+Math.round(num(x.nominal)),0);
-    const offNet=offRevenue-offExpense;
+    // Offline tidak memiliki potongan penjualan. Pengeluaran ditampilkan
+    // terpisah; Uang Bersih untuk Profit tetap sama dengan Pemasukan.
+    const offNet=offRevenue;
     const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty ?? x.catatan)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
 
     // HPP Offline memakai sumber per bulan yang sama dengan Rekap Offline.
@@ -463,7 +465,7 @@ async function loadDashboard(){
     // GABUNGAN: konsisten dengan dua channel.
     const totalRevenue=offRevenue+onRevenue;
     const totalOut=offExpense+onFee;
-    const totalNet=(offRevenue-offExpense)+onNet;
+    const totalNet=offNet+onNet;
     const totalHpp=(offHpp+onHpp);
     // Dashboard memakai label "Terukur": tampilkan hasil berdasarkan
     // HPP/modal yang benar-benar tersedia, tanpa mengosongkan kartu ketika
