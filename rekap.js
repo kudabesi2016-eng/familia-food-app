@@ -400,6 +400,8 @@ function months(){
   });
   (purchases||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m);});
   (returns||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m);});
+  (debtRecords||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m);});
+  (debtPayments||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m);});
   try{FF.monthsOfData(data()).forEach(m=>set.add(m));}catch(e){}
   return [...set].sort();
 }
