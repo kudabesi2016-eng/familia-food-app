@@ -49,8 +49,9 @@ for(const table of requiredTables){
 }
 
 const dashboard=read('index.html');
-if(!dashboard.includes("const overallProfitKnown=overallHppKnown;")) fail('Dashboard must not report overall Profit as complete when historical HPP is incomplete');
-if(!dashboard.includes("if(!offProfitKnown){offlineProfitEl.textContent='—';")) fail('Dashboard must suppress Offline Profit when historical HPP is incomplete');
+if(!dashboard.includes("const overallProfitKnown=true;")) fail('Dashboard must expose measured Profit even when historical HPP is incomplete');
+if(!dashboard.includes("const offProfit=offNet-offHpp;")) fail('Dashboard must calculate measured Offline Profit from net and measured HPP');
+if(!dashboard.includes("setNumber('offProfit',offProfit);")) fail('Dashboard must display measured Offline Profit');
 
 const core=read('ff-core.js');
 if(!core.includes("online_standard_finance")) fail('Shared reporting core must recognize online_standard_finance historical source');
