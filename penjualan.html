@@ -232,7 +232,7 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="actions"><button class="btn" id="save">+ Simpan Penjualan</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div>
 <div class="card" id="offlineHistoryCard" style="border:2px solid #cfe4d7">
   <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div><h2 style="margin:0">📋 Riwayat Transaksi Offline</h2><div class="note">Urutan dibuat <b>Bulan → Tanggal → Detail</b>. Dalam satu tanggal akan terlihat semua <b>Pemasukan</b> dan <b>Pengeluaran</b>.</div></div>
+    <div><h2 style="margin:0">📋 Riwayat Offline — Pemasukan & Pengeluaran</h2><div class="note">Satu riwayat saja: <b>Bulan → Tanggal → Detail</b>. Pemasukan dan Pengeluaran diringkas bersama agar tidak ada tampilan ganda.</div></div>
     <div class="actions" style="margin:0">
       <button class="btn" id="offlineHistoryViewBtn" type="button">👁 Klik Data</button>
       <button class="btn gray" id="offlineHistoryRefresh" type="button">↻ Refresh</button>
@@ -275,8 +275,8 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="card" id="offlineExpenseCard" style="border:2px solid #cfe4d7">
   <div class="cashhead">
     <div>
-      <h2 style="margin:0">💸 Pengeluaran Offline</h2>
-      <div class="note">Isi pengeluaran usaha di sini. Data diringkas <b>per bulan</b> agar tidak panjang. Tekan <b>👁 Klik Data</b> pada bulan yang ingin dilihat.</div>
+      <h2 style="margin:0">➕ Input Pengeluaran Offline</h2>
+      <div class="note">Masukkan pengeluaran baru di sini. <b>Riwayat Pengeluaran tidak dibuat lagi di kartu terpisah</b> karena sudah tampil bersama Pemasukan pada Riwayat Offline di atas.</div>
     </div>
   </div>
   <div class="grid" style="margin-top:16px">
@@ -290,27 +290,8 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
     <button class="btn gray" id="offlineExpenseReset" type="button">Reset</button>
   </div>
   <div id="offlineExpenseMsg"></div>
-  <div class="preview" style="margin-top:12px">
-    <div class="box"><small>Pengeluaran Bulan Berjalan</small><strong id="offlineExpenseMonthTotal">Rp 0</strong></div>
-    <div class="box"><small>Jumlah Data Bulan Berjalan</small><strong id="offlineExpenseCount">0</strong></div>
-  </div>
-  <div class="tablewrap" style="margin-top:12px">
-    <table style="min-width:700px">
-      <thead><tr><th>Bulan</th><th>Jumlah Data</th><th>Total Pengeluaran</th><th>Aksi</th></tr></thead>
-      <tbody id="offlineExpenseMonthRows"><tr><td colspan="4">Memuat pengeluaran...</td></tr></tbody>
-    </table>
-  </div>
-  <div class="tablewrap" id="offlineExpenseDetailWrap" style="margin-top:12px;display:none">
-    <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-      <div><h3 id="offlineExpenseDetailTitle" style="margin:0">Detail Pengeluaran</h3></div>
-      <button class="btn gray" id="offlineExpenseDetailClose" type="button">✖ Tutup Data</button>
-    </div>
-    <table style="min-width:850px">
-      <thead><tr><th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th>Nominal</th><th>Aksi</th></tr></thead>
-      <tbody id="offlineExpenseRows"><tr><td colspan="5">Pilih bulan.</td></tr></tbody>
-    </table>
-  </div>
 </div>
+
 <div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div></section><section class="penjualan-panel" data-panel="cash"><div class="card" id="onlineCashCard">
 <div class="cashhead">
 <div>
