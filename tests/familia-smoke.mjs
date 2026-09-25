@@ -18,7 +18,7 @@ const mustContain = {
   ],
   'penjualan.html': [
     'ffCustomerList','loadCustomerMaster','saveCustomerMaster','saveCustomerLink','ff_penjualan_pelanggan',
-    "source:'manual'","Jumlah Terjual (Bungkus)","offlineExpenseSave","offlineExpenseNominal","pengeluaran"
+    "source:'manual'","Jumlah Terjual (Bungkus)","refreshOfflineHistory","offlineExpenseSave","offlineExpenseNominal","pengeluaran","Penjualan</b> dan <b>Pengeluaran</b> Offline tampil di satu riwayat"
   ],
   'rekap.js': [
     'online_pencairan','online_batch','purchases','returns',
