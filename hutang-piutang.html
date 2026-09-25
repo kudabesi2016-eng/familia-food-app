@@ -176,7 +176,7 @@ function renderLists(){
   const pAktif=pits.filter(r=>computed(r).sisa>0).length;
   $('debtActiveCount').textContent=hAktif+' aktif / '+huts.length+' total';
   $('receivableActiveCount').textContent=pAktif+' aktif / '+pits.length+' total';
-  const row=(r,isPay)=>{const x=computed(r);const action=x.sisa>0?'<button class="btn blue" type="button" data-pay="'+r.id+'">💵 Bayar</button>':'<span class="hint">Lunas</span>';return '<tr><td>'+esc(r.tanggal||'-')+'</td><td>'+esc(r.kategori||'-')+'</td><td>'+esc(r.pihak||'-')+'</td><td>'+esc(r.jatuh_tempo||'-')+'</td><td>'+money(r.nominal_awal)+'</td><td>'+money(x.paid)+'</td><td class="money '+(x.sisa>0?'negative':'positive')+'">'+money(x.sisa)+'</td><td>'+esc(x.status)+'</td><td>'+action+'</td></tr>';};
+  const row=(r,isPay)=>{const x=computed(r);const action=x.sisa>0?'<button class="btn blue" type="button" data-pay="'+r.id+'">'+(r.jenis==='Piutang'?'💰 Terima':'💵 Bayar')+'</button>':'<span class="hint">Lunas</span>';return '<tr><td>'+esc(r.tanggal||'-')+'</td><td>'+esc(r.kategori||'-')+'</td><td>'+esc(r.pihak||'-')+'</td><td>'+esc(r.jatuh_tempo||'-')+'</td><td>'+money(r.nominal_awal)+'</td><td>'+money(x.paid)+'</td><td class="money '+(x.sisa>0?'negative':'positive')+'">'+money(x.sisa)+'</td><td>'+esc(x.status)+'</td><td>'+action+'</td></tr>';};
   $('debtListRows').innerHTML=huts.length?huts.map(r=>row(r,true)).join(''):'<tr><td colspan="9" class="empty">Belum ada hutang.</td></tr>';
   $('receivableListRows').innerHTML=pits.length?pits.map(r=>row(r,true)).join(''):'<tr><td colspan="9" class="empty">Belum ada piutang.</td></tr>';
 }
@@ -194,7 +194,19 @@ function showMonth(m){
   $('detailCard').style.display='block';$('paymentCard').style.display='none';$('detailCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
 $('months').addEventListener('click',e=>{const b=e.target.closest('[data-month]');if(b)showMonth(b.dataset.month)});
-$('detailRows').addEventListener('click',e=>{const b=e.target.closest('[data-pay]');if(!b)return;payTarget=Number(b.dataset.pay);const r=records.find(x=>Number(x.id)===payTarget);$('paymentTitle').textContent=r?'Pembayaran untuk '+r.pihak+' • Sisa '+money(computed(r).sisa):'';$('bayarTanggal').value=today();$('bayarNominal').value='';$('bayarKeterangan').value='';$('paymentMsg').innerHTML='';$('paymentCard').style.display='block';$('paymentCard').scrollIntoView({behavior:'smooth',block:'start'})});
+function openPayTarget(id){
+  payTarget=Number(id);
+  const r=records.find(x=>Number(x.id)===payTarget);
+  if(!r)return;
+  $('paymentTitle').textContent=r?(r.jenis==='Piutang'?'Penerimaan Piutang dari ':'Pembayaran Hutang kepada ')+r.pihak+' • Sisa '+money(computed(r).sisa):'';
+  $('bayarTanggal').value=today();$('bayarNominal').value='';$('bayarKeterangan').value='';
+  $('paymentMsg').innerHTML='';$('paymentCard').style.display='block';$('paymentCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-pay]');
+  if(!b)return;
+  openPayTarget(b.dataset.pay);
+});
 $('savePayment').onclick=async()=>{if(!payTarget)return;const r=records.find(x=>Number(x.id)===payTarget),n=Math.round(Number($('bayarNominal').value)||0);if(!r||n<=0)return;$('savePayment').disabled=true;try{if(n>computed(r).sisa)throw new Error('Nominal pembayaran melebihi sisa saldo.');const x=await supabaseClient.from('ff_hutang_piutang_bayar').insert([{hutang_piutang_id:r.id,tanggal:$('bayarTanggal').value,nominal:n,keterangan:$('bayarKeterangan').value.trim()}]);if(x.error)throw x.error;await updateStatus(r.id);$('paymentMsg').innerHTML='<div class="ok">Pembayaran tersimpan.</div>';await load();showMonth(monthOf(r.tanggal));}catch(e){$('paymentMsg').innerHTML='<div class="bad">'+esc(e.message||e)+'</div>'}finally{$('savePayment').disabled=false}};
 async function updateStatus(id){const r=records.find(x=>Number(x.id)===Number(id));if(!r)return;const x=computed(r),u=await supabaseClient.from('ff_hutang_piutang').update({status:x.status}).eq('id',id);if(u.error)console.warn(u.error)}
 $('closeDetail').onclick=()=>{$('detailCard').style.display='none';$('paymentCard').style.display='none'};
