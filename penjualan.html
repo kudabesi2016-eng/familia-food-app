@@ -192,18 +192,37 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
   <div class="cashhead">
     <div>
       <h2 style="margin:0">📋 Riwayat Transaksi Online Baru</h2>
-      <div class="note">Di sini bro bisa mengecek semua Produk Keluar Online Baru yang sudah disimpan.</div>
+      <div class="note">Urutan dibuat <b>Bulan → Tanggal → Detail</b>. Dalam satu tanggal semua Produk Keluar Online Baru akan dikelompokkan.</div>
     </div>
     <button class="btn gray" id="batchHistoryRefresh" type="button">↻ Refresh</button>
   </div>
-  <div class="tablewrap" style="margin-top:12px">
-    <table style="min-width:900px">
-      <thead>
-        <tr><th>Tanggal</th><th>Jenis</th><th>Produk</th><th>Qty Bungkus</th><th>Modal / Bungkus</th><th>Total Modal</th><th>Aksi</th></tr>
-      </thead>
-      <tbody id="onlineBatchHistoryRows">
-        <tr><td colspan="7">Memuat riwayat...</td></tr>
-      </tbody>
+
+  <div class="tablewrap" id="onlineBatchHistoryMonthWrap" style="margin-top:12px">
+    <table style="min-width:820px">
+      <thead><tr><th>Bulan</th><th>Jumlah Transaksi</th><th>Total Bungkus</th><th>Total Modal/HPP</th><th>Aksi</th></tr></thead>
+      <tbody id="onlineBatchHistoryMonthRows"><tr><td colspan="5">Memuat riwayat...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap" id="onlineBatchHistoryDateWrap" style="margin-top:12px;display:none">
+    <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div><h3 id="onlineBatchHistoryDateTitle" style="margin:0">Tanggal Transaksi Online</h3></div>
+      <div class="actions" style="margin:0"><button class="btn gray" id="onlineBatchHistoryBackMonth" type="button">← Kembali ke Bulan</button></div>
+    </div>
+    <table style="min-width:820px">
+      <thead><tr><th>Tanggal</th><th>Jumlah Transaksi</th><th>Total Bungkus</th><th>Total Modal/HPP</th><th>Aksi</th></tr></thead>
+      <tbody id="onlineBatchHistoryDateRows"><tr><td colspan="5">Pilih bulan.</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap" id="onlineBatchHistoryDetailWrap" style="margin-top:12px;display:none">
+    <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div><h3 id="onlineBatchHistoryDetailTitle" style="margin:0">Detail Transaksi Online</h3></div>
+      <div class="actions" style="margin:0"><button class="btn gray" id="onlineBatchHistoryBackDate" type="button">← Kembali ke Tanggal</button></div>
+    </div>
+    <table style="min-width:980px">
+      <thead><tr><th>Tanggal</th><th>Jenis</th><th>Produk</th><th>Qty Bungkus</th><th>Modal / Bungkus</th><th>Total Modal</th><th>Aksi</th></tr></thead>
+      <tbody id="onlineBatchHistoryDetailRows"><tr><td colspan="7">Pilih tanggal.</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -1106,38 +1125,89 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     updateSummary();
   }
   async function refreshOnlineBatchHistory(){
-    const tb=byId('onlineBatchHistoryRows');
-    if(!tb)return;
-    tb.innerHTML='<tr><td colspan="7">Memuat riwayat...</td></tr>';
+    const monthTb=byId('onlineBatchHistoryMonthRows');
+    const dateTb=byId('onlineBatchHistoryDateRows');
+    const detailTb=byId('onlineBatchHistoryDetailRows');
+    if(!monthTb)return;
+    monthTb.innerHTML='<tr><td colspan="5">Memuat riwayat...</td></tr>';
     try{
-      const r=await supabaseClient
-        .from('penjualan')
+      const r=await supabaseClient.from('penjualan')
         .select('id,tanggal,product_name,variation,qty,modal_hpp,hpp,source')
         .eq('channel','Online')
         .eq('source','online_batch')
         .order('tanggal',{ascending:false})
         .order('id',{ascending:false})
-        .limit(200);
+        .limit(1000);
       if(r.error)throw r.error;
-      const data=r.data||[];
-      tb.innerHTML=data.length?data.map(x=>{
-        const qty=Math.max(1,Number(x.qty)||1);
+      const rows=r.data||[];
+      const months={};
+      rows.forEach(x=>{
+        const month=String(x.tanggal||'Tanpa tanggal').slice(0,7)||'Tanpa tanggal';
+        if(!months[month])months[month]={key:month,rows:[],qty:0,modal:0};
+        const q=Math.max(1,Number(x.qty)||1);
         const total=Math.round(Number(x.modal_hpp??x.hpp??0));
-        const unit=qty?Math.round(total/qty):0;
-        return '<tr>'+
-          '<td>'+esc(x.tanggal||'-')+'</td>'+
-          '<td>'+esc(x.variation||'Naget')+'</td>'+
-          '<td>'+esc(x.product_name||'-')+'</td>'+
-          '<td>'+qty.toLocaleString('id-ID')+'</td>'+
-          '<td>'+money(unit)+'</td>'+
-          '<td>'+money(total)+'</td>'+
-          '<td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td>'+
-        '</tr>';
-      }).join(''):'<tr><td colspan="7">Belum ada transaksi online baru.</td></tr>';
+        months[month].rows.push(x);
+        months[month].qty+=q;
+        months[month].modal+=total;
+      });
+      window.__onlineBatchHistoryMonths=months;
+      const keys=Object.keys(months).sort((a,b)=>String(b).localeCompare(String(a)));
+      monthTb.innerHTML=keys.length?keys.map(k=>{
+        const g=months[k];
+        const label=/^\d{4}-\d{2}$/.test(k)?new Date(Number(k.slice(0,4)),Number(k.slice(5,7))-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):k;
+        return '<tr><td><b>'+esc(label)+'</b></td><td>'+g.rows.length.toLocaleString('id-ID')+'</td><td>'+g.qty.toLocaleString('id-ID')+'</td><td>'+money(g.modal)+'</td><td><button class="mini viewbtn" type="button" data-on-hist-month="'+esc(k)+'">👁 Klik Data</button></td></tr>';
+      }).join(''):'<tr><td colspan="5">Belum ada transaksi online baru.</td></tr>';
+      if(dateTb)dateTb.innerHTML='<tr><td colspan="5">Pilih bulan.</td></tr>';
+      if(detailTb)detailTb.innerHTML='<tr><td colspan="7">Pilih tanggal.</td></tr>';
+      byId('onlineBatchHistoryDateWrap')&&(byId('onlineBatchHistoryDateWrap').style.display='none');
+      byId('onlineBatchHistoryDetailWrap')&&(byId('onlineBatchHistoryDetailWrap').style.display='none');
+      byId('onlineBatchHistoryMonthWrap')&&(byId('onlineBatchHistoryMonthWrap').style.display='block');
     }catch(e){
       console.error(e);
-      tb.innerHTML='<tr><td colspan="7">Gagal memuat riwayat: '+esc(e.message||e)+'</td></tr>';
+      monthTb.innerHTML='<tr><td colspan="5">Gagal memuat riwayat: '+esc(e.message||e)+'</td></tr>';
     }
+  }
+
+  function renderOnlineBatchHistoryMonth(month){
+    const g=(window.__onlineBatchHistoryMonths||{})[month];
+    const wrap=byId('onlineBatchHistoryDateWrap'),tb=byId('onlineBatchHistoryDateRows'),title=byId('onlineBatchHistoryDateTitle');
+    if(!g||!wrap||!tb)return;
+    const dates={};
+    g.rows.forEach(x=>{
+      const d=String(x.tanggal||'Tanpa tanggal');
+      if(!dates[d])dates[d]={key:d,rows:[],qty:0,modal:0};
+      const q=Math.max(1,Number(x.qty)||1),total=Math.round(Number(x.modal_hpp??x.hpp??0));
+      dates[d].rows.push(x);dates[d].qty+=q;dates[d].modal+=total;
+    });
+    window.__onlineBatchHistoryDates={month,dates};
+    const keys=Object.keys(dates).sort((a,b)=>String(b).localeCompare(String(a)));
+    const label=/^\d{4}-\d{2}$/.test(month)?new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):month;
+    if(title)title.textContent='Tanggal Transaksi Online • '+label;
+    tb.innerHTML=keys.length?keys.map(k=>{
+      const g2=dates[k];
+      const dateLabel=/^\d{4}-\d{2}-\d{2}$/.test(k)?new Date(k+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'}):'Tanpa tanggal';
+      return '<tr><td><b>'+esc(dateLabel)+'</b></td><td>'+g2.rows.length.toLocaleString('id-ID')+'</td><td>'+g2.qty.toLocaleString('id-ID')+'</td><td>'+money(g2.modal)+'</td><td><button class="mini viewbtn" type="button" data-on-hist-date="'+esc(k)+'">👁 Klik Data</button></td></tr>';
+    }).join(''):'<tr><td colspan="5">Tidak ada transaksi pada bulan ini.</td></tr>';
+    wrap.style.display='block';
+    byId('onlineBatchHistoryMonthWrap')&&(byId('onlineBatchHistoryMonthWrap').style.display='none');
+    byId('onlineBatchHistoryDetailWrap')&&(byId('onlineBatchHistoryDetailWrap').style.display='none');
+    wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  function renderOnlineBatchHistoryDate(dateKey){
+    const state=window.__onlineBatchHistoryDates||{},g=state.dates?.[dateKey];
+    const wrap=byId('onlineBatchHistoryDetailWrap'),tb=byId('onlineBatchHistoryDetailRows'),title=byId('onlineBatchHistoryDetailTitle');
+    if(!g||!wrap||!tb)return;
+    const dateLabel=/^\d{4}-\d{2}-\d{2}$/.test(dateKey)?new Date(dateKey+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'Tanpa tanggal';
+    if(title)title.textContent='Detail Transaksi Online • '+dateLabel;
+    tb.innerHTML=g.rows.sort((a,b)=>Number(b.id||0)-Number(a.id||0)).map(x=>{
+      const q=Math.max(1,Number(x.qty)||1),total=Math.round(Number(x.modal_hpp??x.hpp??0)),unit=q?Math.round(total/q):0;
+      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(x.variation||'Naget')+'</td><td>'+esc(x.product_name||'-')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+money(unit)+'</td><td>'+money(total)+'</td><td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
+    }).join('');
+    wrap.style.display='block';
+    byId('onlineBatchHistoryMonthWrap')&&(byId('onlineBatchHistoryMonthWrap').style.display='none');
+    byId('onlineBatchHistoryDateWrap')&&(byId('onlineBatchHistoryDateWrap').style.display='none');
+    wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
   async function refreshNewOnlineProfit(){
     try{
@@ -1285,6 +1355,14 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       refreshOnlineBatchHistory();
       byId('onlineBatchHistoryCard')?.scrollIntoView({behavior:'smooth',block:'start'});
     });
+    byId('onlineBatchHistoryBackMonth')?.addEventListener('click',()=>{
+      byId('onlineBatchHistoryDateWrap')&&(byId('onlineBatchHistoryDateWrap').style.display='none');
+      byId('onlineBatchHistoryMonthWrap')&&(byId('onlineBatchHistoryMonthWrap').style.display='block');
+    });
+    byId('onlineBatchHistoryBackDate')?.addEventListener('click',()=>{
+      byId('onlineBatchHistoryDetailWrap')&&(byId('onlineBatchHistoryDetailWrap').style.display='none');
+      byId('onlineBatchHistoryDateWrap')&&(byId('onlineBatchHistoryDateWrap').style.display='block');
+    });
     byId('cashSave')?.addEventListener('click',saveCash);
     byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashMarketplace').value='TikTok Shop';byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
     byId('offlineExpenseDate') && (byId('offlineExpenseDate').value=today());
@@ -1298,6 +1376,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       byId('dropName').value='';byId('dropModal').value='';renderDropMaster();
     });
     document.addEventListener('input',e=>{
+      const onMonth=e.target.closest?.('[data-on-hist-month]');
+      if(onMonth){ renderOnlineBatchHistoryMonth(String(onMonth.dataset.onHistMonth||'')); return; }
+      const onDate=e.target.closest?.('[data-on-hist-date]');
+      if(onDate){ renderOnlineBatchHistoryDate(String(onDate.dataset.onHistDate||'')); return; }
       const tr=e.target.closest?.('tr[data-row]');if(!tr)return;
       const r=getRowObj(Number(tr.dataset.row));if(!r)return;
       if(e.target.classList.contains('batch-drop-search')){
