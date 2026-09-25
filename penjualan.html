@@ -226,13 +226,14 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="cashhead">
 <div>
 <h2 style="margin:0">💰 Penerimaan Uang Online</h2>
-<div class="note">Masukkan saat TikTok benar-benar mencairkan uang. Nominal di sini dianggap <b>Uang Bersih</b> dan sudah termasuk potongan TikTok + iklan.</div>
+<div class="note">Masukkan uang yang benar-benar diterima. Nominal di sini dianggap <b>Uang Bersih</b>. Untuk Shopee, nominal yang bro masukkan adalah nilai net yang sudah selesai dipotong, jadi jangan tambahkan potongan lagi.</div>
 </div>
 </div>
-<div class="grid" style="margin-top:16px;grid-template-columns:1fr 1fr 2fr">
+<div class="grid" style="margin-top:16px;grid-template-columns:1fr 1fr 1fr 2fr">
 <div class="field"><label>Tanggal Diterima</label><input id="cashTanggal" type="date"/></div>
-<div class="field"><label>Uang Bersih Diterima</label><input id="cashAmount" min="0" placeholder="Contoh 850000" step="1" type="number"/></div>
-<div class="field"><label>Keterangan</label><input id="cashNote" placeholder="Pencairan TikTok / periode / catatan" type="text"/></div>
+<div class="field"><label>Marketplace</label><select id="cashMarketplace"><option value="TikTok Shop">TikTok Shop</option><option value="Shopee">Shopee</option></select></div>
+<div class="field"><label>Uang Bersih Diterima</label><input id="cashAmount" min="0" placeholder="Contoh 4000000" step="1" type="number"/></div>
+<div class="field"><label>Keterangan</label><input id="cashNote" placeholder="Contoh: Penerimaan Shopee / periode / catatan" type="text"/></div>
 </div>
 <div class="actions"><button class="btn blue" id="cashSave" type="button">+ Simpan Penerimaan</button><button class="btn gray" id="cashReset" type="button">Reset</button></div>
 <div id="cashMsg"></div>
@@ -1014,12 +1015,15 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   function saveCash(){
     const tanggal=byId('cashTanggal').value;
     const amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0));
+    const marketplace=byId('cashMarketplace').value||'TikTok Shop';
     const note=byId('cashNote').value.trim();
     if(!tanggal||amount<=0){setCashMsg('Tanggal dan Uang Bersih wajib diisi.',true);return;}
-    const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,total:amount,order_id:null,product_name:'Pencairan TikTok',variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:0,source:'online_pencairan'};
+    const isShopee=marketplace==='Shopee';
+    const defaultName=isShopee?'Penerimaan Shopee':'Pencairan TikTok';
+    const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,total:amount,order_id:null,product_name:defaultName,variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:0,source:'online_pencairan',purchase_channel:marketplace,order_channel:marketplace};
     supabaseClient.from('penjualan').insert([row]).select('id').single().then(async r=>{
       if(r.error){setCashMsg('Gagal menyimpan penerimaan: '+esc(r.error.message),true);return;}
-      setCashMsg('Penerimaan Uang Online tersimpan: '+money(amount));
+      setCashMsg((isShopee?'Penerimaan Shopee':'Penerimaan TikTok')+' tersimpan sebagai Uang Bersih: '+money(amount));
       byId('cashAmount').value='';byId('cashNote').value='';
       if(typeof load==='function')await load();
       await refreshNewOnlineProfit();
@@ -1039,7 +1043,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       byId('onlineBatchHistoryCard')?.scrollIntoView({behavior:'smooth',block:'start'});
     });
     byId('cashSave')?.addEventListener('click',saveCash);
-    byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
+    byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashMarketplace').value='TikTok Shop';byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
     byId('dropAdd')?.addEventListener('click',()=>{
       const name=byId('dropName').value.trim();const modal=Math.max(0,Math.round(Number(byId('dropModal').value)||0));
       if(!name||modal<=0){alert('Isi nama produk dan modal dropship.');return;}
