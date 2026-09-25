@@ -61,6 +61,38 @@ main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 6px;color:var
   </div>
 </div>
 
+<div class="card" id="debtListCard">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <div>
+      <h2 style="margin:0">📒 Daftar Hutang</h2>
+      <div class="note">Semua hutang yang masih tercatat. Setiap pembayaran akan otomatis mengurangi kolom Sisa.</div>
+    </div>
+    <span class="badge" id="debtActiveCount">0 aktif</span>
+  </div>
+  <div class="tablewrap" style="margin-top:12px">
+    <table style="min-width:1000px">
+      <thead><tr><th>Tanggal</th><th>Kategori</th><th>Pihak</th><th>Jatuh Tempo</th><th>Nominal Awal</th><th>Sudah Dibayar</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="debtListRows"><tr><td colspan="9" class="empty">Belum ada hutang.</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" id="receivableListCard">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <div>
+      <h2 style="margin:0">📘 Daftar Piutang</h2>
+      <div class="note">Piutang yang belum lunas dan yang sudah lunas tetap tercatat sebagai riwayat.</div>
+    </div>
+    <span class="badge" id="receivableActiveCount">0 aktif</span>
+  </div>
+  <div class="tablewrap" style="margin-top:12px">
+    <table style="min-width:1000px">
+      <thead><tr><th>Tanggal</th><th>Kategori</th><th>Pihak</th><th>Jatuh Tempo</th><th>Nominal Awal</th><th>Sudah Diterima</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="receivableListRows"><tr><td colspan="9" class="empty">Belum ada piutang.</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
 <div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><h2 style="margin:0">📅 Rekap Bulanan</h2><div class="note">Ringkas per bulan; buka detail untuk melihat Hutang/Piutang dan pembayaran.</div></div><button class="btn gray" id="refresh">↻ Refresh</button></div>
   <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Bulan</th><th>Hutang Baru</th><th>Bayar Hutang</th><th>Sisa Hutang</th><th>Piutang Baru</th><th>Terima Piutang</th><th>Sisa Piutang</th><th>Aksi</th></tr></thead><tbody id="months"><tr><td colspan="8">Memuat...</td></tr></tbody></table></div>
@@ -137,6 +169,18 @@ function renderSummary(){
   const keys=allMonths();
   $('months').innerHTML=keys.length?keys.map(m=>{const x=by[m];return '<tr><td><b>'+esc(monthLabel(m))+'</b></td><td>'+money(x.hnew)+'</td><td>'+money(x.hpay)+'</td><td>'+money(x.hrest)+'</td><td>'+money(x.pnew)+'</td><td>'+money(x.ppay)+'</td><td>'+money(x.prest)+'</td><td><button class="btn" type="button" data-month="'+m+'">👁 Lihat</button></td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Belum ada data.</td></tr>';
 }
+function renderLists(){
+  const huts=records.filter(r=>r.jenis==='Hutang').sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))||Number(b.id)-Number(a.id));
+  const pits=records.filter(r=>r.jenis==='Piutang').sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))||Number(b.id)-Number(a.id));
+  const hAktif=huts.filter(r=>computed(r).sisa>0).length;
+  const pAktif=pits.filter(r=>computed(r).sisa>0).length;
+  $('debtActiveCount').textContent=hAktif+' aktif / '+huts.length+' total';
+  $('receivableActiveCount').textContent=pAktif+' aktif / '+pits.length+' total';
+  const row=(r,isPay)=>{const x=computed(r);const action=x.sisa>0?'<button class="btn blue" type="button" data-pay="'+r.id+'">💵 Bayar</button>':'<span class="hint">Lunas</span>';return '<tr><td>'+esc(r.tanggal||'-')+'</td><td>'+esc(r.kategori||'-')+'</td><td>'+esc(r.pihak||'-')+'</td><td>'+esc(r.jatuh_tempo||'-')+'</td><td>'+money(r.nominal_awal)+'</td><td>'+money(x.paid)+'</td><td class="money '+(x.sisa>0?'negative':'positive')+'">'+money(x.sisa)+'</td><td>'+esc(x.status)+'</td><td>'+action+'</td></tr>';};
+  $('debtListRows').innerHTML=huts.length?huts.map(r=>row(r,true)).join(''):'<tr><td colspan="9" class="empty">Belum ada hutang.</td></tr>';
+  $('receivableListRows').innerHTML=pits.length?pits.map(r=>row(r,true)).join(''):'<tr><td colspan="9" class="empty">Belum ada piutang.</td></tr>';
+}
+
 function renderStats(){
   let h=0,p=0,bh=0,bp=0;const cur=today().slice(0,7);
   records.forEach(r=>{const x=computed(r);if(r.jenis==='Hutang')h+=x.sisa;else p+=x.sisa});
@@ -155,7 +199,7 @@ $('savePayment').onclick=async()=>{if(!payTarget)return;const r=records.find(x=>
 async function updateStatus(id){const r=records.find(x=>Number(x.id)===Number(id));if(!r)return;const x=computed(r),u=await supabaseClient.from('ff_hutang_piutang').update({status:x.status}).eq('id',id);if(u.error)console.warn(u.error)}
 $('closeDetail').onclick=()=>{$('detailCard').style.display='none';$('paymentCard').style.display='none'};
 $('closePayment').onclick=()=>{$('paymentCard').style.display='none'};
-async function load(){const [r,p]=await Promise.all([supabaseClient.from('ff_hutang_piutang').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false}),supabaseClient.from('ff_hutang_piutang_bayar').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false})]);if(r.error)throw r.error;if(p.error)throw p.error;records=r.data||[];payments=p.data||[];renderDrafts();renderSummary();renderStats()}
+async function load(){const [r,p]=await Promise.all([supabaseClient.from('ff_hutang_piutang').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false}),supabaseClient.from('ff_hutang_piutang_bayar').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false})]);if(r.error)throw r.error;if(p.error)throw p.error;records=r.data||[];payments=p.data||[];renderDrafts();renderSummary();renderStats();renderLists()}
 $('refresh').onclick=()=>load().catch(e=>{$('months').innerHTML='<tr><td colspan="8">'+esc(e.message)+'</td></tr>'});
 load().catch(e=>$('months').innerHTML='<tr><td colspan="8">'+esc(e.message)+'</td></tr>');
 </script>
