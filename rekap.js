@@ -771,16 +771,26 @@ function renderMonthOptions(){
 ===================================================== */
 
 function debtMonthStats(m){
-  const records=(debtRecords||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m);
-  const recIds=new Set(records.map(x=>Number(x.id)));
-  const pays=(debtPayments||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && recIds.has(Number(x.hutang_piutang_id)));
-  const monthRec=(debtRecords||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m);
-  const allPaidToMonth=debtPayments.filter(x=>recIds.has(Number(x.hutang_piutang_id)) && String(x.tanggal||'').slice(0,7)<=m);
-  const paidMap={};
-  allPaidToMonth.forEach(p=>{paidMap[p.hutang_piutang_id]=(paidMap[p.hutang_piutang_id]||0)+Number(p.nominal||0)});
+  const monthStart=m+'-01';
+  const nextMonth=new Date(Number(m.slice(0,4)),Number(m.slice(5,7)),1);
+  const next=nextMonth.getFullYear()+'-'+String(nextMonth.getMonth()+1).padStart(2,'0')+'-01';
+  const created=(debtRecords||[]).filter(x=>String(x.tanggal||'')>=monthStart && String(x.tanggal||'')<next);
+  const paymentsInMonth=(debtPayments||[]).filter(x=>String(x.tanggal||'')>=monthStart && String(x.tanggal||'')<next);
   let hnew=0,pnew=0,hpaid=0,ppaid=0,hbal=0,pbal=0;
-  monthRec.forEach(x=>{const awal=Number(x.nominal_awal||0),paid=Number(paidMap[x.id]||0),sisa=Math.max(0,awal-paid);if(x.jenis==='Hutang'){hnew+=awal;hbal+=sisa;}else{pnew+=awal;pbal+=sisa;}});
-  pays.forEach(p=>{const x=monthRec.find(r=>Number(r.id)===Number(p.hutang_piutang_id));if(x?.jenis==='Hutang')hpaid+=Number(p.nominal||0);if(x?.jenis==='Piutang')ppaid+=Number(p.nominal||0);});
+  created.forEach(x=>{if(x.jenis==='Hutang')hnew+=Number(x.nominal_awal||0);else if(x.jenis==='Piutang')pnew+=Number(x.nominal_awal||0);});
+  paymentsInMonth.forEach(p=>{
+    const rec=(debtRecords||[]).find(x=>Number(x.id)===Number(p.hutang_piutang_id));
+    if(rec?.jenis==='Hutang')hpaid+=Number(p.nominal||0);
+    if(rec?.jenis==='Piutang')ppaid+=Number(p.nominal||0);
+  });
+  const activeToMonth=(debtRecords||[]).filter(x=>String(x.tanggal||'')<next);
+  activeToMonth.forEach(x=>{
+    const paid=(debtPayments||[]).filter(p=>Number(p.hutang_piutang_id)===Number(x.id) && String(p.tanggal||'')<next)
+      .reduce((a,p)=>a+Number(p.nominal||0),0);
+    const sisa=Math.max(0,Number(x.nominal_awal||0)-paid);
+    if(x.jenis==='Hutang')hbal+=sisa;
+    if(x.jenis==='Piutang')pbal+=sisa;
+  });
   return {hnew,pnew,hpaid,ppaid,hbal,pbal};
 }
 function renderDebtConnection(m){
