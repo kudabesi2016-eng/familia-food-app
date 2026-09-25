@@ -18,7 +18,7 @@ const mustContain = {
   ],
   'penjualan.html': [
     'ffCustomerList','loadCustomerMaster','saveCustomerMaster','saveCustomerLink','ff_penjualan_pelanggan',
-    "source:'manual'","Jumlah Terjual (Bungkus)","refreshOfflineHistory","renderOfflineHistoryMonth","renderOfflineHistoryDate","offlineHistoryViewBtn","offlineExpenseSave","offlineExpenseNominal","pengeluaran","Bulan → Tanggal → Detail","Pemasukan</b> dan <b>Pengeluaran</b>
+    "source:'manual'","Jumlah Terjual (Bungkus)","refreshOfflineHistory","renderOfflineHistoryMonth","renderOfflineHistoryDate","refreshOnlineBatchHistory","renderOnlineBatchHistoryMonth","renderOnlineBatchHistoryDate","onlineBatchHistoryMonthRows","offlineHistoryViewBtn","offlineExpenseSave","offlineExpenseNominal","pengeluaran","Bulan → Tanggal → Detail","Pemasukan</b> dan <b>Pengeluaran</b>
   ],
   'rekap.js': [
     'online_pencairan','online_batch','purchases','returns',
