@@ -365,12 +365,11 @@ td{
     <div class="notice">
 
       <span id="noticeChannel">🔵 <b>Rekap Online</b></span><br>
-      <span id="noticeText">Rekap Online menggabungkan <b>Data Lama + Transaksi Online Baru</b> dalam bulan yang sama tanpa menimpa data lama.<br>
+      <span id="noticeText">Rekap Online menggabungkan <b>Data Lama + Transaksi Online Baru</b> tanpa menimpa data lama.<br>
       Histori Jan–Agustus 2026 berasal dari audit TikTok (seller_center) sebanyak <b>8.085 bungkus</b>.<br>
-      Transaksi baru berasal dari input Online Baru dan ditambahkan ke bulan yang sesuai.<br>
       Uang Bersih = histori + penerimaan transaksi baru yang sudah dicatat.<br>
-      Modal = HPP histori + HPP transaksi baru.<br>
-      Profit = Uang Bersih − Modal.<br></span>
+      Rekap bulanan tetap menampilkan Pemasukan, Potongan, Uang Bersih, Modal, dan Profit produk.<br>
+      Ringkasan <b>Profit Online Final Jan–Agustus</b> di bawah menambahkan Biaya Online Lainnya.</span>
 
     </div>
 
@@ -415,6 +414,22 @@ td{
 
     </div>
 
+  </div>
+
+
+  <div class="card" id="onlineFinalSummaryCard" style="margin-top:12px;display:none">
+    <h2 style="margin-top:0">🔵 Profit Online Final Jan–Agustus 2026</h2>
+    <div class="notice">Biaya Online Lainnya digabung menjadi satu: <b>modal dropship + gaji packing</b>.</div>
+    <div class="cards" style="margin-top:12px">
+      <div class="stat"><small>Uang Bersih Diterima</small><strong id="onlineFinalNet">Rp 0</strong></div>
+      <div class="stat"><small>HPP Produk Keluar</small><strong id="onlineFinalHpp">Rp 0</strong></div>
+      <div class="stat"><small>Biaya Online Lainnya</small><strong id="onlineFinalOther">Rp 35.293.500</strong></div>
+      <div class="stat profit"><small>Profit Online Final</small><strong id="onlineFinalProfit">Rp 0</strong><div class="hint" id="onlineFinalMargin" style="margin-top:4px">Margin —</div></div>
+    </div>
+    <div class="hint" style="margin-top:10px">
+      Rumus: Uang Bersih − HPP Produk Keluar − Biaya Online Lainnya.
+      Biaya Online Lainnya = modal dropship + gaji packing.
+    </div>
   </div>
 
   <div class="card" style="margin-top:12px" id="onlineConnectionCard">
