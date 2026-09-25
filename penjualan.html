@@ -818,7 +818,12 @@ async function refreshOfflineHistory(){
         _source:'Data Lama'
       })),
       ...(salesR.data||[]).map(x=>({...x,_jenis:'Pemasukan',_tanggal:String(x.tanggal||''),_source:'Penjualan Offline'})),
-      ...(expenseR.data||[]).map(x=>({...x,_jenis:'Pengeluaran',_tanggal:String(x.tanggal||x.periode||''),_source:'Pengeluaran'}))
+      ...(expenseR.data||[])
+        .filter(x=>{
+          const d=String(x.tanggal||'').trim(),p=String(x.periode||'').trim();
+          return /^\d{4}-\d{2}-\d{2}$/.test(d)||/^\d{4}-\d{2}$/.test(p);
+        })
+        .map(x=>({...x,_jenis:'Pengeluaran',_tanggal:/^\d{4}-\d{2}-\d{2}$/.test(String(x.tanggal||''))?String(x.tanggal):String(x.periode||''),_source:'Pengeluaran'}))
     ];
 
     const monthGroups={};
@@ -1258,16 +1263,20 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         .order('id',{ascending:false})
         .limit(500);
       if(r.error)throw r.error;
-      const rows=r.data||[];
+      const rows=(r.data||[]).filter(x=>{
+        const d=String(x.tanggal||'').trim(),p=String(x.periode||'').trim();
+        return /^\d{4}-\d{2}-\d{2}$/.test(d)||/^\d{4}-\d{2}$/.test(p);
+      });
       const nowMonth=today().slice(0,7);
-      const monthRows=rows.filter(x=>String(x.periode||x.tanggal||'').slice(0,7)===nowMonth);
+      const monthRows=rows.filter(x=>(/^\d{4}-\d{2}$/.test(String(x.periode||''))?String(x.periode):String(x.tanggal||'').slice(0,7))===nowMonth);
       const monthTotal=monthRows.reduce((a,x)=>a+Math.round(Number(x.nominal)||0),0);
       const totalEl=byId('offlineExpenseMonthTotal');if(totalEl)totalEl.textContent=money(monthTotal);
       const countEl=byId('offlineExpenseCount');if(countEl)countEl.textContent=String(monthRows.length);
 
       const groups={};
       rows.forEach(x=>{
-        const key=String(x.periode||x.tanggal||'Tanpa periode').slice(0,7)||'Tanpa periode';
+        const p=String(x.periode||'').trim(),d=String(x.tanggal||'').trim();
+        const key=/^\d{4}-\d{2}$/.test(p)?p:(/^\d{4}-\d{2}-\d{2}$/.test(d)?d.slice(0,7):'Tanpa periode');
         if(!groups[key])groups[key]={key,count:0,total:0,rows:[]};
         groups[key].count++;
         groups[key].total+=Math.round(Number(x.nominal)||0);
