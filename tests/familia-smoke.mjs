@@ -22,7 +22,7 @@ const mustContain = {
   ],
   'rekap.js': [
     'online_pencairan','online_batch','purchases','returns',
-    'Profit =','Uang Bersih'
+    'Profit transaksi baru =','Uang Bersih'
   ],
   'index.html': [
     'opPurchase','opExpense','opReturn','opSupplier',
