@@ -164,7 +164,9 @@ function offlineFinance(m){
   const newRev=newRows.reduce((a,x)=>a+Math.round(Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0))),0),0);
   const rev=oldRev+newRev;
   const expense=expenseRows.reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
-  const net=rev-expense;
+  // Offline tidak memiliki potongan penjualan. Pengeluaran ditampilkan
+  // terpisah; Uang Bersih untuk perhitungan Profit tetap sama dengan Pemasukan.
+  const net=rev;
   return [rev,expense,net];
 }
 
