@@ -230,7 +230,7 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
   <div class="cashhead">
     <div>
       <h2 style="margin:0">💸 Pengeluaran Offline</h2>
-      <div class="note">Isi pengeluaran usaha di sini. Setelah disimpan, data tampil di <b>Riwayat Transaksi Offline</b> dan otomatis masuk Hasil Bersih Offline di Dashboard + Rekap.</div>
+      <div class="note">Isi pengeluaran usaha di sini. Data diringkas <b>per bulan</b> agar tidak panjang. Tekan <b>👁 Klik Data</b> pada bulan yang ingin dilihat.</div>
     </div>
   </div>
   <div class="grid" style="margin-top:16px">
@@ -246,12 +246,22 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
   <div id="offlineExpenseMsg"></div>
   <div class="preview" style="margin-top:12px">
     <div class="box"><small>Pengeluaran Bulan Berjalan</small><strong id="offlineExpenseMonthTotal">Rp 0</strong></div>
-    <div class="box"><small>Jumlah Data Terbaru</small><strong id="offlineExpenseCount">0</strong></div>
+    <div class="box"><small>Jumlah Data Bulan Berjalan</small><strong id="offlineExpenseCount">0</strong></div>
   </div>
   <div class="tablewrap" style="margin-top:12px">
+    <table style="min-width:700px">
+      <thead><tr><th>Bulan</th><th>Jumlah Data</th><th>Total Pengeluaran</th><th>Aksi</th></tr></thead>
+      <tbody id="offlineExpenseMonthRows"><tr><td colspan="4">Memuat pengeluaran...</td></tr></tbody>
+    </table>
+  </div>
+  <div class="tablewrap" id="offlineExpenseDetailWrap" style="margin-top:12px;display:none">
+    <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div><h3 id="offlineExpenseDetailTitle" style="margin:0">Detail Pengeluaran</h3></div>
+      <button class="btn gray" id="offlineExpenseDetailClose" type="button">✖ Tutup Data</button>
+    </div>
     <table style="min-width:850px">
       <thead><tr><th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th>Nominal</th><th>Aksi</th></tr></thead>
-      <tbody id="offlineExpenseRows"><tr><td colspan="5">Memuat pengeluaran...</td></tr></tbody>
+      <tbody id="offlineExpenseRows"><tr><td colspan="5">Pilih bulan.</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -1088,15 +1098,16 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   async function refreshOfflineExpenses(){
-    const tb=byId('offlineExpenseRows');
-    if(!tb)return;
-    tb.innerHTML='<tr><td colspan="5">Memuat pengeluaran...</td></tr>';
+    const monthTb=byId('offlineExpenseMonthRows');
+    const detailTb=byId('offlineExpenseRows');
+    if(!monthTb)return;
+    monthTb.innerHTML='<tr><td colspan="4">Memuat pengeluaran...</td></tr>';
     try{
       const r=await supabaseClient.from('pengeluaran')
         .select('id,tanggal,periode,kategori,keterangan,nominal')
         .order('tanggal',{ascending:false})
         .order('id',{ascending:false})
-        .limit(30);
+        .limit(500);
       if(r.error)throw r.error;
       const rows=r.data||[];
       const nowMonth=today().slice(0,7);
@@ -1104,17 +1115,54 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       const monthTotal=monthRows.reduce((a,x)=>a+Math.round(Number(x.nominal)||0),0);
       const totalEl=byId('offlineExpenseMonthTotal');if(totalEl)totalEl.textContent=money(monthTotal);
       const countEl=byId('offlineExpenseCount');if(countEl)countEl.textContent=String(monthRows.length);
-      tb.innerHTML=rows.length?rows.map(x=>'<tr>'+
-        '<td>'+esc(x.tanggal||x.periode||'-')+'</td>'+
-        '<td>'+esc(x.kategori||'-')+'</td>'+
-        '<td>'+esc(x.keterangan||'-')+'</td>'+
-        '<td>'+money(x.nominal)+'</td>'+
-        '<td><button class="mini del" type="button" data-off-exp-del="'+x.id+'">🗑 Hapus</button></td>'+
-      '</tr>').join(''):'<tr><td colspan="5">Belum ada data pengeluaran.</td></tr>';
+
+      const groups={};
+      rows.forEach(x=>{
+        const key=String(x.periode||x.tanggal||'Tanpa periode').slice(0,7)||'Tanpa periode';
+        if(!groups[key])groups[key]={key,count:0,total:0,rows:[]};
+        groups[key].count++;
+        groups[key].total+=Math.round(Number(x.nominal)||0);
+        groups[key].rows.push(x);
+      });
+      const keys=Object.keys(groups).sort((a,b)=>String(b).localeCompare(String(a)));
+      monthTb.innerHTML=keys.length?keys.map(k=>{
+        const g=groups[k];
+        const label=/^\d{4}-\d{2}$/.test(k)?new Date(Number(k.slice(0,4)),Number(k.slice(5,7))-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):k;
+        return '<tr>'+
+          '<td><b>'+esc(label)+'</b></td>'+
+          '<td>'+g.count.toLocaleString('id-ID')+'</td>'+
+          '<td>'+money(g.total)+'</td>'+
+          '<td><button class="mini viewbtn" type="button" data-off-exp-month="'+esc(k)+'">👁 Klik Data</button></td>'+
+        '</tr>';
+      }).join(''):'<tr><td colspan="4">Belum ada data pengeluaran.</td></tr>';
+
+      window.__offlineExpenseGroups=groups;
+      if(detailTb && !byId('offlineExpenseDetailWrap')?.style.display || (byId('offlineExpenseDetailWrap')?.style.display==='none')){
+        detailTb.innerHTML='<tr><td colspan="5">Pilih bulan untuk melihat detail.</td></tr>';
+      }
     }catch(e){
       console.error('refreshOfflineExpenses',e);
-      tb.innerHTML='<tr><td colspan="5">Gagal memuat pengeluaran: '+esc(e.message||e)+'</td></tr>';
+      monthTb.innerHTML='<tr><td colspan="4">Gagal memuat pengeluaran: '+esc(e.message||e)+'</td></tr>';
+      if(detailTb)detailTb.innerHTML='<tr><td colspan="5">Gagal memuat detail.</td></tr>';
     }
+  }
+
+  function renderOfflineExpenseMonth(key){
+    const wrap=byId('offlineExpenseDetailWrap'),tb=byId('offlineExpenseRows'),title=byId('offlineExpenseDetailTitle');
+    const groups=window.__offlineExpenseGroups||{};
+    const g=groups[key];
+    if(!wrap||!tb||!g)return;
+    const label=/^\d{4}-\d{2}$/.test(key)?new Date(Number(key.slice(0,4)),Number(key.slice(5,7))-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):key;
+    if(title)title.textContent='Detail Pengeluaran • '+label;
+    tb.innerHTML=g.rows.length?g.rows.map(x=>'<tr>'+
+      '<td>'+esc(x.tanggal||x.periode||'-')+'</td>'+
+      '<td>'+esc(x.kategori||'-')+'</td>'+
+      '<td>'+esc(x.keterangan||'-')+'</td>'+
+      '<td>'+money(x.nominal)+'</td>'+
+      '<td><button class="mini del" type="button" data-off-exp-del="'+x.id+'">🗑 Hapus</button></td>'+
+    '</tr>').join(''):'<tr><td colspan="5">Belum ada data.</td></tr>';
+    wrap.style.display='block';
+    wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
 
   function resetOfflineExpense(){
@@ -1247,6 +1295,16 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       const tr=e.target.closest?.('tr[data-row]');
       if(tr && e.target.closest('.batch-del')){
         const id=Number(tr.dataset.row);rows=rows.filter(r=>r.id!==id);if(!rows.length)rows.push(emptyRow());renderRows();return;
+      }
+      const expMonthBtn=e.target.closest?.('[data-off-exp-month]');
+      if(expMonthBtn){
+        renderOfflineExpenseMonth(String(expMonthBtn.dataset.offExpMonth||''));
+        return;
+      }
+      const expClose=e.target.closest?.('#offlineExpenseDetailClose');
+      if(expClose){
+        const wrap=byId('offlineExpenseDetailWrap');if(wrap)wrap.style.display='none';
+        return;
       }
       const offExpDel=e.target.closest?.('[data-off-exp-del]');
       if(offExpDel){
