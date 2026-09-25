@@ -402,33 +402,40 @@ function renderCards(){
   const m=$('month').value;
   const offline=$('channel').value==='Offline';
   const v=finance(m);
+  const marginEl=$('margin');
   if(!v){
     $('rev').textContent='Rp 0';
     $('out').textContent='Rp 0';
     $('net').textContent='Rp 0';
     $('hpp').textContent='—';
     $('profit').textContent='—';
+    if(marginEl)marginEl.textContent='—';
     return;
   }
   const h=hppForChannel(m);
   $('rev').textContent=money(v[0]);
   $('out').textContent=money(v[1]);
   $('net').textContent=money(v[2]);
+
   if(offline){
     const profit=v[2];
     const margin=v[0]>0?(profit/v[0])*100:0;
     $('hpp').textContent=h.known?money(h.total):'—';
-    $('profit').innerHTML=`${money(profit)}<div class="hint" style="margin-top:4px">Margin ${margin.toFixed(2)}%</div>`;
+    $('profit').textContent=money(profit);
+    if(marginEl)marginEl.textContent=margin.toFixed(2)+'%';
     return;
   }
+
   if(h.known){
     const profit=v[2]-h.total;
     const margin=v[2]?(profit/v[2])*100:0;
     $('hpp').textContent=money(h.total);
-    $('profit').innerHTML=`${money(profit)}<div class="hint" style="margin-top:4px">Margin ${margin.toFixed(2)}%</div>`;
+    $('profit').textContent=money(profit);
+    if(marginEl)marginEl.textContent=margin.toFixed(2)+'%';
   }else{
     $('hpp').textContent='—';
-    $('profit').innerHTML='<span class="hint">Modal belum tersedia</span>';
+    $('profit').textContent='—';
+    if(marginEl)marginEl.textContent='—';
   }
 }
 
