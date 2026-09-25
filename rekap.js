@@ -47,6 +47,8 @@ let products = [];
 let hpps = [];
 let purchases = [];
 let returns = [];
+let debtRecords = [];
+let debtPayments = [];
 
 
 
@@ -115,7 +117,9 @@ const data = () => ({
   products,
   hpps,
   purchases,
-  returns
+  returns,
+  debtRecords,
+  debtPayments
 });
 
 
@@ -766,6 +770,31 @@ function renderMonthOptions(){
    RENDER
 ===================================================== */
 
+function debtMonthStats(m){
+  const records=(debtRecords||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m);
+  const recIds=new Set(records.map(x=>Number(x.id)));
+  const pays=(debtPayments||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && recIds.has(Number(x.hutang_piutang_id)));
+  const monthRec=(debtRecords||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m);
+  const allPaidToMonth=debtPayments.filter(x=>recIds.has(Number(x.hutang_piutang_id)) && String(x.tanggal||'').slice(0,7)<=m);
+  const paidMap={};
+  allPaidToMonth.forEach(p=>{paidMap[p.hutang_piutang_id]=(paidMap[p.hutang_piutang_id]||0)+Number(p.nominal||0)});
+  let hnew=0,pnew=0,hpaid=0,ppaid=0,hbal=0,pbal=0;
+  monthRec.forEach(x=>{const awal=Number(x.nominal_awal||0),paid=Number(paidMap[x.id]||0),sisa=Math.max(0,awal-paid);if(x.jenis==='Hutang'){hnew+=awal;hbal+=sisa;}else{pnew+=awal;pbal+=sisa;}});
+  pays.forEach(p=>{const x=monthRec.find(r=>Number(r.id)===Number(p.hutang_piutang_id));if(x?.jenis==='Hutang')hpaid+=Number(p.nominal||0);if(x?.jenis==='Piutang')ppaid+=Number(p.nominal||0);});
+  return {hnew,pnew,hpaid,ppaid,hbal,pbal};
+}
+function renderDebtConnection(m){
+  const card=$('debtConnectionCard'); if(!card)return;
+  const s=debtMonthStats(m);
+  $('debtConnectionTitle').textContent=label(m);
+  $('debtNew').textContent=money(s.hnew);
+  $('debtPaid').textContent=money(s.hpaid);
+  $('debtBalance').textContent=money(s.hbal);
+  $('receivableNew').textContent=money(s.pnew);
+  $('receivablePaid').textContent=money(s.ppaid);
+  $('receivableBalance').textContent=money(s.pbal);
+}
+
 function render(){
 
   updateChannelUI();
@@ -846,7 +875,9 @@ async function init(){
     ['produk', 'products'],
     ['hpp', 'hpps'],
     ['ff_pembelian', 'purchases'],
-    ['ff_retur_penjualan', 'returns']
+    ['ff_retur_penjualan', 'returns'],
+    ['ff_hutang_piutang', 'debtRecords'],
+    ['ff_hutang_piutang_bayar', 'debtPayments']
   ];
 
   const results = await Promise.all(
@@ -868,6 +899,8 @@ async function init(){
     if(r.key==='hpps') hpps=r.rows;
     if(r.key==='purchases') purchases=r.rows;
     if(r.key==='returns') returns=r.rows;
+    if(r.key==='debtRecords') debtRecords=r.rows;
+    if(r.key==='debtPayments') debtPayments=r.rows;
   }
 
   if(!['Offline','Online'].includes($('channel').value)){
