@@ -824,15 +824,15 @@ async function refreshOfflineHistory(){
 
     if(dateTb)dateTb.innerHTML='<tr><td colspan="6">Pilih bulan.</td></tr>';
     if(detailTb)detailTb.innerHTML='<tr><td colspan="8">Pilih tanggal.</td></tr>';
-    byId('offlineHistoryDateWrap')&&(byId('offlineHistoryDateWrap').style.display='none');
-    byId('offlineHistoryDetailWrap')&&(byId('offlineHistoryDetailWrap').style.display='none');
+    document.getElementById('offlineHistoryDateWrap')&&(document.getElementById('offlineHistoryDateWrap').style.display='none');
+    document.getElementById('offlineHistoryDetailWrap')&&(document.getElementById('offlineHistoryDetailWrap').style.display='none');
   }catch(e){
     console.error(e);
     monthTb.innerHTML='<tr><td colspan="6">Gagal memuat riwayat: '+esc(e.message||e)+'</td></tr>';
   }
 }
 function renderOfflineHistoryMonth(month){
-  const dateWrap=byId('offlineHistoryDateWrap'),dateTb=byId('offlineHistoryDateRows'),title=byId('offlineHistoryDateTitle');
+  const dateWrap=document.getElementById('offlineHistoryDateWrap'),dateTb=document.getElementById('offlineHistoryDateRows'),title=document.getElementById('offlineHistoryDateTitle');
   const g=(window.__offlineHistoryMonths||{})[month];
   if(!g||!dateWrap||!dateTb)return;
   const dates={};
@@ -852,12 +852,12 @@ function renderOfflineHistoryMonth(month){
     return '<tr><td><b>'+esc(dateLabel)+'</b></td><td>'+x.rows.length.toLocaleString('id-ID')+'</td><td>'+rupiah(x.income)+'</td><td>'+rupiah(x.expense)+'</td><td style="font-weight:700">'+rupiah(x.income-x.expense)+'</td><td><button class="mini viewbtn" type="button" data-off-hist-date="'+esc(k)+'">👁 Klik Data</button></td></tr>';
   }).join(''):'<tr><td colspan="6">Tidak ada transaksi pada bulan ini.</td></tr>';
   dateWrap.style.display='block';
-  byId('offlineHistoryDataWrap')&&(byId('offlineHistoryDataWrap').style.display='none');
-  byId('offlineHistoryDetailWrap')&&(byId('offlineHistoryDetailWrap').style.display='none');
+  document.getElementById('offlineHistoryDataWrap')&&(document.getElementById('offlineHistoryDataWrap').style.display='none');
+  document.getElementById('offlineHistoryDetailWrap')&&(document.getElementById('offlineHistoryDetailWrap').style.display='none');
   dateWrap.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function renderOfflineHistoryDate(dateKey){
-  const state=window.__offlineHistoryDates||{},detailWrap=byId('offlineHistoryDetailWrap'),detailTb=byId('offlineHistoryDetailRows'),title=byId('offlineHistoryDetailTitle');
+  const state=window.__offlineHistoryDates||{},detailWrap=document.getElementById('offlineHistoryDetailWrap'),detailTb=document.getElementById('offlineHistoryDetailRows'),title=document.getElementById('offlineHistoryDetailTitle');
   const g=state.dates?.[dateKey];
   if(!g||!detailWrap||!detailTb)return;
   const dateLabel=/^\d{4}-\d{2}-\d{2}$/.test(dateKey)?new Date(dateKey+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'Tanpa tanggal';
@@ -874,8 +874,8 @@ function renderOfflineHistoryDate(dateKey){
     return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#087443">Pemasukan</b></td><td>'+esc(x.product_name||'-')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+rupiah(total)+'</td><td>'+rupiah(modal)+'</td><td style="font-weight:700">'+rupiah(total)+'</td><td><button class="mini edit" type="button" data-off-edit="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-off-del="'+x.id+'">🗑 Hapus</button></td></tr>';
   }).join('');
   detailWrap.style.display='block';
-  byId('offlineHistoryDataWrap')&&(byId('offlineHistoryDataWrap').style.display='none');
-  byId('offlineHistoryDateWrap')&&(byId('offlineHistoryDateWrap').style.display='none');
+  document.getElementById('offlineHistoryDataWrap')&&(document.getElementById('offlineHistoryDataWrap').style.display='none');
+  document.getElementById('offlineHistoryDateWrap')&&(document.getElementById('offlineHistoryDateWrap').style.display='none');
   detailWrap.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=await supabaseClient.from('penjualan').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);await load();msg('Penjualan dihapus.')};
