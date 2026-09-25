@@ -34,7 +34,7 @@ main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 6px;color:var
   <h2 style="margin:0">➕ Tambah Hutang / Piutang</h2>
   <div class="grid" style="margin-top:14px">
     <div class="field"><label>Jenis</label><select id="jenis"><option>Hutang</option><option>Piutang</option></select></div>
-    <div class="field"><label>Kategori</label><select id="kategori"><option>Produktif</option><option>Konsumtif</option><option>Usaha</option><option>Lainnya</option></select></div>
+    <div class="field"><label>Kategori</label><select id="kategori"></select></div>
     <div class="field"><label>Pihak</label><input id="pihak" placeholder="Supplier / pelanggan / pihak lain"></div>
     <div class="field"><label>Tanggal</label><input id="tanggal" type="date"></div>
     <div class="field"><label>Jatuh Tempo</label><input id="jatuhTempo" type="date"></div>
@@ -85,6 +85,15 @@ const today=()=>new Date().toISOString().slice(0,10);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let records=[],payments=[],drafts=[],payTarget=null;
 $('tanggal').value=today();$('bayarTanggal').value=today();
+function renderKategori(){
+  const s=$('jenis').value, el=$('kategori');
+  const opts=s==='Hutang'
+    ? [['Produktif','Utang yang dipakai untuk kegiatan/usaha yang menghasilkan'],['Konsumtif','Utang untuk kebutuhan yang tidak menghasilkan pendapatan'],['Usaha','Utang usaha umum, misalnya supplier'],['Lainnya','Kategori lain']]
+    : [['Usaha','Piutang usaha dari pelanggan/transaksi'],['Lainnya','Kategori lain']];
+  el.innerHTML=opts.map(x=>'<option value="'+esc(x[0])+'">'+esc(x[0])+'</option>').join('');
+}
+$('jenis').addEventListener('change',renderKategori);
+renderKategori();
 
 function normPay(rec){return payments.filter(p=>Number(p.hutang_piutang_id)===Number(rec.id)).reduce((a,p)=>a+Number(p.nominal||0),0)}
 function computed(rec){
@@ -114,12 +123,18 @@ $('saveAll').onclick=async()=>{
 };
 
 function monthOf(v){return String(v||'').slice(0,7)}
+function allMonths(){
+  const set=new Set();
+  records.forEach(x=>{const m=monthOf(x.tanggal);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+  payments.forEach(x=>{const m=monthOf(x.tanggal);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+  return [...set].sort((a,b)=>b.localeCompare(a));
+}
 function monthLabel(m){const [y,mo]=m.split('-');return new Date(Number(y),Number(mo)-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'})}
 function renderSummary(){
   const by={};
   records.forEach(r=>{const m=monthOf(r.tanggal);if(!by[m])by[m]={hnew:0,hpay:0,hrest:0,pnew:0,ppay:0,prest:0};const x=computed(r);if(r.jenis==='Hutang')by[m].hnew+=Number(r.nominal_awal||0);else by[m].pnew+=Number(r.nominal_awal||0);by[m].hrest+=r.jenis==='Hutang'?x.sisa:0;by[m].prest+=r.jenis==='Piutang'?x.sisa:0});
   payments.forEach(p=>{const m=monthOf(p.tanggal),rec=records.find(r=>Number(r.id)===Number(p.hutang_piutang_id));if(!rec)return;if(!by[m])by[m]={hnew:0,hpay:0,hrest:0,pnew:0,ppay:0,prest:0};if(rec.jenis==='Hutang')by[m].hpay+=Number(p.nominal||0);else by[m].ppay+=Number(p.nominal||0)});
-  const keys=Object.keys(by).sort((a,b)=>b.localeCompare(a));
+  const keys=allMonths();
   $('months').innerHTML=keys.length?keys.map(m=>{const x=by[m];return '<tr><td><b>'+esc(monthLabel(m))+'</b></td><td>'+money(x.hnew)+'</td><td>'+money(x.hpay)+'</td><td>'+money(x.hrest)+'</td><td>'+money(x.pnew)+'</td><td>'+money(x.ppay)+'</td><td>'+money(x.prest)+'</td><td><button class="btn" type="button" data-month="'+m+'">👁 Lihat</button></td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Belum ada data.</td></tr>';
 }
 function renderStats(){
