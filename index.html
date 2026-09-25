@@ -373,9 +373,9 @@ async function loadDashboard(){
     // Pengeluaran Offline: hanya baris pengeluaran dengan periode YYYY-MM yang valid,
     // sama seperti Rekap/Data Lama. Baris tanpa periode valid tidak boleh masuk total.
     const offExpense=validExpenseRows.reduce((s,x)=>s+Math.round(num(x.nominal)),0);
-    // Offline tidak memiliki potongan penjualan. Pengeluaran ditampilkan
-    // terpisah; Uang Bersih untuk Profit tetap sama dengan Pemasukan.
-    const offNet=offRevenue;
+    // Offline: Uang Bersih/Laba Offline = Pemasukan − Pengeluaran.
+    // HPP ditampilkan terpisah dan tidak dikurangkan lagi dari Profit Offline.
+    const offNet=offRevenue-offExpense;
     const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty ?? x.catatan)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
 
     // HPP Offline memakai sumber per bulan yang sama dengan Rekap Offline.
@@ -399,7 +399,7 @@ async function loadDashboard(){
     // "Terukur" tetap dihitung dari HPP yang tersedia.
     // Jika sebagian histori belum punya HPP master, angka ini tetap
     // menunjukkan Profit Terukur berdasarkan modal yang berhasil dipetakan.
-    const offProfit=offNet-offHpp;
+    const offProfit=offNet;
     const offProfitKnown=true;
 
     // ONLINE: STANDARD historis + transaksi online baru.
@@ -497,7 +497,7 @@ async function loadDashboard(){
     const offlineProfitEl=document.getElementById('offProfit');
     setNumber('offProfit',offProfit);
     const offlineAudit=document.getElementById('offlineHppAudit');
-    if(offlineAudit){offlineAudit.textContent=offHppKnown ? '✅ HPP histori Offline lengkap.' : '🟠 Sebagian HPP histori belum punya master. Profit yang tampil adalah Profit Terukur berdasarkan HPP yang sudah tersedia.';}
+    if(offlineAudit){offlineAudit.textContent=offHppKnown ? '✅ HPP histori Offline lengkap. HPP ditampilkan terpisah dari Profit agar pengeluaran tidak dihitung dua kali.' : '🟠 Sebagian HPP histori belum punya master. Profit Offline memakai Pemasukan − Pengeluaran; HPP tetap ditampilkan terpisah.';}
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
