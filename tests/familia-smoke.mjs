@@ -18,7 +18,7 @@ const mustContain = {
   ],
   'penjualan.html': [
     'ffCustomerList','loadCustomerMaster','saveCustomerMaster','saveCustomerLink','ff_penjualan_pelanggan',
-    "source:'manual'","Jumlah Terjual (Bungkus)"
+    "source:'manual'","Jumlah Terjual (Bungkus)","offlineExpenseSave","offlineExpenseNominal","pengeluaran"
   ],
   'rekap.js': [
     'online_pencairan','online_batch','purchases','returns',
