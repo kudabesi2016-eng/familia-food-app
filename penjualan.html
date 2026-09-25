@@ -347,14 +347,17 @@ async function saveCustomerMaster(nama){
   return r.data||null;
 }
 async function saveCustomerLink(penjualanId,nama){
-  if(!customerLinksReady)throw new Error('Pemetaan Pelanggan↔Penjualan belum terhubung. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.');
   const name=String(nama||'').trim();
+  // Penjualan tidak boleh gagal hanya karena nama pelanggan kosong.
+  // Mapping pelanggan hanya wajib ketika memang ada nama yang diisi.
   if(!name){
+    delete customerLinks[String(penjualanId)];
+    if(!customerLinksReady)return;
     const d=await supabaseClient.from('ff_penjualan_pelanggan').delete().eq('penjualan_id',penjualanId);
     if(d.error)throw d.error;
-    delete customerLinks[String(penjualanId)];
     return;
   }
+  if(!customerLinksReady)throw new Error('Pemetaan Pelanggan↔Penjualan belum terhubung. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.');
   const customer=await saveCustomerMaster(name);
   if(!customer?.id)throw new Error('Pelanggan gagal disimpan.');
   const u=await supabaseClient.from('ff_penjualan_pelanggan').upsert(
@@ -1113,10 +1116,12 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const kategori=byId('offlineExpenseCategory')?.value||'Lainnya';
     const nominal=Math.max(0,Math.round(Number(byId('offlineExpenseNominal')?.value)||0));
     const keterangan=(byId('offlineExpenseNote')?.value||'').trim();
+    const btn=byId('offlineExpenseSave');
     const out=byId('offlineExpenseMsg');
     if(nominal<=0){out.innerHTML='<div class="bad">Nominal pengeluaran wajib lebih dari 0.</div>';return;}
     if(!keterangan){out.innerHTML='<div class="bad">Keterangan pengeluaran wajib diisi.</div>';return;}
     try{
+      if(btn)btn.disabled=true;
       const row={periode:tanggal.slice(0,7),tanggal,kategori,keterangan,nominal};
       const r=await supabaseClient.from('pengeluaran').insert([row]).select('id').single();
       if(r.error)throw r.error;
@@ -1127,6 +1132,8 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       if(typeof load==='function')await load();
     }catch(e){
       out.innerHTML='<div class="bad">Gagal menyimpan pengeluaran: '+esc(e.message||e)+'</div>';
+    }finally{
+      if(btn)btn.disabled=false;
     }
   }
 
