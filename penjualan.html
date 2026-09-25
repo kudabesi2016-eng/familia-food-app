@@ -885,6 +885,9 @@ function renderOfflineHistoryDate(dateKey){
       return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#9a3412">Pengeluaran</b></td><td>'+esc(note||'-')+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(nominal)+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(-nominal)+'</td><td><button class="mini del" type="button" data-off-exp-del="'+x.id+'">🗑 Hapus</button></td></tr>';
     }
     const q=Math.max(1,Number(x.qty)||1),total=Math.round(Number(x.total)||0),modal=Math.round(Number(x.modal_hpp??x.hpp??0));
+    if(x._source==='Data Lama'){
+      return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#087443">Pemasukan</b></td><td>'+esc(x.product_name||'-')+(x.keterangan?' — '+esc(x.keterangan):'')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+rupiah(total)+'</td><td>—</td><td style="font-weight:700">'+rupiah(total)+'</td><td><span class="small">📁 Data Lama</span></td></tr>';
+    }
     return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#087443">Pemasukan</b></td><td>'+esc(x.product_name||'-')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+rupiah(total)+'</td><td>'+rupiah(modal)+'</td><td style="font-weight:700">'+rupiah(total)+'</td><td><button class="mini edit" type="button" data-off-edit="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-off-del="'+x.id+'">🗑 Hapus</button></td></tr>';
   }).join('');
   detailWrap.style.display='block';
