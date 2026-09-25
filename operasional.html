@@ -143,7 +143,8 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
       <div id="expenseStatus" class="status"></div>
     </div>
     <div class="card">
-      <div class="tablewrap"><table><thead><tr><th>Periode</th><th>Kategori</th><th>Keterangan</th><th>Nominal</th></tr></thead><tbody id="expenseRows"></tbody></table></div>
+      <div class="notice ok">💡 Bila <b>Cara Bayar = Hutang</b>, nominal langsung masuk ke <b>Pengeluaran Utama</b> dan otomatis dibuat di tab <b>Hutang & Piutang</b>. Saat dibayar dari tab Hutang, saldo hutang berkurang dan pembayaran <b>tidak dicatat lagi sebagai pengeluaran</b> agar tidak double.</div>
+      <div class="tablewrap"><table><thead><tr><th>Periode</th><th>Kategori</th><th>Cara Bayar</th><th>Keterangan</th><th>Nominal</th></tr></thead><tbody id="expenseRows"></tbody></table></div>
     </div>
   </section>
 
@@ -381,7 +382,7 @@ async function deletePurchase(id){
 }
 function renderExpenses(){
   const m=today().slice(0,7);const rows=state.expense.filter(x=>String(x.periode||'').slice(0,7)===m);
-  $('expenseRows').innerHTML=rows.slice().sort((a,b)=>String(b.periode).localeCompare(String(a.periode))).map(x=>'<tr><td>'+esc(x.periode)+'</td><td>'+esc(x.kategori||'-')+'</td><td>'+esc(x.keterangan||'-')+'</td><td>'+rupiah(x.nominal)+'</td></tr>').join('')||'<tr><td colspan="4" class="empty">Belum ada pengeluaran bulan ini.</td></tr>';
+  $('expenseRows').innerHTML=rows.slice().sort((a,b)=>String(b.periode).localeCompare(String(a.periode))).map(x=>'<tr><td>'+esc(x.periode)+'</td><td>'+esc(x.kategori||'-')+'</td><td>'+esc(x.cara_bayar||'Tunai')+'</td><td>'+esc(x.keterangan||'-')+'</td><td>'+rupiah(x.nominal)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pengeluaran bulan ini.</td></tr>';
 }
 async function saveExpense(){
   if(!state.tables.pengeluaran){$('expenseStatus').textContent='Database Pengeluaran belum aktif.';return}
