@@ -1398,6 +1398,27 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       byId('onlineBatchHistoryDetailWrap')&&(byId('onlineBatchHistoryDetailWrap').style.display='none');
       byId('onlineBatchHistoryDateWrap')&&(byId('onlineBatchHistoryDateWrap').style.display='block');
     });
+    byId('offlineHistoryBackMonth')?.addEventListener('click',()=>{
+      byId('offlineHistoryDetailWrap')&&(byId('offlineHistoryDetailWrap').style.display='none');
+      byId('offlineHistoryDateWrap')&&(byId('offlineHistoryDateWrap').style.display='none');
+      byId('offlineHistoryDataWrap')&&(byId('offlineHistoryDataWrap').style.display='block');
+    });
+    byId('offlineHistoryBackDate')?.addEventListener('click',()=>{
+      byId('offlineHistoryDetailWrap')&&(byId('offlineHistoryDetailWrap').style.display='none');
+      byId('offlineHistoryDateWrap')&&(byId('offlineHistoryDateWrap').style.display='block');
+      byId('offlineHistoryDateWrap')?.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+    byId('offlineHistoryRefresh')?.addEventListener('click',async()=>{
+      await refreshOfflineHistory();
+      const wrap=byId('offlineHistoryDataWrap');
+      if(wrap)wrap.style.display='block';
+    });
+    byId('offlineHistoryViewBtn')?.addEventListener('click',()=>{
+      const wrap=byId('offlineHistoryDataWrap');
+      if(!wrap)return;
+      const show=wrap.style.display==='none'||!wrap.style.display;
+      wrap.style.display=show?'block':'none';
+    });
     byId('cashSave')?.addEventListener('click',saveCash);
     byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashMarketplace').value='TikTok Shop';byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
     byId('offlineExpenseDate') && (byId('offlineExpenseDate').value=today());
