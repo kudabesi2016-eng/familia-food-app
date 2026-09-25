@@ -796,15 +796,29 @@ async function refreshOfflineHistory(){
   if(!monthTb)return;
   monthTb.innerHTML='<tr><td colspan="6">Memuat riwayat...</td></tr>';
   try{
-    const [salesR,expenseR]=await Promise.all([
+    const [salesR,expenseR,oldR]=await Promise.all([
       supabaseClient.from('penjualan').select('id,tanggal,product_name,qty,harga,total,modal_hpp,hpp,laba,produk_id,channel,source').eq('channel','Offline').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000),
-      supabaseClient.from('pengeluaran').select('id,tanggal,periode,kategori,keterangan,nominal').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000)
+      supabaseClient.from('pengeluaran').select('id,tanggal,periode,kategori,keterangan,nominal').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000),
+      supabaseClient.from('data_lama').select('id,periode,jenis,keterangan,nominal,catatan').order('periode',{ascending:false}).order('id',{ascending:false}).limit(5000)
     ]);
-    if(salesR.error)throw salesR.error;if(expenseR.error)throw expenseR.error;
+    if(salesR.error)throw salesR.error;if(expenseR.error)throw expenseR.error;if(oldR.error)throw oldR.error;
 
     const rows=[
-      ...(salesR.data||[]).map(x=>({...x,_jenis:'Pemasukan',_tanggal:String(x.tanggal||'')})),
-      ...(expenseR.data||[]).map(x=>({...x,_jenis:'Pengeluaran',_tanggal:String(x.tanggal||x.periode||'')}))
+      ...(oldR.data||[]).map(x=>({
+        id:'old-'+x.id,
+        periode:String(x.periode||'').slice(0,7),
+        tanggal:'',
+        product_name:String(x.jenis||'-'),
+        keterangan:String(x.keterangan||''),
+        qty:Number(x.catatan||0),
+        total:Math.round(Number(x.nominal)||0),
+        modal_hpp:0,
+        _jenis:'Pemasukan',
+        _tanggal:String(x.periode||''),
+        _source:'Data Lama'
+      })),
+      ...(salesR.data||[]).map(x=>({...x,_jenis:'Pemasukan',_tanggal:String(x.tanggal||''),_source:'Penjualan Offline'})),
+      ...(expenseR.data||[]).map(x=>({...x,_jenis:'Pengeluaran',_tanggal:String(x.tanggal||x.periode||''),_source:'Pengeluaran'}))
     ];
 
     const monthGroups={};
