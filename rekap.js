@@ -164,9 +164,10 @@ function offlineFinance(m){
   const newRev=newRows.reduce((a,x)=>a+Math.round(Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0))),0),0);
   const rev=oldRev+newRev;
   const expense=expenseRows.reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
-  // Offline tidak memiliki potongan penjualan. Pengeluaran ditampilkan
-  // terpisah; Uang Bersih untuk perhitungan Profit tetap sama dengan Pemasukan.
-  const net=rev;
+  // Offline: Uang Bersih/Laba Offline = Pemasukan − Pengeluaran.
+  // HPP ditampilkan terpisah sebagai indikator biaya produksi dan tidak
+  // dikurangkan lagi di sini agar biaya tidak dihitung dua kali.
+  const net=rev-expense;
   return [rev,expense,net];
 }
 
