@@ -103,7 +103,8 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Potongan Online Shop</small><b id="onFee">Rp 0</b></div>
       <div class="mini"><small>Uang Bersih</small><b id="onNet">Rp 0</b></div>
       <div class="mini"><small>HPP / Modal</small><b id="onHpp">Rp 0</b></div>
-      <div class="mini"><small>Profit</small><b id="onProfit">Rp 0</b></div>
+      <div class="mini"><small>Biaya Online Lainnya</small><b id="onOtherCost">Rp 0</b></div>
+      <div class="mini"><small>Profit Final</small><b id="onProfit">Rp 0</b></div>
       <div class="mini"><small>Produk Keluar Historis (Kunci)</small><b id="onQty">0</b></div>
     </div>
     <div class="note">Online historis memakai <b>8.085 bungkus</b> hasil audit TikTok sebagai kunci Produk Keluar Jan–Agustus 2026. Baris dengan Qty 0 adalah retur penuh dan tidak dihitung sebagai produk keluar/HPP.<br><span id="onlineHistoryAudit">Memeriksa rekonsiliasi…</span></div>
@@ -140,6 +141,9 @@ const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
 const num=n=>Number(n)||0;
 const ONLINE_LOCKED_HISTORY={10:16,12:7292,20:211,25:293,30:90,40:67,50:116};
 const ONLINE_LOCKED_TOTAL=8085;
+// Biaya Online Lainnya yang sudah dikunci: modal dropship + gaji packing.
+// Berlaku sebagai biaya agregat untuk ringkasan Online saat ini.
+const ONLINE_OTHER_COST_LOCKED=35293500;
 const colorValue=(el,v,formatted=rupiah(v))=>{el.textContent=formatted;el.classList.toggle('negative',v<0)};
 const pct=(v)=>{const t=(Number(v)||0).toFixed(2)+'%';return t};
 async function fetchAll(table, select='*'){
@@ -455,7 +459,10 @@ async function loadDashboard(){
     const onFee=onOldFee+onNewFee;
     const onNet=onOldNet+onNewNet;
     const onHpp=onOldHpp+onNewHpp;
-    const onProfit=onOldProfit+(onNewNet-onNewHpp);
+    const onContributionProfit=onOldProfit+(onNewNet-onNewHpp);
+    // Profit final Online dikurangi biaya agregat Online Lainnya yang sudah dikunci.
+    const onOtherCost=(onNet>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0;
+    const onProfit=onContributionProfit-onOtherCost;
     // Jan–Agustus 2026 memakai angka histori audit seller_center yang dikunci.
     const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
 
@@ -500,6 +507,7 @@ async function loadDashboard(){
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
     setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet);
     setNumber('onHpp',onHpp);
+    setNumber('onOtherCost',onOtherCost);
     setNumber('onProfit',onProfit);
     document.getElementById('onQty').textContent=onQty.toLocaleString('id-ID');
     const missingBySize={};
