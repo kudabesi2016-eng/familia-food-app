@@ -184,9 +184,18 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="box profit"><small>Total Modal Dropship</small><strong id="batchTotalDrop">Rp 0</strong></div>
 </div>
 <div class="actions" style="margin-top:12px">
-<button class="btn" id="batchSave" type="button">+ Simpan Semua Produk Keluar</button>
+<button class="btn" id="batchSave" type="button">+ Tambah Produk ke Daftar</button>
 </div>
 <div id="batchMsg"></div>
+</div>
+<div class="card" id="onlineDraftCard" style="border:2px solid #9fcbb0;background:#fbfefc">
+  <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <div><h2 style="margin:0">📝 Daftar Transaksi Online Sementara</h2><div class="note">Produk keluar dan Penerimaan Uang yang ditambahkan di sini <b>belum masuk database</b>. Cek dulu, lalu tekan <b>✅ Simpan Semua</b>.</div></div>
+    <span class="badge" id="onlineDraftCount">0 transaksi belum disimpan</span>
+  </div>
+  <div class="tablewrap" style="margin-top:12px"><table style="min-width:980px"><thead><tr><th>#</th><th>Tanggal</th><th>Jenis</th><th>Marketplace / Produk</th><th>Qty Bungkus</th><th>Nominal</th><th>HPP/Modal</th><th>Aksi</th></tr></thead><tbody id="onlineDraftRows"><tr><td colspan="8" class="empty">Belum ada transaksi sementara.</td></tr></tbody></table></div>
+  <div class="actions" style="margin-top:12px"><button class="btn" id="onlineDraftSaveAll" type="button">✅ Simpan Semua</button><button class="btn gray" id="onlineDraftClear" type="button">🗑 Hapus Semua Daftar</button></div>
+  <div id="onlineDraftMsg"></div>
 </div>
 <div class="card" id="onlineBatchHistoryCard" style="border:2px solid #cfe4d7">
   <div class="cashhead">
@@ -320,7 +329,7 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="field"><label>Uang Bersih Diterima</label><input id="cashAmount" min="0" placeholder="Contoh 4000000" step="1" type="number"/></div>
 <div class="field"><label>Keterangan</label><input id="cashNote" placeholder="Contoh: Penerimaan Shopee / periode / catatan" type="text"/></div>
 </div>
-<div class="actions"><button class="btn blue" id="cashSave" type="button">+ Simpan Penerimaan</button><button class="btn gray" id="cashReset" type="button">Reset</button></div>
+<div class="actions"><button class="btn blue" id="cashSave" type="button">+ Tambah Penerimaan ke Daftar</button><button class="btn gray" id="cashReset" type="button">Reset</button></div>
 <div id="cashMsg"></div>
 </div>
 <div class="card" id="onlineNewProfitCard">
@@ -1110,57 +1119,32 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     try{
       rows.forEach(r=>syncFromDOM(r.id));
       if(!rows.length){setMsg('Belum ada produk yang dimasukkan.',true);return;}
-      const valid=[]; const errors=[];
+      const valid=[],errors=[];
       rows.forEach((r,i)=>{
-        if(!r.tanggal)errors.push(`Baris ${i+1}: tanggal kosong`);
+        if(!r.tanggal)errors.push('Baris '+(i+1)+': tanggal kosong');
         const q=Math.max(1,Math.round(Number(r.qty)||0));
         if(r.jenis==='familia'){
-          const p=productById(r.produkId), h=hppForProduct(p);
-          if(!p)errors.push(`Baris ${i+1}: pilih Produk Keluar`);
-          else if(h<=0)errors.push(`Baris ${i+1}: HPP Online ${p.nama_produk} belum tersedia`);
+          const p=productById(r.produkId),h=hppForProduct(p);
+          if(!p)errors.push('Baris '+(i+1)+': pilih Produk Keluar');
+          else if(h<=0)errors.push('Baris '+(i+1)+': HPP Online '+p.nama_produk+' belum tersedia');
           else valid.push({r,p,h,q,total:q*h});
         }else{
           const d=r.dropIndex!==''?dropRows()[Number(r.dropIndex)]:null;
-          if(!d)errors.push(`Baris ${i+1}: pilih produk Dropship`);
-          else if(Math.round(Number(d.modal)||0)<=0)errors.push(`Baris ${i+1}: modal produk Dropship belum diisi`);
-          else valid.push({r,d,h:Math.round(Number(d.modal)||0),q,total:q*Math.round(Number(d.modal)||0)});
+          if(!d)errors.push('Baris '+(i+1)+': pilih produk Dropship');
+          else if(Math.round(Number(d.modal)||0)<=0)errors.push('Baris '+(i+1)+': modal produk Dropship belum diisi');
+          else valid.push({r,d,h:Math.round(Number(d.modal)||0),q,total:q*Math.round(Number(d.modal)||0});
         }
       });
       if(errors.length){setMsg(errors.slice(0,12).join('<br>'),true);return;}
-
-      const newRows=valid.map(({r,p,d,h,q,total})=>({
-        tanggal:r.tanggal,
-        produk_id:r.jenis==='familia'?p.id:null,
-        qty:q,
-        channel:'Online',
-        harga:0,
-        hpp:Math.round(total),
-        laba:0,
-        order_id:null,
-        product_name:r.jenis==='familia'?p.nama_produk:(d?.name||'Produk Dropship'),
-        variation:r.jenis==='familia'?'Naget':'Dropship',
-        omzet_produk:0,
-        uang_bersih:null,
-        total:0,
-        modal_hpp:Math.round(total),
-        profit_online:null,
-        biaya_platform:null,
-        source:'online_batch'
-      }));
-
-      const ins=await supabaseClient.from('penjualan').insert(newRows).select('id');
-      if(ins.error)throw ins.error;
-      const totalModal=newRows.reduce((a,x)=>a+Number(x.modal_hpp||0),0);
-      const totalQty=newRows.reduce((a,x)=>a+Number(x.qty||0),0);
-      setMsg(`${newRows.length} baris produk tersimpan • ${totalQty} bungkus • Total HPP/Modal ${money(totalModal)}. Profit akan dihitung dari Uang Bersih yang dicatat pada Penerimaan Uang Online.`);
-      rows=[];addRows(1);
-      if(typeof load==='function')await load();
-      await refreshOnlineBatchHistory();
-      await refreshNewOnlineProfit();
-    }catch(e){
-      console.error(e);
-      setMsg('Gagal menyimpan produk online: '+esc(e.message||e),true);
-    }
+      valid.forEach(({r,p,d,h,q,total})=>{
+        const productName=r.jenis==='familia'?p.nama_produk:(d?.name||'Produk Dropship');
+        window.__onlineDraftRows.push({
+          kind:'Produk Keluar',tanggal:r.tanggal,qty:q,modal_hpp:Math.round(total),product_name:productName,variation:r.jenis==='familia'?'Naget':'Dropship',_seq:Date.now()+Math.random(),
+          data:{tanggal:r.tanggal,produk_id:r.jenis==='familia'?p.id:null,qty:q,channel:'Online',harga:0,hpp:Math.round(total),laba:0,order_id:null,product_name:productName,variation:r.jenis==='familia'?'Naget':'Dropship',omzet_produk:0,uang_bersih:null,total:0,modal_hpp:Math.round(total),profit_online:null,biaya_platform:null,source:'online_batch'}
+        });
+      });
+      renderOnlineDrafts();setMsg(valid.length+' produk ditambahkan ke daftar sementara. Belum masuk database.');rows=[];addRows(1);
+    }catch(e){console.error(e);setMsg('Gagal menambahkan produk online: '+esc(e.message||e),true);}
   }
 
   function renderDropMaster(){
@@ -1377,24 +1361,19 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   function saveCash(){
-    const tanggal=byId('cashTanggal').value;
-    const amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0));
-    const marketplace=byId('cashMarketplace').value||'TikTok Shop';
-    const note=byId('cashNote').value.trim();
+    const tanggal=byId('cashTanggal').value,amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0)),marketplace=byId('cashMarketplace').value||'TikTok Shop',note=byId('cashNote').value.trim();
     if(!tanggal||amount<=0){setCashMsg('Tanggal dan Uang Bersih wajib diisi.',true);return;}
-    const isShopee=marketplace==='Shopee';
-    const defaultName=isShopee?'Penerimaan Shopee':'Pencairan TikTok';
+    const isShopee=marketplace==='Shopee',defaultName=isShopee?'Penerimaan Shopee':'Pencairan TikTok';
     const row={tanggal,produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:amount,total:amount,order_id:null,product_name:defaultName,variation:'Uang Bersih',omzet_produk:amount,uang_bersih:amount,modal_hpp:0,profit_online:amount,biaya_platform:0,source:'online_pencairan',purchase_channel:marketplace,order_channel:marketplace};
-    supabaseClient.from('penjualan').insert([row]).select('id').single().then(async r=>{
-      if(r.error){setCashMsg('Gagal menyimpan penerimaan: '+esc(r.error.message),true);return;}
-      setCashMsg((isShopee?'Penerimaan Shopee':'Penerimaan TikTok')+' tersimpan sebagai Uang Bersih: '+money(amount));
-      byId('cashAmount').value='';byId('cashNote').value='';
-      if(typeof load==='function')await load();
-      await refreshNewOnlineProfit();
-    }).catch(e=>setCashMsg('Gagal menyimpan penerimaan: '+esc(e.message||e),true));
+    window.__onlineDraftRows.push({kind:'Penerimaan Uang',tanggal,amount,marketplace,note,data:row,_seq:Date.now()+Math.random()});
+    renderOnlineDrafts();setCashMsg('Penerimaan ditambahkan ke daftar sementara. Belum masuk database.');byId('cashAmount').value='';byId('cashNote').value='';
   }
 
   function init(){
+    renderOnlineDrafts();
+    byId('onlineDraftSaveAll')?.addEventListener('click',saveAllOnlineDrafts);
+    byId('onlineDraftClear')?.addEventListener('click',()=>{if(confirm('Kosongkan semua transaksi Online sementara?'))clearOnlineDrafts();});
+
     renderOfflineDrafts();
     document.getElementById('offlineDraftSaveAll')?.addEventListener('click',saveAllOfflineDrafts);
     document.getElementById('offlineDraftClear')?.addEventListener('click',()=>{
@@ -1489,6 +1468,8 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       syncFromDOM(r.id);
     });
     document.addEventListener('click',async e=>{
+      const od=e.target.closest?.('[data-online-draft-del]');
+      if(od){const i=Number(od.dataset.onlineDraftDel);if(window.__onlineDraftRows[i]){window.__onlineDraftRows.splice(i,1);renderOnlineDrafts();}return;}
       const draftSale=e.target.closest?.('[data-off-draft-sale]');
       if(draftSale){const i=Number(draftSale.dataset.offDraftSale);if(window.__offlineDraftSales[i]){window.__offlineDraftSales.splice(i,1);renderOfflineDrafts();}return;}
       const draftExp=e.target.closest?.('[data-off-draft-exp]');
