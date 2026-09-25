@@ -116,7 +116,7 @@ const $=id=>document.getElementById(id);
 const money=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
 const today=()=>new Date().toISOString().slice(0,10);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let records=[],payments=[],drafts=[],payTarget=null;
+let records=[],payments=[],drafts=[],payTarget=null,editingDraftIndex=null;
 $('tanggal').value=today();$('bayarTanggal').value=today();
 function renderKategori(){
   const s=$('jenis').value, el=$('kategori');
@@ -135,18 +135,57 @@ function computed(rec){
   return {...rec,paid,sisa,status};
 }
 function renderDrafts(){
-  const tb=$('draftRows');$('draftCount').textContent=drafts.length+' data belum disimpan';
-  tb.innerHTML=drafts.length?drafts.map((x,i)=>'<tr><td>'+String(i+1)+'</td><td><b>'+esc(x.jenis)+'</b></td><td>'+esc(x.kategori)+'</td><td>'+esc(x.pihak)+'</td><td>'+esc(x.tanggal)+'</td><td>'+money(x.nominal_awal)+'</td><td>'+esc(x.keterangan||'-')+'</td><td><button class="btn red" type="button" data-draft-del="'+i+'">Hapus</button></td></tr>').join(''):'<tr><td colspan="8" class="empty">Belum ada data.</td></tr>';
+  const tb=$('draftRows');
+  $('draftCount').textContent=drafts.length+' data belum disimpan';
+  tb.innerHTML=drafts.length?drafts.map((x,i)=>{
+    const editActive=editingDraftIndex===i;
+    return '<tr><td>'+String(i+1)+'</td><td><b>'+esc(x.jenis)+'</b></td><td>'+esc(x.kategori)+'</td><td>'+esc(x.pihak)+'</td><td>'+esc(x.tanggal)+'</td><td>'+money(x.nominal_awal)+'</td><td>'+esc(x.keterangan||'-')+'</td><td style="white-space:nowrap"><button class="btn light" type="button" data-draft-edit="'+i+'">✏️ Edit</button> <button class="btn red" type="button" data-draft-del="'+i+'">🗑 Hapus</button></td></tr>';
+  }).join(''):'<tr><td colspan="8" class="empty">Belum ada data.</td></tr>';
 }
-function resetForm(){$('tanggal').value=today();$('jatuhTempo').value='';$('nominal').value='';$('pihak').value='';$('keterangan').value='';}
+function resetForm(){
+  $('tanggal').value=today();$('jatuhTempo').value='';$('nominal').value='';$('pihak').value='';$('keterangan').value='';
+  $('jenis').value='Hutang';renderKategori();$('expCategoryDebt').value='Bahan Baku';
+  editingDraftIndex=null;
+  $('save').textContent='+ Tambah ke Daftar';
+}
+function beginDraftEdit(i){
+  const x=drafts[i]; if(!x)return;
+  editingDraftIndex=i;
+  $('jenis').value=x.jenis;renderKategori();$('kategori').value=x.kategori;
+  $('pihak').value=x.pihak||'';$('tanggal').value=x.tanggal||today();$('jatuhTempo').value=x.jatuh_tempo||'';
+  $('nominal').value=x.nominal_awal||'';$('keterangan').value=x.keterangan||'';$('expCategoryDebt').value=x.expense_category||'Bahan Baku';
+  $('save').textContent='💾 Simpan Perubahan';
+  $('msg').innerHTML='<div class="ok">Mode edit aktif. Perubahan belum masuk database.</div>';
+  renderDrafts();
+  $('pihak').scrollIntoView({behavior:'smooth',block:'center'});
+}
 $('save').onclick=()=>{
   const x={jenis:$('jenis').value,kategori:$('kategori').value,pihak:$('pihak').value.trim(),tanggal:$('tanggal').value,jatuh_tempo:$('jatuhTempo').value||null,nominal_awal:Math.round(Number($('nominal').value)||0),keterangan:$('keterangan').value.trim(),expense_category:$('expCategoryDebt').value};
   if(!x.pihak||!x.tanggal||x.nominal_awal<=0){$('msg').innerHTML='<div class="bad">Jenis, pihak, tanggal, dan nominal wajib diisi.</div>';return}
-  drafts.push(x);renderDrafts();resetForm();$('msg').innerHTML='<div class="ok">Ditambahkan ke daftar sementara. Belum masuk database.</div>';
+  if(editingDraftIndex!==null){
+    drafts[editingDraftIndex]=x;
+    $('msg').innerHTML='<div class="ok">Perubahan tersimpan di daftar sementara. Belum masuk database.</div>';
+    editingDraftIndex=null;
+    $('save').textContent='+ Tambah ke Daftar';
+  }else{
+    drafts.push(x);
+    $('msg').innerHTML='<div class="ok">Ditambahkan ke daftar sementara. Belum masuk database.</div>';
+  }
+  renderDrafts();resetForm();
 };
 $('reset').onclick=resetForm;
-$('clearDraft').onclick=()=>{drafts=[];renderDrafts();$('draftMsg').innerHTML='<div class="warn">Daftar sementara dikosongkan.</div>'};
-$('draftRows').addEventListener('click',e=>{const b=e.target.closest('[data-draft-del]');if(!b)return;drafts.splice(Number(b.dataset.draftDel),1);renderDrafts()});
+$('clearDraft').onclick=()=>{drafts=[];editingDraftIndex=null;resetForm();renderDrafts();$('draftMsg').innerHTML='<div class="warn">Daftar sementara dikosongkan.</div>'};
+$('draftRows').addEventListener('click',e=>{
+  const edit=e.target.closest('[data-draft-edit]');
+  if(edit){beginDraftEdit(Number(edit.dataset.draftEdit));return}
+  const del=e.target.closest('[data-draft-del]');
+  if(!del)return;
+  const i=Number(del.dataset.draftDel);
+  drafts.splice(i,1);
+  if(editingDraftIndex===i)editingDraftIndex=null;
+  else if(editingDraftIndex!==null && editingDraftIndex>i)editingDraftIndex--;
+  renderDrafts();
+});
 $('saveAll').onclick=async()=>{
   if(!drafts.length){$('draftMsg').innerHTML='<div class="bad">Belum ada data.</div>';return}
   const created=[];
