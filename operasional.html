@@ -131,9 +131,13 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
       <h2>💸 Pengeluaran</h2>
       <div class="grid">
         <div class="field"><label>Tanggal / Periode</label><input id="expDate" type="date"></div>
-        <div class="field"><label>Kategori</label><select id="expCategory"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
+        <div class="field"><label>Kategori Pengeluaran</label><select id="expCategory"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
+        <div class="field"><label>Cara Bayar</label><select id="expPayMethod"><option>Tunai</option><option>Hutang</option></select></div>
         <div class="field"><label>Nominal</label><input id="expNominal" type="number" min="0" step="1" placeholder="0"></div>
-        <div class="field"><label>Keterangan</label><input id="expNote" placeholder="Contoh: beli tepung tapioka"></div>
+        <div class="field"><label>Pihak / Supplier</label><input id="expParty" placeholder="Wajib diisi bila Cara Bayar = Hutang"></div>
+        <div class="field"><label>Kategori Hutang</label><select id="expDebtCategory"><option>Produktif</option><option>Konsumtif</option><option>Usaha</option><option>Lainnya</option></select></div>
+        <div class="field"><label>Jatuh Tempo</label><input id="expDueDate" type="date"></div>
+        <div class="field" style="grid-column:span 2"><label>Keterangan</label><input id="expNote" placeholder="Contoh: beli tepung tapioka"></div>
       </div>
       <div class="actions"><button class="btn" id="saveExpense" type="button">+ Simpan Pengeluaran</button></div>
       <div id="expenseStatus" class="status"></div>
@@ -380,14 +384,53 @@ function renderExpenses(){
   $('expenseRows').innerHTML=rows.slice().sort((a,b)=>String(b.periode).localeCompare(String(a.periode))).map(x=>'<tr><td>'+esc(x.periode)+'</td><td>'+esc(x.kategori||'-')+'</td><td>'+esc(x.keterangan||'-')+'</td><td>'+rupiah(x.nominal)+'</td></tr>').join('')||'<tr><td colspan="4" class="empty">Belum ada pengeluaran bulan ini.</td></tr>';
 }
 async function saveExpense(){
-  if(!state.tables.pengeluaran){$('expenseStatus').textContent='Database Pengeluaran belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
-  const d=$('expDate').value||today(),data={periode:d.slice(0,7),kategori:$('expCategory').value,keterangan:$('expNote').value.trim(),nominal:money($('expNominal').value)};
+  if(!state.tables.pengeluaran){$('expenseStatus').textContent='Database Pengeluaran belum aktif.';return}
+  const d=$('expDate').value||today();
+  const payMethod=$('expPayMethod').value;
+  const party=$('expParty').value.trim();
+  const debtCategory=$('expDebtCategory').value;
+  const dueDate=$('expDueDate').value||null;
+  const data={
+    periode:d.slice(0,7),
+    tanggal:d,
+    kategori:$('expCategory').value,
+    keterangan:$('expNote').value.trim(),
+    nominal:money($('expNominal').value),
+    cara_bayar:payMethod,
+    kategori_hutang:payMethod==='Hutang'?debtCategory:null
+  };
   if(data.nominal<=0){$('expenseStatus').textContent='Nominal harus lebih dari 0.';return}
-  const r=await supabaseClient.from('pengeluaran').insert([data]);
+  if(payMethod==='Hutang'&&!party){$('expenseStatus').textContent='Pihak / Supplier wajib diisi bila Cara Bayar = Hutang.';return}
+
+  const r=await supabaseClient.from('pengeluaran').insert([data]).select('id').single();
   if(r.error){$('expenseStatus').textContent='Gagal menyimpan pengeluaran: '+r.error.message;return}
-  $('expenseStatus').textContent='Pengeluaran berhasil disimpan ke database.';
+
+  if(payMethod==='Hutang'){
+    const debt={
+      tanggal:d,
+      jenis:'Hutang',
+      kategori:debtCategory,
+      pihak:party,
+      keterangan:data.keterangan,
+      jatuh_tempo:dueDate,
+      nominal_awal:data.nominal,
+      status:'Belum Lunas',
+      pengeluaran_id:r.data.id
+    };
+    const dr=await supabaseClient.from('ff_hutang_piutang').insert([debt]).select('id').single();
+    if(dr.error){
+      await supabaseClient.from('pengeluaran').delete().eq('id',r.data.id);
+      $('expenseStatus').textContent='Pengeluaran dibatalkan karena Hutang gagal dibuat: '+dr.error.message;
+      return;
+    }
+  }
+
+  $('expenseStatus').textContent=payMethod==='Hutang'
+    ? '✅ Pengeluaran tersimpan dan Hutang otomatis masuk ke tab Hutang.'
+    : '✅ Pengeluaran berhasil disimpan.';
   state.expense=await loadTable('pengeluaran');
-  $('expNominal').value='';$('expNote').value='';renderExpenses();renderStats();
+  $('expNominal').value='';$('expNote').value='';$('expParty').value='';$('expDueDate').value='';
+  renderExpenses();renderStats();
 }
 function renderCustomers(){
   $('customerRows').innerHTML=state.customer.map(c=>'<tr><td>'+esc(c.nama)+'</td><td>'+esc(c.telepon||'-')+'</td><td>'+esc(c.alamat||'-')+'</td><td>'+esc(c.catatan||'-')+'</td><td><button class="btn danger" data-del-cus="'+esc(c.id)+'">Hapus</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pelanggan.</td></tr>';
@@ -453,6 +496,11 @@ async function init(){
 }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $('retChannel').onchange=renderReturnSales;
+$('expPayMethod').onchange=()=>{
+  const debt=$('expPayMethod').value==='Hutang';
+  $('expDebtCategory').disabled=!debt;$('expParty').disabled=!debt;$('expDueDate').disabled=!debt;
+  if(!debt){$('expParty').value='';$('expDueDate').value='';}
+};
 $('saveSupplier').onclick=saveSupplier;$('cancelSupplier').onclick=resetSupplier;$('addPurchaseLine').onclick=()=>addPurchaseLine();$('savePurchase').onclick=savePurchase;$('saveExpense').onclick=saveExpense;$('saveCustomer').onclick=saveCustomer;$('saveReturn').onclick=saveReturn;
 init().catch(e=>{$('schemaNotice').className='notice';$('schemaNotice').textContent='Gagal memuat modul operasional: '+(e.message||e)});
 </script>
