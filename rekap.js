@@ -5,6 +5,10 @@
 
 const $ = id => document.getElementById(id);
 
+// Biaya Online Lainnya yang sudah dikunci sebagai satu angka:
+// modal dropship + gaji packing.
+const ONLINE_OTHER_COST_LOCKED = 35293500;
+
 /*
  * Jangan hentikan seluruh Rekap bila ff-core.js terlambat/gagal dimuat.
  * Pakai helper lokal sebagai fallback lalu gunakan FFCore bila tersedia.
@@ -573,6 +577,39 @@ function renderOnlineConnection(selectedMonth){
   }
 }
 
+function renderOnlineFinalSummary(){
+  const card=$('onlineFinalSummaryCard');
+  if(!card)return;
+  const isOnline=$('channel').value==='Online';
+  card.style.display=isOnline?'block':'none';
+  if(!isOnline)return;
+
+  const onlineRows=(sales||[]).filter(x=>String(x.channel||'')==='Online');
+
+  const net=onlineRows
+    .filter(x=>String(x.source||'')==='online_standard_finance')
+    .reduce((a,x)=>a+Math.round(Number(x.uang_bersih||0)),0)
+    + onlineRows
+    .filter(x=>String(x.source||'')==='online_pencairan')
+    .reduce((a,x)=>a+Math.round(Number(x.uang_bersih ?? x.omzet_produk ?? 0)),0);
+
+  const hpp=onlineRows
+    .filter(x=>String(x.source||'')==='seller_center' || String(x.source||'')==='online_batch')
+    .reduce((a,x)=>a+Math.round(Number(x.modal_hpp ?? x.hpp ?? 0)),0);
+
+  const other=ONLINE_OTHER_COST_LOCKED;
+  const profit=net-hpp-other;
+  const margin=net?profit/net*100:0;
+
+  $('onlineFinalNet').textContent=money(net);
+  $('onlineFinalHpp').textContent=money(hpp);
+  $('onlineFinalOther').textContent=money(other);
+  $('onlineFinalProfit').textContent=money(profit);
+  $('onlineFinalMargin').textContent='Margin '+margin.toFixed(2)+'%';
+
+  const p=$('onlineFinalProfit');
+  if(p)p.style.color=profit<0?'#b42318':'';
+}
 function renderMonthly(){
 
   const ms =
@@ -736,6 +773,7 @@ function render(){
 
   renderMonthly();
   renderNewOnlineMonthly();
+  renderOnlineFinalSummary();
 
   // Detail mengikuti bulan/channel yang dipilih.
   // Tombol 👁 Lihat Data hanya berlaku untuk Transaksi Online Baru.
