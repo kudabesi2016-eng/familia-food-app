@@ -229,7 +229,22 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 </section><section class="penjualan-panel" data-panel="offline"><div class="card"><div class="cashhead"><div><h2 style="margin:0">🟢 Transaksi Offline</h2><div class="note">Tetap memakai struktur penjualan lama; pola HPP tidak diubah.</div></div></div>
 <div class="grid" style="margin-top:16px"><div class="field"><label>Tanggal</label><input id="tanggal" type="date"/></div><div class="field"><label>Nama Pelanggan</label><input id="pelanggan" list="ffCustomerList" placeholder="Contoh: Bu Euis" type="text"/><datalist id="ffCustomerList"></datalist></div><div class="field"><label>Produk</label><select id="produk"><option value="">Pilih Produk</option></select></div><div class="field"><label>Jumlah Terjual (Bungkus)</label><input id="qty" min="1" step="1" type="number" value="1"/></div><div class="field"><label>Channel Penjualan</label><select id="channel"><option>Offline</option></select></div><div class="field"><label>Harga Jual / Bungkus</label><input id="harga" min="0" readonly="" step="1" type="number"/></div><div class="field"><label>HPP / Bungkus</label><input id="hpp" min="0" readonly="" step="1" type="number"/></div></div>
 <div class="preview"><div class="box"><small>Harga Jual</small><strong id="pvHarga">Rp 0</strong></div><div class="box"><small>Total Omzet</small><strong id="pvOmzet">Rp 0</strong></div><div class="box"><small>Total Modal / HPP</small><strong id="pvHpp">Rp 0</strong></div><div class="box profit"><small>Profit</small><strong id="pvProfit">Rp 0</strong></div></div>
-<div class="actions"><button class="btn" id="save">+ Simpan Penjualan</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div>
+<div class="actions"><button class="btn" id="save">+ Tambah ke Daftar</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div>
+<div class="card" id="offlineDraftCard" style="border:2px solid #9fcbb0;background:#fbfefc">
+  <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <div><h2 style="margin:0">📝 Daftar Transaksi Sementara</h2><div class="note">Semua transaksi yang ditambahkan di sini <b>belum masuk database</b>. Cek dulu, lalu tekan <b>✅ Simpan Semua</b>.</div></div>
+    <span class="badge" id="offlineDraftCount">0 transaksi belum disimpan</span>
+  </div>
+  <div class="tablewrap" style="margin-top:12px">
+    <table style="min-width:980px"><thead><tr><th>#</th><th>Tanggal</th><th>Jenis</th><th>Keterangan</th><th>Qty Bungkus</th><th>Nominal</th><th>HPP/Modal</th><th>Aksi</th></tr></thead>
+    <tbody id="offlineDraftRows"><tr><td colspan="8" class="empty">Belum ada transaksi. Tambahkan transaksi dulu.</td></tr></tbody></table>
+  </div>
+  <div class="actions" style="margin-top:12px">
+    <button class="btn" id="offlineDraftSaveAll" type="button">✅ Simpan Semua</button>
+    <button class="btn gray" id="offlineDraftClear" type="button">🗑 Hapus Semua Daftar</button>
+  </div>
+  <div id="offlineDraftMsg"></div>
+</div>
 <div class="card" id="offlineHistoryCard" style="border:2px solid #cfe4d7">
   <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
     <div><h2 style="margin:0">📋 Riwayat Offline — Pemasukan & Pengeluaran</h2><div class="note">Satu riwayat saja: <b>Bulan → Tanggal → Detail</b>. Pemasukan dan Pengeluaran diringkas bersama agar tidak ada tampilan ganda.</div></div>
@@ -420,6 +435,53 @@ function normName(v){return String(v??'').toLowerCase().trim().replace(/\s+/g,' 
 function nagetVariant(p){const n=normName(p?.nama_produk);const m=n.match(/^naget\s*(?:isi\s*)?(10|12|20|25|30|40|50)(?:\D|$)/);return m?Number(m[1]):null;}
 function productsForChannel(){return products;}
 function renderProductOptions(keepId=''){const list=productsForChannel();$('produk').innerHTML='<option value="">Pilih Produk</option>'+list.map(p=>`<option value="${p.id}">${esc(p.nama_produk)} (${p.isi_per_bungkus||''} pcs)</option>`).join('');if(keepId)$('produk').value=String(keepId);}
+window.__offlineDraftSales=window.__offlineDraftSales||[];
+window.__offlineDraftExpenses=window.__offlineDraftExpenses||[];
+function offlineDraftMoney(n){return 'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID')}
+function renderOfflineDrafts(){
+  const tb=document.getElementById('offlineDraftRows'),count=document.getElementById('offlineDraftCount');
+  if(!tb)return;
+  const sales=window.__offlineDraftSales||[], expenses=window.__offlineDraftExpenses||[];
+  const all=[...sales.map((x,i)=>({...x,_draftType:'Pemasukan',_draftIndex:i})),...expenses.map((x,i)=>({...x,_draftType:'Pengeluaran',_draftIndex:i}))].sort((a,b)=>String(b.data?.tanggal||'').localeCompare(String(a.data?.tanggal||''))||Number(b._seq||0)-Number(a._seq||0));
+  if(count)count.textContent=all.length+' transaksi belum disimpan';
+  tb.innerHTML=all.length?all.map((x,i)=>{
+    const income=x._draftType==='Pemasukan',q=income?Number(x.data?.qty||0):0,nominal=income?Number(x.data?.total||0):Number(x.data?.nominal||0),hpp=income?Number(x.data?.modal_hpp||0):0;
+    const detail=income?(String(x.data?.product_name||'-')+(x.pelanggan?' — '+x.pelanggan:'')):(String(x.data?.kategori||'-')+' — '+String(x.data?.keterangan||'-'));
+    const attr=income?'data-off-draft-sale="'+x._draftIndex+'"':'data-off-draft-exp="'+x._draftIndex+'"';
+    return '<tr><td>'+String(i+1)+'</td><td>'+esc(x.data?.tanggal||'-')+'</td><td><b style="color:'+(income?'#087443':'#9a3412')+'">'+x._draftType+'</b></td><td>'+esc(detail)+'</td><td>'+ (q?q.toLocaleString('id-ID'):'—') +'</td><td>'+offlineDraftMoney(nominal)+'</td><td>'+ (income?offlineDraftMoney(hpp):'—') +'</td><td><button class="mini del" type="button" '+attr+'>🗑 Hapus</button></td></tr>';
+  }).join(''):'<tr><td colspan="8" class="empty">Belum ada transaksi. Tambahkan transaksi dulu.</td></tr>';
+}
+async function saveAllOfflineDrafts(){
+  const sales=window.__offlineDraftSales||[],expenses=window.__offlineDraftExpenses||[],out=document.getElementById('offlineDraftMsg'),btn=document.getElementById('offlineDraftSaveAll');
+  if(!sales.length&&!expenses.length){if(out)out.innerHTML='<div class="bad">Belum ada transaksi untuk disimpan.</div>';return;}
+  const insertedSales=[],insertedExpenses=[];
+  try{
+    if(sales.some(x=>x.pelanggan)&&(!customerDbReady||!customerLinksReady))throw new Error('Master Pelanggan belum sepenuhnya terhubung.');
+    if(btn)btn.disabled=true;
+    if(sales.length){
+      const sr=await supabaseClient.from('penjualan').insert(sales.map(x=>x.data)).select('id');
+      if(sr.error)throw sr.error;
+      const ids=(sr.data||[]).map(x=>Number(x.id)).filter(Boolean);
+      if(ids.length!==sales.length)throw new Error('Tidak semua Pemasukan berhasil disimpan.');
+      for(let i=0;i<ids.length;i++){insertedSales.push(ids[i]);if(sales[i].pelanggan)await saveCustomerLink(ids[i],sales[i].pelanggan);}
+    }
+    if(expenses.length){
+      const er=await supabaseClient.from('pengeluaran').insert(expenses.map(x=>x.data)).select('id');
+      if(er.error)throw er.error;
+      const ids=(er.data||[]).map(x=>Number(x.id)).filter(Boolean);
+      if(ids.length!==expenses.length)throw new Error('Tidak semua Pengeluaran berhasil disimpan.');
+      insertedExpenses.push(...ids);
+    }
+    window.__offlineDraftSales=[];window.__offlineDraftExpenses=[];renderOfflineDrafts();
+    if(out)out.innerHTML='<div class="ok">'+(insertedSales.length+insertedExpenses.length)+' transaksi berhasil disimpan sekaligus.</div>';
+    await refreshOfflineHistory();
+    if(typeof load==='function')await load();
+  }catch(e){
+    console.error(e);
+    if(out)out.innerHTML='<div class="bad">Gagal menyimpan: '+esc(e.message||e)+'</div>';
+  }finally{if(btn)btn.disabled=false;}
+}
+function clearOfflineDrafts(){window.__offlineDraftSales=[];window.__offlineDraftExpenses=[];renderOfflineDrafts();const out=document.getElementById('offlineDraftMsg');if(out)out.innerHTML='<div class="warn">Daftar sementara dikosongkan.</div>';}
 document.getElementById('offlineHistoryRefresh')?.addEventListener('click',refreshOfflineHistory);
 (function(){
   const btn=document.getElementById('offlineHistoryViewBtn'),wrap=document.getElementById('offlineHistoryDataWrap');
@@ -449,41 +511,26 @@ $('produk').onchange=()=>loadHpp().catch(e=>msg('Gagal mengambil HPP: '+e.messag
 $('channel').onchange=()=>{const current=$('produk').value;renderProductOptions(current);loadHpp().catch(e=>msg('Gagal mengambil HPP: '+e.message,true));};
 $('save').onclick=async()=>{
   const wasEdit=!!editId;
-  let oldSale=null;
   try{
     const p=selectedProduct(),tanggal=$('tanggal').value,qty=Number($('qty').value),harga=Number($('harga').value),hpp=Number($('hpp').value),channel=$('channel').value;
     if(!p||!tanggal||qty<=0||harga<0||hpp<0)return msg('Lengkapi data penjualan.',true);
     const nama=$('pelanggan').value.trim();
-    if(nama && (!customerDbReady || !customerLinksReady)){
-      return msg('Master Pelanggan belum sepenuhnya terhubung. Jalankan SUPABASE-EXPANSION.sql sebelum menyimpan penjualan dengan nama pelanggan.',true);
-    }
-    if(wasEdit){
-      const prev=await supabaseClient.from('penjualan').select('*').eq('id',editId).maybeSingle();
-      if(prev.error)throw prev.error;
-      oldSale=prev.data||null;
-    }
+    if(nama&&(!customerDbReady||!customerLinksReady))return msg('Master Pelanggan belum sepenuhnya terhubung.',true);
     const hargaBulat=Math.round(harga),hppBulat=Math.round(hpp),total=qty*hargaBulat,hppTotal=qty*hppBulat,laba=total-hppTotal;
-    const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,total,source:'manual',product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,uang_bersih:channel==='Online'?total:total,biaya_platform:channel==='Online'?0:0,profit_online:channel==='Online'?laba:null};
-    let r=wasEdit
-      ? await supabaseClient.from('penjualan').update(data).eq('id',editId)
-      : await supabaseClient.from('penjualan').insert([data]).select('id').single();
-    if(r.error)throw r.error;
-    const savedId=editId||(r.data&&r.data.id);
-    if(savedId){
-      try{
-        await saveCustomerLink(savedId,nama);
-      }catch(linkErr){
-        if(wasEdit && oldSale){
-          await supabaseClient.from('penjualan').update(oldSale).eq('id',savedId);
-        }else if(!wasEdit){
-          await supabaseClient.from('penjualan').delete().eq('id',savedId);
-        }
-        throw linkErr;
-      }
+    const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,total,source:'manual',product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,uang_bersih:total,biaya_platform:0,profit_online:channel==='Online'?laba:null};
+    if(wasEdit){
+      const oldSale=await supabaseClient.from('penjualan').select('*').eq('id',editId).maybeSingle();
+      if(oldSale.error)throw oldSale.error;
+      const up=await supabaseClient.from('penjualan').update(data).eq('id',editId);
+      if(up.error)throw up.error;
+      try{await saveCustomerLink(editId,nama);}catch(e){await supabaseClient.from('penjualan').update(oldSale.data).eq('id',editId);throw e;}
+      msg('Penjualan diperbarui.');editId=null;$('cancel').style.display='none';$('save').textContent='+ Tambah ke Daftar';await load();return;
     }
-    msg(wasEdit?'Penjualan diperbarui.':'Penjualan tersimpan.');
-    editId=null;$('cancel').style.display='none';$('save').textContent='+ Simpan Penjualan';await load();
-  }catch(e){console.error(e);msg('Gagal menyimpan: '+e.message,true)}
+    window.__offlineDraftSales.push({data,pelanggan:nama,_seq:Date.now()+Math.random()});
+    renderOfflineDrafts();
+    msg('Transaksi ditambahkan ke daftar sementara. Belum masuk database.');
+    $('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();
+  }catch(e){console.error(e);msg('Gagal menambahkan transaksi: '+esc(e.message||e),true)}
 };
 $('cancel').onclick=()=>{editId=null;$('cancel').style.display='none';$('save').textContent='+ Simpan Penjualan';$('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();};
 function parseCSV(text){const rows=[],row=[];let cell='',quote=false;for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'){if(quote&&next==='"'){cell+='"';i++;}else quote=!quote;}else if(ch===','&&!quote){row.push(cell);cell='';}else if((ch==='\n'||ch==='\r')&&!quote){if(ch==='\r'&&next==='\n')i++;row.push(cell);if(row.some(x=>String(x).trim()!==''))rows.push(row.slice());row.length=0;cell='';}else cell+=ch;}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
@@ -1320,25 +1367,13 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const kategori=byId('offlineExpenseCategory')?.value||'Lainnya';
     const nominal=Math.max(0,Math.round(Number(byId('offlineExpenseNominal')?.value)||0));
     const keterangan=(byId('offlineExpenseNote')?.value||'').trim();
-    const btn=byId('offlineExpenseSave');
     const out=byId('offlineExpenseMsg');
     if(nominal<=0){out.innerHTML='<div class="bad">Nominal pengeluaran wajib lebih dari 0.</div>';return;}
     if(!keterangan){out.innerHTML='<div class="bad">Keterangan pengeluaran wajib diisi.</div>';return;}
-    try{
-      if(btn)btn.disabled=true;
-      const row={periode:tanggal.slice(0,7),tanggal,kategori,keterangan,nominal};
-      const r=await supabaseClient.from('pengeluaran').insert([row]).select('id').single();
-      if(r.error)throw r.error;
-      out.innerHTML='<div class="ok">Pengeluaran berhasil disimpan. Data tampil di Riwayat Transaksi Offline dan masuk Rekap Offline.</div>';
-      resetOfflineExpense();
-      await refreshOfflineExpenses();
-      await refreshOfflineHistory();
-      if(typeof load==='function')await load();
-    }catch(e){
-      out.innerHTML='<div class="bad">Gagal menyimpan pengeluaran: '+esc(e.message||e)+'</div>';
-    }finally{
-      if(btn)btn.disabled=false;
-    }
+    window.__offlineDraftExpenses.push({data:{periode:tanggal.slice(0,7),tanggal,kategori,keterangan,nominal},_seq:Date.now()+Math.random()});
+    renderOfflineDrafts();
+    out.innerHTML='<div class="ok">Pengeluaran ditambahkan ke daftar sementara. Belum masuk database.</div>';
+    resetOfflineExpense();
   }
 
   function saveCash(){
@@ -1360,6 +1395,11 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   function init(){
+    renderOfflineDrafts();
+    document.getElementById('offlineDraftSaveAll')?.addEventListener('click',saveAllOfflineDrafts);
+    document.getElementById('offlineDraftClear')?.addEventListener('click',()=>{
+      if(confirm('Kosongkan semua transaksi sementara?'))clearOfflineDrafts();
+    });
     addRows(1);
     byId('cashTanggal').value=today();
     byId('batchAddRow')?.addEventListener('click',()=>addRows(1));
@@ -1449,6 +1489,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       syncFromDOM(r.id);
     });
     document.addEventListener('click',async e=>{
+      const draftSale=e.target.closest?.('[data-off-draft-sale]');
+      if(draftSale){const i=Number(draftSale.dataset.offDraftSale);if(window.__offlineDraftSales[i]){window.__offlineDraftSales.splice(i,1);renderOfflineDrafts();}return;}
+      const draftExp=e.target.closest?.('[data-off-draft-exp]');
+      if(draftExp){const i=Number(draftExp.dataset.offDraftExp);if(window.__offlineDraftExpenses[i]){window.__offlineDraftExpenses.splice(i,1);renderOfflineDrafts();}return;}
     const offDel=e.target.closest?.('[data-off-del]');
     const offEdit=e.target.closest?.('[data-off-edit]');
     if(offDel){
