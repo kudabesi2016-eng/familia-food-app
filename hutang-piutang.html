@@ -39,6 +39,7 @@ main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 6px;color:var
     <div class="field"><label>Tanggal</label><input id="tanggal" type="date"></div>
     <div class="field"><label>Jatuh Tempo</label><input id="jatuhTempo" type="date"></div>
     <div class="field"><label>Nominal Awal</label><input id="nominal" type="number" min="0" step="1" placeholder="Contoh 5000000"></div>
+    <div class="field"><label>Kategori Pengeluaran Utama</label><select id="expCategoryDebt"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
     <div class="field" style="grid-column:span 2"><label>Keterangan</label><input id="keterangan" placeholder="Contoh: Hutang bahan baku bulan September"></div>
   </div>
   <div class="actions"><button class="btn" id="save">+ Tambah ke Daftar</button><button class="btn gray" id="reset">Reset</button></div>
@@ -139,7 +140,7 @@ function renderDrafts(){
 }
 function resetForm(){$('tanggal').value=today();$('jatuhTempo').value='';$('nominal').value='';$('pihak').value='';$('keterangan').value='';}
 $('save').onclick=()=>{
-  const x={jenis:$('jenis').value,kategori:$('kategori').value,pihak:$('pihak').value.trim(),tanggal:$('tanggal').value,jatuh_tempo:$('jatuhTempo').value||null,nominal_awal:Math.round(Number($('nominal').value)||0),keterangan:$('keterangan').value.trim()};
+  const x={jenis:$('jenis').value,kategori:$('kategori').value,pihak:$('pihak').value.trim(),tanggal:$('tanggal').value,jatuh_tempo:$('jatuhTempo').value||null,nominal_awal:Math.round(Number($('nominal').value)||0),keterangan:$('keterangan').value.trim(),expense_category:$('expCategoryDebt').value};
   if(!x.pihak||!x.tanggal||x.nominal_awal<=0){$('msg').innerHTML='<div class="bad">Jenis, pihak, tanggal, dan nominal wajib diisi.</div>';return}
   drafts.push(x);renderDrafts();resetForm();$('msg').innerHTML='<div class="ok">Ditambahkan ke daftar sementara. Belum masuk database.</div>';
 };
@@ -148,10 +149,34 @@ $('clearDraft').onclick=()=>{drafts=[];renderDrafts();$('draftMsg').innerHTML='<
 $('draftRows').addEventListener('click',e=>{const b=e.target.closest('[data-draft-del]');if(!b)return;drafts.splice(Number(b.dataset.draftDel),1);renderDrafts()});
 $('saveAll').onclick=async()=>{
   if(!drafts.length){$('draftMsg').innerHTML='<div class="bad">Belum ada data.</div>';return}
-  const rows=drafts.map(x=>({...x,status:'Belum Lunas'}));
-  const r=await supabaseClient.from('ff_hutang_piutang').insert(rows).select('id');
-  if(r.error){$('draftMsg').innerHTML='<div class="bad">'+esc(r.error.message)+'</div>';return}
-  drafts=[];renderDrafts();$('draftMsg').innerHTML='<div class="ok">Semua data berhasil disimpan.</div>';await load();
+  const created=[];
+  try{
+    for(const x of drafts){
+      let expenseId=null;
+      if(x.jenis==='Hutang'){
+        const ex=await supabaseClient.from('pengeluaran').insert([{
+          periode:x.tanggal.slice(0,7),tanggal:x.tanggal,kategori:x.expense_category||'Operasional',
+          keterangan:x.keterangan||('Hutang '+x.pihak),nominal:x.nominal_awal,
+          cara_bayar:'Hutang',kategori_hutang:x.kategori
+        }]).select('id').single();
+        if(ex.error)throw ex.error;
+        expenseId=ex.data.id;
+      }
+      const dr=await supabaseClient.from('ff_hutang_piutang').insert([{
+        jenis:x.jenis,kategori:x.kategori,pihak:x.pihak,tanggal:x.tanggal,jatuh_tempo:x.jatuh_tempo||null,
+        nominal_awal:x.nominal_awal,keterangan:x.keterangan||'',status:'Belum Lunas',pengeluaran_id:expenseId
+      }]).select('id').single();
+      if(dr.error)throw dr.error;
+      created.push({debtId:dr.data.id,expenseId});
+    }
+    drafts=[];renderDrafts();$('draftMsg').innerHTML='<div class="ok">✅ Semua data tersimpan. Hutang juga otomatis masuk ke Pengeluaran Utama.</div>';await load();
+  }catch(e){
+    for(const x of created){
+      if(x.debtId)await supabaseClient.from('ff_hutang_piutang').delete().eq('id',x.debtId);
+      if(x.expenseId)await supabaseClient.from('pengeluaran').delete().eq('id',x.expenseId);
+    }
+    $('draftMsg').innerHTML='<div class="bad">Gagal menyimpan. Data yang sempat dibuat sudah dibatalkan: '+esc(e.message||e)+'</div>';
+  }
 };
 
 function monthOf(v){return String(v||'').slice(0,7)}
@@ -211,7 +236,43 @@ $('savePayment').onclick=async()=>{if(!payTarget)return;const r=records.find(x=>
 async function updateStatus(id){const r=records.find(x=>Number(x.id)===Number(id));if(!r)return;const x=computed(r),u=await supabaseClient.from('ff_hutang_piutang').update({status:x.status}).eq('id',id);if(u.error)console.warn(u.error)}
 $('closeDetail').onclick=()=>{$('detailCard').style.display='none';$('paymentCard').style.display='none'};
 $('closePayment').onclick=()=>{$('paymentCard').style.display='none'};
-async function load(){const [r,p]=await Promise.all([supabaseClient.from('ff_hutang_piutang').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false}),supabaseClient.from('ff_hutang_piutang_bayar').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false})]);if(r.error)throw r.error;if(p.error)throw p.error;records=r.data||[];payments=p.data||[];renderDrafts();renderSummary();renderStats();renderLists()}
+async function reconcileDebtFromExpenses(){
+  const e=await supabaseClient.from('pengeluaran').select('*').eq('cara_bayar','Hutang').order('tanggal',{ascending:false});
+  if(e.error)return;
+  const expenses=e.data||[];
+  const debtByExpense=new Set((records||[]).map(x=>Number(x.pengeluaran_id)).filter(Boolean));
+  const missing=expenses.filter(x=>x.id && !debtByExpense.has(Number(x.id)));
+  for(const x of missing){
+    const d={
+      tanggal:x.tanggal||x.periode+'-01',
+      jenis:'Hutang',
+      kategori:x.kategori_hutang||'Usaha',
+      pihak:x.keterangan||'Tanpa nama pihak',
+      keterangan:x.keterangan||'Hutang dari Pengeluaran',
+      jatuh_tempo:null,
+      nominal_awal:Number(x.nominal)||0,
+      status:'Belum Lunas',
+      pengeluaran_id:x.id
+    };
+    if(d.nominal_awal<=0)continue;
+    const ins=await supabaseClient.from('ff_hutang_piutang').insert([d]);
+    if(ins.error)console.warn('Gagal sinkron Hutang dari Pengeluaran',x.id,ins.error.message);
+  }
+}
+async function load(){
+  const [r,p]=await Promise.all([
+    supabaseClient.from('ff_hutang_piutang').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false}),
+    supabaseClient.from('ff_hutang_piutang_bayar').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false})
+  ]);
+  if(r.error)throw r.error;if(p.error)throw p.error;
+  records=r.data||[];payments=p.data||[];
+  await reconcileDebtFromExpenses();
+  if(records.length || true){
+    const rr=await supabaseClient.from('ff_hutang_piutang').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false});
+    if(!rr.error)records=rr.data||[];
+  }
+  renderDrafts();renderSummary();renderStats();renderLists()
+}
 $('refresh').onclick=()=>load().catch(e=>{$('months').innerHTML='<tr><td colspan="8">'+esc(e.message)+'</td></tr>'});
 load().catch(e=>$('months').innerHTML='<tr><td colspan="8">'+esc(e.message)+'</td></tr>');
 </script>
