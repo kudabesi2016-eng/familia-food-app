@@ -74,7 +74,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
     <div class="card"><div class="card-title">Total Pengeluaran / Potongan</div><div class="card-number" id="totalOut">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Uang Bersih</div><div class="card-number" id="totalNet">Rp 0</div></div>
     <div class="card"><div class="card-title">HPP / Modal Terukur</div><div class="card-number" id="totalHpp">Rp 0</div></div>
-    <div class="card"><div class="card-title">Profit Terukur</div><div class="card-number" id="totalProfit">Rp 0</div></div>
+    <div class="card"><div class="card-title">Hasil Bersih Gabungan</div><div class="card-number" id="totalProfit">Rp 0</div></div>
     <div class="card"><div class="card-title">Margin Terukur</div><div class="card-number" id="totalMargin">0.00%</div></div>
     <div class="card"><div class="card-title">Produk Aktif</div><div class="card-number" id="totalProduk">-</div></div>
     <div class="card"><div class="card-title">Transaksi Baru</div><div class="card-number" id="totalPenjualan">-</div></div>
@@ -88,10 +88,10 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Pemasukan</small><b id="offRevenue">Rp 0</b></div>
       <div class="mini"><small>Pengeluaran</small><b id="offExpense">Rp 0</b></div>
       <div class="mini"><small>Uang Bersih</small><b id="offNet">Rp 0</b></div>
-      <div class="mini"><small>Profit</small><b id="offProfit">Rp 0</b></div>
+      <div class="mini"><small>Hasil Bersih</small><b id="offProfit">Rp 0</b></div>
       <div class="mini"><small>Produk Keluar</small><b id="offQty">0</b></div>
     </div>
-    <div class="note">Offline: Pemasukan − Pengeluaran = hasil bersih setelah pengeluaran. Profit Offline = Pemasukan − HPP Produk Keluar. HPP Produk Keluar = Qty × HPP per bungkus. <span id="offlineHppAudit">Memeriksa HPP produk keluar…</span></div>
+    <div class="note">Offline: Hasil Bersih = Pemasukan − Pengeluaran. HPP Produk Keluar ditampilkan terpisah dan tidak dipakai lagi untuk mengurangi Hasil Bersih. <span id="offlineHppAudit">Memeriksa HPP produk keluar…</span></div>
   </div>
 
   <div class="channel">
@@ -397,10 +397,9 @@ async function loadDashboard(){
         offHppKnown=false;
       }
     });
-    // Profit Offline = Pemasukan − HPP Produk Keluar.
-    // Pengeluaran dipakai untuk metrik "Pemasukan − Pengeluaran" dan
-    // tidak dikurangkan lagi ke Profit Offline.
-    const offProfit=offRevenue-offHpp;
+    // Hasil Bersih Offline = Pemasukan − Pengeluaran.
+    // HPP tetap ditampilkan terpisah agar tidak terjadi pengurangan biaya dua kali.
+    const offProfit=offNet;
     const offProfitKnown=true;
 
     // ONLINE: STANDARD historis + transaksi online baru.
@@ -466,16 +465,13 @@ async function loadDashboard(){
     // Jan–Agustus 2026 memakai angka histori audit seller_center yang dikunci.
     const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
 
-    // GABUNGAN: konsisten dengan dua channel.
+    // GABUNGAN: hasil akhir menggabungkan kondisi riil dua channel.
     const totalRevenue=offRevenue+onRevenue;
     const totalOut=offExpense+onFee;
     const totalNet=offNet+onNet;
     const totalHpp=(offHpp+onHpp);
-    // Dashboard memakai label "Terukur": tampilkan hasil berdasarkan
-    // HPP/modal yang benar-benar tersedia, tanpa mengosongkan kartu ketika
-    // masih ada sebagian histori yang belum memiliki HPP.
     const overallProfitKnown=true;
-    const totalProfit=offProfit + onProfit;
+    const totalProfit=offNet + onProfit;
     const totalMargin=totalNet ? totalProfit/totalNet*100 : 0;
 
     setNumber('totalRevenue',totalRevenue);
@@ -501,7 +497,7 @@ async function loadDashboard(){
     const offlineProfitEl=document.getElementById('offProfit');
     setNumber('offProfit',offProfit);
     const offlineAudit=document.getElementById('offlineHppAudit');
-    if(offlineAudit){offlineAudit.textContent=offHppKnown ? '✅ HPP Produk Keluar terukur. Profit Offline = Pemasukan − HPP.' : '🟠 Sebagian HPP histori belum punya master. Profit Terukur memakai HPP yang tersedia.';}
+    if(offlineAudit){offlineAudit.textContent=offHppKnown ? '✅ HPP Produk Keluar terukur. HPP ditampilkan terpisah dari Hasil Bersih.' : '🟠 Sebagian HPP histori belum punya master. Hasil Bersih tetap memakai Pemasukan − Pengeluaran.';}
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
