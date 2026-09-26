@@ -1599,6 +1599,22 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const tb=byId('onlineBatchRows'); if(!tb)return;
     tb.innerHTML=rows.map(rowHtml).join('');
     rows.forEach(r=>refreshRow(r.id));
+    tb.querySelectorAll('.batch-del').forEach(btn=>{
+      btn.disabled=false;
+      btn.style.pointerEvents='auto';
+      btn.style.position='relative';
+      btn.style.zIndex='70';
+      btn.onclick=e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const tr=btn.closest('tr[data-row]');
+        const id=Number(tr?.dataset?.row||0);
+        if(!id)return;
+        rows=rows.filter(x=>Number(x.id)!==id);
+        if(!rows.length)rows.push(emptyRow());
+        renderRows();
+      };
+    });
     updateSummary();
     byId('batchCount').textContent=rows.length+' baris';
   }
