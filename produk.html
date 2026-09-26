@@ -648,23 +648,20 @@
           hppMap[produk.id] || null;
 
         /*
-          hpp_unit pada tabel HPP digunakan
-          sebagai HPP Offline sementara.
-
-          HPP Online ditampilkan dari record Master HPP yang berasal dari Kalkulator HPP.
+          HPP Master selalu berasal dari hasil Kalkulator HPP.
+          Karena kalkulator memakai HPP yang sama untuk Offline dan Online,
+          keduanya membaca hpp_unit yang sama. Harga jual tetap berasal dari Produk.
         */
 
         const hppOffline =
           hpp && hpp.hpp_unit !== null
-            ? hpp.hpp_unit
+            ? Number(hpp.hpp_unit)
             : null;
 
         const hppOnline =
-          hpp && hpp.untung_online !== null &&
-              produk.harga_online !== null &&
-              produk.harga_online !== undefined
-              ? Number(produk.harga_online) - Number(hpp.untung_online)
-              : null;
+          hpp && hpp.hpp_unit !== null
+            ? Number(hpp.hpp_unit)
+            : null;
 
         const tr =
           document.createElement("tr");
