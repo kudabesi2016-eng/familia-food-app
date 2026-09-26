@@ -1205,6 +1205,8 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     }
   }
 
+  window.ffRefreshOnlineBatchHistory=refreshOnlineBatchHistory;
+
   function renderOnlineBatchHistoryMonth(month){
     const g=(window.__onlineBatchHistoryMonths||{})[month];
     const wrap=byId('onlineBatchHistoryDateWrap'),tb=byId('onlineBatchHistoryDateRows'),title=byId('onlineBatchHistoryDateTitle');
@@ -1603,5 +1605,22 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   const close=document.getElementById('closeOfflineHistoryDetail'); if(close) close.addEventListener('click',()=>{const c=document.getElementById('offlineHistoryDetailCard');if(c)c.style.display='none';});
 })();
 </script></main><script src="android-shell.js" defer></script>
+<script>
+(function(){
+  function bootOnlineHistory(){
+    const fn=window.ffRefreshOnlineBatchHistory;
+    if(typeof fn==='function'){
+      fn().catch(e=>console.error('Boot riwayat online gagal:',e));
+    }
+  }
+  window.addEventListener('load',function(){
+    setTimeout(bootOnlineHistory,1000);
+    const b=document.getElementById('batchHistoryRefresh');
+    if(b){
+      b.addEventListener('click',function(){setTimeout(bootOnlineHistory,0);});
+    }
+  });
+})();
+</script>
 </body>
 </html>
