@@ -166,9 +166,9 @@ function monthOfSaleRow(x){
 }
 
 function isCashExpense(x){
-  // Hutang dicatat di Pengeluaran Utama untuk keterlacakan, tetapi
-  // bukan arus kas/pengeluaran yang sudah dibayar. Pembayaran hutang
-  // juga tidak dicatat ulang sebagai pengeluaran.
+  // Pengeluaran dengan cara_bayar=Hutang yang lama tetap bukan kas dibayar.
+  // Pembayaran hutang baru dibuat sebagai pengeluaran Tunai saat pembayaran nyata,
+  // sehingga pembayaran tersebut memang masuk arus kas/pengeluaran satu kali.
   return String(x?.cara_bayar||'Tunai').trim()!=='Hutang';
 }
 function offlineFinance(m){
