@@ -1675,7 +1675,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
           const d=r.dropIndex!==''?dropRows()[Number(r.dropIndex)]:null;
           if(!d)errors.push('Baris '+(i+1)+': pilih produk Dropship');
           else if(Math.round(Number(d.modal)||0)<=0)errors.push('Baris '+(i+1)+': modal produk Dropship belum diisi');
-          else valid.push({r,d,h:Math.round(Number(d.modal)||0),q,total:q*Math.round(Number(d.modal)||0});
+          else valid.push({r,d,h:Math.round(Number(d.modal)||0),q,total:q*Math.round(Number(d.modal)||0)});
         }
       });
       if(errors.length){setMsg(errors.slice(0,12).join('<br>'),true);return;}
@@ -2335,7 +2335,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         alert('Gagal menghapus: '+(err.message||err));
       }
     });
-    wrap?.scrollIntoView({behavior:'smooth',block:'nearest');
+    wrap?.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
 
   window.ffStandaloneOnlineHistory=async function(){
