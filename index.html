@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#087443">
+<title>Familia Food - Dashboard</title>
+<style>
+*{box-sizing:border-box}
+:root{--brand:#146b3a;--brand2:#1f844b;--bg:#f5f7f6;--muted:#777;--danger:#c62828}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
+.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand);color:#fff;padding:22px 15px}
+.logo{font-size:22px;font-weight:bold;padding:10px;margin-bottom:25px}.menu{display:block;color:#fff;text-decoration:none;padding:13px 15px;margin:4px 0;border-radius:9px}.menu:hover,.menu.active{background:var(--brand2)}
+.main{margin-left:240px;padding:30px}.header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:25px}.header h1{margin:0 0 8px;color:var(--brand)}.header p{margin:0;color:var(--muted)}
+.refresh{position:relative;z-index:10;pointer-events:auto;border:0;background:var(--brand);color:#fff;padding:10px 16px;border-radius:9px;cursor:pointer;font-weight:bold}.refresh:hover{background:var(--brand2)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.card{background:#fff;padding:20px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);min-height:112px}.card-title{color:var(--muted);font-size:14px}.card-number{font-size:28px;font-weight:bold;color:var(--brand);margin-top:10px;word-break:break-word}.negative{color:var(--danger)!important}
+.section{margin-top:25px}.section h2{color:var(--brand);margin-bottom:14px}.channel{margin-top:22px}.channel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px}.channel-head h2{margin:0}.badge{background:#eaf5ee;color:var(--brand);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:bold}
+.channel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.mini{background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}.mini small{display:block;color:var(--muted);margin-bottom:6px}.mini b{font-size:20px;color:var(--brand)}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.quick a{text-decoration:none;background:#fff;color:var(--brand);padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);font-weight:bold}.quick a:hover{background:#eaf5ee}
+.status{margin-top:25px;background:#fff;padding:18px 20px;border-radius:12px;color:#666}.status strong{color:var(--brand)}
+.note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
+@media(max-width:1050px){.cards{grid-template-columns:repeat(2,1fr)}.channel-grid{grid-template-columns:repeat(2,1fr)}.quick{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.sidebar{width:100%;height:auto;position:relative}.main{margin-left:0;padding:20px}.header{flex-direction:column}.quick{grid-template-columns:1fr}}
+@media(max-width:500px){.cards,.channel-grid{grid-template-columns:1fr}}
+</style><style id="familia-mobile">
+@media(max-width:700px){
+  body{background:#f5faf7;font-size:14px}
+  .sidebar{position:sticky!important;top:0;z-index:100;width:100%!important;height:auto!important;padding:8px 10px!important;border-right:0!important;border-bottom:1px solid #dce8e1;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+  .logo{font-size:17px!important;margin:0 0 7px 2px!important}
+  .menu{display:flex!important;overflow-x:auto!important;gap:5px;padding-bottom:2px;scrollbar-width:none}
+  .menu::-webkit-scrollbar{display:none}
+  .menu.menu{flex:0 0 auto}
+  .menu{white-space:nowrap}
+  .sidebar a.menu{font-size:11px;padding:8px 10px;border-radius:8px}
+  .main{margin-left:0!important;padding:10px!important;max-width:none}
+  .header h1{font-size:22px}
+  .header p{font-size:12px}
+  .refresh{width:100%;margin-top:8px}
+  .cards{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .card{padding:11px!important;min-height:88px!important}
+  .card-number{font-size:19px!important}
+  .channel{margin-top:12px}
+  .channel-head{align-items:flex-start}
+  .channel-head h2{font-size:18px}
+  .channel-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .mini{padding:11px!important}
+  .mini b{font-size:16px!important;word-break:break-word}
+  .quick{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .quick a{padding:12px;font-size:12px}
+  .status{padding:12px;font-size:12px}
+}
+</style>
+<link rel="stylesheet" href="android-shell.css"></head>
+<body>
+<div class="sidebar">
+  <div class="logo">🍀 Familia Food</div>
+  <a class="menu active" href="index.html">🏠 Dashboard</a>
+  <a class="menu" href="produk.html">📦 Produk</a>
+  <a class="menu" href="bahan-baku.html">🥣 Bahan Baku</a>
+  <a class="menu" href="resep.html">📋 Resep</a>
+  <a class="menu" href="hpp.html">🧮 HPP</a>
+  <a class="menu" href="penjualan.html">💰 Penjualan</a>
+  <a class="menu" href="operasional.html">🧾 Operasional</a><a class="menu" href="rekap.html">📊 Rekap</a>
+  <a class="menu" href="data-lama.html">📁 Data Lama</a>
+  <a class="menu" href="hutang-piutang.html">💳 Hutang & Piutang</a>
+  <a class="menu" href="pengaturan.html">⚙️ Pengaturan</a>
+</div>
+<div class="main">
+  <div class="header">
+    <div><h1>🍀 Dashboard Familia Food</h1><p>POS 2 channel: Offline + Online. Data lama tetap tersambung dengan transaksi baru.</p></div>
+    <button class="refresh" id="refreshBtn" type="button" onclick="refreshDashboard(event)" style="position:relative;z-index:10;pointer-events:auto;cursor:pointer">↻ Muat Ulang</button>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="card-title">Total Pemasukan</div><div class="card-number" id="totalRevenue">Rp 0</div></div>
+    <div class="card"><div class="card-title">Total Pengeluaran / Potongan</div><div class="card-number" id="totalOut">Rp 0</div></div>
+    <div class="card"><div class="card-title">Total Uang Bersih</div><div class="card-number" id="totalNet">Rp 0</div></div>
+    <div class="card"><div class="card-title">HPP / Modal Terukur</div><div class="card-number" id="totalHpp">Rp 0</div></div>
+    <div class="card"><div class="card-title">Hasil Bersih Gabungan</div><div class="card-number" id="totalProfit">Rp 0</div></div>
+    <div class="card"><div class="card-title">Margin Terukur</div><div class="card-number" id="totalMargin">0.00%</div></div>
+    <div class="card"><div class="card-title">Produk Aktif</div><div class="card-number" id="totalProduk">-</div></div>
+    <div class="card"><div class="card-title">Transaksi Baru</div><div class="card-number" id="totalPenjualan">-</div></div>
+  </div>
+
+  <div class="channel">
+    <div class="channel-head"><h2>🛍️ Offline</h2><span class="badge">Data Lama + Transaksi Baru</span></div>
+    <div class="channel-grid">
+      <div class="mini"><small>Data Lama</small><b id="offOldCount">0 baris</b></div>
+      <div class="mini"><small>Transaksi Baru</small><b id="offNewCount">0</b></div>
+      <div class="mini"><small>Pemasukan</small><b id="offRevenue">Rp 0</b></div>
+      <div class="mini"><small>Pengeluaran</small><b id="offExpense">Rp 0</b></div>
+      <div class="mini"><small>Uang Bersih</small><b id="offNet">Rp 0</b></div>
+      <div class="mini"><small>Hasil Bersih</small><b id="offProfit">Rp 0</b></div>
+      <div class="mini"><small>Produk Keluar</small><b id="offQty">0</b></div>
+    </div>
+    <div class="note">Offline: Hasil Bersih = Pemasukan − Pengeluaran. HPP Produk Keluar ditampilkan terpisah dan tidak dipakai lagi untuk mengurangi Hasil Bersih. <span id="offlineHppAudit">Memeriksa HPP produk keluar…</span></div>
+  </div>
+
+  <div class="channel">
+    <div class="channel-head"><h2>📱 Online</h2><span class="badge">Audit TikTok + Shopee + Transaksi Baru</span></div>
+    <div class="channel-grid">
+      <div class="mini"><small>Baris Income Historis</small><b id="onIncomeRows">0</b></div>
+      <div class="mini"><small>Detail Produk Historis</small><b id="onProductRows">0</b></div>
+      <div class="mini"><small>Pemasukan / Penerimaan</small><b id="onRevenue">Rp 0</b></div>
+      <div class="mini"><small>Potongan Online Shop</small><b id="onFee">Rp 0</b></div>
+      <div class="mini"><small>Uang Bersih</small><b id="onNet">Rp 0</b></div>
+      <div class="mini"><small>Penerimaan Shopee</small><b id="onShopeeCash">Rp 0</b></div>
+      <div class="mini"><small>HPP / Modal</small><b id="onHpp">Rp 0</b></div>
+      <div class="mini"><small>Biaya Online Lainnya</small><b id="onOtherCost">Rp 0</b></div>
+      <div class="mini"><small>Profit Final</small><b id="onProfit">Rp 0</b></div>
+      <div class="mini"><small>Produk Keluar Historis (Kunci)</small><b id="onQty">0</b></div>
+    </div>
+    <div class="note">Online historis memakai <b>8.085 bungkus</b> hasil audit TikTok sebagai kunci Produk Keluar Jan–Agustus 2026. Penerimaan Shopee dicatat sebagai <b>Uang Bersih</b> karena nominal Rp4.000.000 sudah dianggap net dan tidak ditambah potongan lagi.<br><b>Profit Final Online = Uang Bersih − HPP Produk Keluar − Biaya Online Lainnya.</b><br><span id="onlineHistoryAudit">Memeriksa rekonsiliasi…</span></div>
+    <div class="channel-grid" style="margin-top:12px">
+      <div class="mini"><small>Online Baru — Produk Keluar</small><b id="newOnQty">0 bungkus</b></div>
+      <div class="mini"><small>Online Baru — HPP/Modal</small><b id="newOnModal">Rp 0</b></div>
+      <div class="mini"><small>Online Baru — Uang Bersih</small><b id="newOnCash">Rp 0</b></div>
+      <div class="mini"><small>Online Baru — Profit</small><b id="newOnProfit">Rp 0</b></div>
+      <div class="mini"><small>Online Baru — Margin</small><b id="newOnMargin">0,00%</b></div>
+    </div>
+  </div>
+
+  <div class="channel">
+    <div class="channel-head"><h2>🧾 Operasional</h2><span class="badge">Bulan berjalan • tidak mengubah rumus laba</span></div>
+    <div class="channel-grid">
+      <div class="mini"><small>Pembelian Bahan Baku</small><b id="opPurchase">Rp 0</b></div>
+      <div class="mini"><small>Pengeluaran</small><b id="opExpense">Rp 0</b></div>
+      <div class="mini"><small>Retur Penjualan</small><b id="opReturn">Rp 0</b></div>
+      <div class="mini"><small>Supplier Aktif</small><b id="opSupplier">0</b></div>
+    </div>
+    <div class="note">Hutang & Piutang dikelola terpisah dan tidak masuk perhitungan Dashboard.</div>
+  </div>
+
+  <div class="section"><h2>Akses Cepat</h2><div class="quick">
+    <a href="penjualan.html">💰 POS / Penjualan</a><a href="operasional.html">🧾 Operasional</a><a href="rekap.html">📊 Rekap + Lihat Data</a><a href="hutang-piutang.html">💳 Hutang</a><a href="produk.html">📦 Produk</a><a href="hpp.html">🧮 HPP</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
+  </div></div>
+
+  <div class="status" id="statusBox"><strong>Status:</strong> <span id="statusText">Memuat data dari database...</span></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script><script src="app-settings.js"></script><script src="ff-core.js"></script>
+<script>
+const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
+const num=n=>Number(n)||0;
+const ONLINE_LOCKED_HISTORY={10:16,12:7292,20:211,25:293,30:90,40:67,50:116};
+const ONLINE_LOCKED_TOTAL=8085;
+// Biaya Online Lainnya yang sudah dikunci: modal dropship + gaji packing.
+// Berlaku sebagai biaya agregat untuk ringkasan Online saat ini.
+const ONLINE_OTHER_COST_LOCKED=35293500;
+const colorValue=(el,v,formatted=rupiah(v))=>{el.textContent=formatted;el.classList.toggle('negative',v<0)};
+const pct=(v)=>{const t=(Number(v)||0).toFixed(2)+'%';return t};
+async function fetchAll(table, select='*'){
+  const page=1000; let offset=0, all=[];
+  while(true){
+    const r=await supabaseClient.from(table).select(select).range(offset,offset+page-1);
+    if(r.error) throw r.error;
+    const rows=r.data||[]; all.push(...rows);
+    if(rows.length<page) break;
+    offset+=page;
+  }
+  return all;
+}
+function monthOf(v){
+  if(!v) return '';
+  const s=String(v);
+  const m=s.match(/(20\d{2}-\d{2})/);
+  return m?m[1]:'';
+}
+function isHistoricalSource(s){
+  return ['online_standard_finance','online_standard_product','online_historical_finance','online_historical_import','online_historical_product','seller_center','online_standard_product','online_historical_cash'].includes(String(s||''));
+}
+function active(row){
+  const s=String(row?.statustext ?? row?.status ?? 'Aktif').toLowerCase();
+  return s!=='arsip'&&s!=='nonaktif';
+}
+function setNumber(id,v){colorValue(document.getElementById(id),v);}
+
+function detectDashboardPackSize(row){
+  const n=String([row?.product_name,row?.variation,row?.seller_sku].filter(Boolean).join(' | ')).toLowerCase().replace(/\s+/g,' ').trim();
+  const sku=String(row?.sku_id||'').trim();
+  // SKU verified from the audit source: KOTAK listing without size text is ISI 12.
+  if(sku==='1733751720824702091' || sku==='1734541246716347531')return 12;
+  let m=n.match(/\b(\d+)\s*(?:bungkus|bks)\s*(?:isi|is)\s*(24|36|72)\s*pcs?\b/i);
+  if(m){const packs=Number(m[1]),pcs=Number(m[2]),per=packs>0?pcs/packs:0;if([10,12,20,25,30,40,50].includes(per))return per;}
+  m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/i); if(m)return Number(m[1]);
+  m=n.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/i); if(m)return Number(m[1]);
+  m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\b/i); if(m)return Number(m[1]);
+  return null;
+}
+function findDashboardMasterProduct(row, productMaster){
+  const size=detectDashboardPackSize(row);
+  if(!size)return null;
+  const norm=v=>String(v||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const compact=v=>norm(v).replace(/[^a-z0-9]+/g,'');
+  const exact=size===25?'naget 25+saus':('naget '+size);
+  let p=productMaster.find(x=>norm(x.nama_produk)===exact);
+  if(p)return p;
+  const exactCompact=compact(exact);
+  p=productMaster.find(x=>compact(x.nama_produk)===exactCompact);
+  if(p)return p;
+
+  // Utama: gunakan field master isi_per_bungkus bila tersedia.
+  // Ini memetakan listing TikTok ke master tanpa bergantung pada variasi nama.
+  const byPack=productMaster.filter(x=>{
+    const pack=Number(x.isi_per_bungkus);
+    const n=norm(x.nama_produk);
+    return pack===size && /\b(naget|tempura aci)\b/i.test(n);
+  });
+  if(size===25){
+    const sauce=byPack.find(x=>/saus|saos/i.test(norm(x.nama_produk)));
+    if(sauce)return sauce;
+  }
+  if(byPack.length===1)return byPack[0];
+  const byPackPreferred=byPack.find(x=>/\bnaget\b/i.test(norm(x.nama_produk)));
+  if(byPackPreferred)return byPackPreferred;
+
+  // Fallback nama: tetap jangan pernah silang ukuran.
+  const sizeRe=new RegExp('(^|\\s)(?:isi\\s*)?'+size+'(?:\\s*(?:pcs|bungkus))?(\\s|$)','i');
+  const candidates=productMaster.filter(x=>{
+    const n=norm(x.nama_produk);
+    return /\b(naget|tempura aci)\b/i.test(n) && sizeRe.test(n);
+  });
+  if(size===25){
+    const sauce=candidates.find(x=>/saus|saos/i.test(norm(x.nama_produk)));
+    if(sauce)return sauce;
+  }
+  return candidates.find(x=>/\bnaget\b/i.test(norm(x.nama_produk))) || candidates[0] || null;
+}
+function dashboardOnlineHppUnit(row, productMaster, hppRows){
+  const size=detectDashboardPackSize(row);
+  if(!size)return null;
+  const norm=v=>String(v||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const candidates=[];
+
+  const exact=size===25?'naget 25+saus':('naget '+size);
+  const pushIfValid=(p)=>{
+    if(!p)return;
+    if(!candidates.some(x=>String(x.id)===String(p.id)))candidates.push(p);
+  };
+
+  // Coba nama master exact terlebih dahulu.
+  productMaster.filter(x=>norm(x.nama_produk)===exact).forEach(pushIfValid);
+
+  // Lalu seluruh master dengan isi_per_bungkus yang sama.
+  productMaster.filter(x=>{
+    const pack=Number(x.isi_per_bungkus);
+    return pack===size && /\b(naget|tempura aci)\b/i.test(norm(x.nama_produk));
+  }).forEach(pushIfValid);
+
+  // Terakhir fallback nama, tetap tidak silang ukuran.
+  const sizeRe=new RegExp('(^|\\s)(?:isi\\s*)?'+size+'(?:\\s*(?:pcs|bungkus))?(\\s|$)','i');
+  productMaster.filter(x=>{
+    const n=norm(x.nama_produk);
+    return /\b(naget|tempura aci)\b/i.test(n) && sizeRe.test(n);
+  }).forEach(pushIfValid);
+
+  for(const p of candidates){
+    const h=hppRows.find(x=>String(x.produk_id)===String(p.id))||null;
+    const directP=Number(p.hpp_online);
+    if(Number.isFinite(directP)&&directP>0)return Math.trunc(directP);
+
+    const directH=Number(h?.hpp_online);
+    if(Number.isFinite(directH)&&directH>0)return Math.trunc(directH);
+
+    const price=Number(h?.harga_online ?? p.harga_online);
+    const profit=Number(h?.untung_online);
+    if(price>0&&Number.isFinite(profit)&&profit>=0&&price-profit>0){
+      return Math.trunc(price-profit);
+    }
+  }
+  return null;
+}
+async function repairDashboardOnlineHpp(){
+  const state=window.__FF_DASHBOARD_STATE, msg=document.getElementById('onlineHistoryAudit');
+  if(!state||!Array.isArray(state.sales)){if(msg)msg.innerHTML='🔴 Data Dashboard belum siap. Muat ulang halaman.';return;}
+
+  const rows=state.sales.filter(x=>
+    String(x.channel||'')==='Online' &&
+    String(x.source||'')==='seller_center' &&
+    monthOf(x.tanggal||x.paid_time||x.created_time||'')>='2026-01' &&
+    monthOf(x.tanggal||x.paid_time||x.created_time||'')<='2026-08'
+  );
+  const missing=rows.filter(x=>Number(x.qty||0)>0 && Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
+  if(!missing.length){if(msg)msg.innerHTML='🟢 Semua baris histori sudah memiliki HPP.';return;}
+
+  let repaired=0;
+  const failed=[],unresolved=[];
+
+  for(const x of missing){
+    const unit=dashboardOnlineHppUnit(x,state.productMaster,state.hppRows);
+    const qty=Math.trunc(Number(x.qty)||0);
+    if(unit==null || qty<=0){unresolved.push(x);continue;}
+
+    const newHpp=Math.trunc(unit);
+    const newModal=Math.trunc(qty*unit);
+
+    const upd=await supabaseClient.from('penjualan')
+      .update({hpp:newHpp,modal_hpp:newModal})
+      .eq('id',x.id)
+      .select('id,hpp,modal_hpp')
+      .maybeSingle();
+
+    if(upd.error){
+      failed.push({id:x.id,reason:upd.error.message});
+      continue;
+    }
+    if(!upd.data || Number(upd.data.hpp)!==newHpp || Number(upd.data.modal_hpp)!==newModal){
+      failed.push({id:x.id,reason:'UPDATE tidak menyimpan HPP/Modal sesuai nilai master.'});
+      continue;
+    }
+    repaired++;
+  }
+
+  const fresh=await fetchAll('penjualan');
+  const freshRows=fresh.filter(x=>
+    String(x.channel||'')==='Online' &&
+    String(x.source||'')==='seller_center' &&
+    monthOf(x.tanggal||x.paid_time||x.created_time||'')>='2026-01' &&
+    monthOf(x.tanggal||x.paid_time||x.created_time||'')<='2026-08'
+  );
+  const stillMissing=freshRows.filter(x=>
+    Number(x.qty||0)>0 &&
+    Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0
+  );
+
+  const bySize={};
+  stillMissing.forEach(x=>{const sz=detectDashboardPackSize(x)||'tidak-terdeteksi';bySize[sz]=(bySize[sz]||0)+1;});
+  const detail=Object.entries(bySize).map(([sz,n])=>'isi '+sz+': '+n+' baris').join(' • ');
+
+  if(msg){
+    if(stillMissing.length===0){
+      msg.innerHTML='✅ <b>HPP historis sudah tersimpan permanen.</b> Semua baris keluar yang memiliki Qty sudah lolos verifikasi database.';
+    }else if(failed.length){
+      msg.innerHTML='🔴 <b>Database menahan UPDATE HPP.</b> Masih '+stillMissing.length.toLocaleString('id-ID')+' baris.'+(detail?' '+detail+'.':'')+' Tidak ada data yang dihapus.';
+    }else{
+      msg.innerHTML='🟠 Masih ada '+stillMissing.length.toLocaleString('id-ID')+' baris tanpa HPP.'+(detail?' '+detail+'.':'')+' Sumber HPP master belum ditemukan.';
+    }
+  }
+  await loadDashboard();
+}
+
+async function loadDashboard(){
+  document.getElementById('statusText').textContent='Memuat data dari database...';
+  try{
+    const results=await Promise.allSettled([
+      fetchAll('produk'),fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran'),fetchAll('produk'),fetchAll('hpp'),
+      fetchAll('ff_pembelian'),fetchAll('ff_retur_penjualan'),fetchAll('ff_supplier')
+    ]);
+    const [rp,rs,rd,re,rprod,rhpp,rpurchase,rreturn,rsupplier]=results;
+    const errors=[];
+    const products=rp.status==='fulfilled'?rp.value:[]; if(rp.status!=='fulfilled') errors.push('Produk');
+    const sales=rs.status==='fulfilled'?rs.value:[]; if(rs.status!=='fulfilled') errors.push('Penjualan');
+    const old=rd.status==='fulfilled'?rd.value:[]; if(rd.status!=='fulfilled') errors.push('Data Lama');
+    const expenseRows=re.status==='fulfilled'?re.value:[]; if(re.status!=='fulfilled') errors.push('Pengeluaran');
+    const productMaster=rprod.status==='fulfilled'?rprod.value:[]; if(rprod.status!=='fulfilled') errors.push('Produk/HPP');
+    const hppRows=rhpp.status==='fulfilled'?rhpp.value:[];
+    const purchaseRows=rpurchase.status==='fulfilled'?rpurchase.value:[];
+    const returnRows=rreturn.status==='fulfilled'?rreturn.value:[];
+    const supplierRows=rsupplier.status==='fulfilled'?rsupplier.value:[];
+ if(rhpp.status!=='fulfilled') errors.push('Produk/HPP');
+
+    window.__FF_DASHBOARD_STATE={sales,productMaster,hppRows};
+
+    const activeProducts=products.filter(active).length;
+    const currentMonth=new Date().toISOString().slice(0,7);
+    const validExpenseRows=expenseRows.filter(x=>
+      /^20\d{2}-\d{2}$/.test(String(x.periode||'').trim()) &&
+      String(x.cara_bayar||'Tunai')!=='Hutang'
+    );
+    const opPurchase=purchaseRows.filter(x=>String(x.tanggal||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.total)),0);
+    const opExpense=validExpenseRows.filter(x=>String(x.periode||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    const opReturn=returnRows.filter(x=>String(x.tanggal||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    const opSupplier=supplierRows.filter(active).length;
+
+    // OFFLINE: Data Lama + transaksi baru.
+    const offOld=old;
+    const offNew=sales.filter(x=>String(x.channel||'')==='Offline' && !isHistoricalSource(x.source));
+    const offOldRevenue=offOld.reduce((s,x)=>s+Math.round(num(x.nominal ?? x.omzet ?? x.total)),0);
+    const offNewRevenue=offNew.reduce((s,x)=>s+Math.round(num(x.omzet_produk ?? (num(x.qty)*num(x.harga)))),0);
+    const offRevenue=offOldRevenue+offNewRevenue;
+    // Pengeluaran Offline: hanya baris pengeluaran dengan periode YYYY-MM yang valid,
+    // sama seperti Rekap/Data Lama. Baris tanpa periode valid tidak boleh masuk total.
+    const offExpense=validExpenseRows.reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    // Offline: Uang Bersih/Laba Offline = Pemasukan − Pengeluaran.
+    // HPP ditampilkan terpisah dan tidak dikurangkan lagi dari Profit Offline.
+    const offNet=offRevenue-offExpense;
+    const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty ?? x.catatan)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+
+    // HPP Offline memakai sumber per bulan yang sama dengan Rekap Offline.
+    // Jika satu bulan belum memiliki mapping HPP, Profit Offline tetap ditampilkan
+    // sebagai "—" agar Dashboard tidak menyebut Uang Bersih sebagai Profit.
+    const dashboardData={sales,olds:offOld,expenses:expenseRows,products:productMaster,hpps:hppRows};
+    const offlineMonths=FFCore.monthsOfData(dashboardData);
+    let offHpp=0,offHppKnown=true;
+    offlineMonths.forEach(m=>{
+      try{
+        const f=FFCore.financeFor(m,'Offline',dashboardData);
+        if(!f.hppKnown) offHppKnown=false;
+        offHpp+=Math.round(Number(f.hpp)||0);
+      }catch(e){
+        offHppKnown=false;
+      }
+    });
+    // Hasil Bersih Offline = Pemasukan − Pengeluaran.
+    // HPP tetap ditampilkan terpisah agar tidak terjadi pengurangan biaya dua kali.
+    const offProfit=offNet;
+    const offProfitKnown=true;
+
+    // ONLINE: STANDARD historis + transaksi online baru.
+    const onlineFinanceRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_finance');
+    // Histori produk Online Jan–Agustus yang baru: source seller_center hasil audit CSV TikTok.
+    const onlineProductRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='seller_center' && monthOf(x.tanggal||x.paid_time||x.created_time||'')>='2026-01' && monthOf(x.tanggal||x.paid_time||x.created_time||'')<='2026-08');
+    const onlineNew=sales.filter(x=>String(x.channel||'')==='Online' && !isHistoricalSource(x.source));
+    const onlineBatchNew=onlineNew.filter(x=>String(x.source||'')==='online_batch');
+    const onlineCashNew=onlineNew.filter(x=>String(x.source||'')==='online_pencairan');
+    const onOldRevenue=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.omzet_produk)),0);
+    // Historis Online: gunakan angka yang tersimpan di STANDARD,
+    // bukan angka hard-coded, agar Dashboard selalu sama dengan Rekap.
+    const onOldNet=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.uang_bersih)),0);
+    const onOldFee=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.biaya_platform ?? (num(x.omzet_produk)-num(x.uang_bersih)))),0);
+    function onlineHppUnit(row){
+      if(Number(row?.modal_hpp ?? row?.hpp ?? 0)>0) return Math.round(Number(row.modal_hpp ?? row.hpp));
+      const n=String([row?.product_name,row?.variation,row?.seller_sku].filter(Boolean).join(' ')).toLowerCase().trim().replace(/\s+/g,' ');
+      let size=null;
+      const exactSku=String(row?.sku_id??'').trim();
+      if(exactSku==='1733751720824702091') size=12;
+      if(!size){ const m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/); if(m) size=Number(m[1]); }
+      if(!size){ const m=n.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/); if(m) size=Number(m[1]); }
+      if(!size && /tempura aci naget/.test(n) && /bulat/.test(n) && /default/.test(n)) size=12;
+      const masterName=size===25?'naget 25+saus':size?'naget '+size:'';
+      if(!masterName) return 0;
+      const p=productMaster.find(x=>String(x.nama_produk||'').toLowerCase().trim()===masterName);
+      if(!p) return 0;
+      const h=hppRows.find(x=>String(x.produk_id)===String(p.id));
+      if(!h) return 0;
+      const price=Number(h.harga_online ?? p.harga_online ?? 0);
+      const profit=Number(h.untung_online ?? 0);
+      if(price>0 && profit>=0 && price-profit>0) return Math.round(price-profit);
+      if(Number(h.hpp_online)>0) return Math.round(Number(h.hpp_online));
+      return Number(h.hpp_unit)>0 ? Math.round(Number(h.hpp_unit)) : 0;
+    }
+    const onlineHistoricalQtyLockedRows=onlineProductRows;
+    const onlineHistoricalQtyRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+    const onlineHistoricalModalRaw=onlineHistoricalQtyLockedRows.reduce((s,x)=>s+(Number(x.qty||0)>0 ? Math.round(num(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))) : 0),0);
+    const onlineHistoricalMissingHpp=onlineHistoricalQtyLockedRows.some(x=>Number(x.qty||0)>0 && Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
+    const onlineHistoricalQtyMismatch=onlineHistoricalQtyRaw!==ONLINE_LOCKED_TOTAL;
+
+    const onHistoricalHppKnown=!onlineHistoricalQtyMismatch && !onlineHistoricalMissingHpp;
+    // HPP yang sudah tersedia tetap dipakai untuk Profit Terukur,
+    // meskipun audit masih menemukan sebagian baris tanpa HPP.
+    const onOldHpp=onlineHistoricalModalRaw;
+    const onOldProfit=onOldNet-onOldHpp;
+    // Transaksi Online baru memakai basis kas: Uang Bersih yang benar-benar cair.
+    const onNewRevenue=onlineCashNew.reduce((s,x)=>s+Math.round(num(x.uang_bersih ?? x.omzet_produk)),0);
+    const onShopeeCash=onlineCashNew
+      .filter(x=>String(x.purchase_channel||x.order_channel||'').toLowerCase()==='shopee' || /shopee/i.test(String(x.product_name||'')))
+      .reduce((s,x)=>s+Math.round(num(x.uang_bersih ?? x.omzet_produk)),0);
+    const onNewNet=onNewRevenue;
+    const onNewFee=0;
+    const onNewHpp=onlineBatchNew.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? x.hpp)),0);
+    const onNewQty=onlineBatchNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
+    const onNewProfit=onNewNet-onNewHpp;
+    const onNewMargin=onNewNet?onNewProfit/onNewNet*100:0;
+    const onRevenue=onOldRevenue+onNewRevenue;
+    const onFee=onOldFee+onNewFee;
+    const onNet=onOldNet+onNewNet;
+    const onHpp=onOldHpp+onNewHpp;
+    const onContributionProfit=onOldProfit+(onNewNet-onNewHpp);
+    // Profit final Online dikurangi biaya agregat Online Lainnya yang sudah dikunci.
+    const onOtherCost=(onNet>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0;
+    const onProfit=onContributionProfit-onOtherCost;
+    // Jan–Agustus 2026 memakai angka histori audit seller_center yang dikunci.
+    const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
+
+    // GABUNGAN: hasil akhir menggabungkan kondisi riil dua channel.
+    const totalRevenue=offRevenue+onRevenue;
+    const totalOut=offExpense+onFee;
+    const totalNet=offNet+onNet;
+    const totalHpp=(offHpp+onHpp);
+    const overallProfitKnown=true;
+    const totalProfit=offNet + onProfit;
+    const totalMargin=totalNet ? totalProfit/totalNet*100 : 0;
+
+    setNumber('totalRevenue',totalRevenue);
+    setNumber('totalOut',totalOut);
+    setNumber('totalNet',totalNet);
+    setNumber('totalHpp',totalHpp);
+    const totalProfitEl=document.getElementById('totalProfit');
+    setNumber('totalProfit',totalProfit);
+    const tm=document.getElementById('totalMargin');
+    tm.textContent=pct(totalMargin);
+    tm.classList.toggle('negative',totalMargin<0);
+    document.getElementById('totalProduk').textContent=activeProducts.toLocaleString('id-ID');
+    document.getElementById('opPurchase').textContent=rupiah(opPurchase);
+    document.getElementById('opExpense').textContent=rupiah(opExpense);
+    document.getElementById('opReturn').textContent=rupiah(opReturn);
+    document.getElementById('opSupplier').textContent=opSupplier.toLocaleString('id-ID');
+    document.getElementById('totalPenjualan').textContent=sales.filter(x=>!isHistoricalSource(x.source)).length.toLocaleString('id-ID');
+
+    document.getElementById('offOldCount').textContent=offOld.length.toLocaleString('id-ID')+' baris';
+    document.getElementById('offNewCount').textContent=offNew.length.toLocaleString('id-ID');
+    setNumber('offRevenue',offRevenue); setNumber('offExpense',offExpense); setNumber('offNet',offNet); setNumber('offProfit',offProfit);
+    document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
+    const offlineProfitEl=document.getElementById('offProfit');
+    setNumber('offProfit',offProfit);
+    const offlineAudit=document.getElementById('offlineHppAudit');
+    if(offlineAudit){offlineAudit.textContent=offHppKnown ? '✅ HPP Produk Keluar terukur. HPP ditampilkan terpisah dari Hasil Bersih.' : '🟠 Sebagian HPP histori belum punya master. Hasil Bersih tetap memakai Pemasukan − Pengeluaran.';}
+
+    document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
+    document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
+    setNumber('onRevenue',onRevenue); setNumber('onFee',onFee); setNumber('onNet',onNet); setNumber('onShopeeCash',onShopeeCash);
+    setNumber('onHpp',onHpp);
+    setNumber('onOtherCost',onOtherCost);
+    setNumber('onProfit',onProfit);
+    document.getElementById('onQty').textContent=onQty.toLocaleString('id-ID');
+    const missingBySize={};
+    const missingRows=onlineHistoricalQtyLockedRows.filter(x=>Number(x.qty||0)>0 && Number(x.modal_hpp ?? (num(x.qty)*num(x.hpp)))<=0);
+    missingRows.forEach(x=>{const s=detectDashboardPackSize(x)||'tidak-terdeteksi';missingBySize[s]=(missingBySize[s]||0)+1;});
+    const missingCount=missingRows.length;
+    const missingDetail=Object.entries(missingBySize).map(([s,n])=>'isi '+s+': '+n+' baris').join(' • ');
+    const unresolvedDetail=missingRows.slice(0,20).map((x,i)=>{
+      const sku=String(x.sku_id||x.seller_sku||'-');
+      const prod=String(x.product_name||'-').replace(/[<>]/g,'');
+      const vari=String(x.variation||'').replace(/[<>]/g,'');
+      const size=detectDashboardPackSize(x)||'-';
+      return (i+1)+'. <b>isi '+size+'</b> • SKU '+sku+' • '+prod+(vari?' • '+vari:'');
+    }).join('<br>');
+    document.getElementById('onlineHistoryAudit').innerHTML=onlineHistoricalQtyMismatch
+      ? '🔴 <b>Audit:</b> histori seller_center terbaca '+onlineHistoricalQtyRaw.toLocaleString('id-ID')+' bungkus, sedangkan kunci <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b>. Selisih '+(onlineHistoricalQtyRaw-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'
+      : (onlineHistoricalMissingHpp
+        ? '🟠 <b>Audit:</b> 8.085 bungkus cocok, tetapi ada <b>'+missingCount.toLocaleString('id-ID')+'</b> baris tanpa HPP'+(missingDetail?' ('+missingDetail+')':'')+'. <button type="button" id="repairOnlineHpp" style="margin-left:8px;padding:5px 9px;border:0;border-radius:6px;cursor:pointer">🔧 Perbaiki HPP Historis</button><details style="margin-top:6px"><summary>Lihat baris yang belum terpetakan</summary><div style="font-size:12px;line-height:1.5;margin-top:6px">'+unresolvedDetail+'</div></details>'
+        : '🟢 <b>Audit:</b> histori seller_center cocok dengan kunci <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+'</b> bungkus dan HPP terukur.');
+    const repairBtn=document.getElementById('repairOnlineHpp');
+    if(repairBtn)repairBtn.onclick=async()=>{repairBtn.disabled=true;repairBtn.textContent='⏳ Memperbaiki...';try{await repairDashboardOnlineHpp();}catch(e){document.getElementById('onlineHistoryAudit').innerHTML='🔴 Gagal memperbaiki HPP: '+String(e.message||e).replace(/</g,'&lt;');}finally{repairBtn.disabled=false;}};
+    document.getElementById('newOnQty').textContent=onNewQty.toLocaleString('id-ID')+' bungkus';
+    setNumber('newOnModal',onNewHpp);
+    setNumber('newOnCash',onNewNet);
+    setNumber('newOnProfit',onNewProfit);
+    const nm=document.getElementById('newOnMargin'); nm.textContent=onNewMargin.toFixed(2).replace('.',',')+'%'; nm.classList.toggle('negative',onNewMargin<0);
+
+    const status=errors.length?('Sebagian data gagal dimuat: '+errors.join(', ')+'.'):('Database terhubung • Dashboard Offline + Online berhasil dimuat.');
+    document.getElementById('statusText').textContent=status;
+  }catch(e){
+    console.error(e);
+    document.getElementById('statusText').textContent='Gagal memuat dashboard. Periksa koneksi database.';
+  }
+}
+const refreshBtn=document.getElementById('refreshBtn');
+let refreshing=false;
+async function refreshDashboard(event){
+  if(event) event.preventDefault();
+  if(refreshing) return;
+  refreshing=true;
+  refreshBtn.disabled=true;
+  refreshBtn.style.pointerEvents='auto';
+  refreshBtn.style.opacity='0.7';
+  refreshBtn.textContent='⏳ Memuat...';
+  try{ await loadDashboard(); }
+  finally{
+    refreshing=false;
+    refreshBtn.disabled=false;
+    refreshBtn.style.pointerEvents='auto';
+    refreshBtn.style.opacity='1';
+    refreshBtn.textContent='↻ Muat Ulang';
+  }
+}
+refreshBtn.onclick=refreshDashboard;
+refreshBtn.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();refreshDashboard(event);}});
+loadDashboard();
+</script>
+<script src="android-shell.js" defer></script>
+</body>
+</html>
