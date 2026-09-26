@@ -283,17 +283,6 @@ function renderDebtDetails(m){
   $('debtDetailCard').style.display='block';
   $('debtDetailCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function renderDebtDetails(d){
-  const rows=records.filter(r=>r.jenis==='Hutang' && String(r.tanggal||'')===d).sort((a,b)=>Number(b.id)-Number(a.id));
-  $('debtDetailTitle').textContent='📄 Detail Hutang • '+d;
-  $('debtDetailRows').innerHTML=rows.length?rows.map(r=>{
-    const x=computed(r);
-    const action=x.sisa>0?'<button class="btn blue" type="button" data-pay="'+r.id+'">💵 Bayar</button>':'<span class="hint">Lunas</span>';
-    return '<tr><td>'+esc(r.tanggal||'-')+'</td><td>'+esc(r.kategori||'-')+'</td><td>'+esc(r.pihak||'-')+'</td><td>'+esc(r.jatuh_tempo||'-')+'</td><td>'+money(r.nominal_awal)+'</td><td>'+money(x.paid)+'</td><td class="money '+(x.sisa>0?'negative':'positive')+'">'+money(x.sisa)+'</td><td>'+esc(x.status)+'</td><td>'+action+'</td></tr>';
-  }).join(''):'<tr><td colspan="9" class="empty">Belum ada hutang pada tanggal ini.</td></tr>';
-  $('debtDetailCard').style.display='block';
-  $('debtDetailCard').scrollIntoView({behavior:'smooth',block:'start'});
-}
 
 function renderStats(){
   let h=0,p=0,bh=0,bp=0;const cur=today().slice(0,7);
