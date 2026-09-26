@@ -694,7 +694,9 @@ async function ffExpenseUpdateSaved(){
   const invalid=lines.findIndex(x=>!x.category||!x.nama_item||x.harga_satuan<=0);
   if(invalid>=0){if(out)out.innerHTML='<div class="bad">Item '+(invalid+1)+' belum lengkap. Pilih kategori, item, dan isi harga.</div>';return true;}
   const total=lines.reduce((sum,x)=>sum+x.subtotal,0);
-  const up=await supabaseClient.from('pengeluaran').update({periode:date.slice(0,7),tanggal:date,kategori:topCategory,keterangan:note,nominal:total}).eq('id',id);
+  const categories=[...new Set(lines.map(x=>x.category).filter(Boolean))];
+  const headerCategory=categories.length>1?'Multi Kategori':(categories[0]||'Lainnya');
+  const up=await supabaseClient.from('pengeluaran').update({periode:date.slice(0,7),tanggal:date,kategori:headerCategory,keterangan:note,nominal:total}).eq('id',id);
   if(up.error)throw up.error;
   const del=await supabaseClient.from('pengeluaran_item').delete().eq('pengeluaran_id',id);
   if(del.error)throw del.error;
@@ -724,11 +726,13 @@ function ffExpenseSaveDraft(){
   if(invalid>=0){if(out)out.innerHTML='<div class="bad">Item '+(invalid+1)+' belum lengkap. Pilih kategori, item, dan isi Harga Pengeluaran.</div>';return;}
   const total=lines.reduce((sum,x)=>sum+x.subtotal,0);
   if(total<=0){if(out)out.innerHTML='<div class="bad">Total pengeluaran harus lebih dari 0.</div>';return;}
+  const categories=[...new Set(lines.map(x=>x.category).filter(Boolean))];
+  const headerCategory=categories.length>1?'Multi Kategori':(categories[0]||'Lainnya');
   if(window.__offlineDraftEdit?.type==='expense'){
     const idx=window.__offlineDraftExpenses.findIndex(x=>String(x._seq)===String(window.__offlineDraftEdit.seq));
     if(idx>=0){
       window.__offlineDraftExpenses[idx]={
-        data:{periode:date.slice(0,7),tanggal:date,kategori:lines[0]?.category||'Lainnya',keterangan:note,nominal:total},
+        data:{periode:date.slice(0,7),tanggal:date,kategori:headerCategory,keterangan:note,nominal:total},
         items:lines,
         _seq:window.__offlineDraftExpenses[idx]._seq
       };
@@ -741,7 +745,7 @@ function ffExpenseSaveDraft(){
   }
   window.__offlineDraftExpenses=window.__offlineDraftExpenses||[];
   window.__offlineDraftExpenses.push({
-    data:{periode:date.slice(0,7),tanggal:date,kategori:lines[0]?.category||'Lainnya',keterangan:note,nominal:total},
+    data:{periode:date.slice(0,7),tanggal:date,kategori:headerCategory,keterangan:note,nominal:total},
     items:lines,
     _seq:Date.now()+Math.random()
   });
