@@ -464,16 +464,30 @@ window.__offlineDraftSales=window.__offlineDraftSales||[];
 window.__offlineDraftExpenses=window.__offlineDraftExpenses||[];
 window.__offlineDraftEdit=window.__offlineDraftEdit||null;
 function offlineDraftMoney(n){return 'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID')}
-window.__ffExpenseMaterials=window.__ffExpenseMaterials||[];
+window.__ffExpenseItemsMaster=window.__ffExpenseItemsMaster||[];
 
 async function ffExpenseLoadMaterials(){
   try{
-    const r=await supabaseClient.from('bahan_baku').select('id,nama_bahan,satuan,status').order('nama_bahan',{ascending:true});
-    if(r.error)throw r.error;
-    window.__ffExpenseMaterials=r.data||[];
+    const [m,b]=await Promise.all([
+      supabaseClient.from('pengeluaran_item_master').select('id,kategori,nama_item,aktif').eq('aktif',true).order('kategori',{ascending:true}).order('nama_item',{ascending:true}),
+      supabaseClient.from('bahan_baku').select('id,nama_bahan,satuan,status').order('nama_bahan',{ascending:true})
+    ]);
+    if(m.error)throw m.error;
+    const master=(m.data||[]).filter(x=>String(x.kategori||'')!=='Hutang');
+    const existing=new Set(master.map(x=>String(x.kategori)+'|'+String(x.nama_item).trim().toLowerCase()));
+    (b.data||[]).forEach(bahan=>{
+      const key='Bahan Baku|'+String(bahan.nama_bahan||'').trim().toLowerCase();
+      if(!bahan.nama_bahan||existing.has(key))return;
+      master.push({id:'bb-'+bahan.id,kategori:'Bahan Baku',nama_item:bahan.nama_bahan,aktif:true,_bahan_id:Number(bahan.id),_satuan:bahan.satuan||''});
+    });
+    (b.data||[]).forEach(bahan=>{
+      const row=master.find(x=>String(x.kategori)==='Bahan Baku'&&String(x.nama_item).trim().toLowerCase()===String(bahan.nama_bahan).trim().toLowerCase());
+      if(row){row._bahan_id=Number(bahan.id);row._satuan=bahan.satuan||'';}
+    });
+    window.__ffExpenseItemsMaster=master;
   }catch(e){
-    console.error('Gagal memuat Master Bahan Baku untuk Pengeluaran:',e);
-    window.__ffExpenseMaterials=[];
+    console.error('Gagal memuat master item pengeluaran:',e);
+    window.__ffExpenseItemsMaster=[];
   }
   ffExpenseRefreshAllItemControls();
 }
@@ -481,8 +495,7 @@ async function ffExpenseLoadMaterials(){
 function ffExpenseMoney(n){return 'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID')}
 
 function ffExpenseCalcLine(row){
-  const price=Math.max(0,Math.round(Number(row.querySelector('.ff-exp-price')?.value)||0));
-  return price;
+  return Math.max(0,Math.round(Number(row.querySelector('.ff-exp-price')?.value)||0));
 }
 
 function ffExpenseUpdateTotal(){
@@ -494,44 +507,36 @@ function ffExpenseUpdateTotal(){
 
 function ffExpenseItemControlHtml(data={}){
   const category=document.getElementById('ffExpenseCategory')?.value||'Bahan Baku';
-  const isMaterial=category==='Bahan Baku';
-  if(isMaterial){
-    const selectedId=String(data.bahan_id||'');
-    const opts='<option value="">Pilih Bahan Baku</option>'+window.__ffExpenseMaterials.map(b=>
-      '<option value="'+esc(b.id)+'" '+(String(b.id)===selectedId?'selected':'')+'>'+esc(b.nama_bahan)+(b.satuan?' ('+esc(b.satuan)+')':'')+'</option>'
-    ).join('');
-    return '<div class="field"><label>Bahan Baku</label><select class="ff-exp-name-select">'+opts+'</select></div>';
-  }
-  return '<div class="field"><label>Item</label><input class="ff-exp-name" placeholder="Contoh: Listrik / Gaji / Alat" value="'+esc(data.nama_item||'')+'"></div>';
+  const list=window.__ffExpenseItemsMaster
+    .filter(x=>String(x.kategori||'')===String(category)&&x.aktif!==false)
+    .sort((a,b)=>String(a.nama_item||'').localeCompare(String(b.nama_item||''),'id'));
+  const selectedId=String(data.master_id||'');
+  const selectedName=String(data.nama_item||'');
+  const opts='<option value="">Pilih '+esc(category)+'</option>'+list.map(x=>{
+    const selected=(selectedId&&String(x.id)===selectedId)||(!selectedId&&String(x.nama_item)===selectedName)?'selected':'';
+    return '<option value="'+esc(x.id)+'" '+selected+'>'+esc(x.nama_item)+'</option>';
+  }).join('');
+  const empty=!list.length?'<option value="">Belum ada data item kategori ini</option>':'';
+  return '<div class="field"><label>Item '+esc(category)+'</label><select class="ff-exp-name-select">'+(list.length?opts:empty)+'</select></div>';
 }
 
 function ffExpenseGetLineData(row){
   const category=document.getElementById('ffExpenseCategory')?.value||'Lainnya';
   const select=row.querySelector('.ff-exp-name-select');
-  const input=row.querySelector('.ff-exp-name');
-  let nama_item='',bahan_id=null,satuan='';
-  if(select){
-    bahan_id=select.value?Number(select.value):null;
-    const opt=select.options[select.selectedIndex];
-    nama_item=(opt?.textContent||'').replace(/\s*\([^)]*\)\s*$/,'').trim();
-    const b=window.__ffExpenseMaterials.find(x=>String(x.id)===String(bahan_id));
-    satuan=b?.satuan||'';
-  }else{
-    nama_item=(input?.value||'').trim();
-  }
+  const masterId=String(select?.value||'');
+  const selected=window.__ffExpenseItemsMaster.find(x=>String(x.id)===masterId);
+  const nama_item=selected?.nama_item||'';
+  const bahan_id=selected?Number(selected._bahan_id||0)||null:null;
+  const satuan=selected?String(selected._satuan||''):'';
   const price=Math.max(0,Math.round(Number(row.querySelector('.ff-exp-price')?.value)||0));
-  return {category,nama_item,bahan_id,satuan,qty:1,harga_satuan:price,subtotal:price,catatan:''};
+  return {category,nama_item,master_id:masterId,bahan_id,satuan,qty:1,harga_satuan:price,subtotal:price,catatan:''};
 }
 
-function ffExpenseWireRow(row,data={}){
+function ffExpenseWireRow(row){
   const price=row.querySelector('.ff-exp-price');
   if(price)price.addEventListener('input',ffExpenseUpdateTotal);
   const select=row.querySelector('.ff-exp-name-select');
-  if(select){
-    select.addEventListener('change',()=>ffExpenseUpdateTotal());
-  }
-  const input=row.querySelector('.ff-exp-name');
-  if(input)input.addEventListener('input',()=>ffExpenseUpdateTotal());
+  if(select)select.addEventListener('change',ffExpenseUpdateTotal);
   const remove=row.querySelector('.ff-exp-remove');
   if(remove)remove.addEventListener('click',()=>{
     row.remove();
@@ -549,7 +554,7 @@ function ffExpenseAddLine(data={}){
     '<div class="field"><label>Harga Pengeluaran</label><input class="ff-exp-price" type="number" min="0" step="1" value="'+(data.harga_satuan??'')+'" placeholder="Masukkan harga"></div>'+
     '<button type="button" class="mini del ff-exp-remove" title="Hapus">✕</button>';
   host.appendChild(row);
-  ffExpenseWireRow(row,data);
+  ffExpenseWireRow(row);
   ffExpenseUpdateTotal();
 }
 
@@ -561,7 +566,7 @@ function ffExpenseRefreshItemControl(row,data={}){
   temp.innerHTML=ffExpenseItemControlHtml(merged);
   const old=row.firstElementChild;
   if(old)row.replaceChild(temp.firstElementChild,old);
-  ffExpenseWireRow(row,merged);
+  ffExpenseWireRow(row);
 }
 
 function ffExpenseRefreshAllItemControls(){
@@ -575,7 +580,72 @@ function ffExpenseResetForm(){
   const note=document.getElementById('ffExpenseNote');if(note)note.value='';
   const host=document.getElementById('ffExpenseLines');if(host){host.innerHTML='';ffExpenseAddLine();}
   const msgBox=document.getElementById('ffExpenseMsg');if(msgBox)msgBox.innerHTML='';
+  window.__offlineExpenseEditId=null;
+  if(window.__offlineDraftEdit?.type==='expense')window.__offlineDraftEdit=null;
+  const saveBtn=document.getElementById('ffExpenseDraftSave');if(saveBtn)saveBtn.textContent='➕ Tambah Pengeluaran ke Daftar';
   ffExpenseUpdateTotal();
+}
+
+async function ffExpenseLoadSaved(id){
+  const out=document.getElementById('ffExpenseMsg');
+  try{
+    const [h,it]=await Promise.all([
+      supabaseClient.from('pengeluaran').select('*').eq('id',id).single(),
+      supabaseClient.from('pengeluaran_item').select('*').eq('pengeluaran_id',id).order('id',{ascending:true})
+    ]);
+    if(h.error)throw h.error;
+    if(it.error)throw it.error;
+    if(typeof ffExpenseLoadMaterials==='function' && !(window.__ffExpenseItemsMaster||[]).length)await ffExpenseLoadMaterials();
+
+    document.getElementById('ffExpenseDate').value=h.data.tanggal||h.data.periode||today();
+    document.getElementById('ffExpenseCategory').value=h.data.kategori||'Lainnya';
+    document.getElementById('ffExpenseNote').value=h.data.keterangan||'';
+    const host=document.getElementById('ffExpenseLines');
+    host.innerHTML='';
+    const rows=it.data||[];
+    rows.forEach(item=>ffExpenseAddLine({
+      nama_item:item.nama_item||'',
+      harga_satuan:item.harga_satuan||item.subtotal||0,
+      master_id:(window.__ffExpenseItemsMaster||[]).find(x=>String(x.nama_item).toLowerCase()===String(item.nama_item||'').toLowerCase()&&String(x.kategori)===String(h.data.kategori||''))?.id||'',
+      bahan_id:item.bahan_id||null
+    }));
+    if(!rows.length)ffExpenseAddLine();
+    window.__offlineExpenseEditId=Number(id);
+    const saveBtn=document.getElementById('ffExpenseDraftSave');if(saveBtn)saveBtn.textContent='✅ Simpan Perubahan Pengeluaran';
+    if(out)out.innerHTML='<div class="warn">Mode edit pengeluaran. Ubah kategori, item, atau harga lalu simpan perubahan.</div>';
+    document.getElementById('offlineExpenseCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+    ffExpenseUpdateTotal();
+  }catch(e){
+    console.error('ffExpenseLoadSaved',e);
+    if(out)out.innerHTML='<div class="bad">Gagal membuka pengeluaran: '+esc(e.message||e)+'</div>';
+  }
+}
+
+async function ffExpenseUpdateSaved(){
+  const id=Number(window.__offlineExpenseEditId||0);
+  if(!id)return false;
+  const date=document.getElementById('ffExpenseDate')?.value||today();
+  const category=document.getElementById('ffExpenseCategory')?.value||'Lainnya';
+  const note=(document.getElementById('ffExpenseNote')?.value||'').trim();
+  const out=document.getElementById('ffExpenseMsg');
+  const lines=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')].map(ffExpenseGetLineData);
+  const invalid=lines.findIndex(x=>!x.nama_item||x.harga_satuan<=0);
+  if(invalid>=0){if(out)out.innerHTML='<div class="bad">Item '+(invalid+1)+' belum lengkap. Pilih item dan isi harga.</div>';return true;}
+  const total=lines.reduce((sum,x)=>sum+x.subtotal,0);
+  const oldItems=await supabaseClient.from('pengeluaran_item').select('*').eq('pengeluaran_id',id);
+  if(oldItems.error)throw oldItems.error;
+  const up=await supabaseClient.from('pengeluaran').update({periode:date.slice(0,7),tanggal:date,kategori:category,keterangan:note,nominal:total}).eq('id',id);
+  if(up.error)throw up.error;
+  const del=await supabaseClient.from('pengeluaran_item').delete().eq('pengeluaran_id',id);
+  if(del.error)throw del.error;
+  const detailRows=lines.map(x=>({...x,pengeluaran_id:id}));
+  const ins=await supabaseClient.from('pengeluaran_item').insert(detailRows);
+  if(ins.error)throw ins.error;
+  window.__offlineExpenseEditId=null;
+  ffExpenseResetForm();
+  await refreshOfflineHistory();
+  if(out)out.innerHTML='<div class="ok">✅ Pengeluaran berhasil diperbarui.</div>';
+  return true;
 }
 
 function ffExpenseSaveDraft(){
@@ -583,6 +653,13 @@ function ffExpenseSaveDraft(){
   const category=document.getElementById('ffExpenseCategory')?.value||'Lainnya';
   const note=(document.getElementById('ffExpenseNote')?.value||'').trim();
   const out=document.getElementById('ffExpenseMsg');
+  if(window.__offlineExpenseEditId){
+    ffExpenseUpdateSaved().catch(e=>{
+      console.error(e);
+      if(out)out.innerHTML='<div class="bad">Gagal memperbarui: '+esc(e.message||e)+'</div>';
+    });
+    return;
+  }
   const lines=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')].map(ffExpenseGetLineData);
   const invalid=lines.findIndex(x=>!x.nama_item||x.harga_satuan<=0);
   if(invalid>=0){if(out)out.innerHTML='<div class="bad">Item '+(invalid+1)+' belum lengkap. Pilih item dan isi Harga Pengeluaran.</div>';return;}
@@ -616,11 +693,9 @@ function renderOfflineDrafts(){
       ? (String(x.data?.product_name||'-')+(x.pelanggan?' — '+x.pelanggan:''))
       : (String(x.data?.kategori||'-')+' — '+((x.items||[]).map(it=>it.nama_item).filter(Boolean).join(', ')||String(x.data?.keterangan||'-')));
     const orderId=income?String(x.data?.order_id||'-'):'-';
-    const editAttr=income?'data-off-draft-sale-edit="'+x._draftIndex+'"':'';
+    const editAttr=income?'data-off-draft-sale-edit="'+x._draftIndex+'"':'data-off-draft-exp-edit="'+x._draftIndex+'"';
     const delAttr=income?'data-off-draft-sale="'+x._draftIndex+'"':'data-off-draft-exp="'+x._draftIndex+'"';
-    const action=(income
-      ? '<button class="mini edit" type="button" '+editAttr+'>✏️ Edit</button> '
-      : '')+'<button class="mini del" type="button" '+delAttr+'>🗑 Hapus</button>';
+    const action='<button class="mini edit" type="button" '+editAttr+'>✏️ Edit</button> <button class="mini del" type="button" '+delAttr+'>🗑 Hapus</button>';
     return '<tr><td>'+String(i+1)+'</td><td>'+esc(x.data?.tanggal||'-')+'</td><td><b style="color:'+(income?'#087443':'#9a3412')+'">'+x._draftType+'</b></td><td>'+esc(detail)+'</td><td>'+ (q?q.toLocaleString('id-ID'):(income?'—':String((x.items||[]).reduce((a,it)=>a+Number(it.qty||0),0))) ) +'</td><td>'+offlineDraftMoney(nominal)+'</td><td>'+ (income?offlineDraftMoney(hpp):'—') +'</td><td>'+esc(orderId)+'<br>'+action+'</td></tr>';
   }).join(''):'<tr><td colspan="8" class="empty">Belum ada detail. Pilih customer, tambahkan produk pertama, lalu tambah produk berikutnya tanpa mengisi customer lagi.</td></tr>';
   updateOfflineOrderSummary();
@@ -1173,7 +1248,7 @@ function renderOfflineHistoryDate(dateKey){
   }).map(x=>{
     if(x._jenis==='Pengeluaran'){
       const nominal=Math.round(Number(x.nominal)||0),note=[x.kategori,x.keterangan].filter(Boolean).join(' — ');
-      return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#9a3412">Pengeluaran</b></td><td>'+esc(note||'-')+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(nominal)+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(-nominal)+'</td><td><button class="mini del" type="button" data-off-exp-del="'+x.id+'">🗑 Hapus</button></td></tr>';
+      return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#9a3412">Pengeluaran</b></td><td>'+esc(note||'-')+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(nominal)+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(-nominal)+'</td><td><button class="mini edit" type="button" data-off-exp-edit-saved="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-off-exp-del="'+x.id+'">🗑 Hapus</button></td></tr>';
     }
     const q=Math.max(1,Number(x.qty)||1),total=Math.round(Number(x.total)||0),modal=Math.round(Number(x.modal_hpp??x.hpp??0));
     if(x._source==='Data Lama'){
@@ -1779,18 +1854,24 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       if(draftExpEdit){
         const i=Number(draftExpEdit.dataset.offDraftExpEdit),row=window.__offlineDraftExpenses[i];
         if(row){
+          document.getElementById('ffExpenseDate').value=row.data?.tanggal||today();
+          document.getElementById('ffExpenseCategory').value=row.data?.kategori||'Lainnya';
+          document.getElementById('ffExpenseNote').value=row.data?.keterangan||'';
+          const host=document.getElementById('ffExpenseLines');host.innerHTML='';
+          (row.items||[]).forEach(item=>ffExpenseAddLine({
+            nama_item:item.nama_item||'',
+            harga_satuan:item.harga_satuan||item.subtotal||0,
+            master_id:item.master_id||''
+          }));
+          if(!(row.items||[]).length)ffExpenseAddLine();
           window.__offlineDraftEdit={type:'expense',seq:row._seq};
-          byId('offlineExpenseDate').value=row.data?.tanggal||today();
-          byId('offlineExpenseCategory').value=row.data?.kategori||'Lainnya';
-          byId('offlineExpenseNominal').value=Math.round(Number(row.data?.nominal)||0);
-          byId('offlineExpenseNote').value=row.data?.keterangan||'';
-          byId('offlineExpenseSave').textContent='✅ Simpan Perubahan';
-          byId('offlineExpenseMsg').innerHTML='<div class="warn">Mode edit pengeluaran sementara. Ubah data lalu tekan ✅ Simpan Perubahan.</div>';
+          const btn=document.getElementById('ffExpenseDraftSave');if(btn)btn.textContent='✅ Simpan Perubahan Pengeluaran';
+          const out=document.getElementById('ffExpenseMsg');if(out)out.innerHTML='<div class="warn">Mode edit pengeluaran sementara.</div>';
           document.getElementById('offlineExpenseCard')?.scrollIntoView({behavior:'smooth',block:'start'});
         }
         return;
       }
-      const draftExp=e.target.closest?.('[data-off-draft-exp]');
+            const draftExp=e.target.closest?.('[data-off-draft-exp]');
       if(draftExp){const i=Number(draftExp.dataset.offDraftExp);if(window.__offlineDraftExpenses[i]){window.__offlineDraftExpenses.splice(i,1);if(window.__offlineDraftEdit?.type==='expense')resetOfflineDraftEditState();renderOfflineDrafts();}return;}
     const offDel=e.target.closest?.('[data-off-del]');
     const offEdit=e.target.closest?.('[data-off-edit]');
@@ -1826,6 +1907,11 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       const expClose=e.target.closest?.('#offlineExpenseDetailClose');
       if(expClose){
         const wrap=byId('offlineExpenseDetailWrap');if(wrap)wrap.style.display='none';
+        return;
+      }
+      const offExpEditSaved=e.target.closest?.('[data-off-exp-edit-saved]');
+      if(offExpEditSaved){
+        await ffExpenseLoadSaved(Number(offExpEditSaved.dataset.offExpEditSaved));
         return;
       }
       const offExpDel=e.target.closest?.('[data-off-exp-del]');
