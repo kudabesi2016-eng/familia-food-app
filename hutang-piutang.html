@@ -78,19 +78,6 @@ main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 6px;color:var
   </div>
 </div>
 
-<div class="card" id="debtDateCard" style="display:none">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div><h2 id="debtDateTitle" style="margin:0">Tanggal</h2><div class="note">Tekan 👁 Klik Data untuk membuka hutang pada tanggal tersebut.</div></div>
-    <button class="btn gray" id="closeDebtDate">Tutup</button>
-  </div>
-  <div class="tablewrap" style="margin-top:12px">
-    <table style="min-width:850px">
-      <thead><tr><th>Tanggal</th><th>Jumlah</th><th>Nominal Awal</th><th>Sudah Dibayar</th><th>Sisa Hutang</th><th>Aksi</th></tr></thead>
-      <tbody id="debtDateRows"></tbody>
-    </table>
-  </div>
-</div>
-
 <div class="card" id="debtDetailCard" style="display:none">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
     <div><h2 id="debtDetailTitle" style="margin:0">Detail Hutang</h2><div class="note">Pembayaran dilakukan dari tombol 💵 Bayar pada hutang yang dipilih.</div></div>
@@ -298,23 +285,17 @@ function renderLists(){
   };
   $('receivableListRows').innerHTML=pits.length?pits.map(row).join(''):'<tr><td colspan="9" class="empty">Belum ada piutang.</td></tr>';
 }
-function renderDebtDates(m){
-  const rows=records.filter(r=>r.jenis==='Hutang' && monthOf(r.tanggal)===m);
-  const by={};
-  rows.forEach(r=>{
-    const d=String(r.tanggal||'');
-    if(!by[d])by[d]={count:0,awal:0,paid:0,sisa:0};
-    const x=computed(r);by[d].count++;by[d].awal+=Number(r.nominal_awal||0);by[d].paid+=x.paid;by[d].sisa+=x.sisa;
-  });
-  const keys=Object.keys(by).sort((a,b)=>b.localeCompare(a));
-  $('debtDateTitle').textContent='📅 '+monthLabel(m);
-  $('debtDateRows').innerHTML=keys.length?keys.map(d=>{
-    const x=by[d];
-    return '<tr><td><b>'+esc(d)+'</b></td><td>'+x.count.toLocaleString('id-ID')+'</td><td>'+money(x.awal)+'</td><td>'+money(x.paid)+'</td><td><b>'+money(x.sisa)+'</b></td><td><button class="btn light" type="button" data-debt-date="'+d+'">👁 Klik Data</button></td></tr>';
-  }).join(''):'<tr><td colspan="6" class="empty">Belum ada hutang pada bulan ini.</td></tr>';
-  $('debtDateCard').style.display='block';
-  $('debtDetailCard').style.display='none';
-  $('debtDateCard').scrollIntoView({behavior:'smooth',block:'start'});
+function renderDebtDetails(m){
+  const rows=records.filter(r=>r.jenis==='Hutang' && monthOf(r.tanggal)===m)
+    .sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))||Number(b.id)-Number(a.id));
+  $('debtDetailTitle').textContent='📄 Detail Hutang • '+monthLabel(m);
+  $('debtDetailRows').innerHTML=rows.length?rows.map(r=>{
+    const x=computed(r);
+    const action=x.sisa>0?'<button class="btn blue" type="button" data-pay="'+r.id+'">💵 Bayar</button>':'<span class="hint">Lunas</span>';
+    return '<tr><td>'+esc(r.tanggal||'-')+'</td><td>'+esc(r.kategori||'-')+'</td><td>'+esc(r.pihak||'-')+'</td><td>'+esc(r.jatuh_tempo||'-')+'</td><td>'+money(r.nominal_awal)+'</td><td>'+money(x.paid)+'</td><td class="money '+(x.sisa>0?'negative':'positive')+'">'+money(x.sisa)+'</td><td>'+esc(x.status)+'</td><td>'+action+'</td></tr>';
+  }).join(''):'<tr><td colspan="9" class="empty">Belum ada hutang pada bulan ini.</td></tr>';
+  $('debtDetailCard').style.display='block';
+  $('debtDetailCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function renderDebtDetails(d){
   const rows=records.filter(r=>r.jenis==='Hutang' && String(r.tanggal||'')===d).sort((a,b)=>Number(b.id)-Number(a.id));
@@ -356,10 +337,8 @@ document.addEventListener('click',e=>{
 });
 $('savePayment').onclick=async()=>{if(!payTarget)return;const r=records.find(x=>Number(x.id)===payTarget),n=Math.round(Number($('bayarNominal').value)||0);if(!r||n<=0)return;$('savePayment').disabled=true;try{if(n>computed(r).sisa)throw new Error('Nominal pembayaran melebihi sisa saldo.');const x=await supabaseClient.from('ff_hutang_piutang_bayar').insert([{hutang_piutang_id:r.id,tanggal:$('bayarTanggal').value,nominal:n,keterangan:$('bayarKeterangan').value.trim()}]);if(x.error)throw x.error;await updateStatus(r.id);$('paymentMsg').innerHTML='<div class="ok">Pembayaran tersimpan.</div>';await load();showMonth(monthOf(r.tanggal));}catch(e){$('paymentMsg').innerHTML='<div class="bad">'+esc(e.message||e)+'</div>'}finally{$('savePayment').disabled=false}};
 async function updateStatus(id){const r=records.find(x=>Number(x.id)===Number(id));if(!r)return;const x=computed(r),u=await supabaseClient.from('ff_hutang_piutang').update({status:x.status}).eq('id',id);if(u.error)console.warn(u.error)}
-$('debtMonthRows').addEventListener('click',e=>{const b=e.target.closest('[data-debt-month]');if(b)renderDebtDates(b.dataset.debtMonth)});
-$('debtDateRows').addEventListener('click',e=>{const b=e.target.closest('[data-debt-date]');if(b)renderDebtDetails(b.dataset.debtDate)});
+$('debtMonthRows').addEventListener('click',e=>{const b=e.target.closest('[data-debt-month]');if(b)renderDebtDetails(b.dataset.debtMonth)});
 $('debtDetailRows').addEventListener('click',e=>{const b=e.target.closest('[data-pay]');if(b)openPayTarget(b.dataset.pay)});
-$('closeDebtDate').onclick=()=>{$('debtDateCard').style.display='none'};
 $('closeDebtDetail').onclick=()=>{$('debtDetailCard').style.display='none'};
 $('closeDetail').onclick=()=>{$('detailCard').style.display='none';$('paymentCard').style.display='none'};
 $('closePayment').onclick=()=>{$('paymentCard').style.display='none'};
