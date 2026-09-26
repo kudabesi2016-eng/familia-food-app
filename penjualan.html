@@ -1636,5 +1636,71 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   document.addEventListener('DOMContentLoaded',bindOfflineExpenseButton);
 })();
 </script>
+<script>
+(function(){
+  const $id=id=>document.getElementById(id);
+  const money=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const today2=()=>new Date().toISOString().slice(0,10);
+
+  window.ffStandaloneSaveOfflineExpense=function(){
+    const date=$id('offlineExpenseDate')?.value||today2();
+    const category=$id('offlineExpenseCategory')?.value||'Lainnya';
+    const nominal=Math.max(0,Math.round(Number($id('offlineExpenseNominal')?.value)||0));
+    const note=($id('offlineExpenseNote')?.value||'').trim();
+    const msg=$id('offlineExpenseMsg');
+    if(nominal<=0){if(msg)msg.innerHTML='<div class="bad">Nominal pengeluaran wajib lebih dari 0.</div>';return;}
+    if(!note){if(msg)msg.innerHTML='<div class="bad">Keterangan pengeluaran wajib diisi.</div>';return;}
+    window.__offlineDraftExpenses=window.__offlineDraftExpenses||[];
+    window.__offlineDraftExpenses.push({data:{periode:date.slice(0,7),tanggal:date,kategori:category,keterangan:note,nominal},_seq:Date.now()+Math.random()});
+    const tb=$id('offlineDraftRows');
+    if(window.renderOfflineDrafts){window.renderOfflineDrafts();}
+    else if(tb){
+      const all=window.__offlineDraftExpenses||[];
+      tb.innerHTML=all.map((x,i)=>'<tr><td>'+i+'</td><td>'+esc(x.data.tanggal)+'</td><td><b style="color:#9a3412">Pengeluaran</b></td><td>'+esc(x.data.kategori+' — '+x.data.keterangan)+'</td><td>—</td><td>'+money(x.data.nominal)+'</td><td>—</td><td><button class="mini del" type="button" data-off-draft-exp="'+i+'">🗑 Hapus</button></td></tr>').join('');
+    }
+    const count=$id('offlineDraftCount');if(count)count.textContent=(window.__offlineDraftSales?.length||0)+(window.__offlineDraftExpenses?.length||0)+' transaksi belum disimpan';
+    if(msg)msg.innerHTML='<div class="ok">Pengeluaran ditambahkan ke daftar sementara. Belum masuk database.</div>';
+    if($id('offlineExpenseNominal'))$id('offlineExpenseNominal').value='';
+    if($id('offlineExpenseNote'))$id('offlineExpenseNote').value='';
+  };
+
+  window.ffStandaloneOnlineHistory=async function(){
+    const tb=$id('onlineBatchHistoryMonthRows');
+    if(!tb || typeof supabaseClient==='undefined')return;
+    try{
+      tb.innerHTML='<tr><td colspan="5">Memuat riwayat...</td></tr>';
+      const q=await supabaseClient.from('penjualan').select('id,tanggal,product_name,variation,qty,modal_hpp,hpp,source').eq('channel','Online').eq('source','online_batch').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000);
+      if(q.error)throw q.error;
+      const rows=q.data||[],months={};
+      rows.forEach(x=>{
+        const m=String(x.tanggal||'Tanpa tanggal').slice(0,7)||'Tanpa tanggal';
+        if(!months[m])months[m]={rows:[],qty:0,modal:0};
+        const qty=Math.max(1,Number(x.qty)||1),modal=Math.round(Number(x.modal_hpp??x.hpp??0));
+        months[m].rows.push(x);months[m].qty+=qty;months[m].modal+=modal;
+      });
+      window.__FF_STANDALONE_ONLINE_MONTHS=months;
+      const keys=Object.keys(months).sort((a,b)=>b.localeCompare(a));
+      tb.innerHTML=keys.length?keys.map(m=>{
+        const g=months[m],label=/^\d{4}-\d{2}$/.test(m)?new Date(Number(m.slice(0,4)),Number(m.slice(5,7))-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):m;
+        return '<tr><td><b>'+esc(label)+'</b></td><td>'+g.rows.length.toLocaleString('id-ID')+'</td><td>'+g.qty.toLocaleString('id-ID')+'</td><td>'+money(g.modal)+'</td><td><button type="button" class="mini viewbtn" data-ff-online-month="'+esc(m)+'">👁 Klik Data</button></td></tr>';
+      }).join(''):'<tr><td colspan="5">Belum ada transaksi online baru.</td></tr>';
+    }catch(e){
+      console.error('Standalone Online History',e);
+      tb.innerHTML='<tr><td colspan="5">Gagal memuat riwayat: '+esc(e.message||e)+'</td></tr>';
+    }
+  };
+
+  function bind(){
+    const b=$id('offlineExpenseSave');
+    if(b)b.onclick=window.ffStandaloneSaveOfflineExpense;
+    const r=$id('offlineExpenseReset');
+    if(r)r.onclick=()=>{if($id('offlineExpenseDate'))$id('offlineExpenseDate').value=today2();if($id('offlineExpenseNominal'))$id('offlineExpenseNominal').value='';if($id('offlineExpenseNote'))$id('offlineExpenseNote').value='';if($id('offlineExpenseMsg'))$id('offlineExpenseMsg').innerHTML='';};
+    window.ffStandaloneOnlineHistory?.();
+  }
+  document.addEventListener('DOMContentLoaded',bind);
+  window.addEventListener('load',()=>setTimeout(bind,200));
+})();
+</script>
 </body>
 </html>
