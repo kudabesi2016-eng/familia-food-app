@@ -2413,14 +2413,14 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       add.style.pointerEvents='auto';
       add.style.position='relative';
       add.style.zIndex='60';
-      add.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof addRows==='function')addRows(1);}catch(err){console.error(err);}};
+      add.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof window.ffOnlineAddRow==='function')window.ffOnlineAddRow();}catch(err){console.error(err);}};
     }
     if(clear){
       clear.disabled=false;
       clear.style.pointerEvents='auto';
       clear.style.position='relative';
       clear.style.zIndex='60';
-      clear.onclick=function(e){e.preventDefault();e.stopPropagation();try{rows=[];if(typeof addRows==='function')addRows(1);if(typeof setMsg==='function')setMsg('');}catch(err){console.error(err);}};
+      clear.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof window.ffOnlineReset==='function')window.ffOnlineReset();}catch(err){console.error(err);}};
     }
     if(hist){
       hist.disabled=false;
@@ -2428,7 +2428,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       hist.style.position='relative';
       hist.style.zIndex='60';
       hist.onclick=function(e){e.preventDefault();e.stopPropagation();try{
-        if(typeof refreshOnlineBatchHistory==='function')refreshOnlineBatchHistory();
+        if(typeof window.ffOnlineOpenHistory==='function')window.ffOnlineOpenHistory();
         document.getElementById('onlineBatchHistoryCard')?.scrollIntoView({behavior:'smooth',block:'start'});
       }catch(err){console.error(err);}};
     }
@@ -2437,7 +2437,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       save.style.pointerEvents='auto';
       save.style.position='relative';
       save.style.zIndex='60';
-      save.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof saveBatch==='function')saveBatch();}catch(err){console.error(err);}};
+      save.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof window.ffOnlineSaveBatch==='function')window.ffOnlineSaveBatch();}catch(err){console.error(err);}};
     }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ffBindOnlineInputButtons);
