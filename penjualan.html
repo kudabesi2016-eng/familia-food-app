@@ -2276,6 +2276,48 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     if($id('offlineExpenseNote'))$id('offlineExpenseNote').value='';
   };
 
+  function ffStandaloneRenderMonth(month){
+    const g=(window.__FF_STANDALONE_ONLINE_MONTHS||{})[month];
+    const wrap=$id('onlineBatchHistoryDateWrap'), tb=$id('onlineBatchHistoryDateRows'), title=$id('onlineBatchHistoryDateTitle');
+    if(!g||!tb)return;
+    const dates={};
+    (g.rows||[]).forEach(x=>{
+      const d=String(x.tanggal||'Tanpa tanggal');
+      if(!dates[d])dates[d]={rows:[],qty:0,modal:0};
+      const q=Math.max(1,Number(x.qty)||1), modal=Math.round(Number(x.modal_hpp??x.hpp??0));
+      dates[d].rows.push(x); dates[d].qty+=q; dates[d].modal+=modal;
+    });
+    window.__FF_STANDALONE_ONLINE_DATES={month,dates};
+    const keys=Object.keys(dates).sort((a,b)=>b.localeCompare(a));
+    const label=/^\\d{4}-\\d{2}$/.test(month)?new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):month;
+    if(title)title.textContent='Tanggal Transaksi Online • '+label;
+    tb.innerHTML=keys.length?keys.map(d=>{
+      const x=dates[d],dl=/^\\d{4}-\\d{2}-\\d{2}$/.test(d)?new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'}):'Tanpa tanggal';
+      return '<tr><td><b>'+esc(dl)+'</b></td><td>'+x.rows.length.toLocaleString('id-ID')+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td><td>'+money(x.modal)+'</td><td><button type="button" class="mini viewbtn" data-ff-online-date="'+esc(d)+'">👁 Klik Data</button></td></tr>';
+    }).join(''):'<tr><td colspan="5">Tidak ada transaksi pada bulan ini.</td></tr>';
+    tb.querySelectorAll('[data-ff-online-date]').forEach(btn=>btn.onclick=()=>ffStandaloneRenderDate(String(btn.dataset.ffOnlineDate||'')));
+    if(wrap)wrap.style.display='block';
+    const mw=$id('onlineBatchHistoryMonthWrap'); if(mw)mw.style.display='none';
+    const dw=$id('onlineBatchHistoryDetailWrap'); if(dw)dw.style.display='none';
+    wrap?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  function ffStandaloneRenderDate(dateKey){
+    const state=window.__FF_STANDALONE_ONLINE_DATES||{}, g=state.dates?.[dateKey];
+    const wrap=$id('onlineBatchHistoryDetailWrap'), tb=$id('onlineBatchHistoryDetailRows'), title=$id('onlineBatchHistoryDetailTitle');
+    if(!g||!tb)return;
+    const dl=/^\\d{4}-\\d{2}-\\d{2}$/.test(dateKey)?new Date(dateKey+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'Tanpa tanggal';
+    if(title)title.textContent='Detail Transaksi Online • '+dl;
+    tb.innerHTML=(g.rows||[]).slice().sort((a,b)=>Number(b.id||0)-Number(a.id||0)).map(x=>{
+      const q=Math.max(1,Number(x.qty)||1), total=Math.round(Number(x.modal_hpp??x.hpp??0)), unit=q?Math.round(total/q):0;
+      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(x.variation||'Naget')+'</td><td>'+esc(x.product_name||'-')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+money(unit)+'</td><td>'+money(total)+'</td><td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
+    }).join('')||'<tr><td colspan="7">Tidak ada detail.</td></tr>';
+    if(wrap)wrap.style.display='block';
+    const mw=$id('onlineBatchHistoryMonthWrap'); if(mw)mw.style.display='none';
+    const dw=$id('onlineBatchHistoryDateWrap'); if(dw)dw.style.display='none';
+    wrap?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
   window.ffStandaloneOnlineHistory=async function(){
     const tb=$id('onlineBatchHistoryMonthRows');
     if(!tb || typeof supabaseClient==='undefined')return;
@@ -2296,6 +2338,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         const g=months[m],label=/^\d{4}-\d{2}$/.test(m)?new Date(Number(m.slice(0,4)),Number(m.slice(5,7))-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):m;
         return '<tr><td><b>'+esc(label)+'</b></td><td>'+g.rows.length.toLocaleString('id-ID')+'</td><td>'+g.qty.toLocaleString('id-ID')+'</td><td>'+money(g.modal)+'</td><td><button type="button" class="mini viewbtn" data-ff-online-month="'+esc(m)+'">👁 Klik Data</button></td></tr>';
       }).join(''):'<tr><td colspan="5">Belum ada transaksi online baru.</td></tr>';
+      tb.querySelectorAll('[data-ff-online-month]').forEach(btn=>btn.onclick=()=>ffStandaloneRenderMonth(String(btn.dataset.ffOnlineMonth||'')));
     }catch(e){
       console.error('Standalone Online History',e);
       tb.innerHTML='<tr><td colspan="5">Gagal memuat riwayat: '+esc(e.message||e)+'</td></tr>';
