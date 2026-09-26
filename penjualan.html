@@ -1370,6 +1370,17 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
 
   function init(){
+    // Pasang handler Pengeluaran Offline paling awal supaya tetap aktif
+    // meskipun modul lain gagal memuat master/data.
+    const offlineExpenseSaveBtn=byId('offlineExpenseSave');
+    const offlineExpenseResetBtn=byId('offlineExpenseReset');
+    if(offlineExpenseSaveBtn){
+      offlineExpenseSaveBtn.onclick=saveOfflineExpense;
+    }
+    if(offlineExpenseResetBtn){
+      offlineExpenseResetBtn.onclick=resetOfflineExpense;
+    }
+
     renderOnlineDrafts();
     byId('onlineDraftSaveAll')?.addEventListener('click',saveAllOnlineDrafts);
     byId('onlineDraftClear')?.addEventListener('click',()=>{if(confirm('Kosongkan semua transaksi Online sementara?'))clearOnlineDrafts();});
@@ -1422,8 +1433,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     byId('cashSave')?.addEventListener('click',saveCash);
     byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashMarketplace').value='TikTok Shop';byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
     byId('offlineExpenseDate') && (byId('offlineExpenseDate').value=today());
-    byId('offlineExpenseSave')?.addEventListener('click',saveOfflineExpense);
-    byId('offlineExpenseReset')?.addEventListener('click',resetOfflineExpense);
+
     refreshOfflineExpenses();
     byId('dropAdd')?.addEventListener('click',()=>{
       const name=byId('dropName').value.trim();const modal=Math.max(0,Math.round(Number(byId('dropModal').value)||0));
