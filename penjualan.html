@@ -1706,45 +1706,111 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
 </script>
 <script>
 (function(){
-  async function saveAllOfflineFallback(){
-    const out=document.getElementById('offlineDraftMsg');
-    const btn=document.getElementById('offlineDraftSaveAll');
+  // FIX FINAL: satu handler saja untuk "✅ Simpan Semua".
+  // Dipasang pada CAPTURE phase supaya handler lama yang mungkin dobel
+  // tidak ikut berjalan dan tidak menyebabkan tombol terlihat macet/terjadi double insert.
+  let busy=false;
+
+  const byId=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  
+  async function saveOnce(){
+    const btn=byId('offlineDraftSaveAll');
+    const out=byId('offlineDraftMsg');
     const sales=window.__offlineDraftSales||[];
     const expenses=window.__offlineDraftExpenses||[];
+
     if(!sales.length&&!expenses.length){
       if(out)out.innerHTML='<div class="bad">Belum ada transaksi untuk disimpan.</div>';
       return;
     }
-    if(btn){btn.disabled=true;btn.textContent='⏳ Menyimpan...';}
-    const insertedSales=[],insertedExpenses=[];
+
+    if(btn){
+      btn.disabled=true;
+      btn.style.pointerEvents='none';
+      btn.dataset.ffSaving='1';
+      btn.textContent='⏳ Menyimpan...';
+    }
+
     try{
-      // Gunakan fungsi utama bila tersedia agar alur pelanggan/penjualan tetap sama.
-      if(typeof window.ffSaveAllOfflineDrafts==='function'){
-        await window.ffSaveAllOfflineDrafts();
+      // Pakai satu fungsi utama yang sudah ada agar penjualan + customer tetap utuh.
+      const fn=window.ffSaveAllOfflineDrafts;
+      if(typeof fn==='function'){
+        await fn();
         return;
       }
-      if(sales.length)throw new Error('Modul simpan penjualan Offline belum siap. Muat ulang halaman.');
-      const payload=expenses.map(x=>x.data).filter(Boolean);
-      const er=await supabaseClient.from('pengeluaran').insert(payload).select('id');
-      if(er.error)throw er.error;
-      (er.data||[]).forEach(x=>insertedExpenses.push(Number(x.id)));
+
+      // Fallback murni database bila fungsi utama belum tersedia.
+      if(sales.length){
+        const sr=await supabaseClient.from('penjualan').insert(sales.map(x=>x.data)).select('id');
+        if(sr.error)throw sr.error;
+        if((sr.data||[]).length!==sales.length)throw new Error('Tidak semua Pemasukan berhasil disimpan.');
+      }
+
+      if(expenses.length){
+        const er=await supabaseClient.from('pengeluaran').insert(expenses.map(x=>x.data)).select('id');
+        if(er.error)throw er.error;
+        if((er.data||[]).length!==expenses.length)throw new Error('Tidak semua Pengeluaran berhasil disimpan.');
+      }
+
+      window.__offlineDraftSales=[];
       window.__offlineDraftExpenses=[];
-      if(typeof window.renderOfflineDrafts==='function')window.renderOfflineDrafts();
-      if(out)out.innerHTML='<div class="ok">'+insertedExpenses.length+' pengeluaran berhasil disimpan ke database.</div>';
-      if(typeof window.refreshOfflineHistory==='function')await window.refreshOfflineHistory();
+      if(out)out.innerHTML='<div class="ok">'+(sales.length+expenses.length)+' transaksi berhasil disimpan.</div>';
+      
+      const tb=byId('offlineDraftRows');
+      const count=byId('offlineDraftCount');
+      if(count)count.textContent='0 transaksi belum disimpan';
+      if(tb)tb.innerHTML='<tr><td colspan="8" class="empty">Belum ada transaksi. Tambahkan transaksi dulu.</td></tr>';
     }catch(e){
-      console.error('saveAllOfflineFallback',e);
-      if(out)out.innerHTML='<div class="bad">Gagal menyimpan: '+String(e.message||e)+'</div>';
+      console.error('FIX Simpan Semua Offline:',e);
+      if(out)out.innerHTML='<div class="bad">Gagal menyimpan: '+esc(e?.message||e)+'</div>';
     }finally{
-      if(btn){btn.disabled=false;btn.textContent='✅ Simpan Semua';}
+      busy=false;
+      if(btn){
+        btn.disabled=false;
+        btn.style.pointerEvents='auto';
+        delete btn.dataset.ffSaving;
+        btn.textContent='✅ Simpan Semua';
+      }
     }
   }
-  function bind(){
-    const b=document.getElementById('offlineDraftSaveAll');
-    if(b)b.onclick=saveAllOfflineFallback;
+
+  function handleClick(e){
+    const b=e.target?.closest?.('#offlineDraftSaveAll');
+    if(!b)return;
+
+    // Hentikan seluruh handler click lama/duplikat di target dan bubble phase.
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    if(busy || b.dataset.ffSaving==='1')return;
+    busy=true;
+    saveOnce().finally(()=>{
+      // saveOnce menangani UI; ini hanya guard bila ada reject yang tak terduga.
+      busy=false;
+      const btn=byId('offlineDraftSaveAll');
+      if(btn){
+        btn.disabled=false;
+        btn.style.pointerEvents='auto';
+        delete btn.dataset.ffSaving;
+        btn.textContent='✅ Simpan Semua';
+      }
+    });
   }
-  document.addEventListener('DOMContentLoaded',bind);
-  window.addEventListener('load',function(){setTimeout(bind,300);});
+
+  function unlock(){
+    const b=byId('offlineDraftSaveAll');
+    if(!b)return;
+    b.disabled=false;
+    b.style.pointerEvents='auto';
+    b.style.position='relative';
+    b.style.zIndex='50';
+    b.title='Simpan semua transaksi sementara ke database';
+  }
+
+  document.addEventListener('click',handleClick,true);
+  document.addEventListener('DOMContentLoaded',unlock);
+  window.addEventListener('load',()=>setTimeout(unlock,0));
 })();
 </script>
 </body>
