@@ -43,6 +43,7 @@ const esc = FF.esc;
 let sales = [];
 let olds = [];
 let expenses = [];
+let expenseItems = [];
 let products = [];
 let hpps = [];
 let purchases = [];
@@ -863,16 +864,19 @@ function buildTransactionRecapRows(){
     });
   });
 
+  // Transaksi Offline baru: beberapa produk yang dibeli customer disimpan
+  // sebagai beberapa baris penjualan dengan order_id yang sama.
+  // Rekap menyatukannya menjadi SATU transaksi agar tidak double count.
+  const groupedOffline=new Map();
   (sales||[]).forEach((x,i)=>{
     const m=monthOfSaleRow(x);
     if(!FF.isMonth(m))return;
     const src=String(x.source||'').trim();
+    const channel=String(x.channel||'Offline')==='Online'?'Online':'Offline';
     const isHpp=['seller_center','online_batch','online_standard_product'].includes(src);
     const isOnlineFinance=['online_standard_finance','online_pencairan'].includes(src);
     const type=isHpp?'Modal/HPP':'Pemasukan';
-    const channel=String(x.channel||'Offline')==='Online'?'Online':'Offline';
     let nominal=0;
-
     if(isHpp){
       const raw=(x.modal_hpp!=null?x.modal_hpp:(x.hpp!=null?x.hpp:(Number(x.qty||0)*Number(x.hpp||0))));
       nominal=Math.round(Number(raw)||0);
@@ -881,9 +885,25 @@ function buildTransactionRecapRows(){
     }else{
       nominal=Math.round(Number(x.omzet_produk ?? x.total ?? (Number(x.qty||0)*Number(x.harga||0) ?? 0)));
     }
-
     const qty=Math.round(Number(x.qty||0));
     if(nominal<=0 && qty<=0)return;
+
+    if(channel==='Offline' && src==='manual' && String(x.order_id||'').trim()){
+      const oid=String(x.order_id).trim();
+      if(!groupedOffline.has(oid)){
+        groupedOffline.set(oid,{
+          key:'offline-order-'+oid,period:m,date:String(x.tanggal||m),
+          channel:'Offline',type:'Pemasukan',source:'Transaksi Offline Baru',
+          details:[],qty:0,nominal:0
+        });
+      }
+      const g=groupedOffline.get(oid);
+      g.qty+=qty;
+      g.nominal+=nominal;
+      const product=String(x.product_name||x.variation||'Produk').trim();
+      if(product&&!g.details.includes(product))g.details.push(product);
+      return;
+    }
 
     const product=String(x.product_name||'').trim();
     const variation=String(x.variation||'').trim();
@@ -896,22 +916,42 @@ function buildTransactionRecapRows(){
     });
   });
 
+  groupedOffline.forEach(g=>{
+    rows.push({
+      key:g.key,period:g.period,date:g.date,channel:g.channel,type:g.type,
+      source:g.source,
+      detail:(g.details.length?g.details.slice(0,5).join(' + '):'Transaksi Offline')+
+        (g.details.length>5?' + '+(g.details.length-5)+' produk lain':''),
+      qty:g.qty,nominal:Math.round(g.nominal)
+    });
+  });
+
+  const itemMap=new Map();
+  (expenseItems||[]).forEach(it=>{
+    const key=String(it.pengeluaran_id);
+    if(!itemMap.has(key))itemMap.set(key,[]);
+    itemMap.get(key).push(it);
+  });
+
   (expenses||[]).forEach((x,i)=>{
     const m=String(x.periode||'').slice(0,7);
     if(!FF.isMonth(m) || !isCashExpense(x))return;
     const nominal=Math.round(Number(x.nominal||0));
     if(nominal<=0)return;
+    const items=itemMap.get(String(x.id))||[];
+    const itemSummary=items.length
+      ? ' • '+items.slice(0,4).map(it=>String(it.nama_item||'Item')).join(', ')+(items.length>4?' …':'')
+      : '';
     rows.push({
       key:'exp-'+(x.id??i),period:m,date:String(x.tanggal||x.periode||m),
       channel:'Offline',type:'Pengeluaran',source:'Pengeluaran Utama',
-      detail:[x.kategori,x.keterangan].filter(Boolean).join(' • ')||'Pengeluaran',
+      detail:[x.kategori,x.keterangan].filter(Boolean).join(' • ')+itemSummary||'Pengeluaran',
       qty:0,nominal
     });
   });
 
   return rows;
 }
-
 function renderTransactionRecap(){
   const monthEl=document.getElementById('trxMonth');
   const channelEl=document.getElementById('trxChannel');
@@ -1036,6 +1076,7 @@ async function init(){
     ['penjualan', 'sales'],
     ['data_lama', 'olds'],
     ['pengeluaran', 'expenses'],
+    ['pengeluaran_item', 'expenseItems'],
     ['produk', 'products'],
     ['hpp', 'hpps'],
     ['ff_pembelian', 'purchases'],
@@ -1059,6 +1100,7 @@ async function init(){
     if(r.key==='sales') sales=r.rows;
     if(r.key==='olds') olds=r.rows;
     if(r.key==='expenses') expenses=r.rows;
+    if(r.key==='expenseItems') expenseItems=r.rows;
     if(r.key==='products') products=r.rows;
     if(r.key==='hpps') hpps=r.rows;
     if(r.key==='purchases') purchases=r.rows;
