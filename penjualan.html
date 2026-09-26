@@ -2040,5 +2040,38 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   window.addEventListener('load',()=>setTimeout(unlock,0));
 })();
 </script>
+<script>
+(function(){
+  function bindOfflineExpenseButtons(){
+    document.addEventListener('click',function(e){
+      const add=e.target?.closest?.('#ffExpenseAddLine');
+      const save=e.target?.closest?.('#ffExpenseDraftSave');
+      const reset=e.target?.closest?.('#ffExpenseReset');
+      if(!add && !save && !reset)return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      try{
+        if(add){
+          ffExpenseAddLine();
+          return;
+        }
+        if(save){
+          ffExpenseSaveDraft();
+          return;
+        }
+        if(reset){
+          ffExpenseResetForm();
+        }
+      }catch(err){
+        console.error('Offline Expense button error:',err);
+        const out=document.getElementById('ffExpenseMsg');
+        if(out)out.innerHTML='<div class="bad">Gagal menjalankan tombol: '+String(err?.message||err)+'</div>';
+      }
+    },true);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindOfflineExpenseButtons);
+  else bindOfflineExpenseButtons();
+})();
+</script>
 </body>
 </html>
