@@ -665,8 +665,13 @@ td{
         grouped.forEach(g=>revRows.push({...g,detail:g.detail.join(' + ')}));
         expenses.forEach(x=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m)&&cashExpense(x)&&safeNum(x.nominal)>0)revRows.push({date:String(x.tanggal||m),period:m,channel:'Offline',type:'Pengeluaran',source:'Pengeluaran Utama',detail:[x.kategori,x.keterangan].filter(Boolean).join(' • ')||'Pengeluaran',qty:0,nominal:Math.round(safeNum(x.nominal))})});
         const cms=ms.slice().reverse();
+        // Simpan pilihan sebelum option digambar ulang. Kalau tidak, browser
+        // otomatis kembali ke option pertama ("Semua Bulan") setiap onchange.
+        const selectedTrxMonth=tm.value;
         tm.innerHTML='<option value="Semua">Semua Bulan</option>'+cms.map(m=>'<option value="'+m+'">'+label(m)+'</option>').join('');
-        tm.value=tm.value&&cms.includes(tm.value)?tm.value:cms[0]||'Semua';
+        tm.value=(selectedTrxMonth==='Semua'||cms.includes(selectedTrxMonth))
+          ? selectedTrxMonth
+          : (cms[0]||'Semua');
         const rows=revRows.filter(x=>(tm.value==='Semua'||x.period===tm.value)&&(tc.value==='Semua'||x.channel===tc.value)&&(tt.value==='Semua'||x.type===tt.value)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
         const inc=rows.filter(x=>x.type==='Pemasukan').reduce((a,x)=>a+x.nominal,0),exp=rows.filter(x=>x.type==='Pengeluaran').reduce((a,x)=>a+x.nominal,0),hpp=rows.filter(x=>x.type==='Modal/HPP').reduce((a,x)=>a+x.nominal,0);
         document.getElementById('trxIncome').textContent=rupiah(inc);document.getElementById('trxExpense').textContent=rupiah(exp);document.getElementById('trxHpp').textContent=rupiah(hpp);document.getElementById('trxNet').textContent=rupiah(inc-exp);
