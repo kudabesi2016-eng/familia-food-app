@@ -2315,7 +2315,27 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     if(wrap)wrap.style.display='block';
     const mw=$id('onlineBatchHistoryMonthWrap'); if(mw)mw.style.display='none';
     const dw=$id('onlineBatchHistoryDateWrap'); if(dw)dw.style.display='none';
-    wrap?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    tb.querySelectorAll('[data-batch-history-del]').forEach(btn=>btn.onclick=async e=>{
+      e.preventDefault();e.stopPropagation();
+      const id=Number(btn.dataset.batchHistoryDel||0);
+      if(!id)return;
+      if(!confirm('Hapus transaksi online baru ini?'))return;
+      btn.disabled=true; btn.textContent='⏳ Menghapus...';
+      try{
+        const r=await supabaseClient.from('penjualan').delete().eq('id',id);
+        if(r.error)throw r.error;
+        await window.ffStandaloneOnlineHistory();
+        const detail=$id('onlineBatchHistoryDetailWrap'); if(detail)detail.style.display='none';
+        const date=$id('onlineBatchHistoryDateWrap'); if(date)date.style.display='none';
+        const month=$id('onlineBatchHistoryMonthWrap'); if(month)month.style.display='block';
+        alert('Transaksi berhasil dihapus.');
+      }catch(err){
+        console.error('Standalone delete online history',err);
+        btn.disabled=false; btn.textContent='🗑 Hapus';
+        alert('Gagal menghapus: '+(err.message||err));
+      }
+    });
+    wrap?.scrollIntoView({behavior:'smooth',block:'nearest');
   }
 
   window.ffStandaloneOnlineHistory=async function(){
