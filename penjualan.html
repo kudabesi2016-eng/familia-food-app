@@ -1703,7 +1703,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
           data:{tanggal:r.tanggal,produk_id:r.jenis==='familia'?p.id:null,qty:q,channel:'Online',harga:0,hpp:Math.round(total),laba:0,order_id:null,product_name:productName,variation:r.jenis==='familia'?'Naget':'Dropship',omzet_produk:0,uang_bersih:null,total:0,modal_hpp:Math.round(total),profit_online:null,biaya_platform:null,source:'online_batch'}
         });
       });
-      renderOnlineDrafts();setMsg(valid.length+' produk ditambahkan ke daftar sementara. Belum masuk database.');rows=[];addRows(1);
+      renderOnlineDrafts();rows=[];addRows(1);setMsg('');
     }catch(e){console.error(e);setMsg('Gagal menambahkan produk online: '+esc(e.message||e),true);}
   }
 
