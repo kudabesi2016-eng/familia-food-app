@@ -1737,9 +1737,9 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     monthTb.innerHTML='<tr><td colspan="5">Memuat riwayat...</td></tr>';
     try{
       const r=await supabaseClient.from('penjualan')
-        .select('id,tanggal,product_name,variation,qty,modal_hpp,hpp,source')
+        .select('id,tanggal,product_name,variation,qty,modal_hpp,hpp,uang_bersih,omzet_produk,source,purchase_channel,order_channel')
         .eq('channel','Online')
-        .eq('source','online_batch')
+        .in('source',['online_batch','online_pencairan'])
         .order('tanggal',{ascending:false})
         .order('id',{ascending:false})
         .limit(1000);
@@ -1749,8 +1749,9 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       rows.forEach(x=>{
         const month=String(x.tanggal||'Tanpa tanggal').slice(0,7)||'Tanpa tanggal';
         if(!months[month])months[month]={key:month,rows:[],qty:0,modal:0};
-        const q=Math.max(1,Number(x.qty)||1);
-        const total=Math.round(Number(x.modal_hpp??x.hpp??0));
+        const isCash=String(x.source)==='online_pencairan';
+        const q=isCash?0:Math.max(1,Number(x.qty)||1);
+        const total=isCash?0:Math.round(Number(x.modal_hpp??x.hpp??0));
         months[month].rows.push(x);
         months[month].qty+=q;
         months[month].modal+=total;
@@ -1784,7 +1785,8 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     g.rows.forEach(x=>{
       const d=String(x.tanggal||'Tanpa tanggal');
       if(!dates[d])dates[d]={key:d,rows:[],qty:0,modal:0};
-      const q=Math.max(1,Number(x.qty)||1),total=Math.round(Number(x.modal_hpp??x.hpp??0));
+      const isCash=String(x.source)==='online_pencairan';
+      const q=isCash?0:Math.max(1,Number(x.qty)||1),total=isCash?0:Math.round(Number(x.modal_hpp??x.hpp??0));
       dates[d].rows.push(x);dates[d].qty+=q;dates[d].modal+=total;
     });
     window.__onlineBatchHistoryDates={month,dates};
@@ -1813,8 +1815,15 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       const ad=String(a.tanggal||'');const bd=String(b.tanggal||'');
       return bd.localeCompare(ad)||Number(b.id||0)-Number(a.id||0);
     }).map(x=>{
-      const q=Math.max(1,Number(x.qty)||1),total=Math.round(Number(x.modal_hpp??x.hpp??0)),unit=q?Math.round(total/q):0;
-      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(x.variation||'Naget')+'</td><td>'+esc(x.product_name||'-')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+money(unit)+'</td><td>'+money(total)+'</td><td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
+      const isCash=String(x.source)==='online_pencairan';
+      const q=isCash?0:Math.max(1,Number(x.qty)||1);
+      const total=isCash?0:Math.round(Number(x.modal_hpp??x.hpp??0));
+      const unit=q?Math.round(total/q):0;
+      const name=isCash?(x.product_name||'Penerimaan Uang Online'):(x.product_name||'-');
+      const variation=isCash?'Uang Bersih':(x.variation||'Naget');
+      const modalCell=isCash?money(Number(x.uang_bersih??x.omzet_produk??0)):money(unit);
+      const totalCell=isCash?money(Number(x.uang_bersih??x.omzet_produk??0)):money(total);
+      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(variation)+'</td><td>'+esc(name)+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+modalCell+'</td><td>'+totalCell+'</td><td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
     }).join('');
     wrap.style.display='block';
     byId('onlineBatchHistoryMonthWrap')&&(byId('onlineBatchHistoryMonthWrap').style.display='none');
@@ -2395,7 +2404,8 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     (g.rows||[]).forEach(x=>{
       const d=String(x.tanggal||'Tanpa tanggal');
       if(!dates[d])dates[d]={rows:[],qty:0,modal:0};
-      const q=Math.max(1,Number(x.qty)||1), modal=Math.round(Number(x.modal_hpp??x.hpp??0));
+      const isCash=String(x.source)==='online_pencairan';
+      const q=isCash?0:Math.max(1,Number(x.qty)||1), modal=isCash?0:Math.round(Number(x.modal_hpp??x.hpp??0));
       dates[d].rows.push(x); dates[d].qty+=q; dates[d].modal+=modal;
     });
     window.__FF_STANDALONE_ONLINE_DATES={month,dates};
@@ -2420,8 +2430,15 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     const dl=/^\\d{4}-\\d{2}-\\d{2}$/.test(dateKey)?new Date(dateKey+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'Tanpa tanggal';
     if(title)title.textContent='Detail Transaksi Online • '+dl;
     tb.innerHTML=(g.rows||[]).slice().sort((a,b)=>Number(b.id||0)-Number(a.id||0)).map(x=>{
-      const q=Math.max(1,Number(x.qty)||1), total=Math.round(Number(x.modal_hpp??x.hpp??0)), unit=q?Math.round(total/q):0;
-      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(x.variation||'Naget')+'</td><td>'+esc(x.product_name||'-')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+money(unit)+'</td><td>'+money(total)+'</td><td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
+      const isCash=String(x.source)==='online_pencairan';
+      const q=isCash?0:Math.max(1,Number(x.qty)||1);
+      const total=isCash?0:Math.round(Number(x.modal_hpp??x.hpp??0));
+      const unit=q?Math.round(total/q):0;
+      const name=isCash?(x.product_name||'Penerimaan Uang Online'):(x.product_name||'-');
+      const variation=isCash?'Uang Bersih':(x.variation||'Naget');
+      const modalCell=isCash?money(Number(x.uang_bersih??x.omzet_produk??0)):money(unit);
+      const totalCell=isCash?money(Number(x.uang_bersih??x.omzet_produk??0)):money(total);
+      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(variation)+'</td><td>'+esc(name)+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+modalCell+'</td><td>'+totalCell+'</td><td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
     }).join('')||'<tr><td colspan="7">Tidak ada detail.</td></tr>';
     if(wrap)wrap.style.display='block';
     const mw=$id('onlineBatchHistoryMonthWrap'); if(mw)mw.style.display='none';
@@ -2454,13 +2471,14 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     if(!tb || typeof supabaseClient==='undefined')return;
     try{
       tb.innerHTML='<tr><td colspan="5">Memuat riwayat...</td></tr>';
-      const q=await supabaseClient.from('penjualan').select('id,tanggal,product_name,variation,qty,modal_hpp,hpp,source').eq('channel','Online').eq('source','online_batch').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000);
+      const q=await supabaseClient.from('penjualan').select('id,tanggal,product_name,variation,qty,modal_hpp,hpp,uang_bersih,omzet_produk,source,purchase_channel,order_channel').eq('channel','Online').in('source',['online_batch','online_pencairan']).order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000);
       if(q.error)throw q.error;
       const rows=q.data||[],months={};
       rows.forEach(x=>{
         const m=String(x.tanggal||'Tanpa tanggal').slice(0,7)||'Tanpa tanggal';
         if(!months[m])months[m]={rows:[],qty:0,modal:0};
-        const qty=Math.max(1,Number(x.qty)||1),modal=Math.round(Number(x.modal_hpp??x.hpp??0));
+        const isCash=String(x.source)==='online_pencairan';
+        const qty=isCash?0:Math.max(1,Number(x.qty)||1),modal=isCash?0:Math.round(Number(x.modal_hpp??x.hpp??0));
         months[m].rows.push(x);months[m].qty+=qty;months[m].modal+=modal;
       });
       window.__FF_STANDALONE_ONLINE_MONTHS=months;
