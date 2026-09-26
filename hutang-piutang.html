@@ -200,28 +200,17 @@ $('saveAll').onclick=async()=>{
   const created=[];
   try{
     for(const x of drafts){
-      let expenseId=null;
-      if(x.jenis==='Hutang'){
-        const ex=await supabaseClient.from('pengeluaran').insert([{
-          periode:x.tanggal.slice(0,7),tanggal:x.tanggal,kategori:'Hutang',
-          keterangan:x.keterangan||('Hutang '+x.pihak),nominal:x.nominal_awal,
-          cara_bayar:'Hutang',kategori_hutang:x.kategori
-        }]).select('id').single();
-        if(ex.error)throw ex.error;
-        expenseId=ex.data.id;
-      }
       const dr=await supabaseClient.from('ff_hutang_piutang').insert([{
         jenis:x.jenis,kategori:x.kategori,pihak:x.pihak,tanggal:x.tanggal,jatuh_tempo:x.jatuh_tempo||null,
-        nominal_awal:x.nominal_awal,keterangan:x.keterangan||'',status:'Belum Lunas',pengeluaran_id:expenseId
+        nominal_awal:x.nominal_awal,keterangan:x.keterangan||'',status:'Belum Lunas',pengeluaran_id:null
       }]).select('id').single();
       if(dr.error)throw dr.error;
-      created.push({debtId:dr.data.id,expenseId});
+      created.push({debtId:dr.data.id});
     }
-    drafts=[];renderDrafts();$('draftMsg').innerHTML='<div class="ok">✅ Semua data tersimpan. Hutang juga otomatis masuk ke Pengeluaran Utama.</div>';await load();
+    drafts=[];renderDrafts();$('draftMsg').innerHTML='<div class="ok">✅ Semua data Hutang/Piutang tersimpan. Pengeluaran hanya dibuat saat ada pembayaran nyata.</div>';await load();
   }catch(e){
     for(const x of created){
       if(x.debtId)await supabaseClient.from('ff_hutang_piutang').delete().eq('id',x.debtId);
-      if(x.expenseId)await supabaseClient.from('pengeluaran').delete().eq('id',x.expenseId);
     }
     $('draftMsg').innerHTML='<div class="bad">Gagal menyimpan. Data yang sempat dibuat sudah dibatalkan: '+esc(e.message||e)+'</div>';
   } finally {
@@ -230,6 +219,7 @@ $('saveAll').onclick=async()=>{
     $('saveAll').textContent='✅ Simpan Semua';
   }
 };
+
 
 function monthOf(v){return String(v||'').slice(0,7)}
 function allMonths(){
@@ -302,13 +292,81 @@ document.addEventListener('click',e=>{
   if(!b)return;
   openPayTarget(b.dataset.pay);
 });
-$('savePayment').onclick=async()=>{if(!payTarget)return;const r=records.find(x=>Number(x.id)===payTarget),n=Math.round(Number($('bayarNominal').value)||0);if(!r||n<=0)return;$('savePayment').disabled=true;try{if(n>computed(r).sisa)throw new Error('Nominal pembayaran melebihi sisa saldo.');const x=await supabaseClient.from('ff_hutang_piutang_bayar').insert([{hutang_piutang_id:r.id,tanggal:$('bayarTanggal').value,nominal:n,keterangan:$('bayarKeterangan').value.trim()}]);if(x.error)throw x.error;await updateStatus(r.id);$('paymentMsg').innerHTML='<div class="ok">Pembayaran tersimpan.</div>';await load();renderDebtDetails(monthOf(r.tanggal));}catch(e){$('paymentMsg').innerHTML='<div class="bad">'+esc(e.message||e)+'</div>'}finally{$('savePayment').disabled=false}};
+$('savePayment').onclick=async()=>{
+  if(!payTarget)return;
+  const r=records.find(x=>Number(x.id)===payTarget);
+  const n=Math.round(Number($('bayarNominal').value)||0);
+  const tanggalBayar=$('bayarTanggal').value||today();
+  const keteranganBayar=$('bayarKeterangan').value.trim();
+  if(!r||n<=0)return;
+  $('savePayment').disabled=true;
+  let expenseId=null,paymentId=null;
+  try{
+    if(n>computed(r).sisa)throw new Error('Nominal pembayaran melebihi sisa saldo.');
+
+    // Pembayaran Hutang = Pengeluaran Usaha nyata + catatan pembayaran Hutang.
+    const expense={
+      periode:tanggalBayar.slice(0,7),
+      tanggal:tanggalBayar,
+      kategori:'Pembayaran Hutang',
+      keterangan:keteranganBayar||('Cicilan Hutang - '+(r.pihak||'Pihak lain')),
+      nominal:n,
+      cara_bayar:'Tunai',
+      kategori_hutang:null
+    };
+    const ex=await supabaseClient.from('pengeluaran').insert([expense]).select('id').single();
+    if(ex.error)throw ex.error;
+    expenseId=Number(ex.data.id);
+
+    const detail={
+      pengeluaran_id:expenseId,
+      kategori:'Pembayaran Hutang',
+      bahan_id:null,
+      nama_item:'Cicilan Hutang - '+(r.pihak||'Pihak lain'),
+      qty:1,
+      satuan:'transaksi',
+      harga_satuan:n,
+      subtotal:n,
+      catatan:keteranganBayar||null
+    };
+    const di=await supabaseClient.from('pengeluaran_item').insert([detail]).select('id').single();
+    if(di.error)throw di.error;
+
+    const x=await supabaseClient.from('ff_hutang_piutang_bayar').insert([{
+      hutang_piutang_id:r.id,
+      tanggal:tanggalBayar,
+      nominal:n,
+      keterangan:keteranganBayar,
+      pengeluaran_id:expenseId
+    }]).select('id').single();
+    if(x.error)throw x.error;
+    paymentId=Number(x.data.id);
+
+    await updateStatus(r.id);
+    $('paymentMsg').innerHTML='<div class="ok">✅ Pembayaran tersimpan sebagai Pengeluaran Usaha dan tercatat di Hutang. Dampak Kas -'+money(n)+'.</div>';
+    await load();
+    renderDebtDetails(monthOf(r.tanggal));
+  }catch(e){
+    console.error(e);
+    if(paymentId)await supabaseClient.from('ff_hutang_piutang_bayar').delete().eq('id',paymentId);
+    if(expenseId){
+      await supabaseClient.from('pengeluaran_item').delete().eq('pengeluaran_id',expenseId);
+      await supabaseClient.from('pengeluaran').delete().eq('id',expenseId);
+    }
+    $('paymentMsg').innerHTML='<div class="bad">Gagal menyimpan pembayaran: '+esc(e.message||e)+'</div>';
+  }finally{
+    $('savePayment').disabled=false;
+  }
+};
+
 async function updateStatus(id){const r=records.find(x=>Number(x.id)===Number(id));if(!r)return;const x=computed(r),u=await supabaseClient.from('ff_hutang_piutang').update({status:x.status}).eq('id',id);if(u.error)console.warn(u.error)}
 $('debtMonthRows').addEventListener('click',e=>{const b=e.target.closest('[data-debt-month]');if(b)renderDebtDetails(b.dataset.debtMonth)});
 $('debtDetailRows').addEventListener('click',e=>{const b=e.target.closest('[data-pay]');if(b)openPayTarget(b.dataset.pay)});
 $('closeDebtDetail').onclick=()=>{$('debtDetailCard').style.display='none'};
 $('closePayment').onclick=()=>{$('paymentCard').style.display='none'};
 async function reconcileDebtFromExpenses(){
+  // Hanya untuk menjaga kompatibilitas dengan data lama yang memang sudah
+  // mempunyai cara_bayar=Hutang. Pembayaran baru tidak memakai jalur ini.
   const e=await supabaseClient.from('pengeluaran').select('*').eq('cara_bayar','Hutang').order('tanggal',{ascending:false});
   if(e.error)return;
   const expenses=e.data||[];
@@ -334,7 +392,7 @@ async function reconcileDebtFromExpenses(){
       jenis:'Hutang',
       kategori:x.kategori_hutang||'Usaha',
       pihak:'Pihak lain',
-      keterangan:x.keterangan||'Hutang dari Pengeluaran',
+      keterangan:x.keterangan||'Hutang dari Pengeluaran Lama',
       jatuh_tempo:null,
       nominal_awal:Number(x.nominal)||0,
       status:'Belum Lunas',
@@ -344,6 +402,7 @@ async function reconcileDebtFromExpenses(){
     if(!ins.error)current.push(ins.data);
   }
 }
+
 async function load(){
   const [r,p]=await Promise.all([
     supabaseClient.from('ff_hutang_piutang').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false}),
