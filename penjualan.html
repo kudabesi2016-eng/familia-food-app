@@ -2394,6 +2394,54 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
 </script>
 <script>
 (function(){
+  // Emergency binder untuk panel Transaksi Online Baru.
+  // Tetap aktif walau init utama gagal/terlambat memasang handler.
+  function ffBindOnlineInputButtons(){
+    const add=document.getElementById('batchAddRow');
+    const clear=document.getElementById('batchClear');
+    const hist=document.getElementById('batchHistoryJump');
+    const save=document.getElementById('batchSave');
+    if(add){
+      add.disabled=false;
+      add.style.pointerEvents='auto';
+      add.style.position='relative';
+      add.style.zIndex='60';
+      add.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof addRows==='function')addRows(1);}catch(err){console.error(err);}};
+    }
+    if(clear){
+      clear.disabled=false;
+      clear.style.pointerEvents='auto';
+      clear.style.position='relative';
+      clear.style.zIndex='60';
+      clear.onclick=function(e){e.preventDefault();e.stopPropagation();try{rows=[];if(typeof addRows==='function')addRows(1);if(typeof setMsg==='function')setMsg('');}catch(err){console.error(err);}};
+    }
+    if(hist){
+      hist.disabled=false;
+      hist.style.pointerEvents='auto';
+      hist.style.position='relative';
+      hist.style.zIndex='60';
+      hist.onclick=function(e){e.preventDefault();e.stopPropagation();try{
+        if(typeof refreshOnlineBatchHistory==='function')refreshOnlineBatchHistory();
+        document.getElementById('onlineBatchHistoryCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+      }catch(err){console.error(err);}};
+    }
+    if(save){
+      save.disabled=false;
+      save.style.pointerEvents='auto';
+      save.style.position='relative';
+      save.style.zIndex='60';
+      save.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof saveBatch==='function')saveBatch();}catch(err){console.error(err);}};
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ffBindOnlineInputButtons);
+  else ffBindOnlineInputButtons();
+  window.addEventListener('load',()=>setTimeout(ffBindOnlineInputButtons,250));
+  setTimeout(ffBindOnlineInputButtons,800);
+  setTimeout(ffBindOnlineInputButtons,1600);
+})();
+</script>
+<script>
+(function(){
   // FIX FINAL: satu handler saja untuk "✅ Simpan Semua".
   // Dipasang pada CAPTURE phase supaya handler lama yang mungkin dobel
   // tidak ikut berjalan dan tidak menyebabkan tombol terlihat macet/terjadi double insert.
