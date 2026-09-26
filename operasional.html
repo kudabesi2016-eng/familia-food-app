@@ -126,7 +126,37 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
     </div>
   </section>
 
-  <section class="panel" data-panel="expense">
+  <section class="panel" data-panel="expense"><section class="card" id="expenseItemMasterCard" style="border:2px solid #cfe4d7;margin-bottom:16px">
+  <div class="cashhead">
+    <div>
+      <h2 style="margin:0">🗂 Master Item Pengeluaran per Kategori</h2>
+      <div class="note">Setiap kategori punya daftar item sendiri. Pilih kategori untuk melihat, menambah, mengubah, atau menghapus item kategori tersebut. Data ini dipakai oleh dropdown Item pada Pengeluaran Offline.</div>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:14px">
+    <div class="field">
+      <label>Kategori</label>
+      <select id="expenseMasterCategory">
+        <option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Nama Item</label>
+      <input id="expenseMasterItemName" placeholder="Contoh: Gas / Ajo / Aci">
+    </div>
+    <div class="field" style="align-self:end">
+      <button class="btn" id="expenseMasterSave" type="button">+ Tambah Item</button>
+    </div>
+  </div>
+  <div id="expenseMasterStatus" class="status"></div>
+  <div class="tablewrap" style="margin-top:12px">
+    <table style="min-width:620px">
+      <thead><tr><th>Kategori</th><th>Item</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="expenseMasterRows"><tr><td colspan="4">Memuat master item...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
     <div class="card">
       <h2>💸 Pengeluaran • Satu Transaksi Bisa Banyak Item</h2>
       <div class="note">Masukkan satu transaksi pengeluaran lalu tambahkan beberapa item. Setiap item punya <b>qty, satuan, harga satuan, dan subtotal sendiri</b>. Total transaksi tersimpan satu kali agar Rekap tidak menggandakan pengeluaran.</div>
@@ -452,6 +482,71 @@ async function loadExpenseItems(){
   if(!state.tables.pengeluaran_item){state.expenseItems=[];return}
   state.expenseItems=await loadTable('pengeluaran_item');
 }
+let expenseMasterEditId=null;
+let expenseMasterRows=[];
+
+const EXPENSE_MASTER_CATEGORIES=['Bahan Baku','Operasional','Gaji','Alat & Perlengkapan','Retur','Lainnya'];
+
+async function loadExpenseItemMaster(){
+  const box=$('expenseMasterRows');
+  if(box)box.innerHTML='<tr><td colspan="4">Memuat master item...</td></tr>';
+  const r=await supabaseClient.from('pengeluaran_item_master').select('*').order('kategori',{ascending:true}).order('nama_item',{ascending:true});
+  if(r.error){
+    if(box)box.innerHTML='<tr><td colspan="4">Gagal memuat master item.</td></tr>';
+    return;
+  }
+  expenseMasterRows=r.data||[];
+  renderExpenseItemMaster();
+}
+
+function renderExpenseItemMaster(){
+  const cat=$('expenseMasterCategory')?.value||'Bahan Baku';
+  const rows=expenseMasterRows.filter(x=>String(x.kategori)===String(cat));
+  const box=$('expenseMasterRows');
+  if(!box)return;
+  box.innerHTML=rows.length?rows.map(x=>
+    '<tr><td>'+esc(x.kategori)+'</td><td>'+esc(x.nama_item)+'</td><td>'+(x.aktif!==false?'Aktif':'Nonaktif')+'</td><td>'+
+    '<button class="mini edit" type="button" data-exp-master-edit="'+x.id+'">✏ Edit</button> '+
+    '<button class="mini del" type="button" data-exp-master-del="'+x.id+'">🗑 Hapus</button></td></tr>'
+  ).join(''):'<tr><td colspan="4" class="empty">Belum ada item untuk kategori ini.</td></tr>';
+}
+
+function resetExpenseItemMasterForm(){
+  expenseMasterEditId=null;
+  if($('expenseMasterItemName'))$('expenseMasterItemName').value='';
+  const b=$('expenseMasterSave');if(b)b.textContent='+ Tambah Item';
+}
+
+async function saveExpenseItemMaster(){
+  const kategori=$('expenseMasterCategory').value;
+  const nama=String($('expenseMasterItemName').value||'').trim();
+  const out=$('expenseMasterStatus');
+  if(!nama){if(out)out.textContent='Nama item wajib diisi.';return;}
+  const duplicate=expenseMasterRows.find(x=>String(x.kategori)===kategori&&String(x.nama_item).trim().toLowerCase()===nama.toLowerCase()&&String(x.id)!==String(expenseMasterEditId||''));
+  if(duplicate){if(out)out.textContent='Item tersebut sudah ada di kategori ini.';return;}
+  let r;
+  if(expenseMasterEditId){
+    r=await supabaseClient.from('pengeluaran_item_master').update({kategori,nama_item:nama,aktif:true}).eq('id',expenseMasterEditId);
+  }else{
+    r=await supabaseClient.from('pengeluaran_item_master').insert([{kategori,nama_item:nama,aktif:true}]);
+  }
+  if(r.error){if(out)out.textContent='Gagal menyimpan: '+r.error.message;return;}
+  if(out)out.textContent=expenseMasterEditId?'✅ Item berhasil diperbarui.':'✅ Item berhasil ditambahkan.';
+  await loadExpenseItemMaster();
+  resetExpenseItemMasterForm();
+}
+
+async function deleteExpenseItemMaster(id){
+  const row=expenseMasterRows.find(x=>String(x.id)===String(id));
+  if(!row)return;
+  if(!confirm('Hapus item "'+row.nama_item+'" dari kategori '+row.kategori+'?'))return;
+  const r=await supabaseClient.from('pengeluaran_item_master').delete().eq('id',id);
+  if(r.error){if($('expenseMasterStatus'))$('expenseMasterStatus').textContent='Gagal menghapus: '+r.error.message;return;}
+  if($('expenseMasterStatus'))$('expenseMasterStatus').textContent='✅ Item berhasil dihapus dari master.';
+  await loadExpenseItemMaster();
+  resetExpenseItemMasterForm();
+}
+
 async function saveExpense(){
   if(!state.tables.pengeluaran){$('expenseStatus').textContent='Database Pengeluaran belum aktif.';return}
   if(!state.tables.pengeluaran_item){$('expenseStatus').textContent='Detail pengeluaran belum aktif. Muat ulang setelah struktur database diperbarui.';return}
@@ -580,6 +675,7 @@ async function init(){
   const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,product_name,harga,channel').order('tanggal',{ascending:false}).limit(100);
   state.sales=sr.error?[]:(sr.data||[]);
   renderSuppliers();renderSupplierSelects();renderPurchases();renderExpenses();renderCustomers();renderReturnSales();renderReturns();renderStats();await loadMaterials();renderExpenseLines();
+  await loadExpenseItemMaster();
 }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $('retChannel').onchange=renderReturnSales;
@@ -589,6 +685,23 @@ $('expPayMethod').onchange=()=>{
   if(!debt){$('expParty').value='';$('expDueDate').value='';}
 };
 $('saveSupplier').onclick=saveSupplier;$('cancelSupplier').onclick=resetSupplier;$('addPurchaseLine').onclick=()=>addPurchaseLine();$('savePurchase').onclick=savePurchase;$('saveExpense').onclick=saveExpense;$('saveCustomer').onclick=saveCustomer;$('saveReturn').onclick=saveReturn;
+$('expenseMasterCategory').onchange=()=>{resetExpenseItemMasterForm();renderExpenseItemMaster()};$('expenseMasterSave').onclick=saveExpenseItemMaster;
+document.addEventListener('click',async e=>{
+  const edit=e.target.closest?.('[data-exp-master-edit]');
+  const del=e.target.closest?.('[data-exp-master-del]');
+  if(edit){
+    const row=expenseMasterRows.find(x=>String(x.id)===String(edit.dataset.expMasterEdit));
+    if(row){
+      expenseMasterEditId=row.id;
+      $('expenseMasterCategory').value=row.kategori;
+      $('expenseMasterItemName').value=row.nama_item;
+      $('expenseMasterSave').textContent='✅ Simpan Perubahan';
+      $('expenseMasterItemName').focus();
+    }
+    return;
+  }
+  if(del){await deleteExpenseItemMaster(Number(del.dataset.expMasterDel));return;}
+});
 init().catch(e=>{$('schemaNotice').className='notice';$('schemaNotice').textContent='Gagal memuat modul operasional: '+(e.message||e)});
 </script>
 <script src="android-shell.js" defer></script>
