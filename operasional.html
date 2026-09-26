@@ -128,23 +128,26 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
 
   <section class="panel" data-panel="expense">
     <div class="card">
-      <h2>💸 Pengeluaran</h2>
-      <div class="grid">
+      <h2>💸 Pengeluaran • Satu Transaksi Bisa Banyak Item</h2>
+      <div class="note">Masukkan satu transaksi pengeluaran lalu tambahkan beberapa item. Setiap item punya <b>qty, satuan, harga satuan, dan subtotal sendiri</b>. Total transaksi tersimpan satu kali agar Rekap tidak menggandakan pengeluaran.</div>
+      <div class="grid" style="margin-top:12px">
         <div class="field"><label>Tanggal / Periode</label><input id="expDate" type="date"></div>
         <div class="field"><label>Kategori Pengeluaran</label><select id="expCategory"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
         <div class="field"><label>Cara Bayar</label><select id="expPayMethod"><option>Tunai</option><option>Hutang</option></select></div>
-        <div class="field"><label>Nominal</label><input id="expNominal" type="number" min="0" step="1" placeholder="0"></div>
         <div class="field"><label>Pihak / Supplier</label><input id="expParty" placeholder="Wajib diisi bila Cara Bayar = Hutang"></div>
         <div class="field"><label>Kategori Hutang</label><select id="expDebtCategory"><option>Produktif</option><option>Konsumtif</option><option>Usaha</option><option>Lainnya</option></select></div>
         <div class="field"><label>Jatuh Tempo</label><input id="expDueDate" type="date"></div>
-        <div class="field" style="grid-column:span 2"><label>Keterangan</label><input id="expNote" placeholder="Contoh: beli tepung tapioka"></div>
+        <div class="field full" style="grid-column:1/-1"><label>Keterangan Transaksi</label><input id="expNote" placeholder="Contoh: Pembelian bahan baku untuk produksi"></div>
       </div>
-      <div class="actions"><button class="btn" id="saveExpense" type="button">+ Simpan Pengeluaran</button></div>
+      <h3 style="margin:18px 0 8px">Item Pengeluaran</h3>
+      <div id="expenseLines" class="expense-lines"></div>
+      <div class="actions" style="margin-top:10px"><button class="btn light" id="addExpenseLine" type="button">+ Tambah Item</button><button class="btn" id="saveExpense" type="button">✅ Simpan 1 Transaksi</button></div>
+      <div class="expense-total"><span>Total Transaksi</span><strong id="expenseGrandTotal">Rp 0</strong></div>
       <div id="expenseStatus" class="status"></div>
     </div>
     <div class="card">
-      <div class="notice ok">💡 Bila <b>Cara Bayar = Hutang</b>, nominal langsung masuk ke <b>Pengeluaran Utama</b> dan otomatis dibuat di tab <b>Hutang & Piutang</b>. Saat dibayar dari tab Hutang, saldo hutang berkurang dan pembayaran <b>tidak dicatat lagi sebagai pengeluaran</b> agar tidak double.</div>
-      <div class="tablewrap"><table><thead><tr><th>Periode</th><th>Kategori</th><th>Cara Bayar</th><th>Keterangan</th><th>Nominal</th></tr></thead><tbody id="expenseRows"></tbody></table></div>
+      <div class="notice ok">💡 Pengeluaran lama tetap memakai tabel <b>pengeluaran</b>. Transaksi baru menyimpan <b>1 header + detail item</b> di <b>pengeluaran_item</b>, sehingga satu pembelian dengan banyak bahan tetap muncul satu kali di Rekap.</div>
+      <div class="tablewrap"><table><thead><tr><th>Periode</th><th>Kategori</th><th>Cara Bayar</th><th>Item</th><th>Keterangan</th><th>Nominal</th></tr></thead><tbody id="expenseRows"></tbody></table></div>
     </div>
   </section>
 
@@ -206,7 +209,7 @@ async function loadTable(name){
 }
 function fmtDate(v){return v?String(v).slice(0,10):'-'}
 function schemaMessage(){
-  const required=['ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','pengeluaran'];
+  const required=['ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','pengeluaran','pengeluaran_item'];
   const missing=required.filter(x=>state.tables[x]!==true);
   $('schemaNotice').className=missing.length?'notice':'notice ok';
   $('schemaNotice').innerHTML=missing.length
@@ -380,58 +383,140 @@ async function deletePurchase(id){
   await loadMaterials();
   renderPurchases();renderStats();
 }
+
+function expenseMaterialOptions(selected=''){
+  return '<option value="">Bahan manual / pilih bahan</option>'+((window.bahan||[]).map(b=>'<option value="'+esc(b.id)+'" '+(String(b.id)===String(selected)?'selected':'')+'>'+esc(b.nama_bahan)+' • '+esc(b.satuan||'')+'</option>').join(''));
+}
+function calcExpenseLine(row){
+  const qty=Math.max(0,Number(row.querySelector('.exp-line-qty')?.value)||0);
+  const price=Math.max(0,Math.round(Number(row.querySelector('.exp-line-price')?.value)||0));
+  const sub=Math.round(qty*price);
+  const out=row.querySelector('.exp-line-subtotal'); if(out)out.textContent=rupiah(sub);
+  updateExpenseGrandTotal();
+  return sub;
+}
+function updateExpenseGrandTotal(){
+  const total=[...document.querySelectorAll('.expense-line')].reduce((a,row)=>a+calcExpenseLineSilent(row),0);
+  const el=$('expenseGrandTotal'); if(el)el.textContent=rupiah(total);
+  return total;
+}
+function calcExpenseLineSilent(row){
+  const qty=Math.max(0,Number(row.querySelector('.exp-line-qty')?.value)||0);
+  const price=Math.max(0,Math.round(Number(row.querySelector('.exp-line-price')?.value)||0));
+  return Math.round(qty*price);
+}
+function addExpenseLine(data={}){
+  const host=$('expenseLines'); if(!host)return;
+  const row=document.createElement('div'); row.className='expense-line';
+  row.innerHTML=
+    '<div class="field full"><label>Bahan / Item</label><select class="exp-line-mat">'+expenseMaterialOptions(data.bahan_id)+'</select><input class="exp-line-name" style="margin-top:6px" placeholder="Nama item" value="'+esc(data.nama_item||'')+'"></div>'+
+    '<div class="field"><label>Qty</label><input class="exp-line-qty" type="number" min="0.001" step="0.001" value="'+(data.qty??1)+'"></div>'+
+    '<div class="field"><label>Satuan</label><input class="exp-line-unit" placeholder="kg / pcs / liter" value="'+esc(data.satuan||'')+'"></div>'+
+    '<div class="field"><label>Harga Satuan</label><input class="exp-line-price" type="number" min="0" step="1" value="'+(data.harga_satuan??'')+'"></div>'+
+    '<div class="field"><label>Subtotal</label><div class="input-like exp-line-subtotal" style="min-height:38px;display:flex;align-items:center;padding:8px 10px;background:#f7faf8;border:1px solid #ccd5cf;border-radius:8px">Rp 0</div></div>'+
+    '<div class="field"><label>Catatan</label><input class="exp-line-note" placeholder="Opsional" value="'+esc(data.catatan||'')+'"></div>'+
+    '<button type="button" class="btn danger remove-exp-line" title="Hapus">×</button>';
+  host.appendChild(row);
+  const mat=row.querySelector('.exp-line-mat'),name=row.querySelector('.exp-line-name'),unit=row.querySelector('.exp-line-unit'),price=row.querySelector('.exp-line-price');
+  mat.onchange=()=>{
+    const b=(window.bahan||[]).find(x=>String(x.id)===String(mat.value));
+    if(b){
+      name.value=b.nama_bahan||'';
+      if(!unit.value)unit.value=b.satuan||'';
+      if(!price.value||Number(price.value)===0)price.value=Math.round(Number(b.harga_beli)||0);
+    }
+    calcExpenseLine(row); updateExpenseGrandTotal();
+  };
+  [name,unit,price,row.querySelector('.exp-line-qty')].forEach(el=>el.addEventListener('input',()=>{calcExpenseLine(row);updateExpenseGrandTotal();}));
+  row.querySelector('.remove-exp-line').onclick=()=>{row.remove();if(!host.children.length)addExpenseLine();updateExpenseGrandTotal();};
+  if(data.bahan_id)mat.dispatchEvent(new Event('change')); else calcExpenseLine(row);
+}
+function renderExpenseLines(){
+  const host=$('expenseLines'); if(!host)return;
+  host.innerHTML=''; addExpenseLine(); updateExpenseGrandTotal();
+}
 function renderExpenses(){
-  const m=today().slice(0,7);const rows=state.expense.filter(x=>String(x.periode||'').slice(0,7)===m);
-  $('expenseRows').innerHTML=rows.slice().sort((a,b)=>String(b.periode).localeCompare(String(a.periode))).map(x=>'<tr><td>'+esc(x.periode)+'</td><td>'+esc(x.kategori||'-')+'</td><td>'+esc(x.cara_bayar||'Tunai')+'</td><td>'+esc(x.keterangan||'-')+'</td><td>'+rupiah(x.nominal)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pengeluaran bulan ini.</td></tr>';
+  const m=today().slice(0,7);
+  const rows=state.expense.filter(x=>String(x.periode||'').slice(0,7)===m);
+  const itemCount=new Map();
+  (state.expenseItems||[]).forEach(it=>itemCount.set(String(it.pengeluaran_id),(itemCount.get(String(it.pengeluaran_id))||0)+1));
+  $('expenseRows').innerHTML=rows.slice().sort((a,b)=>String(b.periode).localeCompare(String(a.periode))).map(x=>{
+    const items=(state.expenseItems||[]).filter(it=>String(it.pengeluaran_id)===String(x.id));
+    const names=items.slice(0,3).map(it=>it.nama_item).filter(Boolean).join(', ');
+    const extra=(items.length>3?' …':'');
+    const itemText=items.length?items.length+' item • '+names+extra:'1 nominal lama';
+    return '<tr><td>'+esc(x.periode)+'</td><td>'+esc(x.kategori||'-')+'</td><td>'+esc(x.cara_bayar||'Tunai')+'</td><td>'+esc(itemText)+'</td><td>'+esc(x.keterangan||'-')+'</td><td>'+rupiah(x.nominal)+'</td></tr>';
+  }).join('')||'<tr><td colspan="6" class="empty">Belum ada pengeluaran bulan ini.</td></tr>';
+}
+async function loadExpenseItems(){
+  if(!state.tables.pengeluaran_item){state.expenseItems=[];return}
+  state.expenseItems=await loadTable('pengeluaran_item');
 }
 async function saveExpense(){
   if(!state.tables.pengeluaran){$('expenseStatus').textContent='Database Pengeluaran belum aktif.';return}
+  if(!state.tables.pengeluaran_item){$('expenseStatus').textContent='Detail pengeluaran belum aktif. Muat ulang setelah struktur database diperbarui.';return}
   const d=$('expDate').value||today();
   const payMethod=$('expPayMethod').value;
   const party=$('expParty').value.trim();
   const debtCategory=$('expDebtCategory').value;
   const dueDate=$('expDueDate').value||null;
-  const data={
-    periode:d.slice(0,7),
-    tanggal:d,
-    kategori:$('expCategory').value,
-    keterangan:$('expNote').value.trim(),
-    nominal:money($('expNominal').value),
-    cara_bayar:payMethod,
-    kategori_hutang:payMethod==='Hutang'?debtCategory:null
-  };
-  if(data.nominal<=0){$('expenseStatus').textContent='Nominal harus lebih dari 0.';return}
+  const lines=[...document.querySelectorAll('.expense-line')].map(row=>({
+    bahan_id:row.querySelector('.exp-line-mat')?.value?Number(row.querySelector('.exp-line-mat').value):null,
+    nama_item:(row.querySelector('.exp-line-name')?.value||'').trim(),
+    qty:Math.max(0,Number(row.querySelector('.exp-line-qty')?.value)||0),
+    satuan:(row.querySelector('.exp-line-unit')?.value||'').trim(),
+    harga_satuan:Math.max(0,Math.round(Number(row.querySelector('.exp-line-price')?.value)||0)),
+    subtotal:calcExpenseLineSilent(row),
+    catatan:(row.querySelector('.exp-line-note')?.value||'').trim()
+  }));
+  const invalid=lines.findIndex(x=>!x.nama_item||x.qty<=0||x.harga_satuan<=0||x.subtotal<=0);
+  if(invalid>=0){$('expenseStatus').textContent='Item '+(invalid+1)+' belum lengkap. Isi nama, qty, dan harga satuan.';return}
+  const total=lines.reduce((a,x)=>a+x.subtotal,0);
+  if(total<=0){$('expenseStatus').textContent='Total pengeluaran harus lebih dari 0.';return}
   if(payMethod==='Hutang'&&!party){$('expenseStatus').textContent='Pihak / Supplier wajib diisi bila Cara Bayar = Hutang.';return}
 
-  const r=await supabaseClient.from('pengeluaran').insert([data]).select('id').single();
-  if(r.error){$('expenseStatus').textContent='Gagal menyimpan pengeluaran: '+r.error.message;return}
+  const data={
+    periode:d.slice(0,7),tanggal:d,kategori:$('expCategory').value,
+    keterangan:$('expNote').value.trim(),nominal:total,cara_bayar:payMethod,
+    kategori_hutang:payMethod==='Hutang'?debtCategory:null
+  };
+  let expenseId=null;
+  try{
+    const r=await supabaseClient.from('pengeluaran').insert([data]).select('id').single();
+    if(r.error)throw r.error;
+    expenseId=Number(r.data.id);
+    const detailRows=lines.map(x=>({...x,pengeluaran_id:expenseId}));
+    const ir=await supabaseClient.from('pengeluaran_item').insert(detailRows).select('id');
+    if(ir.error)throw ir.error;
+    if((ir.data||[]).length!==detailRows.length)throw new Error('Tidak semua item pengeluaran berhasil disimpan.');
 
-  if(payMethod==='Hutang'){
-    const debt={
-      tanggal:d,
-      jenis:'Hutang',
-      kategori:debtCategory,
-      pihak:party,
-      keterangan:data.keterangan,
-      jatuh_tempo:dueDate,
-      nominal_awal:data.nominal,
-      status:'Belum Lunas',
-      pengeluaran_id:r.data.id
-    };
-    const dr=await supabaseClient.from('ff_hutang_piutang').insert([debt]).select('id').single();
-    if(dr.error){
-      await supabaseClient.from('pengeluaran').delete().eq('id',r.data.id);
-      $('expenseStatus').textContent='Pengeluaran dibatalkan karena Hutang gagal dibuat: '+dr.error.message;
-      return;
+    if(payMethod==='Hutang'){
+      const debt={
+        tanggal:d,jenis:'Hutang',kategori:debtCategory,pihak:party,
+        keterangan:data.keterangan||lines.map(x=>x.nama_item).join(', '),
+        jatuh_tempo:dueDate,nominal_awal:data.nominal,status:'Belum Lunas',
+        pengeluaran_id:expenseId
+      };
+      const dr=await supabaseClient.from('ff_hutang_piutang').insert([debt]).select('id').single();
+      if(dr.error)throw dr.error;
     }
-  }
 
-  $('expenseStatus').textContent=payMethod==='Hutang'
-    ? '✅ Pengeluaran tersimpan dan Hutang otomatis masuk ke tab Hutang.'
-    : '✅ Pengeluaran berhasil disimpan.';
-  state.expense=await loadTable('pengeluaran');
-  $('expNominal').value='';$('expNote').value='';$('expParty').value='';$('expDueDate').value='';
-  renderExpenses();renderStats();
+    $('expenseStatus').textContent=payMethod==='Hutang'
+      ? '✅ 1 transaksi pengeluaran + '+lines.length+' item tersimpan dan Hutang otomatis masuk.'
+      : '✅ 1 transaksi pengeluaran + '+lines.length+' item tersimpan.';
+    state.expense=await loadTable('pengeluaran');
+    await loadExpenseItems();
+    renderExpenses();renderStats();
+    $('expNote').value='';$('expParty').value='';$('expDueDate').value='';
+    renderExpenseLines();
+  }catch(e){
+    if(expenseId){
+      await supabaseClient.from('pengeluaran_item').delete().eq('pengeluaran_id',expenseId);
+      await supabaseClient.from('ff_hutang_piutang').delete().eq('pengeluaran_id',expenseId);
+      await supabaseClient.from('pengeluaran').delete().eq('id',expenseId);
+    }
+    $('expenseStatus').textContent='Gagal menyimpan pengeluaran: '+(e.message||e);
+  }
 }
 function renderCustomers(){
   $('customerRows').innerHTML=state.customer.map(c=>'<tr><td>'+esc(c.nama)+'</td><td>'+esc(c.telepon||'-')+'</td><td>'+esc(c.alamat||'-')+'</td><td>'+esc(c.catatan||'-')+'</td><td><button class="btn danger" data-del-cus="'+esc(c.id)+'">Hapus</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pelanggan.</td></tr>';
@@ -483,7 +568,7 @@ function renderStats(){
 function switchTab(name){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===name))}
 async function init(){
   $('buyDate').value=today();$('expDate').value=today();$('retDate').value=today();
-  const names=['ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','pengeluaran'];
+  const names=['ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','pengeluaran','pengeluaran_item'];
   for(const n of names)await tableReady(n);
   schemaMessage();
   state.supplier=await loadTable('ff_supplier');
@@ -491,9 +576,10 @@ async function init(){
   state.customer=await loadTable('ff_pelanggan');
   state.ret=await loadTable('ff_retur_penjualan');
   state.expense=await loadTable('pengeluaran');
+  await loadExpenseItems();
   const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,product_name,harga,channel').order('tanggal',{ascending:false}).limit(100);
   state.sales=sr.error?[]:(sr.data||[]);
-  renderSuppliers();renderSupplierSelects();renderPurchases();renderExpenses();renderCustomers();renderReturnSales();renderReturns();renderStats();await loadMaterials();
+  renderSuppliers();renderSupplierSelects();renderPurchases();renderExpenses();renderCustomers();renderReturnSales();renderReturns();renderStats();await loadMaterials();renderExpenseLines();
 }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $('retChannel').onchange=renderReturnSales;
