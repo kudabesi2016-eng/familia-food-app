@@ -1362,6 +1362,9 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     resetOfflineExpense();
   }
 
+  // Pastikan fungsi tersedia untuk tombol input pengeluaran.
+  window.ffSaveOfflineExpense=saveOfflineExpense;
+
   function saveCash(){
     const tanggal=byId('cashTanggal').value,amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0)),marketplace=byId('cashMarketplace').value||'TikTok Shop',note=byId('cashNote').value.trim();
     if(!tanggal||amount<=0){setCashMsg('Tanggal dan Uang Bersih wajib diisi.',true);return;}
@@ -1620,6 +1623,17 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       b.addEventListener('click',function(){setTimeout(bootOnlineHistory,0);});
     }
   });
+})();
+</script>
+<script>
+(function(){
+  function bindOfflineExpenseButton(){
+    const btn=document.getElementById('offlineExpenseSave');
+    if(!btn || typeof window.ffSaveOfflineExpense!=='function')return;
+    btn.onclick=window.ffSaveOfflineExpense;
+  }
+  window.addEventListener('load',function(){setTimeout(bindOfflineExpenseButton,0);});
+  document.addEventListener('DOMContentLoaded',bindOfflineExpenseButton);
 })();
 </script>
 </body>
