@@ -2449,5 +2449,84 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   else bindOfflineHistoryBackButtons();
 })();
 </script>
+<script>
+(function(){
+  function bindOfflineDetailActions(){
+    document.addEventListener('click',async function(e){
+      const edit=e.target?.closest?.('[data-off-edit]');
+      if(edit){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        try{
+          const id=Number(edit.dataset.offEdit);
+          if(id && typeof window.editSale==='function'){
+            await window.editSale(id);
+          }
+        }catch(err){
+          console.error('Offline detail edit:',err);
+          alert('Gagal membuka Edit: '+String(err?.message||err));
+        }
+        return;
+      }
+
+      const del=e.target?.closest?.('[data-off-del]');
+      if(del){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        try{
+          const id=Number(del.dataset.offDel);
+          if(!id)return;
+          if(!confirm('Hapus transaksi Offline ini?'))return;
+          const r=await supabaseClient.from('penjualan').delete().eq('id',id);
+          if(r.error){alert('Gagal menghapus transaksi: '+r.error.message);return;}
+          if(typeof load==='function')await load();
+          if(typeof refreshOfflineHistory==='function')await refreshOfflineHistory();
+        }catch(err){
+          console.error('Offline detail delete:',err);
+          alert('Gagal menghapus: '+String(err?.message||err));
+        }
+        return;
+      }
+
+      const expEdit=e.target?.closest?.('[data-off-exp-edit-saved]');
+      if(expEdit){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        try{
+          const id=Number(expEdit.dataset.offExpEditSaved);
+          if(id && typeof ffExpenseLoadSaved==='function')await ffExpenseLoadSaved(id);
+        }catch(err){
+          console.error('Offline expense detail edit:',err);
+          alert('Gagal membuka Edit Pengeluaran: '+String(err?.message||err));
+        }
+        return;
+      }
+
+      const expDel=e.target?.closest?.('[data-off-exp-del]');
+      if(expDel){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        try{
+          const id=Number(expDel.dataset.offExpDel);
+          if(!id)return;
+          if(!confirm('Hapus data pengeluaran ini?'))return;
+          const r=await supabaseClient.from('pengeluaran').delete().eq('id',id);
+          if(r.error){alert('Gagal menghapus pengeluaran: '+r.error.message);return;}
+          if(typeof refreshOfflineExpenses==='function')await refreshOfflineExpenses();
+          if(typeof load==='function')await load();
+          if(typeof refreshOfflineHistory==='function')await refreshOfflineHistory();
+        }catch(err){
+          console.error('Offline expense detail delete:',err);
+          alert('Gagal menghapus pengeluaran: '+String(err?.message||err));
+        }
+        return;
+      }
+    },true);
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindOfflineDetailActions);
+  else bindOfflineDetailActions();
+})();
+</script>
 </body>
 </html>
