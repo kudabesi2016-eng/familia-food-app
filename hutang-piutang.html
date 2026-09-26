@@ -39,7 +39,6 @@ main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 6px;color:var
     <div class="field"><label>Tanggal</label><input id="tanggal" type="date"></div>
     <div class="field"><label>Jatuh Tempo</label><input id="jatuhTempo" type="date"></div>
     <div class="field"><label>Nominal Awal</label><input id="nominal" type="number" min="0" step="1" placeholder="Contoh 5000000"></div>
-    <div class="field"><label>Kategori Pengeluaran Utama</label><select id="expCategoryDebt"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
     <div class="field" style="grid-column:span 2"><label>Keterangan</label><input id="keterangan" placeholder="Contoh: Hutang bahan baku bulan September"></div>
   </div>
   <div class="actions"><button class="btn" id="save">+ Tambah ke Daftar</button><button class="btn gray" id="reset">Reset</button></div>
@@ -150,7 +149,7 @@ function renderDrafts(){
 }
 function resetForm(){
   $('tanggal').value=today();$('jatuhTempo').value='';$('nominal').value='';$('pihak').value='';$('keterangan').value='';
-  $('jenis').value='Hutang';renderKategori();$('expCategoryDebt').value='Bahan Baku';
+  $('jenis').value='Hutang';renderKategori();
   editingDraftIndex=null;
   $('save').textContent='+ Tambah ke Daftar';
 }
@@ -166,7 +165,7 @@ function beginDraftEdit(i){
   $('pihak').scrollIntoView({behavior:'smooth',block:'center'});
 }
 $('save').onclick=()=>{
-  const x={jenis:$('jenis').value,kategori:$('kategori').value,pihak:$('pihak').value.trim(),tanggal:$('tanggal').value,jatuh_tempo:$('jatuhTempo').value||null,nominal_awal:Math.round(Number($('nominal').value)||0),keterangan:$('keterangan').value.trim(),expense_category:$('expCategoryDebt').value};
+  const x={jenis:$('jenis').value,kategori:$('kategori').value,pihak:$('pihak').value.trim(),tanggal:$('tanggal').value,jatuh_tempo:$('jatuhTempo').value||null,nominal_awal:Math.round(Number($('nominal').value)||0),keterangan:$('keterangan').value.trim()};
   if(!x.pihak||!x.tanggal||x.nominal_awal<=0){$('msg').innerHTML='<div class="bad">Jenis, pihak, tanggal, dan nominal wajib diisi.</div>';return}
   if(editingDraftIndex!==null){
     drafts[editingDraftIndex]=x;
@@ -204,7 +203,7 @@ $('saveAll').onclick=async()=>{
       let expenseId=null;
       if(x.jenis==='Hutang'){
         const ex=await supabaseClient.from('pengeluaran').insert([{
-          periode:x.tanggal.slice(0,7),tanggal:x.tanggal,kategori:x.expense_category||'Operasional',
+          periode:x.tanggal.slice(0,7),tanggal:x.tanggal,kategori:'Hutang',
           keterangan:x.keterangan||('Hutang '+x.pihak),nominal:x.nominal_awal,
           cara_bayar:'Hutang',kategori_hutang:x.kategori
         }]).select('id').single();
