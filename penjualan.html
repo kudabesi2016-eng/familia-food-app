@@ -490,6 +490,8 @@ async function saveAllOfflineDrafts(){
     if(out)out.innerHTML='<div class="bad">Gagal menyimpan: '+esc(e.message||e)+'</div>';
   }finally{if(btn)btn.disabled=false;}
 }
+window.ffSaveAllOfflineDrafts=saveAllOfflineDrafts;
+
 function clearOfflineDrafts(){window.__offlineDraftSales=[];window.__offlineDraftExpenses=[];renderOfflineDrafts();const out=document.getElementById('offlineDraftMsg');if(out)out.innerHTML='<div class="warn">Daftar sementara dikosongkan.</div>';}
 document.getElementById('offlineHistoryRefresh')?.addEventListener('click',refreshOfflineHistory);
 (function(){
@@ -1700,6 +1702,49 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
   document.addEventListener('DOMContentLoaded',bind);
   window.addEventListener('load',()=>setTimeout(bind,200));
+})();
+</script>
+<script>
+(function(){
+  async function saveAllOfflineFallback(){
+    const out=document.getElementById('offlineDraftMsg');
+    const btn=document.getElementById('offlineDraftSaveAll');
+    const sales=window.__offlineDraftSales||[];
+    const expenses=window.__offlineDraftExpenses||[];
+    if(!sales.length&&!expenses.length){
+      if(out)out.innerHTML='<div class="bad">Belum ada transaksi untuk disimpan.</div>';
+      return;
+    }
+    if(btn){btn.disabled=true;btn.textContent='⏳ Menyimpan...';}
+    const insertedSales=[],insertedExpenses=[];
+    try{
+      // Gunakan fungsi utama bila tersedia agar alur pelanggan/penjualan tetap sama.
+      if(typeof window.ffSaveAllOfflineDrafts==='function'){
+        await window.ffSaveAllOfflineDrafts();
+        return;
+      }
+      if(sales.length)throw new Error('Modul simpan penjualan Offline belum siap. Muat ulang halaman.');
+      const payload=expenses.map(x=>x.data).filter(Boolean);
+      const er=await supabaseClient.from('pengeluaran').insert(payload).select('id');
+      if(er.error)throw er.error;
+      (er.data||[]).forEach(x=>insertedExpenses.push(Number(x.id)));
+      window.__offlineDraftExpenses=[];
+      if(typeof window.renderOfflineDrafts==='function')window.renderOfflineDrafts();
+      if(out)out.innerHTML='<div class="ok">'+insertedExpenses.length+' pengeluaran berhasil disimpan ke database.</div>';
+      if(typeof window.refreshOfflineHistory==='function')await window.refreshOfflineHistory();
+    }catch(e){
+      console.error('saveAllOfflineFallback',e);
+      if(out)out.innerHTML='<div class="bad">Gagal menyimpan: '+String(e.message||e)+'</div>';
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='✅ Simpan Semua';}
+    }
+  }
+  function bind(){
+    const b=document.getElementById('offlineDraftSaveAll');
+    if(b)b.onclick=saveAllOfflineFallback;
+  }
+  document.addEventListener('DOMContentLoaded',bind);
+  window.addEventListener('load',function(){setTimeout(bind,300);});
 })();
 </script>
 </body>
