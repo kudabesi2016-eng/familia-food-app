@@ -1,0 +1,1161 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#087443">
+<title>Data Lama - Familia Food</title><!-- v12: Data Lama has Offline/Online tabs; Online tab reads full historical penjualan fields. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script><script src="app-settings.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="ff-core.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f7f5;color:#1f2937}.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand-color,#126b3a);color:#fff;padding:25px 15px;z-index:10}.brand{font-size:24px;font-weight:bold;text-align:center;margin-bottom:30px}.menu a{display:block;color:#fff;text-decoration:none;padding:12px 15px;margin-bottom:6px;border-radius:8px}.menu a:hover,.menu a.active{background:#0d542d}.main{margin-left:240px;padding:30px;max-width:1450px}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.header h1{color:var(--brand-color,#126b3a);margin:0}.card{background:#fff;padding:22px;border-radius:14px;margin-top:18px;box-shadow:0 2px 10px #0000000d}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field label{display:block;font-weight:bold;margin-bottom:6px}.field input,.field select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}.btn{margin-top:15px;background:var(--brand-color,#087443);color:#fff;border:0;border-radius:8px;padding:11px 18px;cursor:pointer;font-weight:bold}.btn.secondary{background:#6b7280}.filebox{border:2px dashed #b7d7c5;padding:18px;border-radius:12px;background:#f8fcfa}.hint{color:#6b7280;font-size:13px;line-height:1.5}.msg{margin-top:10px;padding:10px;border-radius:8px}.preview{display:none}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e8f7ed;color:#087443;font-size:12px;font-weight:bold}.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th{background:var(--brand-color,#087443);color:white;padding:10px;text-align:left}td{padding:10px;border-bottom:1px solid #ddd}.del{background:#fdecec;color:#a22;border:0;padding:7px;border-radius:6px;cursor:pointer}.monthtabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px;padding-bottom:12px;border-bottom:1px solid #e2ebe5}.monthtab{border:1px solid #cfe0d6;background:#fff;color:#315247;border-radius:999px;padding:9px 15px;cursor:pointer;font-weight:bold}.monthtab:hover{background:#eef8f1}.monthtab.active{background:var(--brand-color,#087443);border-color:var(--brand-color,#087443);color:#fff}.emptyState{padding:35px;text-align:center;color:#6b7280;background:#fbfdfc;border:1px dashed #cfe0d6;border-radius:12px}.reportHead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:5px 2px 18px}.eyebrow{font-size:11px;letter-spacing:1.3px;font-weight:800;color:#6b8b7b}.reportHead h2{margin:5px 0 3px;font-size:28px;color:#143c2b}.reportHead p{margin:0;color:#6b7280}.reportMeta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.reportMeta span{background:#f0f7f3;border:1px solid #d9e8df;border-radius:8px;padding:8px 11px;font-size:12px;color:#315247;font-weight:700}.kpiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.kpi{background:#fff;border:1px solid #dfe9e3;border-radius:12px;padding:16px;box-shadow:0 2px 8px #00000008}.kpi span{display:block;font-size:12px;color:#6b7280;font-weight:700}.kpi strong{display:block;font-size:23px;color:#087443;margin-top:7px}.kpi small{color:#8a9992}.reportSection{background:#fff;border:1px solid #dfe9e3;border-radius:12px;overflow:hidden;margin-bottom:16px}.sectionHead{padding:15px 17px;border-bottom:1px solid #e6eee9;background:#fbfdfc}.sectionHead h3{margin:0;color:#143c2b;font-size:17px}.sectionHead p{margin:4px 0 0;color:#7a8781;font-size:12px}.cleanTable{min-width:0!important}.cleanTable th{background:#f1f6f3;color:#315247;font-size:12px;text-transform:uppercase;letter-spacing:.2px;border-bottom:1px solid #dfe9e3}.cleanTable td{font-size:13px}.cleanTable tbody tr:hover{background:#f8fbf9}.detailSection .tablewrap{max-height:440px;overflow:auto}.detailSection thead th{position:sticky;top:0;z-index:1}.sectionTotal{display:flex;justify-content:flex-end;gap:18px;padding:12px 17px;background:#fbfdfc;border-top:1px solid #e6eee9;font-weight:bold;color:#315247}.sectionTotal b{color:#087443}.consumerName{font-weight:700;color:#143c2b}.productPill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef8f1;color:#087443;font-size:12px;font-weight:700}.rank{width:42px;color:#7a8781}.reportNotice{padding:10px 12px;background:#f5faf7;border:1px solid #d9e8df;border-radius:10px;color:#315247;font-size:12px;margin-bottom:14px}
+@media(max-width:900px){.sidebar{position:relative;width:100%;height:auto}.main{margin-left:0;padding:15px}.grid,.filters,.kpiGrid{grid-template-columns:1fr}.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}.reportHead{flex-direction:column}.reportMeta{justify-content:flex-start}}
+.history-title{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.history-title h2{margin:0 0 4px}.month-summary{border:1px solid #dfe9e3;border-radius:12px;overflow:hidden}.month-row{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr auto;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid #e8eee9}.month-row:last-child{border-bottom:0}.month-name{font-weight:800;color:#143c2b}.money-label{font-size:11px;color:#7a8781;display:block;margin-bottom:3px}.money{font-weight:800}.income{color:#087443}.expense{color:#b23b3b}.balance{color:#315247}.view-btn{margin:0;background:#087443;color:#fff;border:0;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer;white-space:nowrap}.view-btn:hover{filter:brightness(.95)}.month-detail{grid-column:1/-1;background:#f8fbf9;border-top:1px solid #e8eee9;padding:16px;margin:0 -16px -15px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mini-detail{background:#fff;border:1px solid #dfe9e3;border-radius:10px;padding:14px}.mini-detail h4{margin:0 0 10px;color:#143c2b}.mini-detail table{min-width:0}.mini-detail th{font-size:11px;padding:8px}.mini-detail td{font-size:12px;padding:8px}.close-detail{margin-top:12px;background:#6b7280}.history-note{margin-top:12px;padding:9px 11px;background:#f5faf7;border-radius:8px;font-size:12px;color:#315247}@media(max-width:900px){.month-row{grid-template-columns:1fr 1fr}.month-row>div:last-of-type,.view-btn{grid-column:auto}.month-detail{grid-column:1/-1}.detail-grid{grid-template-columns:1fr}}@media(max-width:600px){.month-row{grid-template-columns:1fr}.view-btn{width:100%}.history-title{flex-direction:column}}
+.history-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px;padding-bottom:10px;border-bottom:1px solid #e2ebe5}.history-tab{border:1px solid #cfe0d6;background:#fff;color:#315247;border-radius:999px;padding:9px 16px;cursor:pointer;font-weight:800}.history-tab.active{background:var(--brand-color,#087443);border-color:var(--brand-color,#087443);color:#fff}.online-month-row{display:grid;grid-template-columns:1.25fr .95fr .95fr .95fr .95fr auto;align-items:center;gap:12px;padding:15px 16px;border-bottom:1px solid #e8eee9}.online-month-row:last-child{border-bottom:0}.online-detail{grid-column:1/-1;background:#f8fbf9;border-top:1px solid #e8eee9;padding:16px;margin:0 -16px -15px}.online-mini{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}.online-mini>div{background:#fff;border:1px solid #dfe9e3;border-radius:10px;padding:11px}.online-mini small{display:block;color:#7a8781;font-size:11px;margin-bottom:4px}.online-mini b{color:#087443}.tab-panel{display:none}.tab-panel.active{display:block}@media(max-width:900px){.online-month-row{grid-template-columns:1fr 1fr}.online-mini{grid-template-columns:1fr 1fr}.online-month-row .online-detail{grid-column:1/-1}}@media(max-width:600px){.online-month-row{grid-template-columns:1fr}.online-mini{grid-template-columns:1fr}.history-tab{width:100%;text-align:center}}</style><style id="familia-mobile">
+@media(max-width:700px){
+  body{font-size:14px}
+  .sidebar{position:sticky!important;top:0;z-index:100;width:100%!important;height:auto!important;padding:8px 10px!important}
+  .brand{font-size:17px!important;margin:0 0 7px!important;text-align:left!important}
+  .menu{display:flex!important;overflow-x:auto!important;gap:5px;scrollbar-width:none}
+  .menu::-webkit-scrollbar{display:none}
+  .menu a{flex:0 0 auto;margin:0 0 2px!important;padding:8px 10px!important;font-size:11px!important;white-space:nowrap}
+  .main{margin-left:0!important;padding:10px!important}
+  .header,.reportHead,.history-title{display:block}
+  .header h1,.reportHead h2{font-size:21px}
+  .grid,.filters,.kpiGrid{grid-template-columns:1fr!important}
+  .card,.reportSection{padding:12px!important;border-radius:12px!important}
+  .monthtabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .monthtabs::-webkit-scrollbar{display:none}
+  .monthtab{flex:0 0 auto;padding:8px 12px;font-size:11px}
+  .month-row{grid-template-columns:1fr 1fr!important;gap:8px!important;padding:11px}
+  .month-name{grid-column:1/-1;font-size:14px}
+  .reportMeta{display:grid;grid-template-columns:1fr 1fr}
+  .reportMeta span{padding:7px;font-size:11px}
+  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:760px}
+  .cleanTable{min-width:0!important}
+  .detailSection .tablewrap{max-height:none}
+}
+</style>
+<link rel="stylesheet" href="android-shell.css"></head>
+<body>
+<aside class="sidebar"><div class="brand">🍀 Familia Food</div><nav class="menu">
+<a href="index.html">🏠 Dashboard</a><a href="produk.html">📦 Produk</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="hpp.html">🧮 HPP</a><a href="penjualan.html">💰 Penjualan</a><a href="operasional.html">🧾 Operasional</a><a href="rekap.html">📊 Rekap</a><a href="data-lama.html" class="active">📁 Data Lama</a><a href="hutang-piutang.html">💳 Hutang & Piutang</a><a href="pengaturan.html">⚙️ Pengaturan</a>
+</nav></aside>
+<main class="main">
+<div class="header"><div><h1>📁 Data Lama</h1><p>Riwayat penjualan lama tetap tersimpan per <b>bulan → ringkasan → konsumen → keluar per produk → detail transaksi</b> dan tetap dapat dibaca oleh Rekap dan Dashboard.</p></div><span class="badge">Historis Offline + Online</span></div>
+
+<div class="card history-card"><div class="history-title"><div><h2>📚 Data Lama per Bulan</h2><p class="hint">Pilih tab <b>Offline</b> atau <b>Online</b>. Masing-masing ditampilkan per bulan dan memiliki <b>👁 Lihat Data</b>.</p></div><span class="badge">Ringkas</span></div><div class="history-tabs"><button type="button" id="tabOffline" class="history-tab active">🟢 Data Offline</button><button type="button" id="tabOnline" class="history-tab">🔵 Data Online</button></div><div id="offlineTabPanel" class="tab-panel active"><div id="monthlySummary"><div class="hint">Memuat data...</div></div></div><div id="onlineTabPanel" class="tab-panel"><div id="onlineMonthlySummary"><div class="hint">Memuat data Online...</div></div></div></div>
+
+<div class="card"><details><summary>📥 Import Data Lama</summary><h2>📥 Import Data Lama</h2><div class="filebox"><input id="file" type="file" accept=".xlsx,.xls,.csv,.pdf"><p class="hint"><b>PDF Familia Food:</b> sistem membaca tabel <b>Bulan → Konsumen → Produk → Qty → Omzet</b>. Baris Subtotal/TOTAL BULAN tidak disimpan. Angka Indonesia seperti <b>3.774.000</b> dibaca sebagai <b>Rp3.774.000</b>.</p></div>
+<div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></details></div>
+
+
+<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Upload <b>CSV TikTok asli</b> untuk audit produk keluar Jan–Agustus 2026, atau <b>Excel STANDARD Familia Food</b>. CSV TikTok akan dikonversi otomatis menjadi <b>bungkus audit</b> setelah retur dan ekspansi paket 2/3/6. Data audit harus menghasilkan <b>8.085 bungkus</b> sebelum dapat disimpan.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>CSV TikTok asli atau Excel STANDARD.</b> Untuk mengganti histori produk lama dengan audit terbaru, gunakan CSV TikTok Jan–Agustus 2026. Beberapa file boleh dipilih; data yang sama tidak akan digandakan.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button type="button" class="btn" id="onlineOldSave" style="position:relative;z-index:20;pointer-events:auto">+ Simpan Data Lama Online</button><div id="onlineOldSaveStatus" class="hint" style="margin-top:8px"></div><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
+
+<div class="card"><details><summary>✍️ Tambah Manual</summary><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
+<div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></details></div>
+</main>
+<script>
+const $=id=>document.getElementById(id),rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID'),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+function msg(t,e=false){$('msg').innerHTML='<div class="msg" style="color:'+(e?'#a22':'var(--brand-color,#087443)')+'">'+esc(t)+'</div>'}
+function nowMonth(){return new Date().toISOString().slice(0,7)} $('periode').value=nowMonth();
+function monthLabel(v){const m=String(v||'').match(/^(\d{4})-(\d{1,2})$/);return m?months[Number(m[2])-1]+' '+m[1]:String(v||'')}
+function toNum(v){if(typeof v==='number')return v;let s=String(v??'').trim().replace(/Rp/gi,'').replace(/\s/g,'');if(!s)return 0;if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(/\.\d{3}$/.test(s))s=s.replace(/\./g,'');else if(s.includes(','))s=s.replace(/,/g,'');else if((s.match(/\./g)||[]).length>1)s=s.replace(/\./g,'');const n=Number(s);return Number.isFinite(n)?n:0}
+function normalPeriode(v){if(v instanceof Date)return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}`;const s=String(v??'').trim();let m=s.match(/(20\d{2})[-\/]([01]?\d)/);if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,'0')}`;const map=Object.fromEntries(months.map((x,i)=>[x.toLowerCase(),i+1]));m=s.toLowerCase().match(/(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s*(20\d{2})/);return m?`${m[2]}-${String(map[m[1]]).padStart(2,'0')}`:''}
+function normalizeProductName(v){let s=String(v||'').toLowerCase().replace(/\s+/g,' ').trim();s=s.replace(/^naget\s+isi\s+/,'naget ');return s}
+let all=[],expenseAll=[],salesAll=[],onlineSalesAll=[],importRows=[],headers=[],pdfMode=false,monthChecks=[],schemaCache=null;
+let productMap={};
+const MONTHLY_EXPENSE_SEED=[{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Aci","nominal":7105000},{"periode":"2026-02","kategori":"Bahan Baku","keterangan":"Aci","nominal":8070000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Aci","nominal":9025000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Aci","nominal":5473000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Aci","nominal":5050000},{"periode":"2026-06","kategori":"Bahan Baku","keterangan":"Aci","nominal":8135000},{"periode":"2026-07","kategori":"Bahan Baku","keterangan":"Aci","nominal":8525000},{"periode":"2026-08","kategori":"Bahan Baku","keterangan":"Aci","nominal":1735000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Tepung roti","nominal":4960000},{"periode":"2026-02","kategori":"Bahan Baku","keterangan":"Tepung roti","nominal":6045000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Tepung roti","nominal":2945000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Tepung roti","nominal":4795000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Tepung roti","nominal":4670000},{"periode":"2026-06","kategori":"Bahan Baku","keterangan":"Tepung roti","nominal":5787000},{"periode":"2026-07","kategori":"Bahan Baku","keterangan":"Tepung roti","nominal":5640000},{"periode":"2026-08","kategori":"Bahan Baku","keterangan":"Tepung roti","nominal":1345000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Plastik","nominal":1382000},{"periode":"2026-02","kategori":"Bahan Baku","keterangan":"Plastik","nominal":1966000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Plastik","nominal":1466000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Plastik","nominal":1921500},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Plastik","nominal":1687500},{"periode":"2026-06","kategori":"Bahan Baku","keterangan":"Plastik","nominal":1708000},{"periode":"2026-07","kategori":"Bahan Baku","keterangan":"Plastik","nominal":1454000},{"periode":"2026-08","kategori":"Bahan Baku","keterangan":"Plastik","nominal":370000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Lumpia","nominal":237000},{"periode":"2026-02","kategori":"Bahan Baku","keterangan":"Lumpia","nominal":1336000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Lumpia","nominal":1346000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Lumpia","nominal":120800},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Lumpia","nominal":99000},{"periode":"2026-06","kategori":"Bahan Baku","keterangan":"Lumpia","nominal":144000},{"periode":"2026-07","kategori":"Bahan Baku","keterangan":"Lumpia","nominal":209000},{"periode":"2026-08","kategori":"Bahan Baku","keterangan":"Lumpia","nominal":75000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Mie","nominal":600000},{"periode":"2026-02","kategori":"Bahan Baku","keterangan":"Mie","nominal":600000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Mie","nominal":200000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Mie","nominal":450000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Mie","nominal":300000},{"periode":"2026-06","kategori":"Bahan Baku","keterangan":"Mie","nominal":262000},{"periode":"2026-07","kategori":"Bahan Baku","keterangan":"Mie","nominal":250000},{"periode":"2026-08","kategori":"Bahan Baku","keterangan":"Mie","nominal":552000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Panir bawang","nominal":193000},{"periode":"2026-02","kategori":"Bahan Baku","keterangan":"Panir bawang","nominal":403000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Panir bawang","nominal":220000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Panir bawang","nominal":110000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Panir bawang","nominal":220000},{"periode":"2026-06","kategori":"Bahan Baku","keterangan":"Panir bawang","nominal":110000},{"periode":"2026-07","kategori":"Bahan Baku","keterangan":"Panir bawang","nominal":110000},{"periode":"2026-08","kategori":"Bahan Baku","keterangan":"Panir bawang","nominal":110000},{"periode":"2026-02","kategori":"Bahan Baku","keterangan":"Tepung","nominal":155000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Tepung","nominal":155000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Tepung","nominal":330000},{"periode":"2026-08","kategori":"Bahan Baku","keterangan":"(deskripsi hilang saat input)","nominal":567000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Cengek","nominal":20000},{"periode":"2026-02","kategori":"Bahan Baku","keterangan":"Cengek","nominal":185000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Cengek","nominal":155000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Cengek","nominal":5000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Cengek","nominal":10000},{"periode":"2026-06","kategori":"Bahan Baku","keterangan":"Cengek","nominal":10000},{"periode":"2026-07","kategori":"Bahan Baku","keterangan":"Cengek","nominal":20000},{"periode":"2026-08","kategori":"Bahan Baku","keterangan":"Cengek","nominal":10000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Tepung 1 karung","nominal":310000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Aci 1 karung","nominal":205000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Ke pasar","nominal":150000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Bawang","nominal":145000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Plastik 2kg","nominal":140000},{"periode":"2026-07","kategori":"Bahan Baku","keterangan":"Teh nyai","nominal":135000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Panir","nominal":110000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Stik","nominal":25500},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Stik","nominal":78000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Sosis + lumpia","nominal":91000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Stik eskrim","nominal":79000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Cengek garing","nominal":25000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Cengek garing","nominal":10000},{"periode":"2026-06","kategori":"Bahan Baku","keterangan":"Cengek garing","nominal":20000},{"periode":"2026-07","kategori":"Bahan Baku","keterangan":"Cengek garing","nominal":10000},{"periode":"2026-08","kategori":"Bahan Baku","keterangan":"Tepung bawang","nominal":44000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Plastik 1 kg","nominal":35000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Plastik 1kg","nominal":35000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Beras 2 kg","nominal":28000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Bawang daun","nominal":20000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Bawang daun","nominal":3000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Bawang daun","nominal":5000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Lumpia 10","nominal":24000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Kresek 26","nominal":24000},{"periode":"2026-01","kategori":"Bahan Baku","keterangan":"Panir bawang 2kg","nominal":22000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Kresek","nominal":22000},{"periode":"2026-05","kategori":"Bahan Baku","keterangan":"Stik Eskrim","nominal":12000},{"periode":"2026-03","kategori":"Bahan Baku","keterangan":"Uyah","nominal":10000},{"periode":"2026-04","kategori":"Bahan Baku","keterangan":"Dus","nominal":7500},{"periode":"2026-01","kategori":"Operasional","keterangan":"Gas","nominal":1656000},{"periode":"2026-02","kategori":"Operasional","keterangan":"Gas","nominal":833000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Gas","nominal":2030000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Gas","nominal":1752500},{"periode":"2026-05","kategori":"Operasional","keterangan":"Gas","nominal":2023000},{"periode":"2026-06","kategori":"Operasional","keterangan":"Gas","nominal":2188000},{"periode":"2026-07","kategori":"Operasional","keterangan":"Gas","nominal":3061000},{"periode":"2026-08","kategori":"Operasional","keterangan":"Gas","nominal":462000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Pasar","nominal":770000},{"periode":"2026-02","kategori":"Operasional","keterangan":"Pasar","nominal":450000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Pasar","nominal":1242500},{"periode":"2026-04","kategori":"Operasional","keterangan":"Pasar","nominal":632500},{"periode":"2026-06","kategori":"Operasional","keterangan":"Pasar","nominal":1180000},{"periode":"2026-07","kategori":"Operasional","keterangan":"Pasar","nominal":1672000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Bensin","nominal":473000},{"periode":"2026-02","kategori":"Operasional","keterangan":"Bensin","nominal":433000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Bensin","nominal":400025},{"periode":"2026-04","kategori":"Operasional","keterangan":"Bensin","nominal":435000},{"periode":"2026-05","kategori":"Operasional","keterangan":"Bensin","nominal":425000},{"periode":"2026-06","kategori":"Operasional","keterangan":"Bensin","nominal":470000},{"periode":"2026-07","kategori":"Operasional","keterangan":"Bensin","nominal":598000},{"periode":"2026-08","kategori":"Operasional","keterangan":"Bensin","nominal":150000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Jajan","nominal":183000},{"periode":"2026-02","kategori":"Operasional","keterangan":"Jajan","nominal":315000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Jajan","nominal":67000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Jajan","nominal":379000},{"periode":"2026-05","kategori":"Operasional","keterangan":"Jajan","nominal":176000},{"periode":"2026-06","kategori":"Operasional","keterangan":"Jajan","nominal":245000},{"periode":"2026-07","kategori":"Operasional","keterangan":"Jajan","nominal":170000},{"periode":"2026-08","kategori":"Operasional","keterangan":"Jajan","nominal":247000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Beras","nominal":242500},{"periode":"2026-02","kategori":"Operasional","keterangan":"Beras","nominal":378500},{"periode":"2026-03","kategori":"Operasional","keterangan":"Beras","nominal":75000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Beras","nominal":380000},{"periode":"2026-05","kategori":"Operasional","keterangan":"Beras","nominal":370000},{"periode":"2026-08","kategori":"Operasional","keterangan":"Beras","nominal":100000},{"periode":"2026-04","kategori":"Operasional","keterangan":"PAM","nominal":900000},{"periode":"2026-05","kategori":"Operasional","keterangan":"PAM","nominal":100000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Pam","nominal":100000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Pam","nominal":100000},{"periode":"2026-06","kategori":"Operasional","keterangan":"Pam","nominal":300000},{"periode":"2026-07","kategori":"Operasional","keterangan":"Pam","nominal":361000},{"periode":"2026-08","kategori":"Operasional","keterangan":"Pam","nominal":100000},{"periode":"2026-05","kategori":"Operasional","keterangan":"Token","nominal":53000},{"periode":"2026-06","kategori":"Operasional","keterangan":"Token","nominal":106000},{"periode":"2026-07","kategori":"Operasional","keterangan":"Token","nominal":311000},{"periode":"2026-08","kategori":"Operasional","keterangan":"Token","nominal":106000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Wifi","nominal":66000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Wifi","nominal":235000},{"periode":"2026-06","kategori":"Operasional","keterangan":"Wifi","nominal":230000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Minyak","nominal":54000},{"periode":"2026-02","kategori":"Operasional","keterangan":"Minyak","nominal":50000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Minyak","nominal":180000},{"periode":"2026-05","kategori":"Operasional","keterangan":"Minyak","nominal":22000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Galon","nominal":36000},{"periode":"2026-02","kategori":"Operasional","keterangan":"Galon","nominal":24000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Galon","nominal":23000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Galon","nominal":42000},{"periode":"2026-05","kategori":"Operasional","keterangan":"Galon","nominal":47000},{"periode":"2026-06","kategori":"Operasional","keterangan":"Galon","nominal":42000},{"periode":"2026-07","kategori":"Operasional","keterangan":"Galon","nominal":60000},{"periode":"2026-08","kategori":"Operasional","keterangan":"Galon","nominal":12000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Aci","nominal":220000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Air","nominal":200000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Air","nominal":15000},{"periode":"2026-08","kategori":"Operasional","keterangan":"(deskripsi hilang saat input)","nominal":196000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Tepung roti","nominal":165000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Atk","nominal":8000},{"periode":"2026-02","kategori":"Operasional","keterangan":"Atk","nominal":57500},{"periode":"2026-03","kategori":"Operasional","keterangan":"Atk","nominal":45000},{"periode":"2026-05","kategori":"Operasional","keterangan":"Atk","nominal":14000},{"periode":"2026-06","kategori":"Operasional","keterangan":"Atk","nominal":10000},{"periode":"2026-07","kategori":"Operasional","keterangan":"Atk","nominal":22000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Plastik","nominal":43000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Plastik","nominal":110000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Dokter","nominal":100000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Rokok","nominal":95000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Makanan","nominal":91500},{"periode":"2026-02","kategori":"Operasional","keterangan":"Gula","nominal":15000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Gula","nominal":45000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Paket ATK","nominal":53000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Token listrik","nominal":50000},{"periode":"2026-08","kategori":"Operasional","keterangan":"Sabun","nominal":35000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Foto copy","nominal":11000},{"periode":"2026-02","kategori":"Operasional","keterangan":"Foto copy","nominal":22500},{"periode":"2026-01","kategori":"Operasional","keterangan":"Nota ATK","nominal":33000},{"periode":"2026-02","kategori":"Operasional","keterangan":"Makan","nominal":5000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Makan","nominal":27000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Roko","nominal":30000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Parkir","nominal":30000},{"periode":"2026-04","kategori":"Operasional","keterangan":"Dus","nominal":30000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Telur","nominal":15000},{"periode":"2026-03","kategori":"Operasional","keterangan":"Telur","nominal":9000},{"periode":"2026-08","kategori":"Operasional","keterangan":"ATK","nominal":20000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Kresek","nominal":16000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Apel","nominal":15000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Parkir cililin","nominal":15000},{"periode":"2026-05","kategori":"Operasional","keterangan":"Tisu basah","nominal":13500},{"periode":"2026-01","kategori":"Operasional","keterangan":"Cengek","nominal":10000},{"periode":"2026-01","kategori":"Operasional","keterangan":"Galon air minum","nominal":6000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Ajo","nominal":525000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Ajo","nominal":1100000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Ajo","nominal":1500000},{"periode":"2026-04","kategori":"Gaji","keterangan":"Ajo","nominal":1600000},{"periode":"2026-05","kategori":"Gaji","keterangan":"Ajo","nominal":900000},{"periode":"2026-06","kategori":"Gaji","keterangan":"Ajo","nominal":1200000},{"periode":"2026-07","kategori":"Gaji","keterangan":"Ajo","nominal":1200000},{"periode":"2026-08","kategori":"Gaji","keterangan":"Ajo","nominal":600000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Mia","nominal":170000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Mia","nominal":720000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Mia","nominal":450000},{"periode":"2026-04","kategori":"Gaji","keterangan":"Mia","nominal":720000},{"periode":"2026-05","kategori":"Gaji","keterangan":"Mia","nominal":510000},{"periode":"2026-06","kategori":"Gaji","keterangan":"Mia","nominal":435000},{"periode":"2026-07","kategori":"Gaji","keterangan":"Mia","nominal":1210000},{"periode":"2026-08","kategori":"Gaji","keterangan":"Mia","nominal":500000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Selsa","nominal":480000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Selsa","nominal":480000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Selsa","nominal":200000},{"periode":"2026-04","kategori":"Gaji","keterangan":"Selsa","nominal":1070000},{"periode":"2026-05","kategori":"Gaji","keterangan":"Selsa","nominal":360000},{"periode":"2026-06","kategori":"Gaji","keterangan":"Selsa","nominal":540000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Teh Nyai","nominal":345000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Teh Nyai","nominal":250000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Teh Nyai","nominal":305000},{"periode":"2026-04","kategori":"Gaji","keterangan":"Teh Nyai","nominal":575000},{"periode":"2026-05","kategori":"Gaji","keterangan":"Teh Nyai","nominal":575000},{"periode":"2026-06","kategori":"Gaji","keterangan":"Teh Nyai","nominal":425000},{"periode":"2026-07","kategori":"Gaji","keterangan":"Teh Nyai","nominal":505000},{"periode":"2026-08","kategori":"Gaji","keterangan":"Teh Nyai","nominal":135000},{"periode":"2026-06","kategori":"Gaji","keterangan":"Warda","nominal":605000},{"periode":"2026-07","kategori":"Gaji","keterangan":"Warda","nominal":1250000},{"periode":"2026-08","kategori":"Gaji","keterangan":"Warda","nominal":250000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Nuri","nominal":50000},{"periode":"2026-04","kategori":"Gaji","keterangan":"Nuri","nominal":224000},{"periode":"2026-05","kategori":"Gaji","keterangan":"Nuri","nominal":246500},{"periode":"2026-06","kategori":"Gaji","keterangan":"Nuri","nominal":390000},{"periode":"2026-07","kategori":"Gaji","keterangan":"Nuri","nominal":165000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Bi Isah","nominal":300000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Bi Isah","nominal":275000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Bi Isah","nominal":290000},{"periode":"2026-04","kategori":"Gaji","keterangan":"Bi Isah","nominal":125000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Dede","nominal":620000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Dede","nominal":250000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Teh Cucu","nominal":60000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Teh Cucu","nominal":310000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Teh Cucu","nominal":30000},{"periode":"2026-04","kategori":"Gaji","keterangan":"Teh Cucu","nominal":110000},{"periode":"2026-06","kategori":"Gaji","keterangan":"Teh Cucu","nominal":161000},{"periode":"2026-07","kategori":"Gaji","keterangan":"Teh Cucu","nominal":30000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Borongan","nominal":596000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Mamah","nominal":150000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Mamah","nominal":380000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Teh elis","nominal":310000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Teh elis","nominal":200000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Ceu Dede","nominal":395000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Ceu Dede","nominal":110000},{"periode":"2026-07","kategori":"Gaji","keterangan":"Fahri","nominal":440000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Nida","nominal":350000},{"periode":"2026-02","kategori":"Gaji","keterangan":"Ade","nominal":260000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Ma ucun","nominal":250000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Teh nung","nominal":160000},{"periode":"2026-08","kategori":"Gaji","keterangan":"Teh nung","nominal":57000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Gaji Ajo","nominal":200000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Bi isah salary","nominal":175000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Th nung","nominal":160000},{"periode":"2026-08","kategori":"Gaji","keterangan":"(deskripsi hilang saat input)","nominal":160000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Th nunu salary","nominal":140000},{"periode":"2026-01","kategori":"Gaji","keterangan":"Ema","nominal":20000},{"periode":"2026-03","kategori":"Gaji","keterangan":"Ema","nominal":100000},{"periode":"2026-01","kategori":"Lain-lain","keterangan":"Setoran bank","nominal":1000000},{"periode":"2026-02","kategori":"Lain-lain","keterangan":"Setoran bank","nominal":1000000},{"periode":"2026-01","kategori":"Lain-lain","keterangan":"Sekolah","nominal":144000},{"periode":"2026-02","kategori":"Lain-lain","keterangan":"Sekolah","nominal":25000},{"periode":"2026-03","kategori":"Lain-lain","keterangan":"Sekolah","nominal":75000},{"periode":"2026-04","kategori":"Lain-lain","keterangan":"Sekolah","nominal":425000},{"periode":"2026-06","kategori":"Lain-lain","keterangan":"Sekolah","nominal":840000},{"periode":"2026-07","kategori":"Lain-lain","keterangan":"Sekolah","nominal":213000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Sekolah","nominal":155000},{"periode":"2026-05","kategori":"Lain-lain","keterangan":"Mekar","nominal":700000},{"periode":"2026-06","kategori":"Lain-lain","keterangan":"Mekar","nominal":138000},{"periode":"2026-07","kategori":"Lain-lain","keterangan":"Mekar","nominal":616000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Mekar","nominal":138000},{"periode":"2026-04","kategori":"Lain-lain","keterangan":"Pasar","nominal":750000},{"periode":"2026-05","kategori":"Lain-lain","keterangan":"Pasar","nominal":392000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Pasar","nominal":150000},{"periode":"2026-02","kategori":"Lain-lain","keterangan":"Lainnya","nominal":930000},{"periode":"2026-03","kategori":"Lain-lain","keterangan":"Lainnya","nominal":5000},{"periode":"2026-04","kategori":"Lain-lain","keterangan":"Lainnya","nominal":20000},{"periode":"2026-07","kategori":"Lain-lain","keterangan":"Lainnya","nominal":100000},{"periode":"2026-05","kategori":"Lain-lain","keterangan":"Bri","nominal":250000},{"periode":"2026-07","kategori":"Lain-lain","keterangan":"Bri","nominal":800000},{"periode":"2026-01","kategori":"Lain-lain","keterangan":"Lain lain","nominal":942000},{"periode":"2026-01","kategori":"Lain-lain","keterangan":"Hutang","nominal":100000},{"periode":"2026-07","kategori":"Lain-lain","keterangan":"Hutang","nominal":800000},{"periode":"2026-04","kategori":"Lain-lain","keterangan":"BRI","nominal":750000},{"periode":"2026-07","kategori":"Lain-lain","keterangan":"Belanja","nominal":570000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Bayar sekolah","nominal":400000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"(deskripsi hilang saat input)","nominal":398000},{"periode":"2026-04","kategori":"Lain-lain","keterangan":"Lainya","nominal":250000},{"periode":"2026-06","kategori":"Lain-lain","keterangan":"Lainya","nominal":50000},{"periode":"2026-07","kategori":"Lain-lain","keterangan":"Arisan","nominal":100000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Arisan","nominal":100000},{"periode":"2026-05","kategori":"Lain-lain","keterangan":"Bayar paket","nominal":92000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Bayar paket","nominal":10000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Ate","nominal":100000},{"periode":"2026-04","kategori":"Lain-lain","keterangan":"Obat","nominal":10000},{"periode":"2026-05","kategori":"Lain-lain","keterangan":"Obat","nominal":5000},{"periode":"2026-06","kategori":"Lain-lain","keterangan":"Obat","nominal":65000},{"periode":"2026-07","kategori":"Lain-lain","keterangan":"Obat","nominal":15000},{"periode":"2026-01","kategori":"Lain-lain","keterangan":"Ajo ojeg","nominal":92000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Aa","nominal":60000},{"periode":"2026-05","kategori":"Lain-lain","keterangan":"Pampers","nominal":43000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Nabung qurban","nominal":30000},{"periode":"2026-01","kategori":"Lain-lain","keterangan":"Bayar karpet","nominal":25000},{"periode":"2026-04","kategori":"Lain-lain","keterangan":"Uang abang","nominal":21000},{"periode":"2026-02","kategori":"Lain-lain","keterangan":"Baju","nominal":20000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Udunan abang","nominal":15000},{"periode":"2026-01","kategori":"Lain-lain","keterangan":"Salep","nominal":13000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Gayung","nominal":12000},{"periode":"2026-01","kategori":"Lain-lain","keterangan":"Di cukur","nominal":10000},{"periode":"2026-05","kategori":"Lain-lain","keterangan":"Parab","nominal":10000},{"periode":"2026-08","kategori":"Lain-lain","keterangan":"Karpet","nominal":10000},{"periode":"2026-05","kategori":"Lain-lain","keterangan":"Alya","nominal":5000},{"periode":"2026-05","kategori":"Lain-lain","keterangan":"Jamu","nominal":4000},{"periode":"2026-04","kategori":"Retur","keterangan":"Bs","nominal":1349300},{"periode":"2026-05","kategori":"Retur","keterangan":"Bs","nominal":722300},{"periode":"2026-06","kategori":"Retur","keterangan":"Bs","nominal":436000},{"periode":"2026-07","kategori":"Retur","keterangan":"Bs","nominal":478500},{"periode":"2026-08","kategori":"Retur","keterangan":"Bs","nominal":80200},{"periode":"2026-01","kategori":"Retur","keterangan":"Naget","nominal":628700},{"periode":"2026-02","kategori":"Retur","keterangan":"Naget","nominal":785200},{"periode":"2026-03","kategori":"Retur","keterangan":"Naget","nominal":1429900},{"periode":"2026-04","kategori":"Retur","keterangan":"Naget","nominal":177900},{"periode":"2026-01","kategori":"Retur","keterangan":"Cireng","nominal":153600},{"periode":"2026-02","kategori":"Retur","keterangan":"Cireng","nominal":222300},{"periode":"2026-03","kategori":"Retur","keterangan":"Cireng","nominal":7400},{"periode":"2026-01","kategori":"Retur","keterangan":"Cibay","nominal":38400},{"periode":"2026-01","kategori":"Retur","keterangan":"Retur Bs t.evi 3 bungkus","nominal":11100},{"periode":"2026-08","kategori":"Retur","keterangan":"(deskripsi hilang saat input)","nominal":10500},{"periode":"2026-01","kategori":"Alat/Perlengkapan","keterangan":"Bengkel","nominal":110000},{"periode":"2026-02","kategori":"Alat/Perlengkapan","keterangan":"Bengkel","nominal":90000},{"periode":"2026-03","kategori":"Alat/Perlengkapan","keterangan":"Bengkel","nominal":145000},{"periode":"2026-05","kategori":"Alat/Perlengkapan","keterangan":"Bengkel","nominal":135000},{"periode":"2026-06","kategori":"Alat/Perlengkapan","keterangan":"Bengkel","nominal":235000},{"periode":"2026-07","kategori":"Alat/Perlengkapan","keterangan":"Bengkel","nominal":155000},{"periode":"2026-08","kategori":"Alat/Perlengkapan","keterangan":"Bengkel","nominal":50000},{"periode":"2026-07","kategori":"Alat/Perlengkapan","keterangan":"Bangunan","nominal":757000},{"periode":"2026-06","kategori":"Alat/Perlengkapan","keterangan":"Paku","nominal":50000},{"periode":"2026-07","kategori":"Alat/Perlengkapan","keterangan":"Paku","nominal":510000},{"periode":"2026-04","kategori":"Alat/Perlengkapan","keterangan":"Mesin","nominal":300000},{"periode":"2026-07","kategori":"Alat/Perlengkapan","keterangan":"Motor","nominal":275000},{"periode":"2026-07","kategori":"Alat/Perlengkapan","keterangan":"Papan","nominal":200000},{"periode":"2026-04","kategori":"Alat/Perlengkapan","keterangan":"Plastik","nominal":112000},{"periode":"2026-01","kategori":"Alat/Perlengkapan","keterangan":"Service mesin","nominal":100000},{"periode":"2026-01","kategori":"Alat/Perlengkapan","keterangan":"Lampu","nominal":50000},{"periode":"2026-04","kategori":"Alat/Perlengkapan","keterangan":"Lampu","nominal":25000},{"periode":"2026-04","kategori":"Alat/Perlengkapan","keterangan":"Ganti oli","nominal":65000},{"periode":"2026-04","kategori":"Alat/Perlengkapan","keterangan":"Tambal ban","nominal":30000},{"periode":"2026-05","kategori":"Alat/Perlengkapan","keterangan":"Tambal ban","nominal":15000},{"periode":"2026-08","kategori":"Alat/Perlengkapan","keterangan":"Tambal ban","nominal":15000},{"periode":"2026-03","kategori":"Alat/Perlengkapan","keterangan":"Tambal","nominal":57000},{"periode":"2026-04","kategori":"Alat/Perlengkapan","keterangan":"Ganti ban","nominal":50000},{"periode":"2026-04","kategori":"Alat/Perlengkapan","keterangan":"Dus","nominal":40000},{"periode":"2026-03","kategori":"Alat/Perlengkapan","keterangan":"Tambal dll","nominal":37000},{"periode":"2026-02","kategori":"Alat/Perlengkapan","keterangan":"Kasa","nominal":10000},{"periode":"2026-04","kategori":"Alat/Perlengkapan","keterangan":"Lakban","nominal":10000}];
+let saleCustomerMap={};
+function saleCustomer(id){return String(saleCustomerMap[String(id)]||'')}
+async function loadSaleCustomers(){
+  saleCustomerMap={};
+  try{
+    const [links,customers]=await Promise.all([
+      supabaseClient.from('ff_penjualan_pelanggan').select('penjualan_id,pelanggan_id'),
+      supabaseClient.from('ff_pelanggan').select('id,nama')
+    ]);
+    if(links.error)throw links.error;
+    if(customers.error)throw customers.error;
+    const names=Object.fromEntries((customers.data||[]).map(x=>[String(x.id),String(x.nama||'')]));
+    (links.data||[]).forEach(x=>{const name=names[String(x.pelanggan_id)];if(name)saleCustomerMap[String(x.penjualan_id)]=name;});
+    return true;
+  }catch(e){
+    // Legacy read-only compatibility for old data created before the DB mapping existed.
+    try{
+      const x=JSON.parse(localStorage.getItem('ff_sale_customers_v1')||'{}');
+      saleCustomerMap=x||{};
+    }catch(_){}
+    console.warn('Mapping pelanggan DB belum tersedia:',e);
+    return false;
+  }
+}
+function saleMonth(v){const s=String(v||'');const m=s.match(/^(20\d{2})-(\d{1,2})/);return m?`${m[1]}-${String(Number(m[2])).padStart(2,'0')}`:''}
+const PDF_EXPECTED={
+ '2026-01':[33,7508,26541100], '2026-02':[52,9741,33617200], '2026-03':[46,8253,27881100],
+ '2026-04':[47,5778,22110700], '2026-05':[38,4635,17767500], '2026-06':[32,5389,21577000],
+ '2026-07':[35,6079,24366500], '2026-08':[28,1970,7938500]
+};
+const DATA_LAMA_ALIASES={
+  periode:['periode','bulan','month','periode_bulan','tanggal','date','tgl'],
+  konsumen:['konsumen','customer','pelanggan','nama_konsumen','nama_pelanggan','customer_name','nama_customer','nama','keterangan'],
+  produk:['produk','product','nama_produk','nama product','item','jenis_produk','jenis'],
+  qty:['qty','jumlah','kuantitas','terjual','jumlah_terjual','quantity','qty_jual'],
+  omzet:['omzet','total','nominal','penjualan','revenue','total_penjualan','total_omzet','nilai_penjualan']
+};
+function normKey(v){return String(v||'').toLowerCase().replace(/[\s_-]+/g,'')}
+const DATA_LAMA_SCHEMA={map:{periode:'periode',konsumen:'keterangan',produk:'jenis',qty:'catatan',omzet:'nominal'},keys:['id','created_at','periode','jenis','keterangan','nominal','catatan'],inferred:false,profile:'supabase-data-lama-v2-exact'};
+function getDataLamaSchema(){return DATA_LAMA_SCHEMA}
+function schemaError(schema){const missing=['periode','konsumen','produk','qty','omzet'].filter(k=>!schema.map[k]);return missing.length?'Mapping tabel data_lama belum lengkap: '+missing.join(', '):''}
+function canonicalizeDataRow(x,schema){const m=schema.map;return {id:x.id,periode:normalPeriode(x[m.periode])||String(x[m.periode]??'').slice(0,7),konsumen:String(x[m.konsumen]??''),produk:String(x[m.produk]??''),qty:toNum(x[m.qty]),omzet:toNum(x[m.omzet])}}
+function rowSignature(x){return [normalPeriode(x.periode),String(x.konsumen||'').trim().toLowerCase(),String(x.produk||'').trim().toLowerCase(),Math.round(Number(x.qty)||0),Math.round(Number(x.omzet)||0)].join('|')}
+async function readExistingCanonical(schema){const r=await supabaseClient.from('data_lama').select('*');if(r.error)return {data:[],error:r.error};return {data:(r.data||[]).map(x=>canonicalizeDataRow(x,schema)),error:null}}
+function buildInsertRows(fresh,m){return fresh.map(x=>({[m.periode]:String(x.periode),[m.konsumen]:x.konsumen,[m.produk]:x.produk,[m.qty]:String(Math.round(Number(x.qty)||0)),[m.omzet]:Math.round(Number(x.omzet)||0)}))}
+async function insertDataLamaResolved(out,schema){
+  const er=await readExistingCanonical(schema);
+  if(er.error)throw new Error('Gagal membaca data_lama sebelum impor: '+er.error.message);
+  const seen=new Set(er.data.map(rowSignature));
+  const fresh=out.filter(x=>!seen.has(rowSignature(x)));
+  if(!fresh.length)return {used:schema.map,rows:[],duplicateCount:out.length};
+  const r=await supabaseClient.from('data_lama').insert(fresh.map(x=>({
+    periode:String(x.periode),
+    jenis:String(x.produk),
+    keterangan:String(x.konsumen),
+    nominal:Math.round(Number(x.omzet)||0),
+    catatan:String(Math.round(Number(x.qty)||0))
+  })));
+  if(r.error)throw r.error;
+  return {used:schema.map,rows:fresh,duplicateCount:out.length-fresh.length};
+}
+function selectedMonth(){return window.ffDataLamaMonth||''}
+function setSelectedMonth(m){toggleMonth(m)}
+function allReportMonths(){
+  const set=new Set();
+  all.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
+  expenseAll.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
+  salesAll.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
+  onlineSalesAll.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
+  const current=new Date(); set.add(`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}`);
+  return Array.from(set).sort().reverse();
+}
+function incomeForMonth(m){const old=all.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0);const off=salesAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0);const on=FFCore.onlineIncomeRows(onlineSalesAll,m).reduce((a,x)=>a+Number(x.revenue||0),0);return old+off+on}
+function expenseForMonth(m){return expenseAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.nominal||0),0)}
+function expensePeriod(v){const s=String(v??'').trim();return /^\d{4}-\d{2}$/.test(s)?s:''}
+function exactExpenseMonths(){return new Set(expenseAll.map(x=>x.periode).filter(m=>/^\d{4}-\d{2}$/.test(m)))}
+function renderMonthlySummary(){
+  const box=$('monthlySummary');
+  const months=allReportMonths();
+  const exactMonths=exactExpenseMonths();
+  let html='<div class="month-summary">';
+  months.forEach(m=>{
+    const income=incomeForMonth(m), expense=expenseForMonth(m), hasExpense=exactMonths.has(m), balance=income-expense;
+    html+=`<div class="month-row"><div class="month-name">📅 ${esc(monthLabel(m))}</div><div><span class="money-label">🟢 Pemasukan</span><span class="money income">${income?rupiah(income):'—'}</span></div><div><span class="money-label">🔴 Pengeluaran</span><span class="money expense">${hasExpense?rupiah(expense):'—'}</span></div><div><span class="money-label">💰 Selisih</span><span class="money balance">${hasExpense?rupiah(balance):'—'}</span></div><button class="view-btn" onclick="toggleMonth('${m}')">👁 Lihat Data</button><div id="detail-${m}" class="month-detail" style="display:none"></div></div>`;
+  });
+  html+='</div>';
+  html+='<div class="history-note">🟢 Pemasukan bulanan = Data Lama + transaksi terbaru dari Penjualan. Bulan tidak dikunci, jadi transaksi baru tetap menambah bulan yang sama.</div>';
+  box.innerHTML=html;
+}
+function detailMonth(m){
+  const rows=all.filter(x=>x.periode===m);
+  const sales=salesAll.filter(x=>x.periode===m);
+  const online=onlineSalesAll.filter(x=>x.periode===m);
+  const onlineFin=FFCore.onlineIncomeRows(onlineSalesAll,m);
+  const onlineProducts=FFCore.onlineSellerRows(onlineSalesAll,m);
+  const ex=expenseAll.filter(x=>x.periode===m);
+  const products={};
+  rows.forEach(x=>{const p=x.produk||'Tanpa Produk';products[p]??={qty:0,omzet:0};products[p].qty+=Number(x.qty||0);products[p].omzet+=Number(x.omzet||0)});
+  sales.forEach(x=>{const p=x.produk||`Produk #${x.produk_id||'-'}`;products['🟢 '+p]??={qty:0,omzet:0};products['🟢 '+p].qty+=Number(x.qty||0);products['🟢 '+p].omzet+=Number(x.omzet||0)});
+  onlineProducts.forEach(x=>{const p=x.product_name||`Produk #${x.product_id||'-'}`;products['🔵 '+p]??={qty:0,omzet:0};products['🔵 '+p].qty+=Number(x.qty||0);products['🔵 '+p].omzet+=Number(x.revenue||0)});
+
+  const expenseGroups={};
+  ex.forEach(x=>{
+    const k=x.kategori||'Tanpa Kategori';
+    expenseGroups[k]??={total:0,rows:[]};
+    expenseGroups[k].total+=Number(x.nominal||0);
+    expenseGroups[k].rows.push(x);
+  });
+
+  const incomeTotal=rows.reduce((a,x)=>a+Number(x.omzet||0),0)+sales.reduce((a,x)=>a+Number(x.omzet||0),0)+onlineFin.reduce((a,x)=>a+Number(x.revenue||0),0);
+  const expenseTotal=ex.reduce((a,x)=>a+Number(x.nominal||0),0);
+  let h='<div class="detail-grid">';
+
+  h+=`<div class="mini-detail"><h4>🟢 Pemasukan Lengkap · ${rupiah(incomeTotal)}</h4><table><thead><tr><th>Sumber</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>`;
+  rows.forEach(x=>{h+=`<tr><td>Data Lama</td><td>${esc(x.konsumen)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td></tr>`});
+  sales.forEach(x=>{const customer=saleCustomer(x.id)||'—';h+=`<tr><td>Penjualan Offline</td><td>${esc(customer)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td></tr>`});
+  onlineFin.forEach(x=>{h+=`<tr><td>Income TikTok</td><td>—</td><td>${esc(x.product_name||'-')}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.revenue)}</td></tr>`});
+  if(!rows.length&&!sales.length&&!onlineFin.length)h+='<tr><td colspan="5">Belum ada pemasukan.</td></tr>';
+  h+='</tbody></table></div>';
+
+  h+=`<div class="mini-detail"><h4>🔴 Pengeluaran Lengkap · ${ex.length?rupiah(expenseTotal):'—'}</h4>`;
+  if(ex.length){
+    Object.entries(expenseGroups).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cat,g])=>{
+      h+=`<div style="margin:0 0 14px"><div style="display:flex;justify-content:space-between;gap:10px;font-weight:800;color:#143c2b;margin-bottom:6px"><span>${esc(cat)}</span><span>${rupiah(g.total)}</span></div><table><thead><tr><th>Keterangan</th><th>Nominal</th></tr></thead><tbody>`;
+      g.rows.forEach(x=>{h+=`<tr><td>${esc(x.keterangan)}</td><td>${rupiah(x.nominal)}</td></tr>`});
+      h+='</tbody></table></div>';
+    });
+  }else h+='<div class="emptyState">Belum ada pengeluaran dengan periode bulan ini.</div>';
+  h+='</div></div>';
+
+  const productRows=Object.entries(products).sort((a,b)=>b[1].qty-a[1].qty);
+  h+='<div class="mini-detail" style="margin-top:14px"><h4>📦 Keluar per Produk</h4><table><thead><tr><th>Produk</th><th>Qty Keluar</th><th>Omzet</th></tr></thead><tbody>';
+  productRows.forEach(([p,v])=>{h+=`<tr><td>${esc(p)}</td><td>${v.qty.toLocaleString('id-ID')}</td><td>${rupiah(v.omzet)}</td></tr>`});
+  if(!productRows.length)h+='<tr><td colspan="3">Belum ada produk keluar.</td></tr>';
+  h+='</tbody></table><button class="view-btn close-detail" onclick="toggleMonth(\''+m+'\')">Tutup Data</button></div>';
+  return h;
+}
+window.toggleMonth=function(m){const el=$('detail-'+m);if(!el)return;if(el.style.display==='none'){el.innerHTML=detailMonth(m);el.style.display='block'}else{el.style.display='none'}};
+function renderGrouped(){renderMonthlySummary()}
+function renderAll(){renderGrouped();renderOnlineMonthlySummary()}
+function onlineFinanceRowsForMonth(m){return onlineSalesAll.filter(x=>String(x.periode||'').slice(0,7)===m && String(x.source||'')==='online_standard_finance')}
+function onlineProductRowsForMonth(m){return onlineSalesAll.filter(x=>String(x.periode||'').slice(0,7)===m && ['online_standard_product','seller_center'].includes(String(x.source||'')))}
+function onlineMonths(){
+  const set=new Set();
+  onlineSalesAll.forEach(x=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+  return Array.from(set).sort();
+}
+function onlineMonthDetail(m){
+  const fin=onlineFinanceRowsForMonth(m), prods=onlineProductRowsForMonth(m);
+  const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+  const pot=fin.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
+  const net=fin.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+  const audit=auditOnlineLockedRows(onlineSalesAll);
+  const ready=!audit.lockedRows || audit.all===ONLINE_LOCKED_TOTAL;
+  const qty=prods.reduce((a,x)=>a+Number(x.qty||0),0);
+
+  let h='<div class="online-detail">';
+  h+='<div class="online-mini">';
+  h+='<div><small>Pemasukan</small><b>'+rupiah(rev)+'</b></div>';
+  h+='<div><small>Potongan Online Shop</small><b>'+rupiah(pot)+'</b></div>';
+  h+='<div><small>Uang Bersih</small><b>'+rupiah(net)+'</b></div>';
+  h+='<div><small>Modal / Profit Historis</small><b>'+(ready?'Mengikuti HPP resmi':'—')+'</b></div>';
+  h+='<div><small>Status Audit</small><b style="color:'+(ready?'#087443':'#a22')+'">'+(ready?'✅ Cocok 8.085':'🔴 Belum cocok')+'</b></div>';
+  h+='</div>';
+
+  if(!ready){
+    h+='<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>🔴 Detail produk historis belum final.</b> Database sumber membaca <b>'+audit.all.toLocaleString('id-ID')+' bungkus</b>, sedangkan audit final Familia Food adalah <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+' bungkus</b>. Karena belum cocok, angka produk/HPP/profit bulanan tidak dipaksakan. Gunakan sumber audit terbaru; baseline lama tidak lagi menjadi acuan.</div>';
+  }else{
+    h+='<div class="sectionTotal"><span>Total Produk Keluar</span><b>'+qty.toLocaleString('id-ID')+' bungkus</b></div>';
+  }
+
+  const grouped={};
+  if(ready){
+    prods.forEach(x=>{const key=[String(x.product_name||x.produk||'-').trim(),String(x.variation||'').trim()].join(' | ');if(!grouped[key])grouped[key]={produk:String(x.product_name||x.produk||'-').trim(),variation:String(x.variation||'').trim(),qty:0};grouped[key].qty+=Number(x.qty||0)});
+  }
+  const rows=Object.values(grouped).sort((a,b)=>b.qty-a.qty);
+  h+='<div class="mini-detail"><h4>📦 Produk Online per Bulan</h4><div class="tablewrap"><table><thead><tr><th>Produk / Listing</th><th>Variasi</th><th>Bungkus</th></tr></thead><tbody>';
+  if(!ready){
+    h+='<tr><td colspan="3">⛔ Detail produk disembunyikan sampai audit TikTok cocok dengan kunci 8.085 bungkus.</td></tr>';
+  }else{
+    rows.forEach(x=>{h+='<tr><td>'+esc(x.produk)+'</td><td>'+esc(x.variation||'—')+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td></tr>'});
+    if(!rows.length)h+='<tr><td colspan="3">Belum ada detail produk.</td></tr>';
+  }
+  h+='</tbody></table></div></div>';
+  h+='<button class="view-btn close-detail" type="button" data-online-month="'+m+'">Tutup Data</button>';
+  h+='</div>';
+  return h;
+}
+function renderOnlineMonthlySummary(){
+  const box=$('onlineMonthlySummary'); if(!box)return;
+  const months=onlineMonths();
+  if(!months.length){box.innerHTML='<div class="emptyState">Belum ada data Online historis.</div>';return}
+
+  const audit=auditOnlineLockedRows(onlineSalesAll);
+  const ready=!audit.lockedRows || audit.all===ONLINE_LOCKED_TOTAL;
+  let html='';
+
+  if(!ready){
+    html+='<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>🔴 AUDIT PRODUK ONLINE HISTORIS</b><br>Audit final Familia Food: <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+' bungkus</b> • Database STANDARD: <b>'+audit.all.toLocaleString('id-ID')+' bungkus</b> • Selisih: <b>'+(audit.all-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus</b>.<br>Produk Keluar final mengikuti sumber audit <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+' bungkus</b> setelah file audit diimpor.</div>';
+  }else{
+    html+='<div class="reportNotice" style="border-color:#cfe6d7;background:#f4fbf6;color:#146b3a"><b>🟢 AUDIT PRODUK ONLINE HISTORIS</b><br>STANDARD cocok dengan kunci <b>'+ONLINE_LOCKED_TOTAL.toLocaleString('id-ID')+' bungkus</b>.</div>';
+  }
+
+  html+='<div class="month-summary">';
+  months.forEach(m=>{
+    const fin=onlineFinanceRowsForMonth(m);
+    const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+    const pot=fin.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
+    const net=fin.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+    html+='<div class="online-month-row"><div class="month-name">📅 '+esc(monthLabel(m))+'</div><div><span class="money-label">🟢 Pemasukan</span><span class="money income">'+rupiah(rev)+'</span></div><div><span class="money-label">🔴 Potongan</span><span class="money expense">'+rupiah(pot)+'</span></div><div><span class="money-label">💰 Uang Bersih</span><span class="money balance">'+rupiah(net)+'</span></div><div><span class="money-label">📦 Produk Keluar Historis</span><span class="money">'+(ready?'Tersedia':'—')+'</span></div><div><span class="money-label">🧮 HPP / Profit</span><span class="money">'+(ready?'Tersedia':'Ditahan')+'</span><button class="view-btn" type="button" style="margin-top:7px" data-online-month="'+m+'">👁 Lihat Data</button></div><div id="online-detail-'+m+'" class="online-detail" style="display:none"></div></div>';
+  });
+  html+='</div><div class="history-note">🔵 Keuangan historis tetap membaca <b>STANDARD Finance</b>. Produk Keluar Jan–Agustus memakai hasil audit sumber <b>8.085 bungkus</b>. HPP historis dihitung dari produk audit yang sudah dipetakan ke master HPP.</div>';
+  box.innerHTML=html;
+}
+window.toggleOnlineMonth=function(m){const el=$('online-detail-'+m);if(!el)return;if(el.style.display==='none'){el.innerHTML=onlineMonthDetail(m);el.style.display='block'}else{el.style.display='none'}};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-online-month]');if(b){toggleOnlineMonth(b.getAttribute('data-online-month'))}});
+function setHistoryTab(tab){
+  const off=tab==='offline';
+  $('tabOffline').classList.toggle('active',off);$('tabOnline').classList.toggle('active',!off);
+  $('offlineTabPanel').classList.toggle('active',off);$('onlineTabPanel').classList.toggle('active',!off);
+}
+$('tabOffline').onclick=()=>setHistoryTab('offline');
+$('tabOnline').onclick=()=>setHistoryTab('online');
+async function load(){
+  try{
+    const schema=await getDataLamaSchema();
+    const er=schemaError(schema);
+    if(er){$('monthlySummary').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';return}
+    const r=await supabaseClient.from('data_lama').select('*');
+    if(r.error){$('monthlySummary').innerHTML='<div class="msg" style="color:#a22">Gagal memuat: '+esc(r.error.message)+'</div>';return}
+    all=(r.data||[]).map(x=>canonicalizeDataRow(x,schema)).map(x=>({...x,qty:Number(x.qty||0),omzet:Math.round(Number(x.omzet||0))}));
+    const erx=await supabaseClient.from('pengeluaran').select('id,periode,kategori,keterangan,nominal');
+    if(erx.error)throw new Error('Gagal memuat pengeluaran: '+erx.error.message);
+    expenseAll=(erx.data||[]).map(x=>({id:x.id,periode:expensePeriod(x.periode),kategori:String(x.kategori||''),keterangan:String(x.keterangan||''),nominal:Math.round(Number(x.nominal)||0)})).filter(x=>x.periode);
+    const pr=await supabaseClient.from('produk').select('id,nama_produk');
+    if(pr.error)throw new Error('Gagal memuat produk: '+pr.error.message);
+    productMap=Object.fromEntries((pr.data||[]).map(x=>[x.id,String(x.nama_produk||`Produk #${x.id}`)]));
+    const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,channel,harga,hpp,laba,source,product_name,variation,sku_id,seller_sku,omzet_produk,biaya_platform,uang_bersih,modal_hpp,profit_online,order_id,import_key');
+    if(sr.error)throw new Error('Gagal memuat penjualan: '+sr.error.message);
+    const allSalesRows=sr.data||[];
+    await loadSaleCustomers();
+    salesAll=allSalesRows.filter(x=>String(x.channel||'')==='Offline').map(x=>({id:x.id,periode:saleMonth(x.tanggal),produk_id:x.produk_id,produk:productMap[x.produk_id]||String(x.product_name||`Produk #${x.produk_id||'-'}`),qty:Number(x.qty||0),channel:String(x.channel||''),harga:Math.round(Number(x.harga)||0),omzet:Math.round(Number(x.omzet_produk??(Number(x.qty||0)*Number(x.harga||0)))||0)}));
+    onlineSalesAll=allSalesRows.filter(x=>String(x.channel||'')==='Online').map(x=>({...x,periode:saleMonth(x.tanggal),produk:productMap[x.produk_id]||String(x.product_name||`Produk #${x.produk_id||'-'}`)}));
+    renderAll();
+  }catch(e){$('monthlySummary').innerHTML='<div class="msg" style="color:#a22">Gagal memuat data: '+esc(e.message||e)+'</div>'}
+}
+$('save').onclick=async()=>{
+  const data={periode:$('periode').value,konsumen:$('konsumen').value.trim(),produk:$('produk').value.trim(),qty:Math.round(Number($('qty').value)||0),omzet:Math.round(Number($('omzet').value)||0)};
+  if(!data.periode||!data.konsumen||!data.produk||data.qty<=0)return msg('Periode, konsumen, produk, dan Qty wajib diisi.',true);
+  try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return msg(er,true);
+    const resolved=await insertDataLamaResolved([data],schema);if(!resolved.rows.length)return msg('Data sudah ada. Tidak dibuat duplikat.');
+    $('konsumen').value='';$('produk').value='';$('qty').value=0;$('omzet').value=0;msg('Data historis tersimpan.');load();
+  }catch(e){msg(e.message||e,true)}
+};
+window.del=async id=>{if(!confirm('Hapus data historis ini?'))return;const r=await supabaseClient.from('data_lama').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);msg('Data historis dihapus.');load()};
+$('refresh')?.addEventListener('click',load);
+
+let onlineOldImportRows=[], productMasterRows=[], hppMasterRows=[], onlineOldPreviewRows=[];
+let onlineOldQueuedFiles=[];
+let onlineOldActiveMonth='';
+function parseAnyDate(v){
+  if(v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
+  const s=String(v??'').trim(); if(!s)return '';
+  let m=s.match(/(20\d{2})[\/-](\d{1,2})[\/-](\d{1,2})/); if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,'0')}-${String(Number(m[3])).padStart(2,'0')}`;
+  m=s.match(/(\d{1,2})[\/-](\d{1,2})[\/-](20\d{2})/); if(m)return `${m[3]}-${String(Number(m[2])).padStart(2,'0')}-${String(Number(m[1])).padStart(2,'0')}`;
+  return '';
+}
+function headersNorm(rec){return new Set(Object.keys(rec||{}).map(x=>FFCore.norm(x)).filter(Boolean))}
+function looksOriginalIncome(rec){const h=headersNorm(rec);return h.has('id pesanan/penyesuaian')&&h.has('jenis transaksi')&&(h.has('jumlah penyelesaian pembayaran')||h.has('total pendapatan'))&&h.has('total biaya')}
+function looksProcessedImport(rec){const h=headersNorm(rec);return h.has('order id')&&h.has('product name')&&h.has('quantity')&&h.has('omzet produk')}
+function looksSeller(rec){const h=headersNorm(rec);return h.has('order id')&&h.has('product name')&&h.has('quantity')&&(h.has('sku subtotal after discount')||h.has('order amount')||h.has('created time'))}
+function normalizeIncomeHistorical(r){
+  const kind=String(r['Jenis transaksi']??'').trim(), id=String(r['ID Pesanan/Penyesuaian']??'').trim();
+  const tanggal=parseAnyDate(r['Waktu pembayaran pesanan'])||parseAnyDate(r['Waktu pemesanan'])||'';
+  const orderDate=parseAnyDate(r['Waktu pemesanan'])||'';
+  const payDate=parseAnyDate(r['Waktu pembayaran pesanan'])||orderDate;
+  const rev=toNum(r['Total Pendapatan']), settlement=toNum(r['Jumlah penyelesaian pembayaran']);
+  const costRaw=toNum(r['Total Biaya']), adjustment=toNum(r['Jumlah penyesuaian']);
+  const related=String(r['ID pesanan terkait']??'').trim();
+  const isOrder=kind.toLowerCase()==='pesanan';
+  const key=['income-old-v2',kind,id,orderDate,payDate,settlement,rev,costRaw,adjustment,related].join('|');
+  return {tanggal: tanggal||'', produk_id:null, qty:0, channel:'Online', harga:0, hpp:0, laba:0,
+    order_id:id, product_name:`[Income TikTok] ${kind||'Transaksi'}`, variation:kind, sku_id:'', seller_sku:'', quantity_return:0,
+    harga_asli:0, omzet_produk:isOrder?rev:0, order_amount:isOrder?rev:0,
+    biaya_platform:isOrder?Math.max(0,rev-settlement):null, uang_bersih:isOrder?settlement:null,
+    modal_hpp:null, profit_online:null,
+    source:isOrder?'online_historical_finance':'online_historical_adjustment',
+    purchase_channel:'TikTok Shop', order_channel:'TikTok Shop', created_time:orderDate?orderDate+'T00:00:00':null,
+    paid_time:payDate?payDate+'T00:00:00':null, import_key:key};
+}
+function parseProcessedHistorical(raw){
+  const out=[];
+  raw.forEach(r=>{const d=parseAnyDate(r['Tanggal']||r['Paid Time']||r['Created Time'])||FFCore.monthOf(r['Tanggal']||r['Paid Time']||r['Created Time']);if(!d)return;
+    const order=String(r['Order ID']??'').trim(),product=String(r['Product Name']??'').trim();if(!order&&!product)return;
+    const qty=toNum(r['Quantity']);const rev=toNum(r['Omzet Produk']);const netVal=String(r['Uang Bersih']??'').trim()===''?null:toNum(r['Uang Bersih']);
+    const modal=String(r['Modal/HPP']??'').trim()===''?null:toNum(r['Modal/HPP']);
+    const key=String(r['Import Key']||['online-old-import',order,r['SKU ID'],r['Variation'],product,FFCore.monthOf(d)].join('|'));
+    out.push({tanggal:d.slice(0,10),produk_id:null,qty,channel:'Online',harga:toNum(r['Harga/Bungkus']),hpp:0,laba:0,order_id:order,product_name:product,variation:String(r['Variation']??''),sku_id:String(r['SKU ID']??''),seller_sku:String(r['Seller SKU']??''),quantity_return:toNum(r['Return Qty']),harga_asli:toNum(r['SKU Unit Original Price']),omzet_produk:rev,order_amount:toNum(r['Order Amount'])||rev,biaya_platform:String(r['Biaya Platform']??'').trim()===''?null:toNum(r['Biaya Platform']),uang_bersih:netVal,modal_hpp:modal,profit_online:String(r['Profit']??'').trim()===''?null:toNum(r['Profit']),source:'online_historical_import',purchase_channel:String(r['Purchase Channel']||'TikTok Shop'),order_channel:String(r['Order Channel']||'TikTok Shop'),created_time:null,paid_time:d.slice(0,10)+'T00:00:00',import_key:key});
+  });return out;
+}
+function sellerBundleMultiplier(r){const t=[r['Product Name'],r['Variation'],r['Seller SKU'],r['SKU ID']].map(v=>String(v??'')).join(' | ');const m=t.match(/\b([236])\s*(?:bungkus|bks)\s*(?:isi|is)\s*(?:24|36|72)\s*pcs?\b/i);return m?Number(m[1]):1}
+function sellerBundleMultiplier(r){
+  const t=[r['Product Name'],r['Variation'],r['Seller SKU'],r['SKU ID']].map(v=>String(v??'')).join(' | ');
+  const m=t.match(/\b([236])\s*(?:bungkus|bks)\s*(?:isi|is)\s*(?:24|36|72)\s*pcs?\b/i);
+  return m?Number(m[1]):1;
+}
+function parseSellerHistorical(raw){
+  // Audit terkunci: hanya TikTok + Selesai + Tempura Aci + Created Time Jan–Agustus 2026.
+  // Qty disimpan sebagai BUNGKUS setelah retur dan ekspansi paket 2/3/6.
+  const sourceRows=(Array.isArray(raw)?raw:[]).filter(r=>{
+    const date=parseAnyDate(r['Created Time']??r['Waktu Dibuat']??r['Tanggal']);
+    const channel=String(r['Purchase Channel']??'').trim().toLowerCase();
+    const status=String(r['Order Status']??'').trim().toLowerCase();
+    const product=String(r['Product Name']??r['Nama Produk']??r['Produk']??'').trim();
+    return !!date && date>='2026-01-01' && date<='2026-08-31' &&
+      channel==='tiktok' && status==='selesai' && /tempura\s*aci/i.test(product);
+  });
+  return sourceRows.map(r=>{
+    const order=String(r['Order ID']??r['ID Pesanan']??r['Order ID/Pesanan']??'').trim().replace(/\s+/g,'');
+    const product=String(r['Product Name']??r['Nama Produk']??r['Produk']??'').trim();
+    if(!order||!product)return null;
+    const rawQty=toNum(r['Quantity']??r['Qty']??r['Jumlah']);
+    const quantityReturn=toNum(r['Sku Quantity of return']??r['Return Qty']??r['Jumlah Retur']);
+    const bundleMult=sellerBundleMultiplier(r);
+    const qty=Math.max(0,rawQty-quantityReturn)*bundleMult;
+    const omzet=toNum(r['SKU Subtotal After Discount']??r['SKU Subtotal Setelah Diskon']??r['Subtotal Produk']??r['Omzet Produk']??r['Total Jual']);
+    const price=toNum(r['SKU Unit Original Price']??r['Harga Jual']??r['Harga'])||(rawQty?omzet/rawQty:0);
+    const date=parseAnyDate(r['Created Time']??r['Waktu Dibuat']??r['Tanggal']);
+    if(!date)return null;
+    const variation=String(r['Variation']??r['Variasi']??'').trim();
+    const sku=String(r['SKU ID']??r['SKU']??r['SKU ID Produk']??'').trim();
+    const sellerSku=String(r['Seller SKU']??r['SKU Penjual']??'').trim();
+    const key=['seller-audit-v5',order,sku,variation,product,date.slice(0,10),rawQty,quantityReturn,bundleMult,Math.round(omzet)].join('|');
+    return {tanggal:date.slice(0,10),produk_id:null,qty:Math.round(qty),channel:'Online',harga:Math.round(price),hpp:0,laba:0,
+      order_id:order,product_name:product,variation,sku_id:sku,seller_sku:sellerSku,quantity_return:quantityReturn,
+      harga_asli:Math.round(price),omzet_produk:omzet,order_amount:toNum(r['Order Amount']??r['Jumlah Pesanan'])||omzet,
+      biaya_platform:null,uang_bersih:null,modal_hpp:null,profit_online:null,source:'seller_center',
+      purchase_channel:String(r['Purchase Channel']||'TikTok Shop'),order_channel:String(r['Order Channel']||'TikTok Shop'),
+      created_time:date+'T00:00:00',paid_time:date+'T00:00:00',import_key:key};
+  }).filter(Boolean);
+}
+function parseLegacyDatabase(wb){
+  const names=wb.SheetNames.map(String), norm=s=>FFCore.norm(s), out=[];
+  const hasOut=names.some(n=>norm(n)==='keluar resi'), hasCash=names.some(n=>norm(n)==='uang masuk');
+  if(hasOut){const wr=XLSX.utils.sheet_to_json(wb.Sheets[names.find(n=>norm(n)==='keluar resi')],{defval:'',raw:false});wr.forEach(r=>{const d=parseAnyDate(r['Tanggal']);if(!d)return;const product=String(r['Produk']??'').trim(),qty=toNum(r['Qty']),rev=toNum(r['Total Jual']),modal=toNum(r['Total Modal']);if(!product||!qty)return;const order=String(r['No Resi']??'').trim();out.push({tanggal:d,produk_id:null,qty,channel:'Online',harga:toNum(r['Harga Jual']),hpp:modal,laba:toNum(r['Margin'])||rev-modal,order_id:order,product_name:product,variation:'',sku_id:'',seller_sku:'',quantity_return:0,harga_asli:toNum(r['Harga Jual']),omzet_produk:rev,order_amount:rev,biaya_platform:null,uang_bersih:null,modal_hpp:modal,profit_online:toNum(r['Margin'])||rev-modal,source:'online_historical_product',purchase_channel:'TikTok Shop',order_channel:'TikTok Shop',created_time:null,paid_time:d+'T00:00:00',import_key:['online-historical-product',order,d,product,qty].join('|')});});}
+  if(hasCash){const wm=XLSX.utils.sheet_to_json(wb.Sheets[names.find(n=>norm(n)==='uang masuk')],{defval:'',raw:false});const monthNet={};wm.forEach(r=>{const d=parseAnyDate(r['Tanggal']);if(!d)return;const m=FFCore.monthOf(d);monthNet[m]=(monthNet[m]||0)+toNum(r['Nominal'])});Object.keys(monthNet).sort().forEach(m=>out.push({tanggal:m+'-01',produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:0,order_id:'HIST-CASH-'+m,product_name:'[Historis Online] Uang Masuk',variation:'',sku_id:'',seller_sku:'',quantity_return:0,harga_asli:0,omzet_produk:0,order_amount:0,biaya_platform:null,uang_bersih:monthNet[m]||0,modal_hpp:null,profit_online:null,source:'online_historical_cash',purchase_channel:'TikTok Shop',order_channel:'TikTok Shop',created_time:null,paid_time:m+'-01T00:00:00',import_key:['online-historical-cash',m].join('|') }));}
+  return out;
+}
+function readCSVText(text){const raw=[];let row=[],cell='',quote=false;for(let i=0;i<text.length;i++){const ch=text[i],n=text[i+1];if(ch==='"'){if(quote&&n==='"'){cell+='"';i++}else quote=!quote}else if(ch===','&&!quote){row.push(cell);cell=''}else if((ch==='\n'||ch==='\r')&&!quote){if(ch==='\r'&&n==='\n')i++;row.push(cell);if(row.some(v=>String(v).trim()))raw.push(row.slice());row=[];cell=''}else cell+=ch}if(cell||row.length){row.push(cell);raw.push(row)}const head=raw.shift()?.map(x=>String(x).trim())||[];return raw.map(a=>Object.fromEntries(head.map((h,i)=>[h,a[i]??''])))}
+function parseOnlineOldWorkbook(wb){
+  const names=wb.SheetNames.map(String), norm=s=>FFCore.norm(s), out=[];
+  const importName=names.find(n=>norm(n)==='import penjualan');
+  if(importName){const raw=XLSX.utils.sheet_to_json(wb.Sheets[importName],{defval:'',raw:false});if(raw.some(looksProcessedImport))return parseProcessedHistorical(raw);}
+  const detailName=names.find(n=>norm(n)==='detail pesanan')||names.find(n=>norm(n).includes('detail pesanan'));
+  if(detailName){const raw=XLSX.utils.sheet_to_json(wb.Sheets[detailName],{defval:'',raw:false});if(raw.some(looksOriginalIncome))out.push(...raw.map(normalizeIncomeHistorical).filter(x=>x.tanggal));}
+  const legacy=parseLegacyDatabase(wb); if(legacy.length)out.push(...legacy);
+  for(const n of names){const raw=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:'',raw:false});if(raw.length&&raw.some(looksSeller)&&!norm(n).includes('detail pesanan'))out.push(...parseSellerHistorical(raw))}
+  if(!out.length)throw new Error('Format Excel online historis tidak dikenali. File asli TikTok Income, Seller Center, Familia-Food-Import-Online-SIAP.xlsx, dan Online Database (8).xlsx didukung.');
+  const seen=new Set(); return out.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true});
+}
+async function parseFamiliaStandardWorkbook(wb){
+  const names=wb.SheetNames.map(String), norm=s=>FFCore.norm(s), out=[];
+  const sheetKey=s=>String(norm(s)||'').replace(/[\s_-]+/g,'').toLowerCase();
+  const rekName=names.find(n=>sheetKey(n)==='rekaponline');
+  const prodName=names.find(n=>sheetKey(n)==='produkonline');
+  if(!rekName&&!prodName)return null;
+  const readRows=name=>name?XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:'',raw:false}):[];
+  const fieldMap=rec=>Object.fromEntries(Object.entries(rec||{}).map(([k,v])=>[String(norm(k)).toLowerCase(),v]));
+  const getField=(rec,...keys)=>{const m=fieldMap(rec);for(const k of keys){const nk=String(norm(k)).toLowerCase();if(Object.prototype.hasOwnProperty.call(m,nk))return m[nk];}return '';};
+  for(const r of readRows(rekName)){
+    const bulan=normalPeriode(getField(r,'Bulan','Periode')); if(!bulan)continue;
+    const rev=toNum(getField(r,'Pemasukan')), pot=toNum(getField(r,'Potongan Online Shop'));
+    const netRaw=String(getField(r,'Uang Bersih yang Diterima','Uang Bersih')).trim();
+    const net=netRaw===''?Math.max(0,rev-pot):toNum(netRaw);
+    const modalRaw=String(getField(r,'Modal/HPP','Modal')).trim();
+    const modal=modalRaw===''?null:toNum(modalRaw);
+    const profitRaw=String(getField(r,'Profit/Margin','Profit')).trim();
+    out.push({tanggal:bulan+'-01',produk_id:null,qty:0,channel:'Online',harga:0,hpp:0,laba:0,
+      order_id:'FF-STANDARD-'+bulan,product_name:'[STANDARD] Rekap Online',variation:'',sku_id:'',seller_sku:'',
+      quantity_return:0,harga_asli:0,omzet_produk:rev,order_amount:rev,biaya_platform:pot,uang_bersih:net,
+      modal_hpp:modal,profit_online:profitRaw===''?null:toNum(profitRaw),source:'online_standard_finance',
+      purchase_channel:'TikTok Shop',order_channel:'TikTok Shop',created_time:null,
+      paid_time:bulan+'-01T00:00:00',import_key:['familia-standard-finance-v1',bulan,rev,pot,net,modal,profitRaw].join('|')});
+  }
+  for(const r of readRows(prodName)){
+    const bulan=normalPeriode(getField(r,'Bulan','Periode'));
+    const product=String(getField(r,'Nama Produk','Produk')).trim();
+    const variation=String(getField(r,'Variasi','Variation')).trim();
+    if(!bulan||!product)continue;
+    const qty=toNum(getField(r,'Bungkus','Qty','Quantity')); if(qty<=0)continue;
+    const isi=String(getField(r,'Isi (pcs)','Isi')).trim();
+    const rows=toNum(getField(r,'Jumlah Baris','Rows'));
+    out.push({tanggal:bulan+'-01',produk_id:null,qty:Math.round(qty),channel:'Online',harga:0,hpp:0,laba:0,
+      order_id:'FF-STANDARD-PRODUCT-'+bulan+'-'+String(out.length+1),product_name:product,variation,sku_id:'',seller_sku:'',
+      quantity_return:0,harga_asli:0,omzet_produk:0,order_amount:0,biaya_platform:null,uang_bersih:null,
+      modal_hpp:null,profit_online:null,source:'online_standard_product',purchase_channel:'TikTok Shop',
+      order_channel:'TikTok Shop',created_time:null,paid_time:bulan+'-01T00:00:00',
+      import_key:['familia-standard-product-v1',bulan,product,variation,isi,qty,rows].join('|')});
+  }
+  if(!out.length)throw new Error('File STANDARD Familia Food tidak memiliki data valid.');
+  return out;
+}
+async function parseOnlineOldFile(file){
+  const name=String(file.name||'');
+  if(/\.csv$/i.test(name)){
+    const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:false,raw:false});
+    const first=wb.SheetNames[0];
+    const raw=first?XLSX.utils.sheet_to_json(wb.Sheets[first],{defval:'',raw:false}):[];
+    if(Array.isArray(raw)&&raw.some(looksSeller))return parseSellerHistorical(raw);
+    const manual=readCSVText(await file.text());
+    if(Array.isArray(manual)&&manual.some(looksSeller))return parseSellerHistorical(manual);
+    throw new Error('CSV '+name+' tidak dikenali sebagai export Seller Center TikTok. Pastikan kolom Order ID, Product Name, Quantity, dan SKU Subtotal After Discount tersedia.');
+  }
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+  const standard=parseFamiliaStandardWorkbook(wb);
+  if(standard)return standard;
+  return parseOnlineOldWorkbook(wb);
+}
+async function parseOnlineOldFiles(files){let out=[];for(const f of Array.from(files||[])){out.push(...await parseOnlineOldFile(f))}const seen=new Set();return out.filter(x=>{if(seen.has(x.import_key))return false;seen.add(x.import_key);return true})}
+function renderOnlineOldFileQueue(){
+  const host=$('onlineOldFiles');
+  if(!host)return;
+  if(!onlineOldQueuedFiles.length){host.innerHTML='';return;}
+  host.innerHTML='<div><b>Antrian file:</b></div>'+onlineOldQueuedFiles.map((f,i)=>'<div style="margin-top:4px">📄 '+FFCore.esc(f.name||('File '+(i+1)))+'</div>').join('');
+}
+async function addOnlineOldFiles(fileList){
+  const files=Array.from(fileList||[]);
+  if(!files.length)return;
+  for(const f of files){
+    const duplicate=onlineOldQueuedFiles.some(x=>x.name===f.name&&x.size===f.size&&x.lastModified===f.lastModified);
+    if(duplicate)continue;
+    const rows=await parseOnlineOldFile(f);
+    if(!Array.isArray(rows))throw new Error('Hasil pembacaan file tidak berbentuk daftar baris.');
+    onlineOldQueuedFiles.push(f);
+    onlineOldImportRows.push(...rows);
+  }
+  const seen=new Set();
+  onlineOldImportRows=(Array.isArray(onlineOldImportRows)?onlineOldImportRows:[]).filter(x=>{const k=String(x.import_key||'');if(seen.has(k))return false;seen.add(k);return true;});
+  renderOnlineOldFileQueue();
+}
+function previewMoney(v){return v==null?'—':FFCore.rupiah(Math.trunc(Number(v)||0))}
+function normOnlineName(v){return String(v??'').toLowerCase().trim().replace(/\s+/g,' ')}
+function onlineMatchText(row){return [row?.product_name,row?.variation,row?.seller_sku].map(normOnlineName).filter(Boolean).join(' | ')}
+function detectOnlinePackSize(row){
+  const n=onlineMatchText(row);
+  const exactSku=String(row?.sku_id??'').trim();
+  // SKU terverifikasi dari Seller Center: 1733751720824702091 = BULAT ISI 12.
+  if(exactSku==='1733751720824702091')return 12;
+  // Saat sudah menjadi Excel STANDARD, SKU ID tidak dibawa. Dua listing BULAT
+  // terverifikasi berikut dipertahankan sebagai ISI 12 ketika variasinya Default.
+  const pname=normOnlineName(row?.product_name);
+  const variation=normOnlineName(row?.variation);
+  if(variation==='default' && /tempura aci naget/.test(pname) && /bulat/.test(pname) && !/(?:isi|pcs|bungkus)\s*(?:10|12|20|25|30|40|50)/.test(pname))return 12;
+  // Ukuran diprioritaskan dari VARIATION/SKU lalu nama produk.
+  // Pola seperti “2 bungkus isi 24 pcs” dibaca 24 / 2 = 12 pcs per bungkus.
+  let m=n.match(/\b(\d+)\s*bungkus\s*(?:isi|is)\s*(\d+)\s*pcs?\b/);
+  if(m){
+    const packs=Number(m[1]), pcs=Number(m[2]);
+    if(packs>0 && pcs>0){
+      const perPack=pcs/packs;
+      if([10,12,20,25,30,40,50].includes(perPack))return perPack;
+    }
+  }
+  m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/);
+  if(m)return Number(m[1]);
+  m=n.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/);
+  if(m)return Number(m[1]);
+  m=n.match(/\bisi\s*(10|12|20|25|30|40|50)\b/);
+  if(m)return Number(m[1]);
+  return null;
+}
+function explicitOnlineProductCandidates(row){
+  const n=onlineMatchText(row);
+  const out=[];
+  const size=detectOnlinePackSize(row);
+  if(/\b(naget|tempura aci)\b/.test(n)){
+    if(size)out.push('naget isi '+size);
+    // Listing TEMPURA ACI isi 12 kadang memiliki Variation=Default.
+    if(/tempura aci.*isi\s*12/.test(n)&&!size)out.push('naget isi 12');
+    // Listing bentuk Eskrim/Kotak/Stik/Bulat/Lidah/Mie/Opal memakai variasi isi 12.
+    // Hanya dipakai saat ukuran memang tidak tersirat sebagai 20/25/30/40/50.
+    if(!size && /tempura aci.*(?:eskrim|kotak|stik|bulat|lidah|mie|opal)/.test(n))out.push('naget isi 12');
+    if(/\btempura aci\b.*\b25\s*pcs\b/.test(n)&&!size)out.push('naget isi 25');
+  }
+  if(/\bcireng\s+isi\b/.test(n))out.push('cireng isi');
+  if(/\bcireng\s+biasa\b/.test(n))out.push('cireng biasa');
+  if(/\bcibay\b/.test(n))out.push('cibay');
+  return [...new Set(out)];
+}
+function findOnlineMasterProduct(row){
+  const pid=String(row?.produk_id||'');
+  if(pid){const p=productMasterRows.find(x=>String(x.id)===pid);if(p)return p;}
+  const n=onlineMatchText(row);
+  if(!n)return null;
+
+  const exactName=normOnlineName(row?.product_name);
+  const exact=productMasterRows.find(p=>normOnlineName(p.nama_produk)===exactName);
+  if(exact)return exact;
+
+  const aliases=explicitOnlineProductCandidates(row);
+  for(const alias of aliases){
+    const p=productMasterRows.find(x=>normOnlineName(x.nama_produk)===alias);
+    if(p)return p;
+  }
+
+  // Fallback berdasarkan ukuran listing, karena nama produk Seller Center
+  // sering lebih panjang daripada nama master aplikasi.
+  const size=detectOnlinePackSize(row);
+  if(size){
+    const sizeRe=new RegExp('(?:^|\\s)(?:isi\\s*)?'+size+'(?:\\s*(?:pcs|bungkus))?(?:\\s|$)','i');
+    const candidates=productMasterRows.filter(p=>{
+      const pn=normOnlineName(p.nama_produk);
+      return /\b(naget|tempura aci)\b/.test(pn) && sizeRe.test(pn);
+    });
+    if(candidates.length===1)return candidates[0];
+    const preferred=candidates.find(p=>{
+      const pn=normOnlineName(p.nama_produk);
+      return /\bnaget\b/.test(pn) && /(?:isi|pcs|bungkus)/.test(pn);
+    });
+    if(preferred)return preferred;
+    if(candidates.length)return candidates[0];
+  }
+
+  return null;
+}
+function hppUnitFromRowAndMaster(row,p,h){
+  const productHppOnline=Number(p?.hpp_online);
+  if(Number.isFinite(productHppOnline)&&productHppOnline>0)return Math.trunc(productHppOnline);
+
+  const explicitHpp=Number(h?.hpp_online);
+  if(Number.isFinite(explicitHpp)&&explicitHpp>0)return Math.trunc(explicitHpp);
+
+  const onlinePrice=Number(h?.harga_online ?? p?.harga_online);
+  const profitOnline=Number(h?.untung_online);
+  if(Number.isFinite(onlinePrice)&&onlinePrice>0&&Number.isFinite(profitOnline)&&profitOnline>=0){
+    const calc=onlinePrice-profitOnline;
+    if(calc>0)return Math.trunc(calc);
+  }
+
+  // hpp_unit adalah HPP Offline/unit, jadi tidak dipakai sebagai HPP Online.
+  return null;
+}
+function onlineHppSource(row){
+  try{
+    const p=findOnlineMasterProduct(row);
+    const aliases=explicitOnlineProductCandidates(row).map(normOnlineName);
+    let h=null;
+    if(p) h=hppMasterRows.find(x=>String(x.produk_id)===String(p.id))||null;
+    if(!h && p) h=hppMasterRows.find(x=>normOnlineName(x.nama_produk)===normOnlineName(p.nama_produk))||null;
+    if(!h && aliases.length) h=hppMasterRows.find(x=>aliases.includes(normOnlineName(x.nama_produk)))||null;
+
+    const directProduct=Number(p?.hpp_online);
+    if(Number.isFinite(directProduct)&&directProduct>0){
+      return {produk:p?.nama_produk||'', hargaOnline:p?.harga_online??null, untungOnline:null, hppOnline:Math.trunc(directProduct), sumber:'produk.hpp_online'};
+    }
+
+    const directHpp=Number(h?.hpp_online);
+    if(Number.isFinite(directHpp)&&directHpp>0){
+      return {produk:h?.nama_produk||p?.nama_produk||'', hargaOnline:h?.harga_online??p?.harga_online??null, untungOnline:h?.untung_online??null, hppOnline:Math.trunc(directHpp), sumber:'hpp.hpp_online'};
+    }
+
+    const onlinePrice=Number(h?.harga_online ?? p?.harga_online);
+    const profitOnline=Number(h?.untung_online);
+    if(Number.isFinite(onlinePrice)&&onlinePrice>0&&Number.isFinite(profitOnline)&&profitOnline>=0){
+      const calc=onlinePrice-profitOnline;
+      if(calc>0){
+        return {produk:h?.nama_produk||p?.nama_produk||'', hargaOnline:onlinePrice, untungOnline:profitOnline, hppOnline:Math.trunc(calc), sumber:'harga_online - untung_online'};
+      }
+    }
+  }catch(_){}
+  return null;
+}
+function previewOnlineHpp(row){
+  const src=onlineHppSource(row);
+  return src?.hppOnline ?? null;
+}
+async function ensureOnlineHppMaster(){
+  try{
+    // Ambil seluruh kolom agar tetap bisa memakai hpp_online bila tersedia
+    // di master Produk, tanpa bergantung pada satu nama kolom saja.
+    const pr=await supabaseClient.from('produk').select('*');
+    if(pr.error)throw pr.error;
+    productMasterRows=pr.data||[];
+
+    const hr=await supabaseClient.from('hpp').select('*');
+    if(hr.error)throw hr.error;
+    hppMasterRows=(hr.data||[]).map(h=>({
+      ...h,
+      nama_produk:(productMasterRows.find(p=>String(p.id)===String(h.produk_id))||{}).nama_produk||''
+    }));
+  }catch(e){
+    productMasterRows=[];
+    hppMasterRows=[];
+    throw new Error('Gagal membaca master Produk/HPP dari Supabase: '+(e.message||e));
+  }
+}
+function standardIsFamiliaProduct(row){
+  const n=onlineMatchText(row);
+  if(/saus bantal|saos bakso/.test(n))return false;
+  return /\btempura aci\b|\bnaget\b/.test(n);
+}
+function masterProductNameForSize(size){
+  const n=Number(size);
+  if(n===25)return 'naget 25+saus';
+  if([10,12,20,30,40,50].includes(n))return 'naget '+n;
+  return '';
+}
+function standardHppUnitForRow(row){
+  try{
+    if(!standardIsFamiliaProduct(row))return null;
+    const size=detectOnlinePackSize(row);
+    if(!size)return null;
+    const target=masterProductNameForSize(size);
+    if(!target)return null;
+    const p=productMasterRows.find(x=>normOnlineName(x.nama_produk)===target);
+    if(!p)return null;
+    const h=hppMasterRows.find(x=>String(x.produk_id)===String(p.id));
+    if(!h)return null;
+    // Rekap Online memakai HPP ONLINE resmi, bukan hpp_unit/offline.
+    const onlinePrice=Number(h.harga_online!=null?h.harga_online:(p.harga_online||0));
+    const profitOnline=Number(h.untung_online||0);
+    if(onlinePrice>0 && profitOnline>=0 && onlinePrice-profitOnline>0)return Math.trunc(onlinePrice-profitOnline);
+    if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Math.trunc(Number(h.hpp_online));
+    if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
+  }catch(_){ }
+  return null;
+}
+function calculateStandardHppByMonth(standardFinance,standardProduct){
+  const byMonth={};
+  standardFinance.forEach(x=>{
+    const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
+    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
+    const g=byMonth[bulan];
+    g.rev+=Number(x.omzet_produk||0);
+    g.pot+=Number(x.biaya_platform||0);
+    if(x.uang_bersih!=null){g.net+=Number(x.uang_bersih||0);g.netKnown=true;}
+  });
+  standardProduct.forEach(x=>{
+    const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
+    byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:0,mappedQty:0,unmappedQty:0,nonFamiliaQty:0,hasMapped:false};
+    const g=byMonth[bulan];
+    const qty=Number(x.qty||0);
+    const unit=standardHppUnitForRow(x);
+    if(unit!=null){
+      g.modal+=qty*Math.trunc(Number(unit)||0);
+      g.mappedQty+=qty;
+      g.hasMapped=true;
+    }else if(standardIsFamiliaProduct(x)){
+      g.unmappedQty+=qty;
+    }else{
+      g.nonFamiliaQty+=qty;
+    }
+  });
+  Object.values(byMonth).forEach(g=>{
+    if(g.hasMapped){
+      g.profit=g.netKnown?g.net-g.modal:null;
+      g.margin=g.netKnown&&g.net!==0&&g.profit!=null?(g.profit/g.net)*100:null;
+    }else{
+      g.modal=null;g.profit=null;g.margin=null;
+    }
+  });
+  // Push calculated values back into the finance rows so the saved Data Lama rows carry Modal/Profit.
+  standardFinance.forEach(x=>{
+    const m=byMonth[FFCore.monthOf(x.tanggal)||''];
+    if(m && m.hasMapped){
+      x.modal_hpp=Math.trunc(Number(m.modal)||0);
+      x.profit_online=m.profit==null?null:Math.trunc(Number(m.profit)||0);
+      x.hpp=Math.trunc(Number(m.modal)||0);
+      x.laba=m.profit==null?0:Math.trunc(Number(m.profit)||0);
+    }
+  });
+  return byMonth;
+}
+function normOrderId(v){let s=String(v??'').trim().replace(/[\s\u00A0]+/g,'').replace(/^['"]+|['"]+$/g,'');if(/^\d+\.0+$/.test(s))s=s.replace(/\.0+$/,'');return s;}
+function makeOnlineOldPreviewRows(rows){
+  // STANDARD Familia Food: tampilkan HASIL RANGKUMAN per bulan.
+  // Modal/HPP dihitung dari PRODUK_ONLINE hanya untuk listing Tempura Aci/Naget yang
+  // memiliki ukuran isi yang bisa dipetakan ke master Naget aplikasi.
+  const standardFinance=rows.filter(x=>x.source==='online_standard_finance');
+  const standardProduct=rows.filter(x=>x.source==='online_standard_product');
+  const finance=rows.filter(x=>x.source==='online_historical_finance');
+  const directFinance=rows.filter(x=>x.source==='online_historical_import');
+  const seller=rows.filter(x=>x.source==='seller_center'||x.source==='online_historical_product');
+  const cash=rows.filter(x=>x.source==='online_historical_cash');
+  const out=[];
+
+  if(standardFinance.length || standardProduct.length){
+    const byMonth=calculateStandardHppByMonth(standardFinance,standardProduct);
+    standardProduct.forEach(x=>{
+      const bulan=FFCore.monthOf(x.tanggal)||''; if(!bulan)return;
+      const g=byMonth[bulan]??={bulan,rev:0,pot:0,net:0,netKnown:false,modal:null,mappedQty:0,unmappedQty:0,hasMapped:false};
+      g.qty=(g.qty||0)+Number(x.qty||0);
+    });
+    Object.keys(byMonth).sort().forEach(bulan=>{
+      const g=byMonth[bulan];
+      out.push({
+        source:'STANDARD — HASIL RANGKUMAN', bulan:g.bulan,
+        produk:'Total Online Bulanan', qty:Number(g.qty||0),
+        rev:g.rev, pot:g.pot, net:g.netKnown?g.net:null,
+        hpp:g.hasMapped?g.modal:null, profit:g.profit, margin:g.margin,
+        mappedQty:g.mappedQty, unmappedQty:g.unmappedQty, nonFamiliaQty:g.nonFamiliaQty,
+        _standardSummary:true
+      });
+    });
+    return out;
+  }
+
+  // Format historis lama tetap menggunakan alur Income + Pesanan yang sudah ada.
+  const financeByOrder={};
+  finance.forEach(x=>{
+    const k=normOrderId(x.order_id); if(!k)return;
+    financeByOrder[k]??={rev:0,net:0,netKnown:true,row:x};
+    financeByOrder[k].rev+=Number(x.omzet_produk||0);
+    if(x.uang_bersih==null)financeByOrder[k].netKnown=false;else financeByOrder[k].net+=Number(x.uang_bersih||0);
+  });
+  const sellerByOrder={};
+  seller.forEach(x=>{const k=normOrderId(x.order_id);if(!k)return;(sellerByOrder[k]??=[]).push(x)});
+  const grouped={};
+  seller.forEach(x=>{
+    const k=[normOrderId(x.order_id),String(x.sku_id||''),String(x.seller_sku||''),String(x.variation||''),String(x.product_name||'')].join('|');
+    grouped[k]??={...x,qty:0,omzet_produk:0};
+    grouped[k].qty+=Number(x.qty||0);
+    grouped[k].omzet_produk+=Number(x.omzet_produk||0);
+  });
+  const usedFinance=new Set();
+  Object.values(grouped).forEach(x=>{
+    const order=normOrderId(x.order_id), f=financeByOrder[order];
+    if(f){usedFinance.add(order)}
+    const net=f&&f.netKnown?f.net:null;
+    const rev=f?f.rev:Number(x.omzet_produk||0);
+    const hppSource=onlineHppSource(x);
+    const unit=hppSource?.hppOnline ?? null;
+    const hpp=unit!=null?Number(x.qty||0)*unit:null;
+    const profit=net!=null&&hpp!=null?net-hpp:null;
+    out.push({
+      source:f?'Income + Pesanan':'Pesanan',
+      bulan:FFCore.monthOf(x.tanggal)||'',
+      produk:x.product_name||'-',
+      product_name:x.product_name||'',
+      variation:x.variation||'',
+      sku_id:x.sku_id||'',
+      seller_sku:x.seller_sku||'',
+      qty:Number(x.qty||0),rev,net,hpp,profit,
+      _hppSource:hppSource,
+      _order_id:order
+    });
+  });
+  directFinance.forEach(x=>out.push({source:'Income Historis',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:null,rev:Number(x.omzet_produk||0),net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null,_order_id:x.order_id}));
+  cash.forEach(x=>out.push({source:'Uang Masuk',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:null,rev:null,net:Number(x.uang_bersih||0),hpp:null,profit:null,_order_id:x.order_id}));
+  finance.forEach(x=>{const k=normOrderId(x.order_id);if(k&&usedFinance.has(k))return;out.push({source:'Income Historis',bulan:FFCore.monthOf(x.tanggal)||'',produk:x.product_name||'-',qty:null,rev:Number(x.omzet_produk||0),net:x.uang_bersih==null?null:Number(x.uang_bersih||0),hpp:null,profit:null,_order_id:x.order_id})});
+  return out;
+}
+function renderOnlineOldMonthTabs(months){
+  const tabs=$('onlineOldMonthTabs');
+  if(!tabs)return;
+  const sorted=[...months].sort((a,b)=>String(a).localeCompare(String(b)));
+  if(!sorted.length){tabs.innerHTML='';$('onlineOldMonthTables').innerHTML='<div class="emptyState">Belum ada data bulan yang terbaca.</div>';return;}
+  if(!sorted.includes(onlineOldActiveMonth))onlineOldActiveMonth=sorted.includes('2026-01')?'2026-01':sorted[0];
+  tabs.innerHTML=sorted.map(m=>`<button type="button" class="monthtab ${m===onlineOldActiveMonth?'active':''}" data-month="${FFCore.esc(m)}">📅 ${FFCore.esc(monthLabel(m))}</button>`).join('');
+  tabs.querySelectorAll('.monthtab').forEach(btn=>btn.onclick=()=>{onlineOldActiveMonth=btn.dataset.month;renderOnlineOldMonthTabs(sorted);renderOnlineOldMonthTable(onlineOldActiveMonth);});
+}
+function renderOnlineOldMonthTable(month){
+  const host=$('onlineOldMonthTables');
+  if(!host)return;
+  const rows=onlineOldPreviewRows.filter(x=>String(x.bulan||'')===String(month||''));
+  if(!rows.length){host.innerHTML='<div class="emptyState">Tidak ada data untuk bulan '+FFCore.esc(monthLabel(month))+'.</div>';return;}
+
+  // Ringkasan dihitung per bulan dari preview yang sudah digabung Income + Pesanan.
+  // Nilai tidak ditebak: hanya angka yang memang tersedia di sumber/import.
+  const totalQty=rows.reduce((a,x)=>a+(x.qty==null?0:Number(x.qty||0)),0);
+  const totalRev=rows.reduce((a,x)=>a+(x.rev==null?0:Number(x.rev||0)),0);
+  const totalNet=rows.reduce((a,x)=>a+(x.net==null?0:Number(x.net||0)),0);
+  const hppKnown=rows.filter(x=>x.hpp!=null);
+  const totalHpp=hppKnown.reduce((a,x)=>a+Number(x.hpp||0),0);
+  const profitKnown=rows.filter(x=>x.profit!=null);
+  const totalProfit=profitKnown.reduce((a,x)=>a+Number(x.profit||0),0);
+  const revKnown=rows.some(x=>x.rev!=null), netKnown=rows.some(x=>x.net!=null);
+  const hppSources={};
+  rows.filter(x=>x.qty!=null).forEach(x=>{
+    const src=x._hppSource || onlineHppSource(x);
+    if(src){
+      const key=[src.produk||'',src.hargaOnline,src.untungOnline,src.hppOnline,src.sumber].join('|');
+      hppSources[key]=src;
+    }
+  });
+  const sourceList=Object.values(hppSources);
+  const sourceNotice=sourceList.length
+    ? '<div class="reportNotice">🔎 <b>Sumber HPP terukur dari master Supabase:</b> '+sourceList.slice(0,8).map(s=>
+        '<span style="display:inline-block;margin:3px 8px 3px 0;padding:5px 8px;background:#fff;border:1px solid #dfe9e3;border-radius:7px">'+
+        FFCore.esc(s.produk||'Produk')+' → Harga Online '+FFCore.rupiah(s.hargaOnline)+' − Untung Online '+FFCore.rupiah(s.untungOnline)+' = <b>'+FFCore.rupiah(s.hppOnline)+'</b> ('+FFCore.esc(s.sumber)+')</span>'
+      ).join('')+
+      (sourceList.length>8?' …':'')+
+      '</div>'
+    : '';
+  const more=rows.length>500?`<div class="reportNotice">Menampilkan <b>500</b> dari <b>${rows.length.toLocaleString('id-ID')}</b> baris detail untuk ${FFCore.esc(monthLabel(month))}. Semua data tetap tersimpan untuk proses simpan.</div>`:'';
+  const shown=rows.slice(0,500);
+  const note=(hppKnown.length===0)
+    ? '<div class="reportNotice">⚠️ Modal/HPP belum tersedia pada data detail bulan ini karena belum ada produk yang berhasil dipetakan ke master HPP Online. Pemasukan/Uang Bersih tetap mengikuti Income TikTok.</div>'
+    : (profitKnown.length===0?'':'');
+  const standardSummary=rows.some(x=>x._standardSummary);
+  if(standardSummary){
+    const r=rows[0]||{};
+    host.innerHTML=`<section class="reportSection detailSection">
+      <div class="sectionHead"><h3>📅 ${FFCore.esc(monthLabel(month))}</h3><p>Hasil rangkuman dari <b>REKAP_ONLINE</b>. Tidak menampilkan detail listing TikTok.</p></div>
+      <div class="kpiGrid" style="padding:16px;margin:0">
+        <div class="kpi"><span>🟢 Pemasukan</span><strong>${previewMoney(r.rev)}</strong><small>hasil rangkuman</small></div>
+        <div class="kpi"><span>🔴 Potongan Online Shop</span><strong>${previewMoney(r.pot)}</strong><small>hasil rangkuman</small></div>
+        <div class="kpi"><span>💰 Uang Bersih</span><strong>${previewMoney(r.net)}</strong><small>hasil rangkuman</small></div>
+        <div class="kpi"><span>📦 Modal</span><strong>${previewMoney(r.hpp)}</strong><small>hasil rangkuman</small></div>
+        <div class="kpi"><span>📈 Profit</span><strong>${previewMoney(r.profit)}</strong><small>hasil rangkuman</small></div>
+      </div>
+      <div class="sectionTotal"><span>Total Bungkus Semua Listing</span><b>${Number(r.qty||0).toLocaleString('id-ID')} bungkus</b></div>
+      <div class="sectionTotal"><span>Bungkus Familia Food terpetakan ke HPP</span><b>${Number(r.mappedQty||0).toLocaleString('id-ID')} bungkus</b></div>
+      <div class="sectionTotal"><span>Produk lain di luar HPP Familia Food</span><b>${Number(r.nonFamiliaQty||0).toLocaleString('id-ID')} bungkus</b></div>
+      ${Number(r.unmappedQty||0)>0?`<div class="reportNotice">⚠️ ${Number(r.unmappedQty).toLocaleString('id-ID')} bungkus produk Familia Food masih belum terpetakan ke HPP.</div>`:`<div class="reportNotice">✅ Semua bungkus produk Familia Food sudah memiliki mapping HPP.</div>`}
+      ${r.margin!=null?`<div class="sectionTotal"><span>Margin</span><b>${Number(r.margin).toFixed(2)}%</b></div>`:''}
+    </section>`;
+    return;
+  }
+  host.innerHTML=`<section class="reportSection detailSection">
+    <div class="sectionHead"><h3>📅 ${FFCore.esc(monthLabel(month))}</h3><p>Data bulan ini berdiri sendiri — tidak digabung dengan bulan lain.</p></div>
+    <div class="kpiGrid" style="padding:16px;margin:0">
+      <div class="kpi"><span>🟢 Pemasukan</span><strong>${revKnown?FFCore.rupiah(totalRev):'—'}</strong><small>Income TikTok bulan ini</small></div>
+      <div class="kpi"><span>💰 Uang Bersih</span><strong>${netKnown?FFCore.rupiah(totalNet):'—'}</strong><small>Settlement Income TikTok</small></div>
+      <div class="kpi"><span>📦 Modal/HPP</span><strong>${hppKnown.length?FFCore.rupiah(totalHpp):'—'}</strong><small>${hppKnown.length?hppKnown.length.toLocaleString('id-ID')+' baris terukur':'belum terpetakan'}</small></div>
+      <div class="kpi"><span>📈 Profit</span><strong>${profitKnown.length?FFCore.rupiah(totalProfit):'—'}</strong><small>${profitKnown.length?'Uang Bersih − Modal/HPP':'belum bisa dihitung'}</small></div>
+    </div>
+    <div class="sectionTotal"><span>Qty Produk</span><b>${totalQty.toLocaleString('id-ID')} bungkus</b></div>
+    ${sourceNotice}${note}${more}
+    <div class="tablewrap"><table class="cleanTable"><thead><tr><th>Sumber</th><th>Bulan</th><th>Produk</th><th>Qty</th><th>Pemasukan</th><th>Uang Bersih</th><th>Modal/HPP</th><th>Profit</th></tr></thead><tbody>${shown.map(x=>'<tr><td>'+FFCore.esc(x.source)+'</td><td>'+FFCore.esc(x.bulan||'-')+'</td><td>'+FFCore.esc(x.produk||'—')+'</td><td>'+((x.qty==null)?'—':Number(x.qty||0).toLocaleString('id-ID'))+'</td><td>'+previewMoney(x.rev)+'</td><td>'+previewMoney(x.net)+'</td><td>'+previewMoney(x.hpp)+'</td><td>'+previewMoney(x.profit)+'</td></tr>').join('')}</tbody></table></div></section>`;
+}
+
+const ONLINE_LOCKED_HISTORY={10:16,12:7292,20:211,25:293,30:90,40:67,50:116};
+const ONLINE_LOCKED_TOTAL=8085;
+function auditOnlineLockedRows(rows){
+  const bySize={10:0,12:0,20:0,25:0,30:0,40:0,50:0};
+  let total=0,lockedRows=0,source='';
+  for(const r of (rows||[])){
+    if(r.source!=='online_standard_product'&&r.source!=='seller_center')continue;
+    const m=FFCore.monthOf(r.tanggal)||'';
+    if(m<'2026-01'||m>'2026-08')continue;
+    lockedRows++;
+    source=source||String(r.source||'');
+    const q=Math.round(Number(r.qty||0)); total+=q;
+    let size=detectOnlinePackSize(r);
+    if(!size){
+      const n=onlineMatchText(r);
+      if(/\btempura aci\b.*(?:eskrim|kotak|stik|bulat|lidah|mie|opal)\b/.test(n) ||
+         /\btempura aci\b.*\bisi\s*12\b/.test(n)) size=12;
+    }
+    if(ONLINE_LOCKED_HISTORY[size]!=null)bySize[size]+=q;
+  }
+  const all=[10,12,20,25,30,40,50].reduce((a,s)=>a+Number(bySize[s]||0),0);
+  return {bySize,total,all,lockedRows,source,expected:ONLINE_LOCKED_TOTAL,
+    ok:lockedRows===0 || (all===ONLINE_LOCKED_TOTAL && total===ONLINE_LOCKED_TOTAL)};
+}
+function lockedAuditMessage(audit){
+  if(!audit.lockedRows)return '';
+  const diffs=[10,12,20,25,30,40,50].map(s=>[s,Number(audit.bySize[s]||0)-ONLINE_LOCKED_HISTORY[s]])
+    .filter(x=>x[1]!==0)
+    .map(x=>'Isi '+x[0]+': '+(x[1]>0?'+':'')+x[1].toLocaleString('id-ID')).join(' • ');
+  if(audit.all===ONLINE_LOCKED_TOTAL) return '<div class="reportNotice" style="border-color:#cfe6d7;background:#f4fbf6;color:#146b3a">✅ Data STANDARD Jan–Agustus 2026 cocok dengan kunci audit terbaru <b>8.085 bungkus</b>.</div>';
+  return '<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>⛔ IMPOR DIBLOKIR UNTUK HISTORI TERKUNCI.</b> Data STANDARD Jan–Agustus terbaca <b>'+audit.all.toLocaleString('id-ID')+'</b> bungkus, sedangkan kunci audit resmi <b>8.085</b> (16 + 7.292 + 211 + 293 + 90 + 67 + 116). '+esc(diffs||('Selisih '+(audit.all-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'))+'<br>Jangan menambal angka dengan data buatan. Gunakan sumber STANDARD yang sudah direkonsiliasi.</div>';
+}
+
+async function refreshOnlineOldPreview(){
+  const isStandard=onlineOldImportRows.some(x=>x.source==='online_standard_finance'||x.source==='online_standard_product');
+  // STANDARD tetap membaca master Produk/HPP aplikasi agar Modal/Profit dihitung dari HPP resmi.
+  await ensureOnlineHppMaster();
+  onlineOldPreviewRows=makeOnlineOldPreviewRows(onlineOldImportRows);
+  const ms=[...new Set(onlineOldImportRows.map(x=>FFCore.monthOf(x.tanggal)).filter(FFCore.isMonth))].sort((a,b)=>String(a).localeCompare(String(b)));
+  const fin=onlineOldImportRows.filter(x=>x.source==='online_standard_finance'||x.source==='online_historical_finance'||x.source==='online_historical_import');
+  const rev=fin.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+  const net=fin.filter(x=>x.uang_bersih!=null).reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+  const cash=onlineOldImportRows.filter(x=>x.source==='online_historical_cash').reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+  const seller=onlineOldImportRows.filter(x=>x.source==='online_standard_product'||x.source==='seller_center'||x.source==='online_historical_product').reduce((a,x)=>a+Number(x.qty||0),0);
+  const standardSummaries=onlineOldPreviewRows.filter(x=>x._standardSummary);
+  const totalMapped=standardSummaries.reduce((a,x)=>a+Number(x.mappedQty||0),0);
+  const totalUnmapped=standardSummaries.reduce((a,x)=>a+Number(x.unmappedQty||0),0);
+  const totalModal=standardSummaries.reduce((a,x)=>a+(x.hpp==null?0:Number(x.hpp||0)),0);
+  const totalProfit=standardSummaries.reduce((a,x)=>a+(x.profit==null?0:Number(x.profit||0)),0);
+  const matchedRows=onlineOldPreviewRows.filter(x=>x.source==='Income + Pesanan');
+  const matchedOrders=new Set(matchedRows.map(x=>x._order_id||'' ).filter(Boolean)).size;
+  const hppKnown=onlineOldPreviewRows.filter(x=>x.hpp!=null).length;
+  const hasLockedSource=onlineOldImportRows.some(x=>x.source==='online_standard_product'||x.source==='seller_center');
+  const lockedAudit=hasLockedSource?auditOnlineLockedRows(onlineOldImportRows):{lockedRows:0,ok:true,all:0,bySize:{}};
+  const lockedNotice=lockedAuditMessage(lockedAudit);
+  $('onlineOldInfo').innerHTML=lockedNotice+'<div class="msg">Terbaca <b>'+onlineOldImportRows.length.toLocaleString('id-ID')+'</b> baris sumber • <b>'+onlineOldPreviewRows.length.toLocaleString('id-ID')+'</b> baris preview • <b>'+ms.length+'</b> bulan • Pemasukan historis <b>'+FFCore.rupiah(rev)+'</b> • Uang bersih Income <b>'+FFCore.rupiah(net)+'</b> • Qty semua listing <b>'+seller.toLocaleString('id-ID')+'</b> • '+(isStandard?'<b>Preview memakai HASIL RANGKUMAN REKAP_ONLINE, bukan detail listing.</b> Modal/HPP memakai HPP ONLINE resmi (Harga Online − Untung Online), dengan mapping Tempura Aci/Naget → master Naget berdasarkan ISI. Modal terukur <b>'+FFCore.rupiah(totalModal)+'</b> • Profit terukur <b>'+FFCore.rupiah(totalProfit)+'</b> • Bungkus Familia Food terpetakan <b>'+totalMapped.toLocaleString('id-ID')+'</b> • Produk lain di luar HPP <b>'+standardSummaries.reduce((a,x)=>a+Number(x.nonFamiliaQty||0),0).toLocaleString('id-ID')+'</b> • Produk Familia Food belum terpetakan <b>'+totalUnmapped.toLocaleString('id-ID')+'</b>.':'Order cocok <b>'+matchedOrders.toLocaleString('id-ID')+'</b> • Baris produk cocok <b>'+matchedRows.length.toLocaleString('id-ID')+'</b> • HPP Online terukur <b>'+hppKnown.toLocaleString('id-ID')+'</b> baris. Produk + Qty mengikuti data historis yang diimpor.')+' Uang Masuk legacy <b>'+FFCore.rupiah(cash)+'</b>.</div>';
+  renderOnlineOldMonthTabs(ms);
+  renderOnlineOldMonthTable(onlineOldActiveMonth);
+  $('onlineOldPreview').style.display='block';
+  const saveBtn=$('onlineOldSave');
+  if(saveBtn)saveBtn.disabled=false;
+  const saveStatus=$('onlineOldSaveStatus');
+  if(saveStatus)saveStatus.innerHTML='Preview siap. Tombol simpan aktif setelah audit 8.085 bungkus.';
+}
+$('onlineOldFile').onchange=async e=>{try{await addOnlineOldFiles(e.target.files);await refreshOnlineOldPreview();e.target.value='';}catch(err){$('onlineOldInfo').innerHTML='<div class="msg" style="color:#a22">'+FFCore.esc(err.message||err)+'</div>';$('onlineOldPreview').style.display='block'}};
+$('onlineOldCancel').onclick=()=>{$('onlineOldFile').value='';onlineOldImportRows=[];onlineOldPreviewRows=[];onlineOldQueuedFiles=[];onlineOldActiveMonth='';renderOnlineOldFileQueue();$('onlineOldMonthTabs').innerHTML='';$('onlineOldMonthTables').innerHTML='';$('onlineOldPreview').style.display='none';$('onlineOldMsg').innerHTML='';};
+renderOnlineOldFileQueue();
+async function saveOnlineHistoricalRows(rows){
+  // Qty SELLER AUDIT sudah dihitung saat parse dari:
+  // (Quantity - Return Quantity) × bundle multiplier.
+  // Jangan hitung ulang dari import_key karena nama produk dapat mengandung karakter "|".
+  const prepared=(rows||[]).map(x=>{
+    const unit=previewOnlineHpp(x);
+    const qty=Math.trunc(Number(x.qty||0));
+    const base={...x,qty};
+    if(unit!=null){
+      return {...base,hpp:Math.trunc(unit),modal_hpp:Math.trunc(qty*unit),profit_online:null};
+    }
+    return base;
+  });
+  rows=prepared;
+  // Gunakan batch kecil agar URL query .in() tidak terlalu panjang dan POST tidak rapuh.
+  const QUERY_BATCH=75;
+  const INSERT_BATCH=50;
+  const existing=new Set();
+  const keys=[...new Set(rows.map(x=>String(x.import_key||'')).filter(Boolean))];
+
+  // Dedup hanya berdasarkan import_key. Satu Order ID TikTok dapat memiliki
+  // beberapa SKU/baris produk; jangan membuang baris lain hanya karena order_id sama.
+  for(let i=0;i<keys.length;i+=QUERY_BATCH){
+    const part=keys.slice(i,i+QUERY_BATCH);
+    const r=await supabaseClient.from('penjualan').select('import_key').in('import_key',part);
+    if(r.error)throw r.error;
+    (r.data||[]).forEach(x=>{if(x.import_key)existing.add(String(x.import_key))});
+  }
+
+  const rowsToSave=rows.filter(x=>!existing.has(String(x.import_key||'')));
+  for(let i=0;i<rowsToSave.length;i+=INSERT_BATCH){
+    const batch=rowsToSave.slice(i,i+INSERT_BATCH);
+    const r=await supabaseClient.from('penjualan').insert(batch);
+    if(r.error)throw r.error;
+  }
+  return {saved:rowsToSave.length,duplicates:rows.length-rowsToSave.length};
+}
+
+async function runOnlineOldSave(){
+  const btn=$('onlineOldSave');
+  const status=$('onlineOldSaveStatus');
+  const msgBox=$('onlineOldMsg');
+  if(!onlineOldImportRows.length){
+    status.innerHTML='<span style="color:#a22;font-weight:bold">Tidak ada data preview yang siap disimpan.</span>';
+    return;
+  }
+  btn.disabled=true;
+  status.innerHTML='<span style="color:#087443;font-weight:bold">⏳ Memeriksa audit dan menyiapkan penyimpanan...</span>';
+  try{
+    const lockedRows=onlineOldImportRows.filter(x=>
+      (x.source==='online_standard_product'||x.source==='seller_center') &&
+      String(FFCore.monthOf(x.tanggal)||'')>='2026-01' &&
+      String(FFCore.monthOf(x.tanggal)||'')<='2026-08'
+    );
+    if(lockedRows.length){
+      const audit=auditOnlineLockedRows(onlineOldImportRows);
+      if(!audit.ok){
+        status.innerHTML='<span style="color:#a22;font-weight:bold">⛔ Penyimpanan dihentikan: audit histori belum cocok dengan kunci 8.085 bungkus.</span>';
+        msgBox.innerHTML=lockedAuditMessage(audit);
+        msgBox.scrollIntoView({behavior:'smooth',block:'center'});
+        return;
+      }
+      status.innerHTML='<span style="color:#087443;font-weight:bold">✅ Audit 8.085 bungkus lolos. Mengganti detail produk Online Jan–Agustus...</span>';
+      const oldProduct=await supabaseClient.from('penjualan').select('id').eq('channel','Online').in('source',['online_standard_product','seller_center']).gte('tanggal','2026-01-01').lt('tanggal','2026-09-01');
+      if(oldProduct.error)throw oldProduct.error;
+      const ids=(oldProduct.data||[]).map(x=>x.id).filter(Boolean);
+      for(let i=0;i<ids.length;i+=100){
+        const batch=ids.slice(i,i+100);
+        const del=await supabaseClient.from('penjualan').delete().in('id',batch);
+        if(del.error)throw del.error;
+      }
+    }
+    status.innerHTML='<span style="color:#087443;font-weight:bold">⏳ Menyimpan data historis Online...</span>';
+    const result=await saveOnlineHistoricalRows(onlineOldImportRows);
+    msgBox.innerHTML='<div class="msg">Berhasil menyimpan <b>'+result.saved.toLocaleString('id-ID')+'</b> baris Online historis. '+result.duplicates.toLocaleString('id-ID')+' duplikat dilewati.</div>';
+    status.innerHTML='<span style="color:#087443;font-weight:bold">✅ Penyimpanan selesai.</span>';
+    onlineOldImportRows=[];
+    await load();
+  }catch(e){
+    const m=String(e?.message||e||'Gagal menyimpan');
+    msgBox.innerHTML='<div class="msg" style="color:#a22">Gagal menyimpan Online historis: '+FFCore.esc(m)+'</div>';
+    status.innerHTML='<span style="color:#a22;font-weight:bold">❌ Penyimpanan gagal. Pesan error ditampilkan di bawah.</span>';
+    msgBox.scrollIntoView({behavior:'smooth',block:'center'});
+    console.error('saveOnlineHistoricalRows',e);
+  }finally{
+    btn.disabled=false;
+  }
+}
+$('onlineOldSave').onclick=runOnlineOldSave;
+
+function fontSizeOf(it){const t=it.transform||[];return Math.max(Math.abs(Number(t[0])||0),Math.abs(Number(t[3])||0))}
+function cleanNumericColumn(items,minX,maxX){
+  const nums=items.filter(it=>it.x>=minX&&it.x<maxX&&/^[\d.,]+$/.test(String(it.str||'').trim()));
+  if(!nums.length)return null;
+  nums.sort((a,b)=>fontSizeOf(a)-fontSizeOf(b)||a.x-b.x);
+  return toNum(nums[0].str);
+}
+function cleanOmzet(items){
+  const nums=items.filter(it=>it.x>=450&&/^[\d.,]+$/.test(String(it.str||'').trim()));
+  if(!nums.length)return null;
+  nums.sort((a,b)=>fontSizeOf(a)-fontSizeOf(b)||a.x-b.x);
+  return toNum(nums[0].str);
+}
+async function readPDF(file){
+const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs');
+pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.mjs';
+const pdf=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;
+const recs=[];
+const monthsMap={JANUARI:1,FEBRUARI:2,MARET:3,APRIL:4,MEI:5,JUNI:6,JULI:7,AGUSTUS:8,SEPTEMBER:9,OKTOBER:10,NOVEMBER:11,DESEMBER:12};
+let currentMonth='',currentConsumer='',inAdditional=false;
+const productRe=/(Naget(?:\s+isi)?\s+(?:10|12|20|25|30|40|50)|Cireng\s+isi\s+10|Cireng\s+biasa|Cireng\s+crispy|Cibay\s+isi\s+10)/i;
+for(let pn=1;pn<=pdf.numPages;pn++){
+  const page=await pdf.getPage(pn),c=await page.getTextContent();
+  const raw=c.items.map(it=>({str:String(it.str??'').trim(),x:Number(it.transform?.[4])||0,y:Number(it.transform?.[5])||0,transform:it.transform||[]})).filter(it=>it.str);
+  const groups=[];
+  raw.sort((a,b)=>b.y-a.y||a.x-b.x).forEach(it=>{
+    // Keep correction-overlay text on a separate row. In this PDF the duplicate
+    // correction values are offset by about 0.47pt from the original row.
+    let g=groups.find(z=>Math.abs(z.y-it.y)<=0.20);
+    if(!g){g={y:it.y,items:[]};groups.push(g)}
+    g.items.push(it);
+  });
+  groups.sort((a,b)=>b.y-a.y);
+  for(const g of groups){
+    g.items.sort((a,b)=>a.x-b.x);
+    const line=g.items.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim(),up=line.toUpperCase();
+    if(!line)continue;
+    const mm=up.match(/\b(JANUARI|FEBRUARI|MARET|APRIL|MEI|JUNI|JULI|AGUSTUS|SEPTEMBER|OKTOBER|NOVEMBER|DESEMBER)\s+(20\d{2})/);
+    if(mm){currentMonth=`${mm[2]}-${String(monthsMap[mm[1]]).padStart(2,'0')}`;currentConsumer='';inAdditional=false;continue}
+    if(/\bTAMBAHAN\s+TRANSAKSI\b/i.test(up)){inAdditional=true;continue}
+    if(inAdditional)continue;
+    if(/^TOTAL\s+BULAN\b/i.test(up)||/^TOTAL\b/i.test(up)||/^SUBTOTAL\b/i.test(up))continue;
+
+    // Match the product from the complete row text. Do not remove numeric
+    // tokens first, because PDF.js may expose the variant number as a separate item.
+    const pm=line.match(productRe);
+    if(pm){
+      // Main table columns are stable: Qty around x=382 and Omzet around x=486.
+      // Additional-transaction rows use different column positions and are already
+      // excluded above by inAdditional.
+      const qitems=g.items.filter(it=>it.x>=350&&it.x<450&&/^[\d.,]+$/.test(String(it.str||'').trim()));
+      const oitems=g.items.filter(it=>it.x>=450&&/^[\d.,]+$/.test(String(it.str||'').trim()));
+      const qty=qitems.length?toNum(qitems[0].str):null;
+      const omzet=oitems.length?toNum(oitems[0].str):null;
+      if(currentMonth&&currentConsumer&&qty!=null&&omzet!=null&&qty>0&&omzet>=0){
+        recs.push([currentMonth,currentConsumer,pm[1].replace(/\s+/g,' ').trim(),Math.round(qty),Math.round(omzet)]);
+      }
+      continue;
+    }
+    if(g.items[0].x<165&&!/[\d.,]/.test(line)&&line.length<50&&!/Konsumen|Produk|Qty|Omzet/i.test(line))currentConsumer=line;
+  }
+}
+if(!recs.length)throw new Error('PDF tidak menemukan baris produk. Pastikan PDF berupa tabel teks yang dapat diseleksi.');
+const clean=recs.filter(r=>r[0]&&r[1]&&r[2]&&r[3]>0&&r[4]>=0);
+const grouped={};clean.forEach(r=>{grouped[r[0]]??={q:0,o:0,rows:0};grouped[r[0]].q+=r[3];grouped[r[0]].o+=r[4];grouped[r[0]].rows++});
+monthChecks=Object.entries(grouped).sort();
+return {rows:clean,checks:monthChecks,expected:PDF_EXPECTED};
+}
+function showChecks(checks){
+let html='<div class="totalbox">';
+for(const [m,v] of checks){
+ const ex=PDF_EXPECTED[m],ok=!!ex&&ex[0]===v.rows&&ex[1]===v.q&&ex[2]===v.o;
+ html+=`<div class="mini"><b>${esc(monthLabel(m))}</b><span>${v.rows} baris · ${v.q.toLocaleString('id-ID')} bungkus · ${rupiah(v.o)}</span><small style="display:block;margin-top:5px;color:${ok?'#087443':'#a22'}">${ok?'✓ Detail cocok dengan total koreksi PDF':'⚠️ Detail PDF belum cocok dengan total koreksi yang ditetapkan.'}</small></div>`;
+}
+html+='</div>';
+const expectedMonths=Object.keys(PDF_EXPECTED).sort();
+const actualMap=Object.fromEntries(checks);
+const strictOk=expectedMonths.length===checks.length&&expectedMonths.every(m=>actualMap[m]&&PDF_EXPECTED[m][0]===actualMap[m].rows&&PDF_EXPECTED[m][1]===actualMap[m].q&&PDF_EXPECTED[m][2]===actualMap[m].o);
+$('validation').innerHTML=html+(strictOk?'':'<div class="msg" style="color:#a22">⚠️ Import DIKUNCI. Total PDF tidak cocok dengan 8 total bulanan yang sudah diverifikasi. Data tidak akan disimpan agar tidak ada angka yang salah.</div>');
+$('importBtn').disabled=!strictOk;
+$('importBtn').style.opacity=strictOk?'1':'.55';
+$('importBtn').style.cursor=strictOk?'pointer':'not-allowed';
+}
+$('file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{pdfMode=/\.pdf$/i.test(file.name);if(pdfMode){const result=await readPDF(file);importRows=result.rows;headers=['Periode','Konsumen','Produk','Qty','Omzet'];showChecks(result.checks)}else{const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});headers=(aoa.shift()||[]).map((h,i)=>String(h).trim()||`Kolom ${i+1}`);$('importBtn').disabled=false;$('importBtn').style.opacity='1';$('importBtn').style.cursor='pointer';importRows=aoa.filter(r=>r.some(v=>String(v??'').trim()));$('validation').innerHTML=''}if(!headers.length)throw new Error('Kolom tidak ditemukan.');$('fileInfo').textContent=`${importRows.length} baris produk terbaca. Preview menampilkan maksimal 30 baris.`;$('prevHead').innerHTML='<tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';$('prevRows').innerHTML=importRows.slice(0,30).map(r=>'<tr>'+headers.map((_,i)=>'<td>'+esc(r[i])+'</td>').join('')+'</tr>').join('');$('preview').style.display='block'}catch(err){$('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(err.message||err)+'</div>';$('preview').style.display='block'}};
+$('cancelImport').onclick=()=>{$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[]};
+$('importBtn').onclick=async()=>{
+  if(!importRows.length)return;
+  let out=[];
+  if(pdfMode){out=importRows.map(r=>({periode:r[0],konsumen:r[1],produk:r[2],qty:Math.round(Number(r[3])||0),omzet:Math.round(Number(r[4])||0)})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
+  else{const idx={};const pick=(kind)=>{const a=(DATA_LAMA_ALIASES[kind]||[]).map(normKey);return headers.findIndex(h=>a.includes(normKey(h)))};for(const k of Object.keys(DATA_LAMA_ALIASES))idx[k]=pick(k);if(Object.values(idx).some(v=>v<0))return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Periode, Konsumen, Produk, Qty, dan Omzet wajib ada.</div>';out=importRows.map(r=>({periode:normalPeriode(r[idx.periode]),konsumen:String(r[idx.konsumen]??'').trim(),produk:String(r[idx.produk]??'').trim(),qty:Math.round(toNum(r[idx.qty])),omzet:Math.round(toNum(r[idx.omzet]))})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
+  if(!out.length)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data valid untuk disimpan.</div>';
+  try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';
+    const resolved=await insertDataLamaResolved(out,schema);
+    const used=resolved.used, rows=out.map(x=>{const row={};row[used.periode]=x.periode;row[used.konsumen]=x.konsumen;row[used.produk]=x.produk;row[used.qty]=x.qty;row[used.omzet]=x.omzet;return row});
+    if(schema.inferred){schemaCache={...schema,map:used,keys:[...new Set([...schema.keys,...Object.values(used)])],inferred:false}}
+    $('importMsg').innerHTML='<div class="msg">Berhasil menyimpan '+rows.length+' baris historis'+(resolved.duplicateCount?'. '+resolved.duplicateCount+' baris duplikat dilewati':'')+'.</div>';$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[];load();
+  }catch(e){$('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}
+};
+load();
+</script>
+<script src="android-shell.js" defer></script>
+</body>
+</html>

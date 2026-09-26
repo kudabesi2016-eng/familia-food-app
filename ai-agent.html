@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Agen AI — Familia Food</title>
+<link rel="stylesheet" href="android-shell.css">
+<style>
+:root{
+  --wa-green:#075e54;
+  --wa-green-2:#128c7e;
+  --wa-soft:#dcf8c6;
+  --wa-bg:#efeae2;
+  --wa-white:#fff;
+  --wa-line:#d8d1c8;
+  --wa-text:#263238;
+  --wa-muted:#66756f;
+}
+html,body{margin:0;padding:0;background:var(--wa-bg);color:var(--wa-text);}
+body.ff-android .ai-page{
+  width:100%!important;max-width:780px!important;margin:0 auto!important;
+  padding:8px 10px 104px!important;box-sizing:border-box!important;
+}
+body.ff-android .ai-card{
+  background:#fff!important;border:1px solid var(--wa-line)!important;border-radius:15px!important;
+  box-shadow:0 2px 9px rgba(40,45,40,.06)!important;overflow:hidden!important;
+}
+.ai-wa-head{
+  display:flex;align-items:center;gap:10px;padding:11px 12px;
+  background:linear-gradient(135deg,var(--wa-green),var(--wa-green-2));color:#fff;
+}
+.ai-avatar{
+  width:42px;height:42px;flex:0 0 42px;border-radius:50%;
+  display:grid;place-items:center;background:#d9fdd3;color:#075e54;font-size:23px;
+}
+.ai-wa-name{font-weight:800;font-size:16px;line-height:1.1;}
+.ai-wa-status{margin-top:3px;font-size:11px;opacity:.9;}
+.ai-wa-body{
+  padding:10px 9px 9px;
+  background-color:var(--wa-bg);
+  background-image:radial-gradient(rgba(0,0,0,.035) 1px,transparent 1px);
+  background-size:12px 12px;
+}
+.ai-status{
+  margin:0 0 8px;padding:8px 10px;border-radius:10px;background:#f6fbf8;
+  border:1px solid #cfe6d9;color:#245b40;font-size:11px;line-height:1.35;
+}
+.ai-status.warn{background:#fff8e7;border-color:#ead9aa;color:#705b20;}
+.ai-chat{
+  display:flex;flex-direction:column;gap:6px;min-height:280px;max-height:52vh;overflow:auto;
+  padding:2px 1px 8px;scroll-behavior:smooth;
+}
+.ai-empty{
+  align-self:center;max-width:86%;padding:9px 11px;border-radius:10px;
+  background:#fff;border:1px solid #ded8cf;color:var(--wa-muted);
+  font-size:11px;line-height:1.45;text-align:center;
+}
+.ai-message{
+  max-width:88%;padding:7px 9px 7px;border-radius:9px;border:1px solid rgba(0,0,0,.06);
+  font-size:13px;line-height:1.45;box-sizing:border-box;overflow-wrap:anywhere;
+  box-shadow:0 1px 1px rgba(0,0,0,.04);
+}
+.ai-message.user{
+  align-self:flex-end;background:var(--wa-soft);border-top-right-radius:3px;
+}
+.ai-message.assistant{
+  align-self:flex-start;background:#fff;border-top-left-radius:3px;
+}
+.ai-role{font-size:10px;font-weight:800;color:#5b6b65;margin-bottom:3px;}
+.ai-body{white-space:pre-wrap;}
+.ai-time{margin-top:3px;text-align:right;font-size:9px;color:#77847f;}
+.ai-quick{
+  display:flex;gap:6px;overflow:auto;padding:2px 1px 5px;scrollbar-width:none;
+}
+.ai-quick::-webkit-scrollbar{display:none}
+.ai-chip{
+  flex:0 0 auto!important;min-height:30px!important;padding:6px 10px!important;
+  border-radius:999px!important;border:1px solid #bdd5ca!important;background:#fff!important;
+  color:var(--wa-green)!important;font-size:10px!important;font-weight:800!important;box-shadow:none!important;
+}
+.ai-compose{
+  display:flex;align-items:flex-end;gap:7px;padding:8px 7px;background:#f0f2f5;border-top:1px solid #d7d2cc;
+}
+.ai-compose textarea{
+  flex:1;min-width:0;min-height:42px;max-height:110px;resize:none;
+  box-sizing:border-box;padding:10px 12px;border:1px solid #d1d7d4;border-radius:18px;
+  background:#fff;color:var(--wa-text);font-size:13px;line-height:1.35;outline:none;
+}
+.ai-compose textarea:focus{border-color:#71a89a;box-shadow:0 0 0 2px rgba(18,140,126,.08);}
+.ai-send{
+  width:42px!important;height:42px!important;min-height:42px!important;flex:0 0 42px!important;
+  padding:0!important;border:0!important;border-radius:50%!important;background:var(--wa-green-2)!important;
+  color:#fff!important;font-size:17px!important;box-shadow:0 2px 6px rgba(7,94,84,.22)!important;
+}
+.ai-clear{
+  margin:7px 8px 2px!important;min-height:32px!important;padding:6px 10px!important;
+  border:0!important;background:transparent!important;color:#6d7974!important;font-size:10px!important;
+}
+.ai-help{padding:12px!important;margin-top:9px!important;}
+.ai-help-title{font-size:13px;font-weight:800;}
+.ai-help p{font-size:11px;line-height:1.4;color:#63716b;margin:6px 0 0;}
+.ai-badge{
+  display:inline-block;margin-top:8px;padding:5px 8px;border-radius:999px;
+  background:#eaf6ef;color:#245b40;font-size:10px;font-weight:800;
+}
+@media(max-width:420px){
+  body.ff-android .ai-page{padding-left:7px!important;padding-right:7px!important;}
+  .ai-message{max-width:92%;}
+}
+.ai-confirm-box{margin-top:6px;padding:8px 0 0;display:flex;gap:6px;flex-wrap:wrap;}
+.ai-confirm-btn{min-height:34px!important;padding:7px 12px!important;border-radius:18px!important;font-size:11px!important;font-weight:800!important;border:1px solid #cddbd3!important;}
+.ai-confirm-ok{background:#128c7e!important;color:#fff!important;border-color:#128c7e!important;}
+.ai-confirm-cancel{background:#fff!important;color:#65726c!important;}
+.ai-confirm-note{font-size:10px;color:#718078;margin-top:4px;}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+</head>
+<body>
+<main class="main ai-page">
+  <section class="card ai-card">
+    <div class="ai-wa-head">
+      <div class="ai-avatar">🤖</div>
+      <div style="min-width:0">
+        <div class="ai-wa-name">Agen AI Familia Food</div><div style="font-size:10px;font-weight:800;margin-top:4px">Tanya Agen AI</div>
+        <div class="ai-wa-status">Online • membaca data usaha • siap membantu</div><a href="index.html" aria-label="Kembali ke Beranda" style="display:inline-block;margin-top:7px;padding:5px 9px;border-radius:999px;background:#fff;color:#075e54;text-decoration:none;font-size:10px;font-weight:800">🏠 Beranda</a>
+      </div>
+    </div>
+
+    <div class="ai-wa-body">
+      <div id="aiStatus" class="ai-status">Agen AI terhubung ke aplikasi • Menyiapkan Agen AI...</div>
+
+      <div class="ai-quick" aria-label="Pertanyaan cepat">
+        <button class="ai-chip" type="button" data-q="Berapa profit saya?">Profit</button>
+        <button class="ai-chip" type="button" data-q="Berapa profit Online Januari?">Profit Online</button>
+        <button class="ai-chip" type="button" data-q="Produk apa yang paling banyak terjual?">Produk terlaris</button>
+        <button class="ai-chip" type="button" data-q="Berapa pengeluaran bulan ini?">Pengeluaran</button>
+      </div>
+
+      <div id="aiChat" class="ai-chat" aria-live="polite">
+        <div class="ai-empty">Halo 👋<br>Saya bisa cek data Familia Food dan mencatat transaksi penjualan dari perintah yang jelas.</div>
+      </div>
+    </div>
+
+    <form id="aiForm" class="ai-compose">
+      <textarea id="aiInput" rows="1" placeholder="Tulis pesan… Contoh: catat offline Naget 12 5 bungkus" required></textarea>
+      <button class="ai-send" type="submit" aria-label="Kirim">➤</button>
+    </form>
+    <button class="ai-clear" type="button" id="aiClear">Bersihkan percakapan</button>
+  </section>
+
+  <section class="card ai-card ai-help">
+    <div class="ai-help-title">Apa yang bisa Agen AI lakukan?</div>
+    <p>Memeriksa penjualan, data lama, HPP, produk, bahan baku, resep, pengeluaran, pembelian, supplier, pelanggan, retur, dan pengaturan.</p>
+    <p>Untuk penjualan dan pengeluaran, Agen AI dapat <b>menambah, mengedit, atau menghapus</b> data. Sebelum perubahan dilakukan, Agen AI selalu meminta konfirmasi <b>OKE</b> terlebih dahulu.</p>
+    <span class="ai-badge">🔒 Tidak mengubah master data • Transaksi penjualan saja</span>
+  </section>
+</main>
+<script src="android-shell.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const history=[];
+  const endpoint=(window.FF_AI_ENDPOINT||'https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai');
+  const data={sales:[],olds:[],expenses:[],products:[],hpps:[],materials:[],recipes:[],purchases:[],purchaseItems:[],suppliers:[],customers:[],returns:[],settings:[]};
+
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function norm(v){return String(v??'').trim().toLowerCase().replace(/\s+/g,' ');}
+  function nowTime(){return new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit'}).format(new Date());}
+  function todayLocal(){
+    const d=new Date(),p=n=>String(n).padStart(2,'0');
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+  function monthOf(v){const m=String(v??'').match(/^(\d{4})-(\d{1,2})/);return m?m[1]+'-'+String(Number(m[2])).padStart(2,'0'):'';}
+  function monthLabel(m){if(!/^\d{4}-\d{2}$/.test(m))return m||'-';return new Date(m+'-01T00:00:00Z').toLocaleDateString('id-ID',{month:'long',year:'numeric',timeZone:'UTC'});}
+  function rupiah(v){return 'Rp '+Math.round(Number(v)||0).toLocaleString('id-ID');}
+
+  function add(role,text){
+    const d=document.createElement('div');
+    d.className='ai-message '+(role==='user'?'user':'assistant');
+    d.innerHTML='<div class="ai-role">'+(role==='user'?'Anda':'🤖 Agen AI')+'</div><div class="ai-body">'+esc(text)+'</div><div class="ai-time">'+nowTime()+'</div>';
+    $('aiChat').appendChild(d);
+    $('aiChat').scrollTop=$('aiChat').scrollHeight;
+  }
+
+  let aiSessionPromise=null;
+  async function ensureAiSession(){
+    if(aiSessionPromise)return aiSessionPromise;
+    aiSessionPromise=(async()=>{
+      const current=await supabaseClient.auth.getSession();
+      if(current?.data?.session?.access_token)return current.data.session;
+      const r=await supabaseClient.auth.signInAnonymously();
+      if(r.error)throw r.error;
+      return r.data.session;
+    })().catch(e=>{aiSessionPromise=null;throw e});
+    return aiSessionPromise;
+  }
+
+  async function fetchAll(table,select='*'){
+    let result=[],start=0;
+    while(true){
+      const r=await supabaseClient.from(table).select(select).range(start,start+999);
+      if(r.error)throw r.error;
+      const rows=r.data||[]; result.push(...rows);
+      if(rows.length<1000)break;
+      start+=1000;
+    }
+    return result;
+  }
+
+  async function loadData(){
+    const jobs=[
+      ['penjualan','sales'],['data_lama','olds'],['pengeluaran','expenses'],['produk','products'],['hpp','hpps'],
+      ['bahan_baku','materials'],['resep','recipes'],['ff_pembelian','purchases'],['ff_pembelian_item','purchaseItems'],
+      ['ff_supplier','suppliers'],['ff_pelanggan','customers'],['ff_retur_penjualan','returns'],['pengaturan','settings']
+    ];
+    const results=await Promise.all(jobs.map(async([table,key])=>[key,await fetchAll(table)]));
+    for(const [key,rows] of results)data[key]=rows;
+  }
+
+  function resolveHpp(name){
+    const raw=norm(name).replace(/\bisi\b/g,' ').replace(/\s+/g,' ').trim();
+    const p=data.products.find(x=>norm(x.nama_produk).replace(/\bisi\b/g,' ').replace(/\s+/g,' ').trim()===raw);
+    if(!p)return null;
+    const h=data.hpps.find(x=>String(x.produk_id)===String(p.id));
+    const unit=Number(h?.hpp_unit||0);
+    return unit>0?unit:null;
+  }
+
+  function resolveProduct(q){
+    const raw=norm(q);
+    const cleaned=raw
+      .replace(/\b(masukkan|input|catat|simpan|transaksi|tambah|jual|penjualan|offline|online|tiktok|sebanyak|qty|jumlah)\b/g,' ')
+      .replace(/\bisi\b/g,' ')
+      .replace(/\b(bungkus|pack|paket)\b/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+
+    const exact=data.products.find(p=>{
+      const n=norm(p.nama_produk).replace(/\bisi\b/g,' ').replace(/\s+/g,' ').trim();
+      return n && new RegExp('(^|\\\\s)'+n.replace(/[.*+?^{}()|[\\]\\\\]/g,'\\\\$&')+'($|\\\\s)','i').test(cleaned);
+    });
+    if(exact)return exact;
+
+    // Khusus produk Naget: izinkan kata "isi", channel, dan kata pengantar
+    // berada di posisi mana pun selama varian angkanya jelas.
+    const nagetMatch=raw.match(/\bnaget\b(?:\s+(?:isi)?)?\s*(10|12|20|25|30|40|50)\b/i);
+    if(nagetMatch){
+      const variant=nagetMatch[1];
+      const target=data.products.find(p=>{
+        const n=norm(p.nama_produk);
+        return n===('naget '+variant) || (variant==='25' && n==='naget 25+saus');
+      });
+      if(target)return target;
+    }
+
+    return null;
+  }
+  function parseDate(q){
+    const m=String(q).match(/(?:tanggal|tgl)\s*(\d{1,2})[\/-](\d{1,2})(?:[\/-](20\d{2}))?/i);
+    if(!m)return todayLocal();
+    const y=m[3]||String(new Date().getFullYear()),d=String(Number(m[1])).padStart(2,'0'),mo=String(Number(m[2])).padStart(2,'0');
+    return y+'-'+mo+'-'+d;
+  }
+
+  let pendingAction=null;
+
+  function cleanProductKey(v){
+    return norm(v)
+      .replace(/\b(masukkan|input|catat|simpan|transaksi|tambah|jual|penjualan|offline|online|tiktok|sebanyak|qty|jumlah|bungkus|pack|paket|isi)\b/g,' ')
+      .replace(/[^a-z0-9]+/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+
+  function resolveProduct(q){
+    const key=cleanProductKey(q);
+    const list=data.products.slice().sort((a,b)=>cleanProductKey(b.nama_produk).length-cleanProductKey(a.nama_produk).length);
+    return list.find(p=>{
+      const pk=cleanProductKey(p.nama_produk);
+      return pk && key.includes(pk);
+    })||null;
+  }
+
+  function extractChannel(q){
+    const s=norm(q);
+    if(/\bonline\b|tiktok/.test(s))return 'Online';
+    if(/\boffline\b/.test(s))return 'Offline';
+    return null;
+  }
+
+  function extractQty(q){
+    const s=norm(q);
+    const patterns=[
+      /(?:sebanyak|qty|jumlah)\s*(\d+(?:[\.,]\d+)?)\s*(?:bungkus|pack|paket)?/i,
+      /\b(\d+(?:[\.,]\d+)?)\s*(?:bungkus|pack|paket)\b/i
+    ];
+    for(const re of patterns){
+      const m=s.match(re);
+      if(m){
+        const v=Number(String(m[1]).replace(',','.'));
+        if(Number.isFinite(v)&&v>0)return v;
+      }
+    }
+    return null;
+  }
+
+  function extractId(q){
+    const s=String(q);
+    const m=s.match(/\b(?:id|nomor|no)\s*[:#-]?\s*(\d+)\b/i) || s.match(/\b(?:transaksi|pengeluaran)\s*#?\s*(\d+)\b/i);
+    return m?Number(m[1]):null;
+  }
+
+  function extractDate(q){
+    const m=String(q).match(/(?:tanggal|tgl|pada)\s*(\d{1,2})[\/-](\d{1,2})(?:[\/-](20\d{2}))?/i);
+    if(!m)return null;
+    const y=m[3]||String(new Date().getFullYear());
+    return y+'-'+String(Number(m[2])).padStart(2,'0')+'-'+String(Number(m[1])).padStart(2,'0');
+  }
+
+  function extractMoney(q){
+    const s=String(q);
+    const matches=[...s.matchAll(/(?:rp\.?\s*)?(\d{1,3}(?:[\.,]\d{3})+|\d+(?:[\.,]\d+)?)\s*(juta|jt|ribu|rb|k)?\b/gi)];
+    if(!matches.length)return null;
+    const m=matches[matches.length-1];
+    let raw=m[1];
+    const unit=(m[2]||'').toLowerCase();
+    let v;
+    if(unit==='juta'||unit==='jt')v=Number(raw.replace(',','.'))*1000000;
+    else if(unit==='ribu'||unit==='rb'||unit==='k')v=Number(raw.replace(',','.'))*1000;
+    else v=Number(raw.replace(/\./g,'').replace(',','.'));
+    return Number.isFinite(v)&&v>0?Math.round(v):null;
+  }
+
+  function parseTransactionDetails(q, existing=null){
+    const channel=extractChannel(q)||existing?.channel||null;
+    const product=resolveProduct(q)||(
+      existing?.produk_id
+        ? data.products.find(p=>String(p.id)===String(existing.produk_id))
+        : null
+    );
+    const qty=extractQty(q) ?? (existing?Number(existing.qty||0):null);
+
+    if(!channel)return {error:'Channel belum disebutkan. Sebutkan Offline atau Online.'};
+    if(!product)return {error:'Produk belum jelas. Gunakan nama produk sesuai Master Produk, misalnya Naget 12.'};
+    if(!qty||qty<=0)return {error:'Jumlah bungkus belum jelas. Contoh: “5 bungkus”.'};
+
+    const explicitPrice=(String(q).match(/harga\s*(?:jual)?\s*[:=]?\s*rp?\s*([0-9\.]+)/i)||[])[1];
+    let harga=explicitPrice?Number(explicitPrice.replace(/\./g,'')):null;
+    if(harga==null){
+      if(existing && !resolveProduct(q) && !extractChannel(q)) harga=Number(existing.harga||0);
+      else harga=Number(channel==='Online'?product.harga_online:product.harga_offline);
+    }
+    if(!Number.isFinite(harga)||harga<=0)return {error:'Harga '+channel+' untuk '+product.nama_produk+' belum tersedia di Master Produk. Saya tidak akan menebak.'};
+
+    const h=data.hpps.find(x=>String(x.produk_id)===String(product.id));
+    const hppUnit=Number(h?.hpp_unit||0);
+    if(hppUnit<=0 && !existing)return {error:'HPP '+product.nama_produk+' belum tersedia. Saya tidak akan menyimpan transaksi dengan HPP 0.'};
+
+    const unitHpp=hppUnit>0?hppUnit:(Number(existing?.hpp||0)/(Number(existing?.qty||1)));
+    if(!Number.isFinite(unitHpp)||unitHpp<=0)return {error:'HPP transaksi tidak tersedia, jadi perubahan tidak aman dilakukan.'};
+
+    const total=Math.round(qty*harga);
+    const hppTotal=Math.round(qty*unitHpp);
+    const laba=total-hppTotal;
+    return {tanggal:extractDate(q)||existing?.tanggal||todayLocal(),channel,product,qty:Math.round(qty),harga:Math.round(harga),hppUnit:Math.round(unitHpp),hppTotal,laba,total};
+  }
+
+  function parseSaleAction(q){
+    const s=norm(q);
+    const isDelete=/\b(hapus|delete|hapuskan|batalkan)\b/.test(s) && /\b(transaksi|penjualan)\b/.test(s);
+    const isEdit=/\b(edit|ubah|ganti|perbarui|perbaiki)\b/.test(s) && /\b(transaksi|penjualan)\b/.test(s);
+    const isAdd=/\b(masukkan|input|catat|simpan|tambah|jual)\b/.test(s) && !/\b(pengeluaran|biaya)\b/.test(s) && !isDelete && !isEdit;
+    if(!isDelete&&!isEdit&&!isAdd)return null;
+
+    const id=extractId(q);
+    if((isDelete||isEdit)&&!id)return {intent:true,error:'Untuk edit/hapus transaksi, sebutkan ID transaksi agar tidak salah.'};
+
+    if(isDelete||isEdit){
+      const row=data.sales.find(x=>Number(x.id)===id);
+      if(!row)return {intent:true,error:'Transaksi dengan ID '+id+' tidak ditemukan.'};
+      if(isDelete)return {intent:true,action:{kind:'delete-sale',id,row}};
+
+      const details=parseTransactionDetails(q,row);
+      if(details.error)return {intent:true,error:details.error};
+      return {intent:true,action:{kind:'update-sale',id,row,details}};
+    }
+
+    const details=parseTransactionDetails(q,null);
+    if(details.error)return {intent:true,error:details.error};
+    return {intent:true,action:{kind:'add-sale',details}};
+  }
+
+  function explicitExpenseCategory(q){
+    const s=norm(q);
+    const explicit=s.match(/kategori\s*[:=]?\s*(bahan baku|operasional|gaji|alat\s*&?\s*perlengkapan|retur|lainnya)/i);
+    if(explicit){
+      const v=explicit[1].toLowerCase();
+      if(v.includes('bahan'))return 'Bahan Baku';
+      if(v.includes('operasional'))return 'Operasional';
+      if(v.includes('gaji'))return 'Gaji';
+      if(v.includes('alat'))return 'Alat & Perlengkapan';
+      if(v.includes('retur'))return 'Retur';
+      return 'Lainnya';
+    }
+    for(const c of ['Bahan Baku','Operasional','Gaji','Alat & Perlengkapan','Retur']){
+      if(s.includes(c.toLowerCase()))return c;
+    }
+    return null;
+  }
+  function expenseCategory(q){
+    return explicitExpenseCategory(q)||'Lainnya';
+  }
+
+  function expenseNoteFromQuery(q){
+    let s=norm(q);
+    s=s.replace(/\b(catat|input|masukkan|tambah|simpan|pengeluaran|biaya|expense|edit|ubah|ganti|perbarui|perbaiki|hapus|delete|transaksi|id|nomor|no|menjadi|jadi)\b/g,' ');
+    s=s.replace(/\b(online|offline|tiktok)\b/g,' ');
+    s=s.replace(/kategori\s*[:=]?\s*(bahan baku|operasional|gaji|alat\s*&?\s*perlengkapan|retur|lainnya)/g,' ');
+    s=s.replace(/(?:rp\.?\s*)?\d+(?:[\.,]\d+)?\s*(?:juta|jt|ribu|rb|k)?\b/g,' ');
+    s=s.replace(/(?:tanggal|tgl|pada)\s*\d{1,2}[\/-]\d{1,2}(?:[\/-]20\d{2})?/g,' ');
+    return s.replace(/\s+/g,' ').trim();
+  }
+
+  function expenseChannelFromNote(x){
+    const s=String(x?.keterangan||'').trim();
+    const m=s.match(/^\[(Online|Offline)\]\s*/i);
+    return m?m[1].replace(/^./,c=>c.toUpperCase()):null;
+  }
+  function expensePlainNote(x){
+    return String(x?.keterangan||'').replace(/^\[(Online|Offline)\]\s*/i,'').trim();
+  }
+  function inferExpenseCategory(q){
+    const s=norm(q);
+    if(/gas|listrik|air|transport|ongkir|iklan|admin|internet|telepon|sewa|operasional/.test(s))return 'Operasional';
+    if(/aci|tepung|plastik|mie|lumpia|stik|bumbu|bahan baku/.test(s))return 'Bahan Baku';
+    if(/gaji|upah/.test(s))return 'Gaji';
+    if(/alat|mesin|timbangan|sealer|rak|perlengkapan/.test(s))return 'Alat & Perlengkapan';
+    if(/retur/.test(s))return 'Retur';
+    return null;
+  }
+
+
+  function parseExpenseAction(q){
+    const s=norm(q);
+    const isDelete=/\b(hapus|delete|hapuskan|batalkan)\b/.test(s) && /\b(pengeluaran|biaya)\b/.test(s);
+    const isEdit=/\b(edit|ubah|ganti|perbarui|perbaiki)\b/.test(s) && /\b(pengeluaran|biaya)\b/.test(s);
+    const isAdd=/\b(masukkan|input|catat|simpan|tambah)\b/.test(s) && /\b(pengeluaran|biaya)\b/.test(s) && !isDelete && !isEdit;
+    if(!isDelete&&!isEdit&&!isAdd)return null;
+
+    const id=extractId(q);
+    if((isDelete||isEdit)&&!id)return {intent:true,error:'Untuk edit/hapus pengeluaran, sebutkan ID pengeluaran agar tidak salah.'};
+
+    if(isDelete||isEdit){
+      const row=data.expenses.find(x=>Number(x.id)===id);
+      if(!row)return {intent:true,error:'Pengeluaran dengan ID '+id+' tidak ditemukan.'};
+      if(isDelete)return {intent:true,action:{kind:'delete-expense',id,row}};
+
+      const channel=extractChannel(q)||expenseChannelFromNote(row);
+      const nominal=extractMoney(q)??Number(row.nominal||0);
+      const kategori=explicitExpenseCategory(q)||inferExpenseCategory(q)||row.kategori||'Lainnya';
+      const note=expenseNoteFromQuery(q)||expensePlainNote(row)||'Pengeluaran';
+      if(!nominal||nominal<=0)return {intent:true,error:'Nominal pengeluaran belum jelas.'};
+      if(!channel)return {intent:true,error:'Channel pengeluaran belum disebutkan. Gunakan Online atau Offline.'};
+      const tanggal=extractDate(q)||row.tanggal||((String(row.periode||'')+'-01').slice(0,10));
+      return {intent:true,action:{kind:'update-expense',id,row,data:{tanggal,periode:tanggal.slice(0,7),kategori,keterangan:'['+channel+'] '+note,nominal}}};
+    }
+
+    const channel=extractChannel(q);
+    if(!channel)return {intent:true,error:'Untuk pengeluaran, sebutkan channel Online atau Offline.'};
+    const nominal=extractMoney(q);
+    if(!nominal)return {intent:true,error:'Nominal pengeluaran belum jelas. Contoh: “catat pengeluaran Offline gas Rp100.000”.'};
+    const tanggal=extractDate(q)||todayLocal();
+    const kategori=explicitExpenseCategory(q)||inferExpenseCategory(q)||'Lainnya';
+    const note=expenseNoteFromQuery(q)||'Pengeluaran';
+    return {intent:true,action:{kind:'add-expense',data:{tanggal,periode:tanggal.slice(0,7),kategori,keterangan:'['+channel+'] '+note,nominal}}};
+  }
+
+  function parseAction(q){
+    return parseExpenseAction(q) || parseSaleAction(q);
+  }
+
+  function describeAction(action){
+    if(action.kind==='add-sale'){
+      const x=action.details;
+      return 'Konfirmasi transaksi PENJUALAN:\n\nTanggal: '+x.tanggal.split('-').reverse().join('/')+'\nChannel: '+x.channel+'\nProduk: '+x.product.nama_produk+'\nJumlah: '+x.qty+' bungkus\nHarga: '+rupiah(x.harga)+' / bungkus\nTotal: '+rupiah(x.total)+'\nHPP: '+rupiah(x.hppTotal)+'\nLaba: '+rupiah(x.laba)+'\n\nApakah saya boleh menyimpan ke tabel Penjualan?';
+    }
+    if(action.kind==='update-sale'){
+      const x=action.details;
+      return 'Konfirmasi EDIT PENJUALAN ID '+action.id+':\n\nTanggal: '+x.tanggal.split('-').reverse().join('/')+'\nChannel: '+x.channel+'\nProduk: '+x.product.nama_produk+'\nJumlah: '+x.qty+' bungkus\nHarga: '+rupiah(x.harga)+' / bungkus\nTotal: '+rupiah(x.total)+'\nHPP: '+rupiah(x.hppTotal)+'\nLaba: '+rupiah(x.laba)+'\n\nApakah saya boleh mengubah transaksi ini?';
+    }
+    if(action.kind==='delete-sale'){
+      const x=action.row;
+      return 'Konfirmasi HAPUS PENJUALAN ID '+action.id+':\n\nTanggal: '+x.tanggal+'\nChannel: '+(x.channel||'-')+'\nProduk: '+(x.product_name||'-')+'\nJumlah: '+(Number(x.qty)||0)+' bungkus\n\nData akan dihapus dari tabel Penjualan. Lanjutkan?';
+    }
+    if(action.kind==='add-expense'){
+      const x=action.data;
+      return 'Konfirmasi PENGELUARAN BARU:\n\nTanggal: '+x.tanggal.split('-').reverse().join('/')+'\nChannel: '+(expenseChannelFromNote(x)||'-')+'\nKategori: '+x.kategori+'\nKeterangan: '+expensePlainNote(x)+'\nNominal: '+rupiah(x.nominal)+'\n\nApakah saya boleh menyimpan ke tabel Pengeluaran?';
+    }
+    if(action.kind==='update-expense'){
+      const x=action.data;
+      return 'Konfirmasi EDIT PENGELUARAN ID '+action.id+':\n\nTanggal: '+x.tanggal.split('-').reverse().join('/')+'\nChannel: '+(expenseChannelFromNote(x)||'-')+'\nKategori: '+x.kategori+'\nKeterangan: '+expensePlainNote(x)+'\nNominal: '+rupiah(x.nominal)+'\n\nApakah saya boleh mengubah pengeluaran ini?';
+    }
+    if(action.kind==='delete-expense'){
+      const x=action.row;
+      return 'Konfirmasi HAPUS PENGELUARAN ID '+action.id+':\n\nTanggal: '+(x.tanggal||x.periode||'-')+'\nChannel: '+(expenseChannelFromNote(x)||'-')+'\nKategori: '+(x.kategori||'-')+'\nKeterangan: '+expensePlainNote(x)+'\nNominal: '+rupiah(x.nominal)+'\n\nData akan dihapus. Lanjutkan?';
+    }
+    return 'Konfirmasi perubahan data?';
+  }
+
+  function addConfirmPrompt(action){
+    pendingAction=action;
+    const d=document.createElement('div');
+    d.className='ai-message assistant';
+    d.innerHTML='<div class="ai-role">🤖 Agen AI</div><div class="ai-body">'+esc(describeAction(action))+'</div>';
+    const box=document.createElement('div');box.className='ai-confirm-box';
+    const ok=document.createElement('button');ok.className='ai-confirm-btn ai-confirm-ok';ok.type='button';ok.textContent='✅ OKE, LAKUKAN';
+    const no=document.createElement('button');no.className='ai-confirm-btn ai-confirm-cancel';no.type='button';no.textContent='❌ BATAL';
+    const note=document.createElement('div');note.className='ai-confirm-note';note.textContent='Belum ada data yang diubah. Menunggu konfirmasi Anda.';
+    box.append(ok,no);d.appendChild(box);d.appendChild(note);$('aiChat').appendChild(d);$('aiChat').scrollTop=$('aiChat').scrollHeight;
+    action.dom=d;
+    ok.onclick=()=>confirmPending(true,d);
+    no.onclick=()=>confirmPending(false,d);
+  }
+
+  async function executeAction(action){
+    if(action.kind==='add-sale'){
+      const x=action.details;
+      const row={tanggal:x.tanggal,produk_id:x.product.id,qty:x.qty,channel:x.channel,harga:x.harga,total:x.total,hpp:x.hppTotal,laba:x.laba,source:'manual',product_name:x.product.nama_produk,omzet_produk:x.total,modal_hpp:x.hppTotal,profit_online:x.channel==='Online'?x.laba:null};
+      const r=await supabaseClient.from('penjualan').insert([row]).select('id').single();if(r.error)throw r.error;
+      data.sales.push({...row,id:r.data.id});
+      return '✅ Penjualan tersimpan ke tabel Penjualan. ID transaksi: '+r.data.id+'.';
+    }
+    if(action.kind==='update-sale'){
+      const x=action.details;
+      const row={tanggal:x.tanggal,produk_id:x.product.id,qty:x.qty,channel:x.channel,harga:x.harga,total:x.total,hpp:x.hppTotal,laba:x.laba,source:action.row.source||'manual',product_name:x.product.nama_produk,omzet_produk:x.total,modal_hpp:x.hppTotal,profit_online:x.channel==='Online'?x.laba:null};
+      const r=await supabaseClient.from('penjualan').update(row).eq('id',action.id).select('id').single();if(r.error)throw r.error;
+      data.sales=data.sales.map(z=>Number(z.id)===Number(action.id)?{...z,...row,id:action.id}:z);
+      return '✅ Penjualan ID '+action.id+' berhasil diubah.';
+    }
+    if(action.kind==='delete-sale'){
+      const r=await supabaseClient.from('penjualan').delete().eq('id',action.id);if(r.error)throw r.error;
+      data.sales=data.sales.filter(z=>Number(z.id)!==Number(action.id));
+      return '✅ Penjualan ID '+action.id+' berhasil dihapus.';
+    }
+    if(action.kind==='add-expense'||action.kind==='update-expense'){
+      const r=action.kind==='add-expense'
+        ? await supabaseClient.from('pengeluaran').insert([action.data]).select('id').single()
+        : await supabaseClient.from('pengeluaran').update(action.data).eq('id',action.id).select('id').single();
+      if(r.error)throw r.error;
+      if(action.kind==='add-expense')data.expenses.push({...action.data,id:r.data.id});
+      else data.expenses=data.expenses.map(z=>Number(z.id)===Number(action.id)?{...z,...action.data,id:action.id}:z);
+      return action.kind==='add-expense'?'✅ Pengeluaran tersimpan ke tabel Pengeluaran. ID: '+r.data.id+'.':'✅ Pengeluaran ID '+action.id+' berhasil diubah.';
+    }
+    if(action.kind==='delete-expense'){
+      const r=await supabaseClient.from('pengeluaran').delete().eq('id',action.id);if(r.error)throw r.error;
+      data.expenses=data.expenses.filter(z=>Number(z.id)!==Number(action.id));
+      return '✅ Pengeluaran ID '+action.id+' berhasil dihapus.';
+    }
+    throw new Error('Jenis aksi tidak dikenal.');
+  }
+
+  async function confirmPending(ok,dom){
+    if(!pendingAction)return;
+    const action=pendingAction;
+    pendingAction=null;
+    if(dom)dom.querySelectorAll('button').forEach(b=>b.disabled=true);
+    if(!ok){
+      const a='❌ Dibatalkan. Tidak ada data yang diubah.';
+      history.push({role:'assistant',content:a});add('assistant',a);return;
+    }
+    try{
+      const a=await executeAction(action);
+      history.push({role:'assistant',content:a});add('assistant',a);
+    }catch(e){
+      const a='⚠️ Gagal menjalankan perubahan: '+e.message;
+      history.push({role:'assistant',content:a});add('assistant',a);
+    }
+  }
+  function expenseMonth(x){const p=String(x?.periode??'').trim();return /^\d{4}-\d{2}$/.test(p)?p:monthOf(x?.tanggal);}
+  function latestMonth(){
+    const set=new Set();
+    data.sales.forEach(x=>{const m=monthOf(x.tanggal);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+    data.olds.forEach(x=>{const m=monthOf(x.periode);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+    data.expenses.forEach(x=>{const m=expenseMonth(x);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+    return [...set].sort().pop()||todayLocal().slice(0,7);
+  }
+  function requestedMonth(q){
+    const s=norm(q),ym=s.match(/\b(20\d{2})[-\/]?(0?[1-9]|1[0-2])\b/);
+    if(ym)return ym[1]+'-'+String(Number(ym[2])).padStart(2,'0');
+    const names=['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'];
+    const y=new Date().getFullYear();for(let i=0;i<names.length;i++)if(s.includes(names[i]))return y+'-'+String(i+1).padStart(2,'0');
+    return latestMonth();
+  }
+
+  function calcMonth(m){
+    const oldOff=data.olds.filter(x=>monthOf(x.periode)===m),newOff=data.sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m),ex=data.expenses.filter(x=>expenseMonth(x)===m);
+    let offlineRev=oldOff.reduce((a,x)=>a+Number(x.nominal||x.omzet||0),0),offlineModal=0,offlineHppKnown=true;
+    for(const x of oldOff){const qty=Number(x.catatan||0),h=resolveHpp(x.jenis);if(qty>0&&!h)offlineHppKnown=false;if(h)offlineModal+=qty*h;}
+    for(const x of newOff){const qty=Number(x.qty||0);offlineRev+=Number(x.omzet_produk??qty*Number(x.harga||0));const h=x.modal_hpp!=null?Number(x.modal_hpp):(x.hpp!=null?Number(x.hpp):(resolveHpp(x.product_name)||0)*qty);const known=x.modal_hpp!=null||x.hpp!=null||!!resolveHpp(x.product_name);if(qty>0&&!known)offlineHppKnown=false;offlineModal+=h;}
+    const offlineExpense=ex.reduce((a,x)=>a+Number(x.nominal||0),0),offlineNet=offlineRev-offlineExpense,offlineProfit=offlineHppKnown?offlineNet-offlineModal:null;
+    const onlineFin=data.sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&x.source==='online_standard_finance');
+    const seller=data.sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&x.source==='seller_center');
+    const onlineNew=data.sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&x.source==='online_batch');
+    const cash=data.sales.filter(x=>x.channel==='Online'&&monthOf(x.tanggal)===m&&x.source==='online_pencairan');
+    const histRev=onlineFin.reduce((a,x)=>a+Number(x.omzet_produk||0),0),histNet=onlineFin.reduce((a,x)=>a+Number(x.uang_bersih||0),0),newNet=cash.reduce((a,x)=>a+Number(x.uang_bersih??x.omzet_produk??0),0);
+    const onlineRevenue=histRev+newNet,onlineNet=histNet+newNet;
+    let onlineModal=0,onlineHppKnown=true;
+    for(const x of seller){const modal=x.modal_hpp!=null?Number(x.modal_hpp):Number(x.qty||0)*Number(x.hpp||0);if(Number(x.qty||0)>0&&modal<=0)onlineHppKnown=false;onlineModal+=modal;}
+    for(const x of onlineNew){const modal=x.modal_hpp!=null?Number(x.modal_hpp):Number(x.qty||0)*Number(x.hpp||0);if(Number(x.qty||0)>0&&modal<=0)onlineHppKnown=false;onlineModal+=modal;}
+    const onlineProfit=onlineHppKnown?onlineNet-onlineModal:null;
+    return {label:monthLabel(m),offline:{revenue:offlineRev,expense:offlineExpense,net:offlineNet,modal:offlineModal,profit:offlineProfit},online:{revenue:onlineRevenue,net:onlineNet,modal:onlineModal,profit:onlineProfit}};
+  }
+
+  function localAnswer(q){
+    const s=norm(q),m=requestedMonth(q),c=calcMonth(m),isOnline=/online|tiktok|seller center/.test(s),isOffline=/offline/.test(s);
+    if(/\b(profit|laba|keuntungan)\b/.test(s)){
+      const x=isOnline?c.online:isOffline?c.offline:null;
+      if(x){return x.profit==null?'Profit belum bisa dihitung karena HPP/modal belum lengkap.':'Profit '+(isOnline?'Online':isOffline?'Offline':'')+' bulan '+c.label+' adalah '+rupiah(x.profit)+'.\nUang bersih: '+rupiah(x.net)+'\nHPP/modal: '+rupiah(x.modal)+'.';}
+      if(c.offline.profit==null||c.online.profit==null)return 'Profit gabungan bulan '+c.label+' belum bisa dihitung karena HPP/modal belum lengkap.';
+      return 'Profit gabungan Offline + Online bulan '+c.label+' adalah '+rupiah(c.offline.profit+c.online.profit)+'.\nOffline: '+rupiah(c.offline.profit)+'\nOnline: '+rupiah(c.online.profit)+'.';
+    }
+    if(/pengeluaran|biaya/.test(s))return 'Total pengeluaran bulan '+c.label+' adalah '+rupiah(c.offline.expense)+'.';
+    if(/berapa produk|jumlah produk|master produk/.test(s))return 'Master Produk berisi '+data.products.length+' produk.';
+    if(/bahan baku/.test(s))return 'Master Bahan Baku berisi '+data.materials.length+' bahan.';
+    if(/resep/.test(s))return 'Data Resep berisi '+data.recipes.length+' baris.';
+    if(/supplier/.test(s))return 'Data Supplier berisi '+data.suppliers.length+' supplier.';
+    if(/pelanggan/.test(s))return 'Data Pelanggan berisi '+data.customers.length+' pelanggan.';
+    if(/retur/.test(s))return 'Data Retur berisi '+data.returns.length+' transaksi retur.';
+    if(/berapa transaksi|jumlah transaksi/.test(s))return 'Tabel Penjualan berisi '+data.sales.length+' transaksi.';
+    if(/penjualan hari ini|hari ini/.test(s)){const d=todayLocal(),rows=data.sales.filter(x=>x.tanggal===d);const total=rows.reduce((a,x)=>a+Number(x.total||x.omzet_produk||0),0);return 'Hari ini ada '+rows.length+' transaksi penjualan dengan nilai '+rupiah(total)+'.';}
+    return 'Saya terhubung ke data Familia Food. Anda bisa bertanya angka usaha atau memerintahkan transaksi, misalnya: “catat Online Naget 12 sebanyak 5 bungkus”.';
+  }
+
+  async function tryRemote(q){
+    // message:'__healthcheck__' is the reserved no-cost connection probe.
+    const session=await ensureAiSession(),r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({message:q,history})});
+    const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Endpoint AI belum aktif');return String(d.answer||d.output_text||'');
+  }
+
+  async function submitQuestion(q){
+    if(pendingAction){
+      const s=norm(q);
+      if(/^(oke|ok|ya|iya|lakukan|lanjut|setuju|gas|konfirmasi)(,|\s|$)/.test(s)){
+        await confirmPending(true,pendingAction.dom||null);
+        return;
+      }
+      if(/^(batal|tidak|jangan|cancel|gak jadi)/.test(s)){
+        await confirmPending(false,pendingAction.dom||null);
+        return;
+      }
+      const a='⚠️ Ada perubahan yang masih menunggu konfirmasi. Jawab “OKE” untuk menjalankan atau “BATAL” untuk membatalkan.';
+      add('assistant',a);return;
+    }
+
+    add('user',q);history.push({role:'user',content:q});
+
+    const action=parseAction(q);
+    if(action?.intent){
+      if(action.error){
+        const a='⚠️ '+action.error;history.push({role:'assistant',content:a});add('assistant',a);return;
+      }
+      const domAction=action.action;
+      addConfirmPrompt(domAction);
+      return;
+    }
+
+    let answer='';try{answer=await tryRemote(q);}catch(_){answer=localAnswer(q);}
+    if(!answer)answer=localAnswer(q);
+    history.push({role:'assistant',content:answer});add('assistant',answer);
+  }
+
+  async function startup(){
+    try{
+      await loadData();
+      try{
+        await tryRemote('__healthcheck__');
+        $('aiStatus').className='ai-status';
+        $('aiStatus').innerHTML='✅ Terhubung ke data Familia Food. Cek data memakai sumber Supabase.';
+      }catch(e){
+        $('aiStatus').className='ai-status warn';
+        $('aiStatus').innerHTML='🟡 Data usaha terbaca. Agen percakapan lanjutan berjalan dengan mode lokal jika server AI tidak tersedia.';
+      }
+    }catch(e){
+      $('aiStatus').className='ai-status warn';
+      $('aiStatus').innerHTML='⚠️ Data Agen AI belum dapat dibaca. Cek koneksi Supabase.';
+      console.error(e);
+    }
+  }
+
+  $('aiForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const q=$('aiInput').value.trim();if(!q)return;
+    $('aiInput').value='';const b=e.submitter;if(b)b.disabled=true;
+    try{await submitQuestion(q);}finally{if(b)b.disabled=false;}
+  });
+  $('aiInput').addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('aiForm').requestSubmit();}
+  });
+  $('aiClear').onclick=()=>{
+    $('aiChat').innerHTML='<div class="ai-empty">Percakapan dibersihkan. Silakan mulai lagi.</div>';
+    history.length=0;
+  };
+  document.querySelectorAll('.ai-chip').forEach(btn=>btn.addEventListener('click',()=>{
+    $('aiInput').value=btn.dataset.q||'';$('aiInput').focus();
+  }));
+  startup();
+})();
+</script>
+</body>
+</html>

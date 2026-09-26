@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#087443">
+<title>Operasional - Familia Food</title>
+<style>
+*{box-sizing:border-box}
+:root{--brand:#087443;--brand2:#146b3a;--bg:#f5f8f6;--muted:#66736d;--line:#dce8e1}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#243029}
+.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:var(--brand);color:#fff;padding:22px 15px;z-index:20}
+.brand{font-size:22px;font-weight:800;text-align:center;margin-bottom:24px}
+.nav a{display:block;color:#fff;text-decoration:none;padding:12px 14px;border-radius:9px;margin:4px 0}
+.nav a:hover,.nav a.active{background:#146b3a}
+main{margin-left:240px;padding:28px;max-width:1400px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.top h1{margin:0;color:var(--brand)}
+.sub{color:var(--muted);margin-top:6px}
+.badge{background:#eaf5ee;color:var(--brand);font-weight:700;border-radius:999px;padding:7px 11px;font-size:12px}
+.card{background:#fff;border:1px solid #e3ece7;border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px #00000008}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:#f4fbf6;border:1px solid #d9eadf;border-radius:12px;padding:14px}
+.stat small{display:block;color:var(--muted)}
+.stat b{display:block;font-size:22px;color:var(--brand);margin-top:5px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tab{border:1px solid #cfe2d7;background:#fff;color:var(--brand);border-radius:10px;padding:10px 13px;font-weight:800;cursor:pointer}
+.tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.panel{display:none}.panel.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:800;color:#58665f}
+.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #cbd8d0;border-radius:8px;background:#fff;font:inherit}
+.field textarea{min-height:80px;resize:vertical}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:0;background:var(--brand);color:#fff;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer}
+.btn.gray{background:#727b76}.btn.danger{background:#b42318}.btn.light{background:#eaf5ee;color:var(--brand)}
+.tablewrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th{background:var(--brand);color:#fff;text-align:left;padding:9px;white-space:nowrap}
+td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
+.empty{padding:18px;text-align:center;color:var(--muted)}
+.line-row{display:grid;grid-template-columns:minmax(220px,1.6fr) 110px 120px 130px 42px;gap:8px;align-items:end;padding:10px;background:#f8fcf9;border:1px solid var(--line);border-radius:10px;margin-top:8px}
+.remove-line{height:40px}
+.notice{padding:10px 12px;border-radius:9px;background:#fff8df;border:1px solid #f0df9b;color:#6b5a16;margin-bottom:12px}
+.notice.ok{background:#eef7f1;border-color:#cde7d7;color:#166534}
+.status{margin-top:10px;color:var(--muted);font-size:13px}
+.hidden{display:none!important}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.sidebar{position:sticky;top:0;width:100%;height:auto;padding:8px 10px}.brand{text-align:left;font-size:17px;margin:0 0 7px}.nav{display:flex;overflow:auto;gap:5px}.nav a{white-space:nowrap;margin:0;padding:8px 10px;font-size:11px}.nav a.active{background:#146b3a}main{margin-left:0;padding:10px}.top{display:block}.top h1{font-size:22px}.badge{display:inline-block;margin-top:8px}.stats,.grid{grid-template-columns:1fr 1fr}.tabs{overflow:auto;flex-wrap:nowrap}.tab{white-space:nowrap;font-size:11px;padding:8px 10px}.card{padding:12px}.line-row{grid-template-columns:1fr 1fr}.line-row .mat{grid-column:1/-1}.line-row .price{grid-column:1}.line-row .qty{grid-column:2}.line-row .remove-line{grid-column:1/-1;width:100%}}
+</style>
+<link rel="stylesheet" href="android-shell.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">🍀 Familia Food</div>
+  <nav class="nav">
+    <a href="index.html">🏠 Dashboard</a>
+    <a href="produk.html">📦 Produk</a>
+    <a href="bahan-baku.html">🥣 Bahan Baku</a>
+    <a href="resep.html">📋 Resep</a>
+    <a href="hpp.html">🧮 HPP</a>
+    <a href="penjualan.html">💰 Penjualan</a>
+    <a href="operasional.html" class="active">🧾 Operasional</a>
+    <a href="rekap.html">📊 Rekap</a>
+    <a href="data-lama.html">📁 Data Lama</a><a href="hutang-piutang.html">💳 Hutang & Piutang</a>
+    <a href="pengaturan.html">⚙️ Pengaturan</a>
+  </nav>
+</aside>
+
+<main>
+  <div class="top">
+    <div><h1>🧾 Operasional</h1><div class="sub">Lengkapi Familia Food dengan Supplier, Pembelian, Pelanggan, Retur, dan Pengeluaran tanpa mengubah modul inti.</div></div>
+    <span class="badge">Tidak termasuk: pembayaran • stok • mutasi stok • multi outlet • user/akses</span>
+  </div>
+
+  <div id="schemaNotice" class="notice">Memeriksa koneksi modul tambahan…</div>
+
+  <div class="stats">
+    <div class="stat"><small>Supplier</small><b id="statSupplier">0</b></div>
+    <div class="stat"><small>Pembelian</small><b id="statPurchase">0</b></div>
+    <div class="stat"><small>Pengeluaran Bulan Ini</small><b id="statExpense">Rp 0</b></div>
+    <div class="stat"><small>Retur Penjualan</small><b id="statReturn">0</b></div>
+  </div>
+
+  <div class="tabs" style="margin-top:16px">
+    <button class="tab active" data-tab="supplier" type="button">🏢 Supplier</button>
+    <button class="tab" data-tab="purchase" type="button">🛒 Pembelian</button>
+    <button class="tab" data-tab="expense" type="button">💸 Pengeluaran</button>
+    <button class="tab" data-tab="customer" type="button">👤 Pelanggan</button>
+    <button class="tab" data-tab="return" type="button">↩️ Retur</button>
+  </div>
+
+  <section class="panel active" data-panel="supplier">
+    <div class="card">
+      <h2>🏢 Master Supplier</h2>
+      <div class="grid">
+        <div class="field"><label>Nama Supplier</label><input id="supNama" placeholder="Contoh: Toko Tepung"></div>
+        <div class="field"><label>Telepon</label><input id="supTelp" placeholder="08..."></div>
+        <div class="field"><label>Alamat</label><input id="supAlamat" placeholder="Alamat supplier"></div>
+        <div class="field"><label>Catatan</label><input id="supCatatan" placeholder="Catatan"></div>
+      </div>
+      <div class="actions"><button class="btn" id="saveSupplier" type="button">+ Simpan Supplier</button><button class="btn gray" id="cancelSupplier" type="button">Batal</button></div>
+      <div id="supplierStatus" class="status"></div>
+    </div>
+    <div class="card">
+      <div class="tablewrap"><table><thead><tr><th>Nama</th><th>Telepon</th><th>Alamat</th><th>Catatan</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="supplierRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="purchase">
+    <div class="card">
+      <h2>🛒 Pembelian Bahan Baku</h2>
+      <div class="grid">
+        <div class="field"><label>Tanggal</label><input id="buyDate" type="date"></div>
+        <div class="field"><label>Supplier</label><select id="buySupplier"></select></div>
+        <div class="field" style="grid-column:span 2"><label>Catatan</label><input id="buyNote" placeholder="Nomor nota / catatan pembelian"></div>
+      </div>
+      <h3 style="margin:18px 0 8px">Item Pembelian</h3>
+      <div id="purchaseLines"></div>
+      <div class="actions"><button class="btn light" id="addPurchaseLine" type="button">+ Tambah Bahan</button><button class="btn" id="savePurchase" type="button">Simpan Pembelian</button></div>
+      <div id="purchaseStatus" class="status"></div>
+    </div>
+    <div class="card">
+      <div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Supplier</th><th>Total</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="purchaseRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="expense">
+    <div class="card">
+      <h2>💸 Pengeluaran</h2>
+      <div class="grid">
+        <div class="field"><label>Tanggal / Periode</label><input id="expDate" type="date"></div>
+        <div class="field"><label>Kategori Pengeluaran</label><select id="expCategory"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
+        <div class="field"><label>Cara Bayar</label><select id="expPayMethod"><option>Tunai</option><option>Hutang</option></select></div>
+        <div class="field"><label>Nominal</label><input id="expNominal" type="number" min="0" step="1" placeholder="0"></div>
+        <div class="field"><label>Pihak / Supplier</label><input id="expParty" placeholder="Wajib diisi bila Cara Bayar = Hutang"></div>
+        <div class="field"><label>Kategori Hutang</label><select id="expDebtCategory"><option>Produktif</option><option>Konsumtif</option><option>Usaha</option><option>Lainnya</option></select></div>
+        <div class="field"><label>Jatuh Tempo</label><input id="expDueDate" type="date"></div>
+        <div class="field" style="grid-column:span 2"><label>Keterangan</label><input id="expNote" placeholder="Contoh: beli tepung tapioka"></div>
+      </div>
+      <div class="actions"><button class="btn" id="saveExpense" type="button">+ Simpan Pengeluaran</button></div>
+      <div id="expenseStatus" class="status"></div>
+    </div>
+    <div class="card">
+      <div class="notice ok">💡 Bila <b>Cara Bayar = Hutang</b>, nominal langsung masuk ke <b>Pengeluaran Utama</b> dan otomatis dibuat di tab <b>Hutang & Piutang</b>. Saat dibayar dari tab Hutang, saldo hutang berkurang dan pembayaran <b>tidak dicatat lagi sebagai pengeluaran</b> agar tidak double.</div>
+      <div class="tablewrap"><table><thead><tr><th>Periode</th><th>Kategori</th><th>Cara Bayar</th><th>Keterangan</th><th>Nominal</th></tr></thead><tbody id="expenseRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="customer">
+    <div class="card">
+      <h2>👤 Master Pelanggan</h2>
+      <div class="grid">
+        <div class="field"><label>Nama</label><input id="cusNama" placeholder="Nama pelanggan"></div>
+        <div class="field"><label>Telepon</label><input id="cusTelp" placeholder="08..."></div>
+        <div class="field"><label>Alamat</label><input id="cusAlamat"></div>
+        <div class="field"><label>Catatan</label><input id="cusCatatan"></div>
+      </div>
+      <div class="actions"><button class="btn" id="saveCustomer" type="button">+ Simpan Pelanggan</button></div>
+      <div id="customerStatus" class="status"></div>
+    </div>
+    <div class="card"><div class="tablewrap"><table><thead><tr><th>Nama</th><th>Telepon</th><th>Alamat</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="customerRows"></tbody></table></div></div>
+  </section>
+
+  <section class="panel" data-panel="return">
+    <div class="card">
+      <h2>↩️ Retur Penjualan</h2>
+      <div class="grid">
+        <div class="field"><label>Tanggal</label><input id="retDate" type="date"></div>
+        <div class="field"><label>Channel</label><select id="retChannel"><option>Offline</option><option>Online</option></select></div>
+        <div class="field"><label>Penjualan</label><select id="retSale"></select></div>
+        <div class="field"><label>Qty Retur (bungkus)</label><input id="retQty" type="number" min="1" step="1" value="1"></div>
+        <div class="field"><label>Nominal Retur</label><input id="retNominal" type="number" min="0" step="1" placeholder="0"></div>
+        <div class="field" style="grid-column:span 2"><label>Alasan</label><input id="retReason" placeholder="Contoh: kemasan rusak"></div>
+      </div>
+      <div class="actions"><button class="btn" id="saveReturn" type="button">+ Simpan Retur</button></div>
+      <div id="returnStatus" class="status"></div>
+    </div>
+    <div class="card"><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Channel</th><th>Produk</th><th>Qty</th><th>Nominal</th><th>Alasan</th></tr></thead><tbody id="returnRows"></tbody></table></div></div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="app-settings.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const rupiah=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
+const today=()=>new Date().toISOString().slice(0,10);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=v=>Math.round(Number(v)||0);
+const state={supplier:[],purchase:[],customer:[],ret:[],expense:[],tables:{}};
+let editSupplierId=null;
+
+async function tableReady(name){
+  const r=await supabaseClient.from(name).select('*').limit(1);
+  state.tables[name]=!r.error;
+  return state.tables[name];
+}
+async function loadTable(name){
+  if(!state.tables[name])return [];
+  const r=await supabaseClient.from(name).select('*');
+  if(r.error)throw r.error;
+  return r.data||[];
+}
+function fmtDate(v){return v?String(v).slice(0,10):'-'}
+function schemaMessage(){
+  const required=['ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','pengeluaran'];
+  const missing=required.filter(x=>state.tables[x]!==true);
+  $('schemaNotice').className=missing.length?'notice':'notice ok';
+  $('schemaNotice').innerHTML=missing.length
+    ? '⚠️ Integrasi database belum lengkap: <b>'+missing.join(', ')+'</b>. Modul Operasional <b>tidak menyimpan data bisnis ke perangkat sebagai pengganti database</b>. Jalankan <b>SUPABASE-EXPANSION.sql</b> satu kali di Supabase, lalu muat ulang aplikasi.'
+    : '✅ Semua modul Operasional terhubung ke database Supabase. Data Supplier, Pembelian, Pengeluaran, Pelanggan, dan Retur memakai sumber data yang sama dengan Rekap/Dashboard.';
+}
+function supplierName(id){const x=state.supplier.find(s=>String(s.id)===String(id));return x?.nama||'-'}
+function materialOptions(selected=''){return '<option value="">Pilih bahan</option>'+window.bahan.map(b=>'<option value="'+esc(b.id)+'" '+(String(b.id)===String(selected)?'selected':'')+'>'+esc(b.nama_bahan)+'</option>').join('')}
+function renderSupplierSelects(){
+  $('buySupplier').innerHTML='<option value="">Tanpa supplier</option>'+state.supplier.map(s=>'<option value="'+esc(s.id)+'">'+esc(s.nama)+'</option>').join('');
+}
+function renderPurchaseLines(){
+  const host=$('purchaseLines');
+  host.innerHTML='';
+  if(!host.children.length)addPurchaseLine();
+}
+function addPurchaseLine(data={}){
+  const host=$('purchaseLines');
+  const row=document.createElement('div');row.className='line-row';
+  row.innerHTML='<div class="field mat"><label>Bahan</label><select class="line-mat">'+materialOptions(data.bahan_id)+'</select></div>'+
+    '<div class="field qty"><label>Qty</label><input class="line-qty" type="number" min="0" step="0.001" value="'+(data.qty??1)+'"></div>'+
+    '<div class="field price"><label>Harga Beli</label><input class="line-price" type="number" min="0" step="1" value="'+(data.harga_beli??'')+'"></div>'+
+    '<div class="field"><label>Subtotal</label><input class="line-subtotal" readonly value="'+(money(data.subtotal)||0)+'"></div>'+
+    '<button type="button" class="btn danger remove-line" title="Hapus">×</button>';
+  host.appendChild(row);
+  const mat=row.querySelector('.line-mat'),qty=row.querySelector('.line-qty'),price=row.querySelector('.line-price'),sub=row.querySelector('.line-subtotal');
+  function calc(){sub.value=money((Number(qty.value)||0)*(Number(price.value)||0))}
+  mat.onchange=()=>{const b=window.bahan.find(x=>String(x.id)===String(mat.value));if(b&&(!price.value||price.value==='0'))price.value=money(b.harga_beli);calc()};
+  qty.oninput=calc;price.oninput=calc;row.querySelector('.remove-line').onclick=()=>{row.remove();if(!host.children.length)addPurchaseLine()};
+}
+async function loadMaterials(){
+  const r=await supabaseClient.from('bahan_baku').select('*').order('id',{ascending:true});
+  window.bahan=r.error?[]:(r.data||[]);
+  if(!window.bahan.length)$('purchaseStatus').textContent='Bahan baku belum terbaca dari database.';
+  renderPurchaseLines();
+}
+function resetSupplier(){editSupplierId=null;$('supNama').value='';$('supTelp').value='';$('supAlamat').value='';$('supCatatan').value='';$('saveSupplier').textContent='+ Simpan Supplier'}
+function renderSuppliers(){
+  $('supplierRows').innerHTML=state.supplier.map(s=>'<tr><td>'+esc(s.nama)+'</td><td>'+esc(s.telepon||'-')+'</td><td>'+esc(s.alamat||'-')+'</td><td>'+esc(s.catatan||'-')+'</td><td>'+esc(s.status||'Aktif')+'</td><td><button class="btn light" data-edit-sup="'+esc(s.id)+'">Edit</button> <button class="btn danger" data-del-sup="'+esc(s.id)+'">Hapus</button></td></tr>').join('')||'<tr><td colspan="6" class="empty">Belum ada supplier.</td></tr>';
+  document.querySelectorAll('[data-edit-sup]').forEach(b=>b.onclick=()=>editSupplier(b.dataset.editSup));
+  document.querySelectorAll('[data-del-sup]').forEach(b=>b.onclick=()=>deleteSupplier(b.dataset.delSup));
+}
+async function editSupplier(id){
+  const s=state.supplier.find(x=>String(x.id)===String(id));if(!s)return;
+  editSupplierId=id;$('supNama').value=s.nama||'';$('supTelp').value=s.telepon||'';$('supAlamat').value=s.alamat||'';$('supCatatan').value=s.catatan||'';$('saveSupplier').textContent='Simpan Perubahan';
+  document.querySelector('[data-tab="supplier"]').click();window.scrollTo({top:0,behavior:'smooth'});
+}
+async function deleteSupplier(id){
+  if(!confirm('Hapus supplier ini?'))return;
+  if(!state.tables.ff_supplier){$('supplierStatus').textContent='Database Supplier belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
+  const r=await supabaseClient.from('ff_supplier').delete().eq('id',id);
+  if(r.error){$('supplierStatus').textContent='Gagal: '+r.error.message;return}
+  state.supplier=await loadTable('ff_supplier');renderSuppliers();renderSupplierSelects();renderStats();
+}
+async function saveSupplier(){
+  const data={nama:$('supNama').value.trim(),telepon:$('supTelp').value.trim(),alamat:$('supAlamat').value.trim(),catatan:$('supCatatan').value.trim(),status:'Aktif'};
+  if(!data.nama){$('supplierStatus').textContent='Nama supplier wajib diisi.';return}
+  if(!state.tables.ff_supplier){$('supplierStatus').textContent='Database Supplier belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
+  let r=editSupplierId?await supabaseClient.from('ff_supplier').update(data).eq('id',editSupplierId):await supabaseClient.from('ff_supplier').insert([data]).select().single();
+  if(r.error){$('supplierStatus').textContent='Gagal: '+r.error.message;return}
+  state.supplier=await loadTable('ff_supplier');
+  resetSupplier();renderSuppliers();renderSupplierSelects();$('supplierStatus').textContent='Supplier berhasil disimpan.';renderStats();
+}
+function renderPurchases(){
+  $('purchaseRows').innerHTML=state.purchase.slice().sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))).map(p=>'<tr><td>'+esc(fmtDate(p.tanggal))+'</td><td>'+esc(supplierName(p.supplier_id))+'</td><td>'+rupiah(p.total)+'</td><td>'+esc(p.catatan||'-')+'</td><td><button class="btn danger" data-del-buy="'+esc(p.id)+'">Hapus</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pembelian.</td></tr>';
+  document.querySelectorAll('[data-del-buy]').forEach(b=>b.onclick=()=>deletePurchase(b.dataset.delBuy));
+}
+async function syncLastPurchasePrices(rows){
+  const warnings=[];
+  for(const x of rows){
+    const id=Number(x.bahan_id);
+    const price=money(x.harga_beli);
+    if(!id || price<0)continue;
+    const r=await supabaseClient.from('bahan_baku').update({harga_beli:price}).eq('id',id);
+    if(r.error)warnings.push((window.bahan.find(b=>String(b.id)===String(id))||{}).nama_bahan||('ID '+id));
+    const local=window.bahan.find(b=>String(b.id)===String(id));
+    if(local)local.harga_beli=price;
+  }
+  return warnings;
+}
+
+async function savePurchase(){
+  if(!state.tables.ff_pembelian || !state.tables.ff_pembelian_item){$('purchaseStatus').textContent='Database Pembelian belum aktif lengkap. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
+  const tanggal=$('buyDate').value||today(),supplierId=$('buySupplier').value||null,catatan=$('buyNote').value.trim();
+  const rows=[...document.querySelectorAll('#purchaseLines .line-row')].map(r=>({bahan_id:r.querySelector('.line-mat').value||null,qty:Number(r.querySelector('.line-qty').value)||0,harga_beli:money(r.querySelector('.line-price').value),subtotal:money(r.querySelector('.line-subtotal').value)})).filter(x=>x.qty>0&&x.harga_beli>=0&&x.bahan_id);
+  if(!rows.length){$('purchaseStatus').textContent='Minimal satu bahan harus dipilih.';return}
+  const total=rows.reduce((a,x)=>a+x.subtotal,0);
+  if(state.tables.ff_pembelian && state.tables.ff_pembelian_item){
+    const h=await supabaseClient.from('ff_pembelian').insert([{tanggal,supplier_id:supplierId?Number(supplierId):null,total,catatan}]).select().single();
+    if(h.error){$('purchaseStatus').textContent='Gagal header pembelian: '+h.error.message;return}
+    const items=rows.map(x=>({pembelian_id:h.data.id,bahan_id:x.bahan_id?Number(x.bahan_id):null,nama_bahan:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).nama_bahan||'-',qty:x.qty,satuan:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).satuan||null,harga_beli:x.harga_beli,subtotal:x.subtotal}));
+    const d=await supabaseClient.from('ff_pembelian_item').insert(items);
+    if(d.error){await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);$('purchaseStatus').textContent='Gagal item pembelian: '+d.error.message;return}
+    const previousPrices={};
+    for(const x of rows){
+      const b=window.bahan.find(z=>String(z.id)===String(x.bahan_id));
+      if(b)previousPrices[String(x.bahan_id)]=money(b.harga_beli);
+    }
+    const priceWarnings=await syncLastPurchasePrices(rows);
+    if(priceWarnings.length){
+      await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);
+      for(const x of rows){
+        const oldPrice=previousPrices[String(x.bahan_id)];
+        if(oldPrice==null)continue;
+        const rr=await supabaseClient.from('bahan_baku').update({harga_beli:oldPrice}).eq('id',Number(x.bahan_id));
+        if(rr.error)console.warn('Gagal memulihkan harga bahan setelah rollback',x.bahan_id,rr.error);
+      }
+      $('purchaseStatus').textContent='Pembelian dibatalkan karena harga bahan tidak berhasil disinkronkan: '+priceWarnings.join(', ')+'.';
+      await loadMaterials();
+      return;
+    }
+    state.purchase=await loadTable('ff_pembelian');
+    $('purchaseStatus').textContent='Pembelian tersimpan, harga bahan diperbarui, dan HPP siap membaca harga terbaru.';
+
+    $('buyNote').value='';$('purchaseLines').innerHTML='';addPurchaseLine();renderPurchases();renderStats();
+  }
+}
+async function refreshMaterialLastPrices(bahanIds){
+  const ids=[...new Set((bahanIds||[]).map(Number).filter(Boolean))];
+  if(!ids.length)return [];
+  const items=await supabaseClient.from('ff_pembelian_item').select('bahan_id,harga_beli,pembelian_id').in('bahan_id',ids);
+  if(items.error)throw items.error;
+  const latest=new Map();
+  for(const x of (items.data||[])){
+    const key=String(x.bahan_id);
+    const cur=latest.get(key);
+    if(!cur || Number(x.pembelian_id)>Number(cur.pembelian_id))latest.set(key,x);
+  }
+  const warnings=[];
+  for(const id of ids){
+    const row=latest.get(String(id));
+    if(!row)continue;
+    const price=money(row.harga_beli);
+    const r=await supabaseClient.from('bahan_baku').update({harga_beli:price}).eq('id',id);
+    if(r.error)warnings.push((window.bahan.find(b=>String(b.id)===String(id))||{}).nama_bahan||('ID '+id));
+    const local=window.bahan.find(b=>String(b.id)===String(id));
+    if(local)local.harga_beli=price;
+  }
+  return warnings;
+}
+async function deletePurchase(id){
+  if(!state.tables.ff_pembelian || !state.tables.ff_pembelian_item){$('purchaseStatus').textContent='Database Pembelian belum aktif lengkap.';return}
+  if(!confirm('Hapus pembelian ini?'))return;
+  const oldItems=await supabaseClient.from('ff_pembelian_item').select('bahan_id').eq('pembelian_id',id);
+  if(oldItems.error){$('purchaseStatus').textContent='Gagal membaca item pembelian: '+oldItems.error.message;return}
+  const bahanIds=[...new Set((oldItems.data||[]).map(x=>Number(x.bahan_id)).filter(Boolean))];
+  const previous={};
+  for(const idBahan of bahanIds){
+    const b=window.bahan.find(x=>String(x.id)===String(idBahan));
+    if(b)previous[String(idBahan)]=money(b.harga_beli);
+  }
+  const r=await supabaseClient.from('ff_pembelian').delete().eq('id',id);
+  if(r.error){$('purchaseStatus').textContent='Gagal: '+r.error.message;return}
+  let warnings=[];
+  try{
+    warnings=await refreshMaterialLastPrices(bahanIds);
+  }catch(e){
+    warnings=['Sinkronisasi harga bahan gagal: '+(e.message||e)];
+  }
+  if(warnings.length){
+    for(const idBahan of bahanIds){
+      if(previous[String(idBahan)]==null)continue;
+      const rr=await supabaseClient.from('bahan_baku').update({harga_beli:previous[String(idBahan)]}).eq('id',idBahan);
+      if(rr.error)console.warn('Gagal memulihkan harga bahan',idBahan,rr.error);
+    }
+    $('purchaseStatus').textContent='Pembelian sudah dihapus, tetapi sinkronisasi harga bahan gagal. Harga sebelumnya dipertahankan; cek Bahan Baku.';
+  }else{
+    $('purchaseStatus').textContent='Pembelian dihapus dan harga bahan mengikuti pembelian terakhir yang masih ada.';
+  }
+  state.purchase=await loadTable('ff_pembelian');
+  await loadMaterials();
+  renderPurchases();renderStats();
+}
+function renderExpenses(){
+  const m=today().slice(0,7);const rows=state.expense.filter(x=>String(x.periode||'').slice(0,7)===m);
+  $('expenseRows').innerHTML=rows.slice().sort((a,b)=>String(b.periode).localeCompare(String(a.periode))).map(x=>'<tr><td>'+esc(x.periode)+'</td><td>'+esc(x.kategori||'-')+'</td><td>'+esc(x.cara_bayar||'Tunai')+'</td><td>'+esc(x.keterangan||'-')+'</td><td>'+rupiah(x.nominal)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pengeluaran bulan ini.</td></tr>';
+}
+async function saveExpense(){
+  if(!state.tables.pengeluaran){$('expenseStatus').textContent='Database Pengeluaran belum aktif.';return}
+  const d=$('expDate').value||today();
+  const payMethod=$('expPayMethod').value;
+  const party=$('expParty').value.trim();
+  const debtCategory=$('expDebtCategory').value;
+  const dueDate=$('expDueDate').value||null;
+  const data={
+    periode:d.slice(0,7),
+    tanggal:d,
+    kategori:$('expCategory').value,
+    keterangan:$('expNote').value.trim(),
+    nominal:money($('expNominal').value),
+    cara_bayar:payMethod,
+    kategori_hutang:payMethod==='Hutang'?debtCategory:null
+  };
+  if(data.nominal<=0){$('expenseStatus').textContent='Nominal harus lebih dari 0.';return}
+  if(payMethod==='Hutang'&&!party){$('expenseStatus').textContent='Pihak / Supplier wajib diisi bila Cara Bayar = Hutang.';return}
+
+  const r=await supabaseClient.from('pengeluaran').insert([data]).select('id').single();
+  if(r.error){$('expenseStatus').textContent='Gagal menyimpan pengeluaran: '+r.error.message;return}
+
+  if(payMethod==='Hutang'){
+    const debt={
+      tanggal:d,
+      jenis:'Hutang',
+      kategori:debtCategory,
+      pihak:party,
+      keterangan:data.keterangan,
+      jatuh_tempo:dueDate,
+      nominal_awal:data.nominal,
+      status:'Belum Lunas',
+      pengeluaran_id:r.data.id
+    };
+    const dr=await supabaseClient.from('ff_hutang_piutang').insert([debt]).select('id').single();
+    if(dr.error){
+      await supabaseClient.from('pengeluaran').delete().eq('id',r.data.id);
+      $('expenseStatus').textContent='Pengeluaran dibatalkan karena Hutang gagal dibuat: '+dr.error.message;
+      return;
+    }
+  }
+
+  $('expenseStatus').textContent=payMethod==='Hutang'
+    ? '✅ Pengeluaran tersimpan dan Hutang otomatis masuk ke tab Hutang.'
+    : '✅ Pengeluaran berhasil disimpan.';
+  state.expense=await loadTable('pengeluaran');
+  $('expNominal').value='';$('expNote').value='';$('expParty').value='';$('expDueDate').value='';
+  renderExpenses();renderStats();
+}
+function renderCustomers(){
+  $('customerRows').innerHTML=state.customer.map(c=>'<tr><td>'+esc(c.nama)+'</td><td>'+esc(c.telepon||'-')+'</td><td>'+esc(c.alamat||'-')+'</td><td>'+esc(c.catatan||'-')+'</td><td><button class="btn danger" data-del-cus="'+esc(c.id)+'">Hapus</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pelanggan.</td></tr>';
+  document.querySelectorAll('[data-del-cus]').forEach(b=>b.onclick=()=>deleteCustomer(b.dataset.delCus));
+}
+async function saveCustomer(){
+  const data={nama:$('cusNama').value.trim(),telepon:$('cusTelp').value.trim(),alamat:$('cusAlamat').value.trim(),catatan:$('cusCatatan').value.trim(),status:'Aktif'};
+  if(!data.nama){$('customerStatus').textContent='Nama pelanggan wajib diisi.';return}
+  if(!state.tables.ff_pelanggan){$('customerStatus').textContent='Database Pelanggan belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
+  const r=await supabaseClient.from('ff_pelanggan').insert([data]);
+  if(r.error){$('customerStatus').textContent='Gagal: '+r.error.message;return}
+  state.customer=await loadTable('ff_pelanggan');
+  $('cusNama').value='';$('cusTelp').value='';$('cusAlamat').value='';$('cusCatatan').value='';$('customerStatus').textContent='Pelanggan berhasil disimpan.';renderCustomers();renderStats();
+}
+async function deleteCustomer(id){
+  if(!confirm('Hapus pelanggan ini?'))return;
+  if(state.tables.ff_pelanggan){const r=await supabaseClient.from('ff_pelanggan').delete().eq('id',id);if(r.error){$('customerStatus').textContent='Gagal: '+r.error.message;return}}
+  state.customer=state.customer.filter(x=>String(x.id)!==String(id));renderCustomers();renderStats();
+}
+function renderReturnSales(){
+  const channel=$('retChannel').value;
+  const rows=state.sales.filter(s=>!channel || String(s.channel||'')===channel).slice(0,100);
+  $('retSale').innerHTML='<option value="">Pilih transaksi '+esc(channel)+'</option>'+rows.map(s=>'<option value="'+esc(s.id)+'">'+esc(fmtDate(s.tanggal))+' • '+esc(s.product_name||s.nama_produk||'-')+' • '+(Number(s.qty)||0)+' bungkus</option>').join('');
+}
+function renderReturns(){
+  $('returnRows').innerHTML=state.ret.slice().sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))).map(x=>'<tr><td>'+esc(fmtDate(x.tanggal))+'</td><td>'+esc(x.channel||'-')+'</td><td>'+esc(x.nama_produk||'-')+'</td><td>'+esc(x.qty)+'</td><td>'+rupiah(x.nominal)+'</td><td>'+esc(x.alasan||'-')+'</td></tr>').join('')||'<tr><td colspan="6" class="empty">Belum ada retur.</td></tr>';
+}
+async function saveReturn(){
+  if(!state.tables.ff_retur_penjualan){$('returnStatus').textContent='Database Retur belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
+  const sale=state.sales.find(x=>String(x.id)===String($('retSale').value));
+  const qty=Math.max(1,Number($('retQty').value)||1);
+  const existing=state.ret.filter(x=>String(x.penjualan_id)===String(sale?.id));
+  const already=existing.reduce((a,x)=>a+Math.max(0,Number(x.qty)||0),0);
+  const saleQty=Math.max(0,Number(sale?.qty)||0);
+  const data={tanggal:$('retDate').value||today(),penjualan_id:sale?.id?Number(sale.id):null,channel:$('retChannel').value,produk_id:sale?.produk_id?Number(sale.produk_id):null,nama_produk:sale?.product_name||sale?.nama_produk||'Produk tidak diketahui',qty,nominal:money($('retNominal').value),alasan:$('retReason').value.trim()};
+  if(!sale){$('returnStatus').textContent='Pilih transaksi penjualan.';return}
+  if(qty>saleQty-already){$('returnStatus').textContent='Qty retur melebihi qty penjualan yang belum diretur. Sisa boleh diretur: '+Math.max(0,saleQty-already)+' bungkus.';return}
+  const r=await supabaseClient.from('ff_retur_penjualan').insert([data]);
+  if(r.error){$('returnStatus').textContent='Gagal: '+r.error.message;return}
+  state.ret=await loadTable('ff_retur_penjualan');
+  $('retReason').value='';$('retNominal').value='';$('retQty').value=1;$('returnStatus').textContent='Retur berhasil dicatat.';renderReturns();renderStats();
+}
+function renderStats(){
+  $('statSupplier').textContent=state.supplier.length.toLocaleString('id-ID');
+  $('statPurchase').textContent=state.purchase.length.toLocaleString('id-ID');
+  const m=today().slice(0,7);const ex=state.expense.filter(x=>String(x.periode||'').slice(0,7)===m).reduce((a,x)=>a+money(x.nominal),0);
+  $('statExpense').textContent=rupiah(ex);$('statReturn').textContent=state.ret.length.toLocaleString('id-ID');
+}
+function switchTab(name){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===name))}
+async function init(){
+  $('buyDate').value=today();$('expDate').value=today();$('retDate').value=today();
+  const names=['ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','pengeluaran'];
+  for(const n of names)await tableReady(n);
+  schemaMessage();
+  state.supplier=await loadTable('ff_supplier');
+  state.purchase=await loadTable('ff_pembelian');
+  state.customer=await loadTable('ff_pelanggan');
+  state.ret=await loadTable('ff_retur_penjualan');
+  state.expense=await loadTable('pengeluaran');
+  const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,product_name,harga,channel').order('tanggal',{ascending:false}).limit(100);
+  state.sales=sr.error?[]:(sr.data||[]);
+  renderSuppliers();renderSupplierSelects();renderPurchases();renderExpenses();renderCustomers();renderReturnSales();renderReturns();renderStats();await loadMaterials();
+}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+$('retChannel').onchange=renderReturnSales;
+$('expPayMethod').onchange=()=>{
+  const debt=$('expPayMethod').value==='Hutang';
+  $('expDebtCategory').disabled=!debt;$('expParty').disabled=!debt;$('expDueDate').disabled=!debt;
+  if(!debt){$('expParty').value='';$('expDueDate').value='';}
+};
+$('saveSupplier').onclick=saveSupplier;$('cancelSupplier').onclick=resetSupplier;$('addPurchaseLine').onclick=()=>addPurchaseLine();$('savePurchase').onclick=savePurchase;$('saveExpense').onclick=saveExpense;$('saveCustomer').onclick=saveCustomer;$('saveReturn').onclick=saveReturn;
+init().catch(e=>{$('schemaNotice').className='notice';$('schemaNotice').textContent='Gagal memuat modul operasional: '+(e.message||e)});
+</script>
+<script src="android-shell.js" defer></script>
+</body>
+</html>
