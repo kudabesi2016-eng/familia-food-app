@@ -306,21 +306,31 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
 <div class="card" id="offlineExpenseCard" style="border:2px solid #cfe4d7">
   <div class="cashhead">
     <div>
-      <h2 style="margin:0">➕ Input Pengeluaran Offline</h2>
-      <div class="note">Masukkan pengeluaran baru di sini. <b>Riwayat Pengeluaran tidak dibuat lagi di kartu terpisah</b> karena sudah tampil bersama Pemasukan pada Riwayat Offline di atas.</div>
+      <h2 style="margin:0">➕ Pengeluaran Offline — 1 Transaksi, Banyak Item</h2>
+      <div class="note">Satu pembelian dapat berisi beberapa item. Semua item disimpan sebagai <b>1 transaksi</b>, sedangkan detailnya masuk ke <b>pengeluaran_item</b> agar Rekap tidak menggandakan nominal.</div>
     </div>
   </div>
   <div class="grid" style="margin-top:16px">
-    <div class="field"><label>Tanggal</label><input id="offlineExpenseDate" type="date"/></div>
-    <div class="field"><label>Kategori</label><select id="offlineExpenseCategory"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
-    <div class="field"><label>Nominal</label><input id="offlineExpenseNominal" type="number" min="0" step="1" placeholder="Contoh 500000"/></div>
-    <div class="field"><label>Keterangan</label><input id="offlineExpenseNote" type="text" placeholder="Contoh: beli tepung tapioka"/></div>
+    <div class="field"><label>Tanggal</label><input id="ffExpenseDate" type="date"/></div>
+    <div class="field"><label>Kategori</label><select id="ffExpenseCategory"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
+    <div class="field"><label>Cara Bayar</label><select id="ffExpensePayMethod"><option>Tunai</option><option>Hutang</option></select></div>
+    <div class="field"><label>Pihak / Supplier</label><input id="ffExpenseParty" placeholder="Wajib bila Hutang"/></div>
+    <div class="field"><label>Kategori Hutang</label><select id="ffExpenseDebtCategory"><option>Produktif</option><option>Konsumtif</option><option>Usaha</option><option>Lainnya</option></select></div>
+    <div class="field"><label>Jatuh Tempo</label><input id="ffExpenseDueDate" type="date"/></div>
+    <div class="field" style="grid-column:1/-1"><label>Keterangan Transaksi</label><input id="ffExpenseNote" placeholder="Contoh: belanja bahan untuk produksi"/></div>
   </div>
+
+  <h3 style="margin:18px 0 8px">Item Pengeluaran</h3>
+  <div id="ffExpenseLines"></div>
   <div class="actions">
-    <button class="btn" id="offlineExpenseSave" type="button">+ Simpan Pengeluaran</button>
-    <button class="btn gray" id="offlineExpenseReset" type="button">Reset</button>
+    <button class="btn light" id="ffExpenseAddLine" type="button">+ Tambah Item</button>
+    <button class="btn" id="ffExpenseDraftSave" type="button">➕ Tambah Pengeluaran ke Daftar</button>
+    <button class="btn gray" id="ffExpenseReset" type="button">Reset</button>
   </div>
-  <div id="offlineExpenseMsg"></div>
+  <div class="preview" style="margin-top:14px;grid-template-columns:1fr">
+    <div class="box"><small>Total Transaksi Pengeluaran</small><strong id="ffExpenseGrandTotal">Rp 0</strong></div>
+  </div>
+  <div id="ffExpenseMsg"></div>
 </div>
 
 <div class="card" id="detailCard" style="display:none"><div class="cashhead"><div><h2 id="detailTitle">Detail Data</h2></div><button class="btn gray" id="closeDetail">Tutup</button></div><div class="tablewrap"><table><thead><tr><th>Nama Produk</th><th>Variasi</th><th>Jumlah Terjual</th><th>Pendapatan</th><th>Biaya TikTok</th><th>Uang Bersih</th><th>HPP Online</th><th>Total Modal</th><th>Laba Bersih</th><th>Margin</th></tr></thead><tbody id="detailRows"></tbody></table></div></div></section><section class="penjualan-panel" data-panel="cash"><div class="card" id="onlineCashCard">
@@ -458,6 +468,82 @@ window.__offlineDraftSales=window.__offlineDraftSales||[];
 window.__offlineDraftExpenses=window.__offlineDraftExpenses||[];
 window.__offlineDraftEdit=window.__offlineDraftEdit||null;
 function offlineDraftMoney(n){return 'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID')}
+function ffExpenseMoney(n){return 'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID')}
+function ffExpenseCalcLine(row){
+  const qty=Math.max(0,Number(row.querySelector('.ff-exp-qty')?.value)||0);
+  const price=Math.max(0,Math.round(Number(row.querySelector('.ff-exp-price')?.value)||0));
+  const subtotal=Math.round(qty*price);
+  const out=row.querySelector('.ff-exp-subtotal');if(out)out.value=subtotal;
+  return subtotal;
+}
+function ffExpenseUpdateTotal(){
+  const rows=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')];
+  const total=rows.reduce((sum,row)=>sum+ffExpenseCalcLine(row),0);
+  const out=document.getElementById('ffExpenseGrandTotal');if(out)out.textContent=ffExpenseMoney(total);
+  return total;
+}
+function ffExpenseAddLine(data={}){
+  const host=document.getElementById('ffExpenseLines');if(!host)return;
+  const row=document.createElement('div');row.className='ff-exp-line';
+  row.style.cssText='display:grid;grid-template-columns:2fr .8fr .9fr 1.1fr 1.1fr 42px;gap:8px;align-items:end;margin-bottom:10px;padding:10px;border:1px solid #dce8e1;border-radius:10px;background:#fbfefc';
+  row.innerHTML='<div class="field"><label>Item / Bahan</label><input class="ff-exp-name" placeholder="Contoh: Tepung tapioka" value="'+esc(data.nama_item||'')+'"></div>'+
+    '<div class="field"><label>Qty</label><input class="ff-exp-qty" type="number" min="0" step="0.001" value="'+(data.qty??1)+'"></div>'+
+    '<div class="field"><label>Satuan</label><input class="ff-exp-unit" placeholder="kg / pcs / dus" value="'+esc(data.satuan||'')+'"></div>'+
+    '<div class="field"><label>Harga Satuan</label><input class="ff-exp-price" type="number" min="0" step="1" value="'+(data.harga_satuan??'')+'"></div>'+
+    '<div class="field"><label>Subtotal</label><input class="ff-exp-subtotal" readonly value="'+(Math.round(Number(data.subtotal)||0))+'"></div>'+
+    '<button type="button" class="mini del ff-exp-remove" title="Hapus">✕</button>';
+  host.appendChild(row);
+  row.querySelector('.ff-exp-qty').addEventListener('input',ffExpenseUpdateTotal);
+  row.querySelector('.ff-exp-price').addEventListener('input',ffExpenseUpdateTotal);
+  row.querySelector('.ff-exp-remove').addEventListener('click',()=>{row.remove();if(!host.children.length)ffExpenseAddLine();ffExpenseUpdateTotal();});
+  ffExpenseCalcLine(row);ffExpenseUpdateTotal();
+}
+function ffExpenseResetForm(){
+  const d=document.getElementById('ffExpenseDate');if(d)d.value=today();
+  const c=document.getElementById('ffExpenseCategory');if(c)c.value='Bahan Baku';
+  const p=document.getElementById('ffExpensePayMethod');if(p)p.value='Tunai';
+  const party=document.getElementById('ffExpenseParty');if(party)party.value='';
+  const debt=document.getElementById('ffExpenseDebtCategory');if(debt)debt.value='Produktif';
+  const due=document.getElementById('ffExpenseDueDate');if(due)due.value='';
+  const note=document.getElementById('ffExpenseNote');if(note)note.value='';
+  const host=document.getElementById('ffExpenseLines');if(host){host.innerHTML='';ffExpenseAddLine();}
+  const msgBox=document.getElementById('ffExpenseMsg');if(msgBox)msgBox.innerHTML='';
+  ffExpenseUpdateTotal();
+}
+function ffExpenseSaveDraft(){
+  const date=document.getElementById('ffExpenseDate')?.value||today();
+  const category=document.getElementById('ffExpenseCategory')?.value||'Lainnya';
+  const payMethod=document.getElementById('ffExpensePayMethod')?.value||'Tunai';
+  const party=(document.getElementById('ffExpenseParty')?.value||'').trim();
+  const debtCategory=document.getElementById('ffExpenseDebtCategory')?.value||'Lainnya';
+  const dueDate=document.getElementById('ffExpenseDueDate')?.value||null;
+  const note=(document.getElementById('ffExpenseNote')?.value||'').trim();
+  const out=document.getElementById('ffExpenseMsg');
+  const lines=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')].map(row=>({
+    nama_item:(row.querySelector('.ff-exp-name')?.value||'').trim(),
+    qty:Math.max(0,Number(row.querySelector('.ff-exp-qty')?.value)||0),
+    satuan:(row.querySelector('.ff-exp-unit')?.value||'').trim(),
+    harga_satuan:Math.max(0,Math.round(Number(row.querySelector('.ff-exp-price')?.value)||0)),
+    subtotal:ffExpenseCalcLine(row),
+    catatan:''
+  }));
+  const invalid=lines.findIndex(x=>!x.nama_item||x.qty<=0||x.harga_satuan<=0||x.subtotal<=0);
+  if(invalid>=0){if(out)out.innerHTML='<div class="bad">Item '+(invalid+1)+' belum lengkap. Isi nama, qty, dan harga satuan.</div>';return;}
+  const total=lines.reduce((sum,x)=>sum+x.subtotal,0);
+  if(total<=0){if(out)out.innerHTML='<div class="bad">Total pengeluaran harus lebih dari 0.</div>';return;}
+  if(payMethod==='Hutang'&&!party){if(out)out.innerHTML='<div class="bad">Pihak / Supplier wajib diisi bila Cara Bayar = Hutang.</div>';return;}
+  window.__offlineDraftExpenses=window.__offlineDraftExpenses||[];
+  window.__offlineDraftExpenses.push({
+    data:{periode:date.slice(0,7),tanggal:date,kategori:category,keterangan:note,nominal:total,cara_bayar:payMethod,kategori_hutang:payMethod==='Hutang'?debtCategory:null},
+    items:lines,
+    party,
+    dueDate,
+    _seq:Date.now()+Math.random()
+  });
+  renderOfflineDrafts();
+  if(out)out.innerHTML='<div class="ok">1 transaksi pengeluaran dengan '+lines.length+' item ditambahkan ke daftar. Belum masuk database.</div>';
+  ffExpenseResetForm();
+}
 function renderOfflineDrafts(){
   const tb=document.getElementById('offlineDraftRows'),count=document.getElementById('offlineDraftCount');
   if(!tb)return;
@@ -467,19 +553,27 @@ function renderOfflineDrafts(){
   const activeCount=sales.filter(x=>String(x?.data?.order_id||'')===String(activeOrder)).length;
   if(count)count.textContent=all.length+' detail belum disimpan'+(activeCount?' · '+activeCount+' produk dalam transaksi aktif':'');
   tb.innerHTML=all.length?all.map((x,i)=>{
-    const income=x._draftType==='Pemasukan',q=income?Number(x.data?.qty||0):0,nominal=income?Number(x.data?.total||0):Number(x.data?.nominal||0),hpp=income?Number(x.data?.modal_hpp||0):0;
-    const detail=income?(String(x.data?.product_name||'-')+(x.pelanggan?' — '+x.pelanggan:'')):(String(x.data?.kategori||'-')+' — '+String(x.data?.keterangan||'-'));
+    const income=x._draftType==='Pemasukan';
+    const q=income?Number(x.data?.qty||0):0;
+    const nominal=income?Number(x.data?.total||0):Number(x.data?.nominal||0);
+    const hpp=income?Number(x.data?.modal_hpp||0):0;
+    const detail=income
+      ? (String(x.data?.product_name||'-')+(x.pelanggan?' — '+x.pelanggan:''))
+      : (String(x.data?.kategori||'-')+' — '+((x.items||[]).map(it=>it.nama_item).filter(Boolean).join(', ')||String(x.data?.keterangan||'-')));
     const orderId=income?String(x.data?.order_id||'-'):'-';
-    const editAttr=income?'data-off-draft-sale-edit="'+x._draftIndex+'"':'data-off-draft-exp-edit="'+x._draftIndex+'"';
+    const editAttr=income?'data-off-draft-sale-edit="'+x._draftIndex+'"':'';
     const delAttr=income?'data-off-draft-sale="'+x._draftIndex+'"':'data-off-draft-exp="'+x._draftIndex+'"';
-    return '<tr><td>'+String(i+1)+'</td><td>'+esc(x.data?.tanggal||'-')+'</td><td><b style="color:'+(income?'#087443':'#9a3412')+'">'+x._draftType+'</b></td><td>'+esc(detail)+'</td><td>'+ (q?q.toLocaleString('id-ID'):'—') +'</td><td>'+offlineDraftMoney(nominal)+'</td><td>'+ (income?offlineDraftMoney(hpp):'—') +'</td><td>'+esc(orderId)+'<br><button class="mini edit" type="button" '+editAttr+'>✏️ Edit</button> <button class="mini del" type="button" '+delAttr+'>🗑 Hapus</button></td></tr>';
+    const action=(income
+      ? '<button class="mini edit" type="button" '+editAttr+'>✏️ Edit</button> '
+      : '')+'<button class="mini del" type="button" '+delAttr+'>🗑 Hapus</button>';
+    return '<tr><td>'+String(i+1)+'</td><td>'+esc(x.data?.tanggal||'-')+'</td><td><b style="color:'+(income?'#087443':'#9a3412')+'">'+x._draftType+'</b></td><td>'+esc(detail)+'</td><td>'+ (q?q.toLocaleString('id-ID'):(income?'—':String((x.items||[]).reduce((a,it)=>a+Number(it.qty||0),0))) ) +'</td><td>'+offlineDraftMoney(nominal)+'</td><td>'+ (income?offlineDraftMoney(hpp):'—') +'</td><td>'+esc(orderId)+'<br>'+action+'</td></tr>';
   }).join(''):'<tr><td colspan="8" class="empty">Belum ada detail. Pilih customer, tambahkan produk pertama, lalu tambah produk berikutnya tanpa mengisi customer lagi.</td></tr>';
   updateOfflineOrderSummary();
 }
 function resetOfflineDraftEditState(){
   window.__offlineDraftEdit=null;
-  const expBtn=document.getElementById('offlineExpenseSave'); if(expBtn)expBtn.textContent='+ Simpan Pengeluaran';
-  const saleBtn=document.getElementById('save'); if(saleBtn)saleBtn.textContent='+ Tambah ke Daftar';
+  const expBtn=document.getElementById('ffExpenseDraftSave'); if(expBtn)expBtn.textContent='➕ Tambah Pengeluaran ke Daftar';
+  const saleBtn=document.getElementById('save'); if(saleBtn)saleBtn.textContent='➕ Tambah Produk';
   const cancel=document.getElementById('cancel'); if(cancel)cancel.style.display='none';
   if(typeof updateOfflineCustomerUI==='function')updateOfflineCustomerUI();
 }
@@ -490,6 +584,7 @@ async function saveAllOfflineDrafts(){
   try{
     if(sales.some(x=>x.pelanggan)&&(!customerDbReady||!customerLinksReady))throw new Error('Master Pelanggan belum sepenuhnya terhubung.');
     if(btn)btn.disabled=true;
+
     if(sales.length){
       const sr=await supabaseClient.from('penjualan').insert(sales.map(x=>x.data)).select('id');
       if(sr.error)throw sr.error;
@@ -497,19 +592,46 @@ async function saveAllOfflineDrafts(){
       if(ids.length!==sales.length)throw new Error('Tidak semua Pemasukan berhasil disimpan.');
       for(let i=0;i<ids.length;i++){insertedSales.push(ids[i]);if(sales[i].pelanggan)await saveCustomerLink(ids[i],sales[i].pelanggan);}
     }
-    if(expenses.length){
-      const er=await supabaseClient.from('pengeluaran').insert(expenses.map(x=>x.data)).select('id');
+
+    for(const x of expenses){
+      const er=await supabaseClient.from('pengeluaran').insert([x.data]).select('id').single();
       if(er.error)throw er.error;
-      const ids=(er.data||[]).map(x=>Number(x.id)).filter(Boolean);
-      if(ids.length!==expenses.length)throw new Error('Tidak semua Pengeluaran berhasil disimpan.');
-      insertedExpenses.push(...ids);
+      const expenseId=Number(er.data.id);
+      insertedExpenses.push(expenseId);
+
+      const items=Array.isArray(x.items)?x.items:[];
+      if(items.length){
+        const detailRows=items.map(item=>({...item,pengeluaran_id:expenseId}));
+        const ir=await supabaseClient.from('pengeluaran_item').insert(detailRows).select('id');
+        if(ir.error)throw ir.error;
+        if((ir.data||[]).length!==detailRows.length)throw new Error('Tidak semua item pengeluaran berhasil disimpan.');
+      }
+
+      if(x.data.cara_bayar==='Hutang'){
+        const debt={
+          tanggal:x.data.tanggal,jenis:'Hutang',kategori:x.data.kategori_hutang||'Lainnya',pihak:x.party||'',
+          keterangan:x.data.keterangan||items.map(i=>i.nama_item).join(', '),jatuh_tempo:x.dueDate||null,
+          nominal_awal:x.data.nominal,status:'Belum Lunas',pengeluaran_id:expenseId
+        };
+        const dr=await supabaseClient.from('ff_hutang_piutang').insert([debt]).select('id').single();
+        if(dr.error)throw dr.error;
+      }
     }
+
     window.__offlineDraftSales=[];window.__offlineDraftExpenses=[];resetOfflineCurrentOrder();renderOfflineDrafts();
     if(out)out.innerHTML='<div class="ok">'+(insertedSales.length+insertedExpenses.length)+' transaksi berhasil disimpan sekaligus.</div>';
     await refreshOfflineHistory();
     if(typeof load==='function')await load();
   }catch(e){
     console.error(e);
+    for(const id of insertedExpenses){
+      try{await supabaseClient.from('pengeluaran_item').delete().eq('pengeluaran_id',id);}catch(_){}
+      try{await supabaseClient.from('ff_hutang_piutang').delete().eq('pengeluaran_id',id);}catch(_){}
+      try{await supabaseClient.from('pengeluaran').delete().eq('id',id);}catch(_){}
+    }
+    for(const id of insertedSales){
+      try{await supabaseClient.from('penjualan').delete().eq('id',id);}catch(_){}
+    }
     if(out)out.innerHTML='<div class="bad">Gagal menyimpan: '+esc(e.message||e)+'</div>';
   }finally{if(btn)btn.disabled=false;}
 }
@@ -1532,7 +1654,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     });
     byId('cashSave')?.addEventListener('click',saveCash);
     byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashMarketplace').value='TikTok Shop';byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
-    byId('offlineExpenseDate') && (byId('offlineExpenseDate').value=today());
+    if(byId('ffExpenseDate'))ffExpenseResetForm();
+    byId('ffExpenseAddLine')?.addEventListener('click',()=>ffExpenseAddLine());
+    byId('ffExpenseDraftSave')?.addEventListener('click',ffExpenseSaveDraft);
+    byId('ffExpenseReset')?.addEventListener('click',ffExpenseResetForm);
 
     refreshOfflineExpenses();
     byId('dropAdd')?.addEventListener('click',()=>{
@@ -1896,7 +2021,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         btn.disabled=false;
         btn.style.pointerEvents='auto';
         delete btn.dataset.ffSaving;
-        btn.textContent='✅ Simpan Semua';
+        btn.textContent='✅ Simpan 1 Transaksi / Semua Produk';
       }
     }
   }
