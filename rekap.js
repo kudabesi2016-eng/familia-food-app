@@ -813,13 +813,161 @@ function render(){
   renderMonthly();
   renderNewOnlineMonthly();
   renderOnlineFinalSummary();
+  renderTransactionRecap();
 
-  // Detail mengikuti bulan/channel yang dipilih.
-  // Tombol 👁 Lihat Data hanya berlaku untuk Transaksi Online Baru.
   viewOnlineMonth($('month').value);
 
 }
 
+
+/* =====================================================
+   REKAP SEMUA TRANSAKSI
+===================================================== */
+
+function trxSourceLabel(x, kind){
+  const s=String(x?.source||'').trim();
+  const map={
+    manual:'Transaksi Baru',
+    online_pencairan:'Penerimaan Uang Online',
+    online_standard_finance:'Data Lama Online • Keuangan',
+    seller_center:'Data Lama Online • Produk Keluar',
+    online_batch:'Transaksi Online Baru • Produk Keluar',
+    online_standard_product:'Data Lama Online • Produk Keluar'
+  };
+  if(map[s])return map[s];
+  if(kind==='expense')return 'Pengeluaran Utama';
+  if(kind==='old')return 'Data Lama Offline';
+  return s||'Transaksi';
+}
+
+function buildTransactionRecapRows(){
+  const rows=[];
+
+  (olds||[]).forEach((x,i)=>{
+    const m=String(x.periode||'').slice(0,7);
+    if(!FF.isMonth(m))return;
+    const qty=Math.round(Number(x.qty||0));
+    const nominal=Math.round(Number(x.nominal ?? x.omzet ?? x.total ?? 0));
+    if(nominal<=0 && qty<=0)return;
+    rows.push({
+      key:'old-'+(x.id??i),period:m,date:m,channel:'Offline',type:'Pemasukan',
+      source:'Data Lama Offline',
+      detail:[x.konsumen,x.produk].filter(Boolean).join(' • ')||'Data lama offline',
+      qty,nominal
+    });
+  });
+
+  (sales||[]).forEach((x,i)=>{
+    const m=monthOfSaleRow(x);
+    if(!FF.isMonth(m))return;
+    const src=String(x.source||'').trim();
+    const isHpp=['seller_center','online_batch','online_standard_product'].includes(src);
+    const isOnlineFinance=['online_standard_finance','online_pencairan'].includes(src);
+    const type=isHpp?'Modal/HPP':'Pemasukan';
+    const channel=String(x.channel||'Offline')==='Online'?'Online':'Offline';
+    let nominal=0;
+
+    if(isHpp){
+      const raw=(x.modal_hpp!=null?x.modal_hpp:(x.hpp!=null?x.hpp:(Number(x.qty||0)*Number(x.hpp||0))));
+      nominal=Math.round(Number(raw)||0);
+    }else if(isOnlineFinance){
+      nominal=Math.round(Number(x.uang_bersih ?? x.omzet_produk ?? x.total ?? 0));
+    }else{
+      nominal=Math.round(Number(x.omzet_produk ?? x.total ?? ((Number(x.qty||0)*Number(x.harga||0))) || 0));
+    }
+
+    const qty=Math.round(Number(x.qty||0));
+    if(nominal<=0 && qty<=0)return;
+
+    const product=String(x.product_name||'').trim();
+    const variation=String(x.variation||'').trim();
+    let detail=product||variation||src||'Transaksi';
+    if(product&&variation&&variation!=='Uang Bersih')detail+=' • '+variation;
+
+    rows.push({
+      key:'sale-'+(x.id??i),period:m,date:String(x.tanggal||m),
+      channel,type,source:trxSourceLabel(x,'sale'),detail,qty,nominal
+    });
+  });
+
+  (expenses||[]).forEach((x,i)=>{
+    const m=String(x.periode||'').slice(0,7);
+    if(!FF.isMonth(m))return;
+    const nominal=Math.round(Number(x.nominal||0));
+    if(nominal<=0)return;
+    rows.push({
+      key:'exp-'+(x.id??i),period:m,date:String(x.tanggal||x.periode||m),
+      channel:'Offline',type:'Pengeluaran',source:'Pengeluaran Utama',
+      detail:[x.kategori,x.keterangan].filter(Boolean).join(' • ')||'Pengeluaran',
+      qty:0,nominal
+    });
+  });
+
+  return rows;
+}
+
+function renderTransactionRecap(){
+  const monthEl=document.getElementById('trxMonth');
+  const channelEl=document.getElementById('trxChannel');
+  const typeEl=document.getElementById('trxType');
+  const body=document.getElementById('transactionRecapRows');
+  if(!monthEl||!channelEl||!typeEl||!body)return;
+
+  const ms=months().sort().reverse();
+  const selected=monthEl.value;
+  monthEl.innerHTML='<option value="Semua">Semua Bulan</option>'+ms.map(m=>'<option value="'+m+'">'+FF.esc(label(m))+'</option>').join('');
+  if(selected && (selected==='Semua'||ms.includes(selected)))monthEl.value=selected;
+  else monthEl.value=ms[0]||'Semua';
+
+  const month=monthEl.value;
+  const channel=channelEl.value;
+  const type=typeEl.value;
+  const rows=buildTransactionRecapRows()
+    .filter(x=>(month==='Semua'||x.period===month)&&(channel==='Semua'||x.channel===channel)&&(type==='Semua'||x.type===type))
+    .sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(a.channel).localeCompare(String(b.channel))||String(a.type).localeCompare(String(b.type))||String(a.detail).localeCompare(String(b.detail)));
+
+  const income=rows.filter(x=>x.type==='Pemasukan').reduce((a,x)=>a+x.nominal,0);
+  const expense=rows.filter(x=>x.type==='Pengeluaran').reduce((a,x)=>a+x.nominal,0);
+  const hpp=rows.filter(x=>x.type==='Modal/HPP').reduce((a,x)=>a+x.nominal,0);
+  const net=income-expense;
+
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=money(v);};
+  set('trxIncome',income);set('trxExpense',expense);set('trxHpp',hpp);set('trxNet',net);
+
+  const badge=document.getElementById('transactionRecapCount');
+  if(badge)badge.textContent=rows.length.toLocaleString('id-ID')+' transaksi';
+
+  if(!rows.length){
+    body.innerHTML='<tr><td colspan="7" class="empty">Tidak ada transaksi sesuai filter.</td></tr>';
+    return;
+  }
+
+  body.innerHTML=rows.map(x=>{
+    const isNeg=x.type==='Pengeluaran';
+    const isHpp=x.type==='Modal/HPP';
+    const c=isNeg?'#b42318':(isHpp?'#7a5c00':'#087443');
+    return '<tr>'+
+      '<td><b>'+FF.esc(x.date||x.period)+'</b><div class="hint">'+FF.esc(label(x.period))+'</div></td>'+
+      '<td>'+FF.esc(x.channel)+'</td>'+
+      '<td><b style="color:'+c+'">'+FF.esc(x.type)+'</b></td>'+
+      '<td>'+FF.esc(x.source)+'</td>'+
+      '<td>'+FF.esc(x.detail)+'</td>'+
+      '<td>'+((Number(x.qty)||0)>0?Number(x.qty).toLocaleString('id-ID'):'—')+'</td>'+
+      '<td><b style="color:'+c+'">'+money(x.nominal)+'</b></td>'+
+      '</tr>';
+  }).join('');
+}
+
+function bindTransactionRecap(){
+  const monthEl=document.getElementById('trxMonth');
+  const channelEl=document.getElementById('trxChannel');
+  const typeEl=document.getElementById('trxType');
+  const reload=document.getElementById('trxReload');
+  if(monthEl)monthEl.onchange=renderTransactionRecap;
+  if(channelEl)channelEl.onchange=renderTransactionRecap;
+  if(typeEl)typeEl.onchange=renderTransactionRecap;
+  if(reload)reload.onclick=async()=>{await init();renderTransactionRecap();};
+}
 
 /* =====================================================
    EVENT + STARTUP
@@ -918,6 +1066,7 @@ async function init(){
   }
 
   renderMonthOptions();
+  bindTransactionRecap();
   render();
 
   const failed=results.filter(x=>x.error);
