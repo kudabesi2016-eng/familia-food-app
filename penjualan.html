@@ -2166,6 +2166,13 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     });
     setTimeout(()=>{ensureSellerCenterDropship();renderDropMaster();refreshOnlineBatchHistory();refreshNewOnlineProfit();},500);
   }
+  // Expose kasir Online Baru actions so outer repair handlers can call the
+  // real functions inside this private IIFE.
+  window.ffOnlineAddRow=()=>addRows(1);
+  window.ffOnlineReset=()=>{rows=[];addRows(1);setMsg('');};
+  window.ffOnlineOpenHistory=async()=>{await refreshOnlineBatchHistory();byId('onlineBatchHistoryCard')?.scrollIntoView({behavior:'smooth',block:'start'});};
+  window.ffOnlineSaveBatch=()=>saveBatch();
+
   window.addEventListener('load',async ()=>{
     // Jangan menunggu master produk: kasir + riwayat harus langsung tampil.
     // Setelah master selesai dibaca, baris aktif dirender ulang agar pilihan produk muncul.
