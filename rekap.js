@@ -847,6 +847,35 @@ function trxSourceLabel(x, kind){
   return s||'Transaksi';
 }
 
+function renderHistoricalExpenseAggregate(){
+  const card=document.getElementById('historicalExpenseAggregateCard');
+  const countEl=document.getElementById('historicalExpenseCount');
+  const totalEl=document.getElementById('historicalExpenseTotal');
+  const body=document.getElementById('historicalExpenseRows');
+  if(!card||!countEl||!totalEl||!body)return;
+
+  const rows=(expenses||[]).filter(x=>{
+    const p=String(x.periode||'').trim();
+    return /^20\\d{2}-\\d{2}\\s+s\\/d\\s+20\\d{2}-\\d{2}$/i.test(p) &&
+      isCashExpense(x) &&
+      Number(x.nominal||0)>0;
+  }).sort((a,b)=>Number(b.nominal||0)-Number(a.nominal||0));
+
+  const total=rows.reduce((a,x)=>a+Number(x.nominal||0),0);
+  countEl.textContent=rows.length.toLocaleString('id-ID');
+  totalEl.textContent=money(total);
+
+  body.innerHTML=rows.length ? rows.map(x=>
+    '<tr>'+
+      '<td>'+FF.esc(x.periode||'-')+'</td>'+
+      '<td>'+FF.esc(x.kategori||'-')+'</td>'+
+      '<td>'+FF.esc(x.keterangan||'-')+'</td>'+
+      '<td>'+FF.esc(x.cara_bayar||'Tunai')+'</td>'+
+      '<td><b>'+money(x.nominal)+'</b></td>'+
+    '</tr>'
+  ).join('') : '<tr><td colspan="5" class="empty">Tidak ada data periode gabungan.</td></tr>';
+}
+
 function buildTransactionRecapRows(){
   const rows=[];
 
@@ -1116,6 +1145,7 @@ async function init(){
   renderMonthOptions();
   bindTransactionRecap();
   render();
+  renderHistoricalExpenseAggregate();
 
   const failed=results.filter(x=>x.error);
   if(failed.length){
