@@ -164,17 +164,23 @@ function monthOfSaleRow(x){
   return FF.monthOf(x.tanggal||x.paid_time||x.created_time||'') || String(x.periode||'').slice(0,7);
 }
 
+function isCashExpense(x){
+  // Hutang dicatat di Pengeluaran Utama untuk keterlacakan, tetapi
+  // bukan arus kas/pengeluaran yang sudah dibayar. Pembayaran hutang
+  // juga tidak dicatat ulang sebagai pengeluaran.
+  return String(x?.cara_bayar||'Tunai').trim()!=='Hutang';
+}
 function offlineFinance(m){
   const oldRows=(olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m);
   const newRows=(sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m);
-  const expenseRows=(expenses||[]).filter(x=>String(x.periode||'').trim()===m);
+  const expenseRows=(expenses||[]).filter(x=>String(x.periode||'').trim()===m && isCashExpense(x));
   const oldRev=oldRows.reduce((a,x)=>a+Math.round(Number(x.nominal ?? x.omzet ?? x.total ?? 0)),0);
   const newRev=newRows.reduce((a,x)=>a+Math.round(Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0))),0),0);
   const rev=oldRev+newRev;
   const expense=expenseRows.reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
-  // Offline: Uang Bersih/Laba Offline = Pemasukan − Pengeluaran.
-  // HPP ditampilkan terpisah sebagai indikator biaya produksi dan tidak
-  // dikurangkan lagi di sini agar biaya tidak dihitung dua kali.
+  // Offline: Uang Bersih/Laba Offline = Pemasukan − Pengeluaran Tunai.
+  // Hutang dipisahkan dari arus kas dan ditampilkan di modul Hutang.
+  // HPP ditampilkan terpisah agar tidak dihitung dua kali.
   const net=rev-expense;
   return [rev,expense,net];
 }
@@ -504,7 +510,7 @@ function renderOnlineConnection(selectedMonth){
   if(!modeOnline){
     const opsBuy=(purchases||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
     const opsRet=(returns||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && String(x.channel||'')==='Offline').reduce((a,x)=>a+Number(x.nominal||0),0);
-    const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.nominal||0),0);
+    const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isCashExpense(x)).reduce((a,x)=>a+Number(x.nominal||0),0);
     note.innerHTML='Bulan <b>'+esc(label(m))+'</b>. Ringkasan Offline tetap memakai rumus penjualan Familia Food. Informasi Operasional ditampilkan terpisah.';
     body.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'+
       '<div class="stat"><small>🛒 Pembelian Bahan Baku</small><strong>'+money(opsBuy)+'</strong></div>'+
@@ -892,7 +898,7 @@ function buildTransactionRecapRows(){
 
   (expenses||[]).forEach((x,i)=>{
     const m=String(x.periode||'').slice(0,7);
-    if(!FF.isMonth(m))return;
+    if(!FF.isMonth(m) || !isCashExpense(x))return;
     const nominal=Math.round(Number(x.nominal||0));
     if(nominal<=0)return;
     rows.push({
