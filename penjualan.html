@@ -2070,5 +2070,28 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   else bindOfflineExpenseButtons();
 })();
 </script>
+<script>
+(function(){
+  function bootExpenseForm(){
+    try{
+      if(typeof window.ffExpenseResetForm==='function'){
+        window.ffExpenseResetForm();
+      }else{
+        const host=document.getElementById('ffExpenseLines');
+        if(host && !host.children.length && typeof window.ffExpenseAddLine==='function'){
+          window.ffExpenseAddLine();
+        }
+        const d=document.getElementById('ffExpenseDate');
+        if(d && !d.value && typeof window.today==='function')d.value=window.today();
+      }
+    }catch(err){
+      console.error('FF Expense Initial Row Boot:',err);
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootExpenseForm);
+  else bootExpenseForm();
+  window.addEventListener('load',function(){setTimeout(bootExpenseForm,100);});
+})();
+</script>
 </body>
 </html>
