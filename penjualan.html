@@ -2239,14 +2239,36 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     });
     setTimeout(()=>{ensureSellerCenterDropship();renderDropMaster();refreshOnlineBatchHistory();refreshNewOnlineProfit();},500);
   }
+  async function ffLoadOnlineProductMasterDirect(){
+    try{
+      const [pr,hr]=await Promise.all([
+        supabaseClient.from('produk').select('*').order('id',{ascending:true}),
+        supabaseClient.from('hpp').select('*')
+      ]);
+      if(pr.error)throw pr.error;
+      if(hr.error)throw hr.error;
+      window.products=pr.data||[];
+      window.importHppRows=hr.data||[];
+      renderRows();
+      return true;
+    }catch(err){
+      console.error('Online product master direct load:',err);
+      setMsg('Gagal memuat master produk: '+esc(err.message||err),true);
+      return false;
+    }
+  }
+
   // Expose kasir Online Baru actions so outer repair handlers can call the
   // real functions inside this private IIFE.
   window.ffOnlineAddRow=()=>addRows(1);
   window.ffOnlineReset=()=>{rows=[];addRows(1);setMsg('');};
   window.ffOnlineOpenHistory=async()=>{await refreshOnlineBatchHistory();byId('onlineBatchHistoryCard')?.scrollIntoView({behavior:'smooth',block:'start'});};
   window.ffOnlineSaveBatch=()=>saveBatch();
+  window.ffReloadOnlineProducts=ffLoadOnlineProductMasterDirect;
 
   window.addEventListener('load',async ()=>{
+    setTimeout(()=>{ffLoadOnlineProductMasterDirect();},350);
+
     // Jangan menunggu master produk: kasir + riwayat harus langsung tampil.
     // Setelah master selesai dibaca, baris aktif dirender ulang agar pilihan produk muncul.
     init();
