@@ -665,6 +665,21 @@ function ffExpenseSaveDraft(){
   if(invalid>=0){if(out)out.innerHTML='<div class="bad">Item '+(invalid+1)+' belum lengkap. Pilih item dan isi Harga Pengeluaran.</div>';return;}
   const total=lines.reduce((sum,x)=>sum+x.subtotal,0);
   if(total<=0){if(out)out.innerHTML='<div class="bad">Total pengeluaran harus lebih dari 0.</div>';return;}
+  if(window.__offlineDraftEdit?.type==='expense'){
+    const idx=window.__offlineDraftExpenses.findIndex(x=>String(x._seq)===String(window.__offlineDraftEdit.seq));
+    if(idx>=0){
+      window.__offlineDraftExpenses[idx]={
+        data:{periode:date.slice(0,7),tanggal:date,kategori:category,keterangan:note,nominal:total},
+        items:lines,
+        _seq:window.__offlineDraftExpenses[idx]._seq
+      };
+      window.__offlineDraftEdit=null;
+      renderOfflineDrafts();
+      if(out)out.innerHTML='<div class="ok">✅ Pengeluaran sementara berhasil diperbarui.</div>';
+      ffExpenseResetForm();
+      return;
+    }
+  }
   window.__offlineDraftExpenses=window.__offlineDraftExpenses||[];
   window.__offlineDraftExpenses.push({
     data:{periode:date.slice(0,7),tanggal:date,kategori:category,keterangan:note,nominal:total},
