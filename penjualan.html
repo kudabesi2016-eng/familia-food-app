@@ -1492,6 +1492,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   const today=()=>new Date().toISOString().slice(0,10);
   const DROP_KEY='ff_dropship_master_v1';
   const LOCAL_KEY='ff_online_new_v3';
+  window.__onlineDraftRows=Array.isArray(window.__onlineDraftRows)?window.__onlineDraftRows:[];
 
   const norm=v=>String(v??'').toLowerCase().replace(/\s+/g,' ').trim();
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
