@@ -702,7 +702,17 @@ async function ffExpenseUpdateSaved(){
   if(up.error)throw up.error;
   const del=await supabaseClient.from('pengeluaran_item').delete().eq('pengeluaran_id',id);
   if(del.error)throw del.error;
-  const detailRows=lines.map(x=>({...x,pengeluaran_id:id}));
+  const detailRows=lines.map(x=>({
+    pengeluaran_id:id,
+    kategori:x.category||x.kategori||'Lainnya',
+    bahan_id:x.bahan_id||null,
+    nama_item:x.nama_item,
+    qty:x.qty??1,
+    satuan:x.satuan||'',
+    harga_satuan:x.harga_satuan||0,
+    subtotal:x.subtotal||0,
+    catatan:x.catatan||''
+  }));
   const ins=await supabaseClient.from('pengeluaran_item').insert(detailRows);
   if(ins.error)throw ins.error;
   window.__offlineExpenseEditId=null;
@@ -812,7 +822,17 @@ async function saveAllOfflineDrafts(){
 
       const items=Array.isArray(x.items)?x.items:[];
       if(items.length){
-        const detailRows=items.map(item=>({...item,pengeluaran_id:expenseId}));
+        const detailRows=items.map(item=>({
+          pengeluaran_id:expenseId,
+          kategori:item.category||item.kategori||x.data.kategori||'Lainnya',
+          bahan_id:item.bahan_id||null,
+          nama_item:item.nama_item,
+          qty:item.qty??1,
+          satuan:item.satuan||'',
+          harga_satuan:item.harga_satuan||0,
+          subtotal:item.subtotal||0,
+          catatan:item.catatan||''
+        }));
         const ir=await supabaseClient.from('pengeluaran_item').insert(detailRows).select('id');
         if(ir.error)throw ir.error;
         if((ir.data||[]).length!==detailRows.length)throw new Error('Tidak semua item pengeluaran berhasil disimpan.');
