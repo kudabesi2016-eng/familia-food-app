@@ -1493,6 +1493,8 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   const DROP_KEY='ff_dropship_master_v1';
   const LOCAL_KEY='ff_online_new_v3';
   window.__onlineDraftRows=Array.isArray(window.__onlineDraftRows)?window.__onlineDraftRows:[];
+  const ONLINE_DRAFT_STORAGE='ff_online_draft_v1';
+  try{const savedDraft=JSON.parse(localStorage.getItem(ONLINE_DRAFT_STORAGE)||'[]');if(Array.isArray(savedDraft)&&savedDraft.length)window.__onlineDraftRows=savedDraft;}catch(e){console.warn('Gagal memulihkan draft Online:',e);}
 
   const norm=v=>String(v??'').toLowerCase().replace(/\s+/g,' ').trim();
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1963,6 +1965,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     if(!tb)return;
     const list=Array.isArray(window.__onlineDraftRows)?window.__onlineDraftRows:[];
     if(count)count.textContent=list.length+' transaksi belum disimpan';
+    try{localStorage.setItem(ONLINE_DRAFT_STORAGE,JSON.stringify(list));}catch(e){console.warn('Draft Online tidak bisa disimpan:',e);}
     tb.innerHTML=list.length?list.map((x,i)=>{
       const d=x.data||{};
       const isCash=x.kind==='Penerimaan Uang';
@@ -1986,6 +1989,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
 
   function clearOnlineDrafts(){
     window.__onlineDraftRows=[];
+    try{localStorage.removeItem(ONLINE_DRAFT_STORAGE);}catch(e){}
     renderOnlineDrafts();
     const out=byId('onlineDraftMsg');if(out)out.innerHTML='<div class="warn">Daftar transaksi Online sementara dikosongkan.</div>';
   }
@@ -2001,6 +2005,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       if(r.error)throw r.error;
       if((r.data||[]).length!==rowsToSave.length)throw new Error('Tidak semua transaksi Online berhasil disimpan.');
       window.__onlineDraftRows=[];
+      try{localStorage.removeItem(ONLINE_DRAFT_STORAGE);}catch(e){}
       renderOnlineDrafts();
       if(typeof setMsg==='function')setMsg('');
       if(out)out.innerHTML='<div class="ok">'+rowsToSave.length+' transaksi Online berhasil disimpan.</div>';
