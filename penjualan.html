@@ -537,6 +537,18 @@ $('save').onclick=async()=>{
     if(nama&&(!customerDbReady||!customerLinksReady))return msg('Master Pelanggan belum sepenuhnya terhubung.',true);
     const hargaBulat=Math.round(harga),hppBulat=Math.round(hpp),total=qty*hargaBulat,hppTotal=qty*hppBulat,laba=total-hppTotal;
     const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,total,source:'manual',product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,uang_bersih:total,biaya_platform:0,profit_online:channel==='Online'?laba:null};
+    const draftEdit=window.__offlineDraftEdit;
+    if(!wasEdit && draftEdit?.type==='sale'){
+      const i=window.__offlineDraftSales.findIndex(x=>String(x._seq)===String(draftEdit.seq));
+      if(i>=0){
+        window.__offlineDraftSales[i]={data,pelanggan:nama,_seq:window.__offlineDraftSales[i]._seq};
+        resetOfflineDraftEditState();
+        renderOfflineDrafts();
+        msg('Penjualan sementara berhasil diperbarui.');
+        $('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();
+        return;
+      }
+    }
     if(wasEdit){
       const oldSale=await supabaseClient.from('penjualan').select('*').eq('id',editId).maybeSingle();
       if(oldSale.error)throw oldSale.error;
