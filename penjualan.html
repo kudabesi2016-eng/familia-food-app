@@ -297,10 +297,26 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
         <button class="btn gray" id="offlineHistoryBackDate" type="button">← Kembali ke Tanggal</button>
       </div>
     </div>
-    <table style="min-width:1050px">
-      <thead><tr><th>Tanggal</th><th>Jenis</th><th>Keterangan</th><th>Qty Bungkus</th><th>Nominal</th><th>HPP/Modal</th><th>Dampak Kas</th><th>Aksi</th></tr></thead>
-      <tbody id="offlineHistoryDetailRows"><tr><td colspan="8">Pilih tanggal.</td></tr></tbody>
-    </table>
+
+    <div id="offlineHistoryIncomeSection" style="margin-top:12px">
+      <h3 style="margin:0 0 8px">🟢 Pemasukan Offline</h3>
+      <div class="tablewrap">
+        <table style="min-width:900px">
+          <thead><tr><th>Tanggal</th><th>Produk</th><th>Qty Bungkus</th><th>Nominal</th><th>HPP/Modal</th><th>Dampak Kas</th><th>Aksi</th></tr></thead>
+          <tbody id="offlineHistoryIncomeRows"><tr><td colspan="7">Tidak ada pemasukan.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="offlineHistoryExpenseSection" style="margin-top:18px">
+      <h3 style="margin:0 0 8px">🔴 Pengeluaran Offline</h3>
+      <div class="tablewrap">
+        <table style="min-width:950px">
+          <thead><tr><th>Tanggal</th><th>Kategori</th><th>Item Pengeluaran</th><th>Harga Pengeluaran</th><th>Total Transaksi</th><th>Dampak Kas</th><th>Aksi</th></tr></thead>
+          <tbody id="offlineHistoryExpenseRows"><tr><td colspan="7">Tidak ada pengeluaran.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 <div class="card" id="offlineExpenseCard" style="border:2px solid #cfe4d7">
@@ -1258,12 +1274,19 @@ async function refreshOfflineHistory(){
   if(!monthTb)return;
   monthTb.innerHTML='<tr><td colspan="6">Memuat riwayat...</td></tr>';
   try{
-    const [salesR,expenseR,oldR]=await Promise.all([
+    const [salesR,expenseR,oldR,expenseItemR]=await Promise.all([
       supabaseClient.from('penjualan').select('id,tanggal,product_name,qty,harga,total,modal_hpp,hpp,laba,produk_id,channel,source').eq('channel','Offline').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000),
       supabaseClient.from('pengeluaran').select('id,tanggal,periode,kategori,keterangan,nominal').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000),
-      supabaseClient.from('data_lama').select('id,periode,jenis,keterangan,nominal,catatan').order('periode',{ascending:false}).order('id',{ascending:false}).limit(5000)
+      supabaseClient.from('data_lama').select('id,periode,jenis,keterangan,nominal,catatan').order('periode',{ascending:false}).order('id',{ascending:false}).limit(5000),
+      supabaseClient.from('pengeluaran_item').select('id,pengeluaran_id,kategori,nama_item,harga_satuan,subtotal').order('id',{ascending:true}).limit(5000)
     ]);
     if(salesR.error)throw salesR.error;if(expenseR.error)throw expenseR.error;if(oldR.error)throw oldR.error;
+    const expenseItemsById={};
+    (expenseItemR.error?[]:(expenseItemR.data||[])).forEach(it=>{
+      const key=String(it.pengeluaran_id);
+      if(!expenseItemsById[key])expenseItemsById[key]=[];
+      expenseItemsById[key].push(it);
+    });
 
     const rows=[
       ...(oldR.data||[]).map(x=>({
@@ -1285,7 +1308,7 @@ async function refreshOfflineHistory(){
           const d=String(x.tanggal||'').trim(),p=String(x.periode||'').trim();
           return /^\d{4}-\d{2}-\d{2}$/.test(d)||/^\d{4}-\d{2}$/.test(p);
         })
-        .map(x=>({...x,_jenis:'Pengeluaran',_tanggal:/^\d{4}-\d{2}-\d{2}$/.test(String(x.tanggal||''))?String(x.tanggal):String(x.periode||''),_source:'Pengeluaran'}))
+        .map(x=>({...x,_jenis:'Pengeluaran',_tanggal:/^\d{4}-\d{2}-\d{2}$/.test(String(x.tanggal||''))?String(x.tanggal):String(x.periode||''),_source:'Pengeluaran',_expense_items:expenseItemsById[String(x.id)]||[]}))
     ];
 
     const monthGroups={};
@@ -1338,30 +1361,60 @@ function renderOfflineHistoryMonth(month){
   dateWrap.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function renderOfflineHistoryDate(dateKey){
-  const state=window.__offlineHistoryDates||{},detailWrap=document.getElementById('offlineHistoryDetailWrap'),detailTb=document.getElementById('offlineHistoryDetailRows'),title=document.getElementById('offlineHistoryDetailTitle');
+  const state=window.__offlineHistoryDates||{},
+    detailWrap=document.getElementById('offlineHistoryDetailWrap'),
+    incomeTb=document.getElementById('offlineHistoryIncomeRows'),
+    expenseTb=document.getElementById('offlineHistoryExpenseRows'),
+    title=document.getElementById('offlineHistoryDetailTitle');
   const g=state.dates?.[dateKey];
-  if(!g||!detailWrap||!detailTb)return;
-  const dateLabel=/^\d{4}-\d{2}-\d{2}$/.test(dateKey)?new Date(dateKey+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'Tanpa tanggal';
+  if(!g||!detailWrap||!incomeTb||!expenseTb)return;
+
+  const dateLabel=/^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+    ?new Date(dateKey+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})
+    :'Tanpa tanggal';
   if(title)title.textContent='Detail Transaksi • '+dateLabel;
-  detailTb.innerHTML=g.rows.slice().sort((a,b)=>{
-    const ad=String(a._tanggal||a.tanggal||a.periode||'');const bd=String(b._tanggal||b.tanggal||b.periode||'');
+
+  const incomes=g.rows.filter(x=>x._jenis==='Pemasukan').slice().sort((a,b)=>{
+    const ad=String(a._tanggal||a.tanggal||a.periode||''),bd=String(b._tanggal||b.tanggal||b.periode||'');
     return bd.localeCompare(ad)||Number(b.id||0)-Number(a.id||0);
-  }).map(x=>{
-    if(x._jenis==='Pengeluaran'){
-      const nominal=Math.round(Number(x.nominal)||0),note=[x.kategori,x.keterangan].filter(Boolean).join(' — ');
-      return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#9a3412">Pengeluaran</b></td><td>'+esc(note||'-')+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(nominal)+'</td><td>—</td><td style="color:#b42318;font-weight:700">'+rupiah(-nominal)+'</td><td><button class="mini edit" type="button" data-off-exp-edit-saved="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-off-exp-del="'+x.id+'">🗑 Hapus</button></td></tr>';
-    }
-    const q=Math.max(1,Number(x.qty)||1),total=Math.round(Number(x.total)||0),modal=Math.round(Number(x.modal_hpp??x.hpp??0));
+  });
+  const expenses=g.rows.filter(x=>x._jenis==='Pengeluaran').slice().sort((a,b)=>{
+    const ad=String(a._tanggal||a.tanggal||a.periode||''),bd=String(b._tanggal||b.tanggal||b.periode||'');
+    return bd.localeCompare(ad)||Number(b.id||0)-Number(a.id||0);
+  });
+
+  incomeTb.innerHTML=incomes.length?incomes.map(x=>{
+    const q=Math.max(1,Number(x.qty)||1);
+    const total=Math.round(Number(x.total)||0);
+    const modal=Math.round(Number(x.modal_hpp??x.hpp??0));
+    const product=String(x.product_name||'-');
     if(x._source==='Data Lama'){
-      return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#087443">Pemasukan</b></td><td>'+esc(x.product_name||'-')+(x.keterangan?' — '+esc(x.keterangan):'')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+rupiah(total)+'</td><td>—</td><td style="font-weight:700">'+rupiah(total)+'</td><td><span class="small">📁 Data Lama</span></td></tr>';
+      return '<tr><td>'+esc(x._tanggal||'-')+'</td><td>'+esc(product)+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+rupiah(total)+'</td><td>—</td><td style="font-weight:700">'+rupiah(total)+'</td><td><span class="small">📁 Data Lama</span></td></tr>';
     }
-    return '<tr><td>'+esc(x._tanggal||'-')+'</td><td><b style="color:#087443">Pemasukan</b></td><td>'+esc(x.product_name||'-')+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+rupiah(total)+'</td><td>'+rupiah(modal)+'</td><td style="font-weight:700">'+rupiah(total)+'</td><td><button class="mini edit" type="button" data-off-edit="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-off-del="'+x.id+'">🗑 Hapus</button></td></tr>';
-  }).join('');
+    return '<tr><td>'+esc(x._tanggal||'-')+'</td><td>'+esc(product)+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+rupiah(total)+'</td><td>'+rupiah(modal)+'</td><td style="font-weight:700">'+rupiah(total)+'</td><td><button class="mini edit" type="button" data-off-edit="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-off-del="'+x.id+'">🗑 Hapus</button></td></tr>';
+  }).join(''):'<tr><td colspan="7">Tidak ada pemasukan pada tanggal ini.</td></tr>';
+
+  expenseTb.innerHTML=expenses.length?expenses.map(x=>{
+    const nominal=Math.round(Number(x.nominal)||0);
+    const note=String(x.keterangan||'');
+    const itemNames=Array.isArray(x._expense_items)&&x._expense_items.length
+      ?x._expense_items.map(it=>{
+        const h=rupiah(Number(it.harga_satuan||it.subtotal||0));
+        return esc((it.kategori||x.kategori||'Lainnya')+' — '+(it.nama_item||'-')+' ('+h+')');
+      }).join('<br>')
+      :esc(note||'-');
+    const category=(x.kategori==='Multi Kategori'&&Array.isArray(x._expense_items)&&x._expense_items.length)
+      ?'Multi Kategori':esc(x.kategori||'-');
+    return '<tr><td>'+esc(x._tanggal||'-')+'</td><td>'+category+'</td><td>'+itemNames+'</td><td>'+rupiah(nominal)+'</td><td>'+rupiah(nominal)+'</td><td style="color:#b42318;font-weight:700">'+rupiah(-nominal)+'</td><td><button class="mini edit" type="button" data-off-exp-edit-saved="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-off-exp-del="'+x.id+'">🗑 Hapus</button></td></tr>';
+  }).join(''):'<tr><td colspan="7">Tidak ada pengeluaran pada tanggal ini.</td></tr>';
+
   detailWrap.style.display='block';
   document.getElementById('offlineHistoryDataWrap')&&(document.getElementById('offlineHistoryDataWrap').style.display='none');
   document.getElementById('offlineHistoryDateWrap')&&(document.getElementById('offlineHistoryDateWrap').style.display='none');
   detailWrap.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
+
+
 window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=await supabaseClient.from('penjualan').delete().eq('id',id);if(r.error)return msg('Gagal menghapus: '+r.error.message,true);await load();msg('Penjualan dihapus.')};
 (async()=>{try{await loadCustomerMaster();await loadProducts();await load()}catch(e){console.error(e);msg('Gagal memuat data: '+e.message,true)}})();
 </script><script>
