@@ -18,7 +18,7 @@
     ['naget isi 40','Naget 40'], ['naget 40','Naget 40'],
     ['naget isi 50','Naget 50'], ['naget 50','Naget 50'],
     ['cireng isi 10','Cireng isi'], ['cireng isi','Cireng isi'],
-    ['cireng biasa','Cireng biasa'], ['cibay isi 10','Cibay'], ['cibay','Cibay']
+    ['cireng biasa','Cireng biasa'], ['cireng crispy','Cireng biasa'], ['cibay isi 10','Cibay'], ['cibay','Cibay']
   ]);
 
   function findProduct(products, name, id){
