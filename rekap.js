@@ -873,7 +873,7 @@ function buildTransactionRecapRows(){
     }else if(isOnlineFinance){
       nominal=Math.round(Number(x.uang_bersih ?? x.omzet_produk ?? x.total ?? 0));
     }else{
-      nominal=Math.round(Number(x.omzet_produk ?? x.total ?? ((Number(x.qty||0)*Number(x.harga||0))) || 0));
+      nominal=Math.round(Number(x.omzet_produk ?? x.total ?? (Number(x.qty||0)*Number(x.harga||0) ?? 0)));
     }
 
     const qty=Math.round(Number(x.qty||0));
