@@ -690,7 +690,9 @@ async function ffExpenseUpdateSaved(){
   const topCategory=document.getElementById('ffExpenseCategory')?.value||'Lainnya';
   const note=(document.getElementById('ffExpenseNote')?.value||'').trim();
   const out=document.getElementById('ffExpenseMsg');
-  const lines=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')].map(ffExpenseGetLineData);
+  const rawRows=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')];
+  const rawData=rawRows.map(ffExpenseGetLineData);
+  const lines=rawData.filter(x=>x.category||x.nama_item||x.harga_satuan>0);
   const invalid=lines.findIndex(x=>!x.category||!x.nama_item||x.harga_satuan<=0);
   if(invalid>=0){if(out)out.innerHTML='<div class="bad">Item '+(invalid+1)+' belum lengkap. Pilih kategori, item, dan isi harga.</div>';return true;}
   const total=lines.reduce((sum,x)=>sum+x.subtotal,0);
@@ -721,7 +723,9 @@ function ffExpenseSaveDraft(){
     });
     return;
   }
-  const lines=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')].map(ffExpenseGetLineData);
+  const rawRows=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')];
+  const rawData=rawRows.map(ffExpenseGetLineData);
+  const lines=rawData.filter(x=>x.category||x.nama_item||x.harga_satuan>0);
   const invalid=lines.findIndex(x=>!x.category||!x.nama_item||x.harga_satuan<=0);
   if(invalid>=0){if(out)out.innerHTML='<div class="bad">Item '+(invalid+1)+' belum lengkap. Pilih kategori, item, dan isi Harga Pengeluaran.</div>';return;}
   const total=lines.reduce((sum,x)=>sum+x.subtotal,0);
