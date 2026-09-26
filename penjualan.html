@@ -468,9 +468,7 @@ function ffExpenseMoney(n){return 'Rp '+Math.round(Number(n)||0).toLocaleString(
 function ffExpenseCalcLine(row){
   const qty=Math.max(0,Number(row.querySelector('.ff-exp-qty')?.value)||0);
   const price=Math.max(0,Math.round(Number(row.querySelector('.ff-exp-price')?.value)||0));
-  const subtotal=Math.round(qty*price);
-  const out=row.querySelector('.ff-exp-subtotal');if(out)out.value=subtotal;
-  return subtotal;
+  return Math.round(qty*price);
 }
 function ffExpenseUpdateTotal(){
   const rows=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')];
@@ -481,12 +479,10 @@ function ffExpenseUpdateTotal(){
 function ffExpenseAddLine(data={}){
   const host=document.getElementById('ffExpenseLines');if(!host)return;
   const row=document.createElement('div');row.className='ff-exp-line';
-  row.style.cssText='display:grid;grid-template-columns:2fr .8fr .9fr 1.1fr 1.1fr 42px;gap:8px;align-items:end;margin-bottom:10px;padding:10px;border:1px solid #dce8e1;border-radius:10px;background:#fbfefc';
-  row.innerHTML='<div class="field"><label>Item / Bahan</label><input class="ff-exp-name" placeholder="Contoh: Tepung tapioka" value="'+esc(data.nama_item||'')+'"></div>'+
+  row.style.cssText='display:grid;grid-template-columns:2fr 1fr 1.2fr 42px;gap:8px;align-items:end;margin-bottom:10px;padding:10px;border:1px solid #dce8e1;border-radius:10px;background:#fbfefc';
+  row.innerHTML='<div class="field"><label>Item</label><input class="ff-exp-name" placeholder="Contoh: Tepung tapioka" value="'+esc(data.nama_item||'')+'"></div>'+
     '<div class="field"><label>Qty</label><input class="ff-exp-qty" type="number" min="0" step="0.001" value="'+(data.qty??1)+'"></div>'+
-    '<div class="field"><label>Satuan</label><input class="ff-exp-unit" placeholder="kg / pcs / dus" value="'+esc(data.satuan||'')+'"></div>'+
-    '<div class="field"><label>Harga Satuan</label><input class="ff-exp-price" type="number" min="0" step="1" value="'+(data.harga_satuan??'')+'"></div>'+
-    '<div class="field"><label>Subtotal</label><input class="ff-exp-subtotal" readonly value="'+(Math.round(Number(data.subtotal)||0))+'"></div>'+
+    '<div class="field"><label>Harga</label><input class="ff-exp-price" type="number" min="0" step="1" value="'+(data.harga_satuan??'')+'"></div>'+
     '<button type="button" class="mini del ff-exp-remove" title="Hapus">✕</button>';
   host.appendChild(row);
   row.querySelector('.ff-exp-qty').addEventListener('input',ffExpenseUpdateTotal);
@@ -510,7 +506,7 @@ function ffExpenseSaveDraft(){
   const lines=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')].map(row=>({
     nama_item:(row.querySelector('.ff-exp-name')?.value||'').trim(),
     qty:Math.max(0,Number(row.querySelector('.ff-exp-qty')?.value)||0),
-    satuan:(row.querySelector('.ff-exp-unit')?.value||'').trim(),
+    satuan:'',
     harga_satuan:Math.max(0,Math.round(Number(row.querySelector('.ff-exp-price')?.value)||0)),
     subtotal:ffExpenseCalcLine(row),
     catatan:''
