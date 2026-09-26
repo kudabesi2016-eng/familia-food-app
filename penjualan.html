@@ -506,37 +506,69 @@ function ffExpenseUpdateTotal(){
 }
 
 function ffExpenseItemControlHtml(data={}){
-  const category=document.getElementById('ffExpenseCategory')?.value||'Bahan Baku';
+  const category=document.getElementById('ffExpenseCategory')?.value||'Lainnya';
   const list=window.__ffExpenseItemsMaster
     .filter(x=>String(x.kategori||'')===String(category)&&x.aktif!==false)
     .sort((a,b)=>String(a.nama_item||'').localeCompare(String(b.nama_item||''),'id'));
+
   const selectedId=String(data.master_id||'');
   const selectedName=String(data.nama_item||'');
-  const opts='<option value="">Pilih '+esc(category)+'</option>'+list.map(x=>{
-    const selected=(selectedId&&String(x.id)===selectedId)||(!selectedId&&String(x.nama_item)===selectedName)?'selected':'';
-    return '<option value="'+esc(x.id)+'" '+selected+'>'+esc(x.nama_item)+'</option>';
-  }).join('');
-  const empty=!list.length?'<option value="">Belum ada data item kategori ini</option>':'';
-  return '<div class="field"><label>Item '+esc(category)+'</label><select class="ff-exp-name-select">'+(list.length?opts:empty)+'</select></div>';
+  const matching=list.find(x=>(selectedId&&String(x.id)===selectedId)||(!selectedId&&String(x.nama_item)===selectedName));
+  const isManual=!!selectedName && !matching;
+
+  const opts='<option value="">'+(list.length?'Pilih item '+esc(category):'Belum ada master item — isi manual')+'</option>'+
+    list.map(x=>{
+      const selected=(selectedId&&String(x.id)===selectedId)||(!selectedId&&String(x.nama_item)===selectedName)?'selected':'';
+      return '<option value="'+esc(x.id)+'" '+selected+'>'+esc(x.nama_item)+'</option>';
+    }).join('')+
+    '<option value="__MANUAL__" '+(isManual?'selected':'')+'>✏ Input Manual</option>';
+
+  return '<div class="field">'+
+    '<label>Item '+esc(category)+'</label>'+
+    '<select class="ff-exp-name-select">'+opts+'</select>'+
+    '<input class="ff-exp-manual-name" type="text" placeholder="Ketik nama item manual" value="'+esc(isManual?selectedName:'')+'" style="margin-top:6px;display:'+(isManual?'block':'none')+'">'+
+    '</div>';
 }
 
 function ffExpenseGetLineData(row){
   const category=document.getElementById('ffExpenseCategory')?.value||'Lainnya';
   const select=row.querySelector('.ff-exp-name-select');
+  const manual=row.querySelector('.ff-exp-manual-name');
   const masterId=String(select?.value||'');
   const selected=window.__ffExpenseItemsMaster.find(x=>String(x.id)===masterId);
-  const nama_item=selected?.nama_item||'';
-  const bahan_id=selected?Number(selected._bahan_id||0)||null:null;
-  const satuan=selected?String(selected._satuan||''):'';
+  let nama_item=selected?.nama_item||'';
+  let bahan_id=selected?Number(selected._bahan_id||0)||null:null;
+  let satuan=selected?String(selected._satuan||''):'';
+  if(masterId==='__MANUAL__' || (!selected && manual)){
+    nama_item=(manual?.value||'').trim();
+    bahan_id=null;
+    satuan='';
+  }
   const price=Math.max(0,Math.round(Number(row.querySelector('.ff-exp-price')?.value)||0));
-  return {category,nama_item,master_id:masterId,bahan_id,satuan,qty:1,harga_satuan:price,subtotal:price,catatan:''};
+  return {category,nama_item,master_id:masterId==='__MANUAL__'?'':masterId,bahan_id,satuan,qty:1,harga_satuan:price,subtotal:price,catatan:'',manual:masterId==='__MANUAL__'};
 }
 
 function ffExpenseWireRow(row){
   const price=row.querySelector('.ff-exp-price');
   if(price)price.addEventListener('input',ffExpenseUpdateTotal);
   const select=row.querySelector('.ff-exp-name-select');
-  if(select)select.addEventListener('change',ffExpenseUpdateTotal);
+  const manual=row.querySelector('.ff-exp-manual-name');
+
+  const syncManual=()=>{
+    const isManual=select?.value==='__MANUAL__';
+    if(manual){
+      manual.style.display=isManual?'block':'none';
+      if(isManual)manual.focus();
+    }
+  };
+  if(select)select.addEventListener('change',()=>{
+    syncManual();
+    ffExpenseUpdateTotal();
+  });
+  if(manual)manual.addEventListener('input',ffExpenseUpdateTotal);
+
+  syncManual();
+
   const remove=row.querySelector('.ff-exp-remove');
   if(remove)remove.addEventListener('click',()=>{
     row.remove();
@@ -561,7 +593,8 @@ function ffExpenseAddLine(data={}){
 function ffExpenseRefreshItemControl(row,data={}){
   if(!row)return;
   const current=ffExpenseGetLineData(row);
-  const merged={...current,...data};
+  const preserved={harga_satuan:current.harga_satuan};
+  const merged={...preserved,...data};
   const temp=document.createElement('div');
   temp.innerHTML=ffExpenseItemControlHtml(merged);
   const old=row.firstElementChild;
