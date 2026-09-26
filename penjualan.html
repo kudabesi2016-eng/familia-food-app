@@ -1567,7 +1567,13 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   let nextId=1;
 
   function emptyRow(){
-    return {id:nextId++,tanggal:today(),jenis:'familia',produkId:'',dropIndex:'',qty:1};
+    return {id:nextId++,tanggal:today(),jenis:'familia',produkId:'',dropIndex:'',qty:0};
+  }
+  function rowHasProduct(r){
+    return r?.jenis==='dropship' ? String(r.dropIndex||'')!=='' : String(r.produkId||'')!=='';
+  }
+  function activeRows(){
+    return rows.filter(rowHasProduct);
   }
   function addRows(n=1){for(let i=0;i<n;i++)rows.push(emptyRow());renderRows();}
   function rowHtml(r,idx){
@@ -1617,7 +1623,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       };
     });
     updateSummary();
-    byId('batchCount').textContent=rows.length+' baris';
+    byId('batchCount').textContent=activeRows().length+' baris siap';
   }
   function refreshRow(id){
     const r=getRowObj(id); const tr=document.querySelector(`tr[data-row="${id}"]`); if(!r||!tr)return;
@@ -1655,12 +1661,13 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
   function updateSummary(){
     let qty=0,hpp=0,drop=0;
-    rows.forEach(r=>{
+    const active=activeRows();
+    active.forEach(r=>{
       const q=Math.max(1,Number(r.qty)||1); qty+=q;
       if(r.jenis==='familia') hpp+=q*hppForProduct(productById(r.produkId));
       else if(r.dropIndex!==''){const d=dropRows()[Number(r.dropIndex)];if(d)drop+=q*Math.round(Number(d.modal)||0);}
     });
-    byId('batchTotalRows').textContent=rows.length.toLocaleString('id-ID');
+    byId('batchTotalRows').textContent=active.length.toLocaleString('id-ID');
     byId('batchTotalQty').textContent=qty.toLocaleString('id-ID');
     byId('batchTotalHpp').textContent=money(hpp);
     byId('batchTotalDrop').textContent=money(drop);
@@ -1678,9 +1685,10 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   async function saveBatch(){
     try{
       rows.forEach(r=>syncFromDOM(r.id));
-      if(!rows.length){setMsg('Belum ada produk yang dimasukkan.',true);return;}
+      const selected=activeRows();
+      if(!selected.length){setMsg('Pilih produk yang akan ditambahkan.',true);return;}
       const valid=[],errors=[];
-      rows.forEach((r,i)=>{
+      selected.forEach((r,i)=>{
         if(!r.tanggal)errors.push('Baris '+(i+1)+': tanggal kosong');
         const q=Math.max(1,Math.round(Number(r.qty)||0));
         if(r.jenis==='familia'){
@@ -1698,7 +1706,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       if(errors.length){setMsg(errors.slice(0,12).join('<br>'),true);return;}
       valid.forEach(({r,p,d,h,q,total})=>{
         const productName=r.jenis==='familia'?p.nama_produk:(d?.name||'Produk Dropship');
-        window.__onlineDraftRows.push({
+         window.__onlineDraftRows.push({
           kind:'Produk Keluar',tanggal:r.tanggal,qty:q,modal_hpp:Math.round(total),product_name:productName,variation:r.jenis==='familia'?'Naget':'Dropship',_seq:Date.now()+Math.random(),
           data:{tanggal:r.tanggal,produk_id:r.jenis==='familia'?p.id:null,qty:q,channel:'Online',harga:0,hpp:Math.round(total),laba:0,order_id:null,product_name:productName,variation:r.jenis==='familia'?'Naget':'Dropship',omzet_produk:0,uang_bersih:null,total:0,modal_hpp:Math.round(total),profit_online:null,biaya_platform:null,source:'online_batch'}
         });
@@ -2493,54 +2501,6 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   }
   document.addEventListener('DOMContentLoaded',bind);
   window.addEventListener('load',()=>setTimeout(bind,200));
-})();
-</script>
-<script>
-(function(){
-  // Emergency binder untuk panel Transaksi Online Baru.
-  // Tetap aktif walau init utama gagal/terlambat memasang handler.
-  function ffBindOnlineInputButtons(){
-    const add=document.getElementById('batchAddRow');
-    const clear=document.getElementById('batchClear');
-    const hist=document.getElementById('batchHistoryJump');
-    const save=document.getElementById('batchSave');
-    if(add){
-      add.disabled=false;
-      add.style.pointerEvents='auto';
-      add.style.position='relative';
-      add.style.zIndex='60';
-      add.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof window.ffOnlineAddRow==='function')window.ffOnlineAddRow();}catch(err){console.error(err);}};
-    }
-    if(clear){
-      clear.disabled=false;
-      clear.style.pointerEvents='auto';
-      clear.style.position='relative';
-      clear.style.zIndex='60';
-      clear.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof window.ffOnlineReset==='function')window.ffOnlineReset();}catch(err){console.error(err);}};
-    }
-    if(hist){
-      hist.disabled=false;
-      hist.style.pointerEvents='auto';
-      hist.style.position='relative';
-      hist.style.zIndex='60';
-      hist.onclick=function(e){e.preventDefault();e.stopPropagation();try{
-        if(typeof window.ffOnlineOpenHistory==='function')window.ffOnlineOpenHistory();
-        document.getElementById('onlineBatchHistoryCard')?.scrollIntoView({behavior:'smooth',block:'start'});
-      }catch(err){console.error(err);}};
-    }
-    if(save){
-      save.disabled=false;
-      save.style.pointerEvents='auto';
-      save.style.position='relative';
-      save.style.zIndex='60';
-      save.onclick=function(e){e.preventDefault();e.stopPropagation();try{if(typeof window.ffOnlineSaveBatch==='function')window.ffOnlineSaveBatch();}catch(err){console.error(err);}};
-    }
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ffBindOnlineInputButtons);
-  else ffBindOnlineInputButtons();
-  window.addEventListener('load',()=>setTimeout(ffBindOnlineInputButtons,250));
-  setTimeout(ffBindOnlineInputButtons,800);
-  setTimeout(ffBindOnlineInputButtons,1600);
 })();
 </script>
 <script>
