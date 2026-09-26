@@ -573,7 +573,7 @@ function renderOfflineDrafts(){
 function resetOfflineDraftEditState(){
   window.__offlineDraftEdit=null;
   const expBtn=document.getElementById('ffExpenseDraftSave'); if(expBtn)expBtn.textContent='➕ Tambah Pengeluaran ke Daftar';
-  const saleBtn=document.getElementById('save'); if(saleBtn)saleBtn.textContent='+ Tambah ke Daftar';
+  const saleBtn=document.getElementById('save'); if(saleBtn)saleBtn.textContent='➕ Tambah Produk';
   const cancel=document.getElementById('cancel'); if(cancel)cancel.style.display='none';
   if(typeof updateOfflineCustomerUI==='function')updateOfflineCustomerUI();
 }
@@ -2021,7 +2021,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         btn.disabled=false;
         btn.style.pointerEvents='auto';
         delete btn.dataset.ffSaving;
-        btn.textContent='✅ Simpan Semua';
+        btn.textContent='✅ Simpan 1 Transaksi / Semua Produk';
       }
     }
   }
