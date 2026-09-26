@@ -856,7 +856,7 @@ function renderHistoricalExpenseAggregate(){
 
   const rows=(expenses||[]).filter(x=>{
     const p=String(x.periode||'').trim();
-    return /^20\\d{2}-\\d{2}\\s+s\\/d\\s+20\\d{2}-\\d{2}$/i.test(p) &&
+    return /^20\d{2}-\d{2}\s+s\/d\s+20\d{2}-\d{2}$/i.test(p) &&
       isCashExpense(x) &&
       Number(x.nominal||0)>0;
   }).sort((a,b)=>Number(b.nominal||0)-Number(a.nominal||0));
