@@ -1737,6 +1737,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         const label=/^\d{4}-\d{2}$/.test(k)?new Date(Number(k.slice(0,4)),Number(k.slice(5,7))-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'}):k;
         return '<tr><td><b>'+esc(label)+'</b></td><td>'+g.rows.length.toLocaleString('id-ID')+'</td><td>'+g.qty.toLocaleString('id-ID')+'</td><td>'+money(g.modal)+'</td><td><button class="mini viewbtn" type="button" data-on-hist-month="'+esc(k)+'">👁 Klik Data</button></td></tr>';
       }).join(''):'<tr><td colspan="5">Belum ada transaksi online baru.</td></tr>';
+      monthTb.querySelectorAll('[data-on-hist-month]').forEach(btn=>btn.onclick=()=>renderOnlineBatchHistoryMonth(String(btn.dataset.onHistMonth||'')));
       if(dateTb)dateTb.innerHTML='<tr><td colspan="5">Pilih bulan.</td></tr>';
       if(detailTb)detailTb.innerHTML='<tr><td colspan="7">Pilih tanggal.</td></tr>';
       byId('onlineBatchHistoryDateWrap')&&(byId('onlineBatchHistoryDateWrap').style.display='none');
@@ -1770,6 +1771,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       const dateLabel=/^\d{4}-\d{2}-\d{2}$/.test(k)?new Date(k+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'}):'Tanpa tanggal';
       return '<tr><td><b>'+esc(dateLabel)+'</b></td><td>'+g2.rows.length.toLocaleString('id-ID')+'</td><td>'+g2.qty.toLocaleString('id-ID')+'</td><td>'+money(g2.modal)+'</td><td><button class="mini viewbtn" type="button" data-on-hist-date="'+esc(k)+'">👁 Klik Data</button></td></tr>';
     }).join(''):'<tr><td colspan="5">Tidak ada transaksi pada bulan ini.</td></tr>';
+    tb.querySelectorAll('[data-on-hist-date]').forEach(btn=>btn.onclick=()=>renderOnlineBatchHistoryDate(String(btn.dataset.onHistDate||'')));
     wrap.style.display='block';
     byId('onlineBatchHistoryMonthWrap')&&(byId('onlineBatchHistoryMonthWrap').style.display='none');
     byId('onlineBatchHistoryDetailWrap')&&(byId('onlineBatchHistoryDetailWrap').style.display='none');
