@@ -1955,15 +1955,17 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
         const i=Number(draftExpEdit.dataset.offDraftExpEdit),row=window.__offlineDraftExpenses[i];
         if(row){
           document.getElementById('ffExpenseDate').value=row.data?.tanggal||today();
-          document.getElementById('ffExpenseCategory').value=row.data?.kategori||'Lainnya';
           document.getElementById('ffExpenseNote').value=row.data?.keterangan||'';
-          const host=document.getElementById('ffExpenseLines');host.innerHTML='';
-          (row.items||[]).forEach(item=>ffExpenseAddLine({
+          const host=document.getElementById('ffExpenseLines');if(host)host.innerHTML='';
+          const items=Array.isArray(row.items)?row.items:[];
+          items.forEach(item=>ffExpenseAddLine({
+            category:item.category||item.kategori||'Bahan Baku',
             nama_item:item.nama_item||'',
-            harga_satuan:item.harga_satuan||item.subtotal||0,
-            master_id:item.master_id||''
+            harga_satuan:item.harga_satuan??item.subtotal??0,
+            master_id:item.master_id||'',
+            manual:!!item.manual
           }));
-          if(!(row.items||[]).length)ffExpenseAddLine();
+          if(!items.length)ffExpenseAddLine();
           window.__offlineDraftEdit={type:'expense',seq:row._seq};
           const btn=document.getElementById('ffExpenseDraftSave');if(btn)btn.textContent='✅ Simpan Perubahan Pengeluaran';
           const out=document.getElementById('ffExpenseMsg');if(out)out.innerHTML='<div class="warn">Mode edit pengeluaran sementara.</div>';
