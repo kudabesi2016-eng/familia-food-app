@@ -502,9 +502,30 @@ td{
     </div>
   </div>
 
+  <div class="card" style="margin-top:12px" id="historicalExpenseAggregateCard">
+    <h2 style="margin-top:0">🗂 Pengeluaran Historis Periode Gabungan</h2>
+    <div class="notice">
+      Data dengan periode seperti <b>2026-01 s/d 2026-08</b> adalah data historis agregat.
+      Data ini <b>tidak digabung ke total bulanan</b> agar tidak terjadi double count dengan pengeluaran bulanan yang sudah tercatat.
+    </div>
+    <div class="cards" style="margin-top:12px">
+      <div class="stat"><small>Jumlah Data</small><strong id="historicalExpenseCount">0</strong></div>
+      <div class="stat"><small>Total Nilai</small><strong id="historicalExpenseTotal">Rp 0</strong></div>
+    </div>
+    <details style="margin-top:12px">
+      <summary style="cursor:pointer;font-weight:700">👁 Lihat semua data historis agregat</summary>
+      <div class="tablewrap" style="margin-top:12px">
+        <table class="cleanTable">
+          <thead><tr><th>Periode</th><th>Kategori</th><th>Keterangan</th><th>Cara Bayar</th><th>Nominal</th></tr></thead>
+          <tbody id="historicalExpenseRows"></tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+
   <div class="card" style="margin-top:12px" id="debtConnectionCard">
     <h2 style="margin-top:0">💳 Hutang & Piutang • <span id="debtConnectionTitle">Bulan Terpilih</span></h2>
-    <div class="notice">Hutang/Piutang dipisahkan dari laba usaha. <b>Bayar Hutang</b> mengurangi saldo hutang dan kas, tetapi tidak dicatat ulang sebagai pengeluaran. <b>Terima Piutang</b> mengurangi saldo piutang dan menambah kas, tetapi tidak dicatat ulang sebagai pemasukan.</div>
+    <div class="notice">Hutang/Piutang dipisahkan dari saldo hutang/piutang. <b>Bayar Hutang</b> mengurangi saldo hutang dan kas, serta dicatat satu kali sebagai <b>Pengeluaran Usaha</b>. <b>Terima Piutang</b> mengurangi saldo piutang dan menambah kas, tanpa dicatat sebagai Pengeluaran.</div>
     <div class="cards" style="margin-top:12px">
       <div class="stat"><small>Hutang Baru</small><strong id="debtNew">Rp 0</strong></div>
       <div class="stat"><small>Bayar Hutang</small><strong id="debtPaid">Rp 0</strong></div>
