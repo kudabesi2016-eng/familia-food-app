@@ -1093,34 +1093,14 @@ window.addEventListener('unhandledrejection',e=>{
    INIT
 ===================================================== */
 
-async function init(){
-
-  $('monthly').innerHTML = `
-    <tr>
-      <td colspan="6" class="empty">Memuat data Rekap...</td>
-    </tr>
-  `;
-
-  const jobs = [
-    ['penjualan', 'sales'],
-    ['data_lama', 'olds'],
-    ['pengeluaran', 'expenses'],
-    ['pengeluaran_item', 'expenseItems'],
-    ['produk', 'products'],
-    ['hpp', 'hpps'],
-    ['ff_pembelian', 'purchases'],
-    ['ff_retur_penjualan', 'returns'],
-    ['ff_hutang_piutang', 'debtRecords'],
-    ['ff_hutang_piutang_bayar', 'debtPayments']
-  ];
-
+async function loadTableList(jobs){
   const results = await Promise.all(
     jobs.map(async ([table,key]) => {
       try{
         return {key, rows:await fetchAllSafe(table)};
       }catch(e){
         console.error('Gagal membaca '+table,e);
-        return {key, rows:[], error:e.message};
+        return {key, rows:[], error:e?.message||String(e)};
       }
     })
   );
@@ -1137,6 +1117,33 @@ async function init(){
     if(r.key==='debtRecords') debtRecords=r.rows;
     if(r.key==='debtPayments') debtPayments=r.rows;
   }
+  return results;
+}
+
+let initSerial=0;
+
+async function init(){
+
+  const serial=++initSerial;
+  $('monthly').innerHTML = `
+    <tr>
+      <td colspan="6" class="empty">Memuat data Rekap...</td>
+    </tr>
+  `;
+
+  // DATA INTI: tampilkan Rekap secepat mungkin.
+  // Tabel tambahan tidak boleh menahan dropdown bulan/reports.
+  const coreJobs = [
+    ['penjualan', 'sales'],
+    ['data_lama', 'olds'],
+    ['pengeluaran', 'expenses'],
+    ['produk', 'products'],
+    ['hpp', 'hpps']
+  ];
+
+  const coreResults = await loadTableList(coreJobs);
+
+  if(serial!==initSerial)return;
 
   if(!['Offline','Online'].includes($('channel').value)){
     $('channel').value='Online';
@@ -1147,11 +1154,31 @@ async function init(){
   render();
   renderHistoricalExpenseAggregate();
 
-  const failed=results.filter(x=>x.error);
-  if(failed.length){
-    $('noticeText').innerHTML += '<br><b style="color:#b42318">Catatan:</b> beberapa data belum terbaca: '+failed.map(x=>FF.esc(x.key)).join(', ')+'. Klik <b>↻ Muat Ulang</b> untuk mencoba lagi.';
+  const coreFailed=coreResults.filter(x=>x.error);
+  if(coreFailed.length){
+    $('noticeText').innerHTML += '<br><b style="color:#b42318">Catatan:</b> beberapa data inti belum terbaca: '+coreFailed.map(x=>FF.esc(x.key)).join(', ')+'.';
   }
 
+  // DATA TAMBAHAN: dimuat setelah tampilan utama sudah hidup.
+  const extraJobs = [
+    ['pengeluaran_item', 'expenseItems'],
+    ['ff_pembelian', 'purchases'],
+    ['ff_retur_penjualan', 'returns'],
+    ['ff_hutang_piutang', 'debtRecords'],
+    ['ff_hutang_piutang_bayar', 'debtPayments']
+  ];
+  const extraResults = await loadTableList(extraJobs);
+
+  if(serial!==initSerial)return;
+
+  render();
+  renderHistoricalExpenseAggregate();
+
+  const failed=[...coreResults,...extraResults].filter(x=>x.error);
+  if(failed.length){
+    const note='Data belum terbaca: '+failed.map(x=>FF.esc(x.key)).join(', ')+'.';
+    $('noticeText').innerHTML += '<br><b style="color:#b42318">Catatan:</b> '+note+' Klik <b>↻ Muat Ulang</b> untuk mencoba lagi.';
+  }
 }
 
 
