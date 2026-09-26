@@ -2346,6 +2346,22 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   };
 
   function bind(){
+    const backMonth=$id('onlineBatchHistoryBackMonth');
+    if(backMonth)backMonth.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const detail=$id('onlineBatchHistoryDetailWrap'); if(detail)detail.style.display='none';
+      const date=$id('onlineBatchHistoryDateWrap'); if(date)date.style.display='none';
+      const month=$id('onlineBatchHistoryMonthWrap'); if(month)month.style.display='block';
+      month?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    };
+    const backDate=$id('onlineBatchHistoryBackDate');
+    if(backDate)backDate.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const detail=$id('onlineBatchHistoryDetailWrap'); if(detail)detail.style.display='none';
+      const date=$id('onlineBatchHistoryDateWrap'); if(date)date.style.display='block';
+      const month=$id('onlineBatchHistoryMonthWrap'); if(month)month.style.display='none';
+      date?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    };
     const b=$id('offlineExpenseSave');
     if(b)b.onclick=window.ffStandaloneSaveOfflineExpense;
     const r=$id('offlineExpenseReset');
