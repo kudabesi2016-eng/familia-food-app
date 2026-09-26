@@ -2415,5 +2415,39 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   else bindOfflineHistoryClicks();
 })();
 </script>
+<script>
+(function(){
+  function bindOfflineHistoryBackButtons(){
+    document.addEventListener('click',function(e){
+      const backDate=e.target?.closest?.('#offlineHistoryBackDate');
+      if(backDate){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const detail=document.getElementById('offlineHistoryDetailWrap');
+        const date=document.getElementById('offlineHistoryDateWrap');
+        if(detail)detail.style.display='none';
+        if(date)date.style.display='block';
+        date?.scrollIntoView({behavior:'smooth',block:'start'});
+        return;
+      }
+      const backMonth=e.target?.closest?.('#offlineHistoryBackMonth');
+      if(backMonth){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const date=document.getElementById('offlineHistoryDateWrap');
+        const month=document.getElementById('offlineHistoryDataWrap');
+        const detail=document.getElementById('offlineHistoryDetailWrap');
+        if(date)date.style.display='none';
+        if(detail)detail.style.display='none';
+        if(month)month.style.display='block';
+        month?.scrollIntoView({behavior:'smooth',block:'start'});
+        return;
+      }
+    },true);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindOfflineHistoryBackButtons);
+  else bindOfflineHistoryBackButtons();
+})();
+</script>
 </body>
 </html>
