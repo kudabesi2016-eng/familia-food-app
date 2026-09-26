@@ -236,9 +236,9 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
   </div>
 </div>
 </section><section class="penjualan-panel" data-panel="offline"><div class="card"><div class="cashhead"><div><h2 style="margin:0">🟢 Transaksi Offline</h2><div class="note">Tetap memakai struktur penjualan lama; pola HPP tidak diubah.</div></div></div>
-<div class="grid" style="margin-top:16px"><div class="field"><label>Tanggal</label><input id="tanggal" type="date"/></div><div class="field"><label>Nama Pelanggan</label><input id="pelanggan" list="ffCustomerList" placeholder="Contoh: Bu Euis" type="text"/><datalist id="ffCustomerList"></datalist></div><div class="field"><label>Produk</label><select id="produk"><option value="">Pilih Produk</option></select></div><div class="field"><label>Jumlah Terjual (Bungkus)</label><input id="qty" min="1" step="1" type="number" value="1"/></div><div class="field"><label>Channel Penjualan</label><select id="channel"><option>Offline</option></select></div><div class="field"><label>Harga Jual / Bungkus</label><input id="harga" min="0" readonly="" step="1" type="number"/></div><div class="field"><label>HPP / Bungkus</label><input id="hpp" min="0" readonly="" step="1" type="number"/></div></div>
+<div class="grid" style="margin-top:16px"><div class="field"><label>Tanggal</label><input id="tanggal" type="date"/></div><div class="field"><label>Nama Pelanggan</label><input id="pelanggan" list="ffCustomerList" placeholder="Contoh: Bu Euis" type="text"/><datalist id="ffCustomerList"></datalist><div class="small" style="margin-top:5px">Nama pelanggan tetap dipakai untuk produk berikutnya. Ganti nama hanya bila pelanggan berbeda.</div></div><div class="field"><label>Produk</label><select id="produk"><option value="">Pilih Produk</option></select></div><div class="field"><label>Jumlah Terjual (Bungkus)</label><input id="qty" min="1" step="1" type="number" value="1"/></div><div class="field"><label>Channel Penjualan</label><select id="channel"><option>Offline</option></select></div><div class="field"><label>Harga Jual / Bungkus</label><input id="harga" min="0" readonly="" step="1" type="number"/></div><div class="field"><label>HPP / Bungkus</label><input id="hpp" min="0" readonly="" step="1" type="number"/></div></div>
 <div class="preview"><div class="box"><small>Harga Jual</small><strong id="pvHarga">Rp 0</strong></div><div class="box"><small>Total Omzet</small><strong id="pvOmzet">Rp 0</strong></div><div class="box"><small>Total Modal / HPP</small><strong id="pvHpp">Rp 0</strong></div><div class="box profit"><small>Profit</small><strong id="pvProfit">Rp 0</strong></div></div>
-<div class="actions"><button class="btn" id="save">+ Tambah ke Daftar</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div>
+<div class="actions"><button class="btn" id="save">+ Tambah ke Daftar</button><button class="btn gray" id="cancel" style="display:none">Batal Edit</button><button class="btn light" id="clearCustomer" type="button" style="display:none">🔄 Ganti Customer</button></div><div id="msg"></div></div><div class="card"><div class="summary"><div class="stat">Penjualan Offline Baru<b id="sQty">0</b></div><div class="stat">Omzet Offline<b id="sOmzet">Rp 0</b></div><div class="stat">Uang Bersih Offline<b id="sNet">Rp 0</b></div><div class="stat">Profit Offline<b id="sProfit">Rp 0</b></div></div></div>
 <div class="card" id="offlineDraftCard" style="border:2px solid #9fcbb0;background:#fbfefc">
   <div class="cashhead" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
     <div><h2 style="margin:0">📝 Daftar Transaksi Sementara</h2><div class="note">Semua transaksi yang ditambahkan di sini <b>belum masuk database</b>. Cek dulu, lalu tekan <b>✅ Simpan Semua</b>.</div></div>
@@ -467,6 +467,7 @@ function resetOfflineDraftEditState(){
   const expBtn=document.getElementById('offlineExpenseSave'); if(expBtn)expBtn.textContent='+ Simpan Pengeluaran';
   const saleBtn=document.getElementById('save'); if(saleBtn)saleBtn.textContent='+ Tambah ke Daftar';
   const cancel=document.getElementById('cancel'); if(cancel)cancel.style.display='none';
+  if(typeof updateOfflineCustomerUI==='function')updateOfflineCustomerUI();
 }
 async function saveAllOfflineDrafts(){
   const sales=window.__offlineDraftSales||[],expenses=window.__offlineDraftExpenses||[],out=document.getElementById('offlineDraftMsg'),btn=document.getElementById('offlineDraftSaveAll');
@@ -523,8 +524,16 @@ document.getElementById('offlineHistoryRefresh')?.addEventListener('click',refre
 async function loadProducts(){const [r,h]=await Promise.all([supabaseClient.from('produk').select('*').order('id',{ascending:true}),supabaseClient.from('hpp').select('*')]);if(r.error)throw r.error;if(h.error)throw h.error;products=r.data||[];window.products=products;window.importHppRows=h.data||[];renderProductOptions();}
 function importHppFor(r){const pid=r?.produk_id;if(pid==null)return null;const h=(window.importHppRows||[]).find(x=>String(x.produk_id)===String(pid));if(!h)return null;if(h.hpp_online!=null&&Number.isFinite(Number(h.hpp_online)))return Number(h.hpp_online);if(h.harga_online!=null&&h.untung_online!=null){const v=Number(h.harga_online)-Number(h.untung_online);if(Number.isFinite(v)&&v>=0)return v;}if(h.hpp_unit!=null&&Number.isFinite(Number(h.hpp_unit)))return Number(h.hpp_unit);return null;}
 function selectedProduct(){return products.find(p=>String(p.id)===$('produk').value)}
+function updateOfflineCustomerUI(){
+  const has=!!String($('pelanggan')?.value||'').trim();
+  const saveBtn=$('save'),clearBtn=$('clearCustomer');
+  if(saveBtn && !window.__offlineDraftEdit && !editId)saveBtn.textContent=has?'➕ Tambah Produk untuk Customer':'➕ Tambah ke Daftar';
+  if(clearBtn)clearBtn.style.display=has&&!window.__offlineDraftEdit?'inline-flex':'none';
+}
 function updatePreview(){const qty=Math.max(0,Number($('qty').value)||0),harga=Math.round(Number($('harga').value)||0),hpp=Math.round(Number($('hpp').value)||0);$('pvHarga').textContent=rupiah(harga);$('pvOmzet').textContent=rupiah(qty*harga);$('pvHpp').textContent=rupiah(qty*hpp);$('pvProfit').textContent=rupiah(qty*(harga-hpp));}
 $('qty').addEventListener('input',updatePreview);$('harga').addEventListener('input',updatePreview);$('hpp').addEventListener('input',updatePreview);
+$('pelanggan').addEventListener('input',updateOfflineCustomerUI);
+$('clearCustomer').onclick=()=>{$('pelanggan').value='';updateOfflineCustomerUI();$('pelanggan').focus();};
 async function loadHpp(){const p=selectedProduct();if(!p)return;$('harga').value=($('channel').value==='Online'?p.harga_online:p.harga_offline)||'';const r=await supabaseClient.from('hpp').select('*').eq('produk_id',p.id).maybeSingle();if(r.error)throw r.error;let nilaiHpp='';if(r.data){const h=r.data;nilaiHpp=Number(h.hpp_unit||0);if($('channel').value==='Online'&&h.harga_online!=null&&h.untung_online!=null)nilaiHpp=Number(h.harga_online)-Number(h.untung_online)}$('hpp').value=nilaiHpp!==''?Math.round(nilaiHpp):'';updatePreview();}
 $('produk').onchange=()=>loadHpp().catch(e=>msg('Gagal mengambil HPP: '+e.message,true));
 $('channel').onchange=()=>{const current=$('produk').value;renderProductOptions(current);loadHpp().catch(e=>msg('Gagal mengambil HPP: '+e.message,true));};
@@ -544,8 +553,8 @@ $('save').onclick=async()=>{
         window.__offlineDraftSales[i]={data,pelanggan:nama,_seq:window.__offlineDraftSales[i]._seq};
         resetOfflineDraftEditState();
         renderOfflineDrafts();
-        msg('Penjualan sementara berhasil diperbarui.');
-        $('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();
+        msg('Penjualan sementara berhasil diperbarui. Customer tetap dipertahankan untuk produk berikutnya.');
+        $('tanggal').value=tanggal;$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();updateOfflineCustomerUI();
         return;
       }
     }
@@ -559,11 +568,11 @@ $('save').onclick=async()=>{
     }
     window.__offlineDraftSales.push({data,pelanggan:nama,_seq:Date.now()+Math.random()});
     renderOfflineDrafts();
-    msg('Transaksi ditambahkan ke daftar sementara. Belum masuk database.');
-    $('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();
+    msg('Produk ditambahkan ke pesanan sementara. Customer tetap dipakai untuk produk berikutnya.');
+    $('tanggal').value=tanggal;$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();updateOfflineCustomerUI();
   }catch(e){console.error(e);msg('Gagal menambahkan transaksi: '+esc(e.message||e),true)}
 };
-$('cancel').onclick=()=>{editId=null;resetOfflineDraftEditState();$('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();};
+$('cancel').onclick=()=>{editId=null;resetOfflineDraftEditState();$('tanggal').value=today();$('pelanggan').value='';$('produk').value='';$('qty').value=1;$('harga').value='';$('hpp').value='';updatePreview();updateOfflineCustomerUI();};
 function parseCSV(text){const rows=[],row=[];let cell='',quote=false;for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'){if(quote&&next==='"'){cell+='"';i++;}else quote=!quote;}else if(ch===','&&!quote){row.push(cell);cell='';}else if((ch==='\n'||ch==='\r')&&!quote){if(ch==='\r'&&next==='\n')i++;row.push(cell);if(row.some(x=>String(x).trim()!==''))rows.push(row.slice());row.length=0;cell='';}else cell+=ch;}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
 function num(v){if(v===null||v===undefined||v==='')return null;let s=String(v).trim().replace(/\s/g,'');if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(/^[-+]?\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');return Number(s)||0;}
 function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})(?:\s+(\d{1,2}):(\d{2}):(\d{2}))?/);if(m)return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}${m[4]?`T${String(m[4]).padStart(2,'0')}:${m[5]}:${m[6]}`:'T00:00:00'}`;m=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);if(m)return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}${m[4]?`T${String(m[4]).padStart(2,'0')}:${m[5]}:${m[6]||'00'}`:'T00:00:00'}`;const d=new Date(s);return isNaN(d)?null:d.toISOString();}
