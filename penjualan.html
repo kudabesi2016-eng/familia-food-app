@@ -1941,6 +1941,62 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
   // Pastikan fungsi tersedia untuk tombol input pengeluaran.
   window.ffSaveOfflineExpense=saveOfflineExpense;
 
+  function renderOnlineDrafts(){
+    const tb=byId('onlineDraftRows'), count=byId('onlineDraftCount');
+    if(!tb)return;
+    const list=Array.isArray(window.__onlineDraftRows)?window.__onlineDraftRows:[];
+    if(count)count.textContent=list.length+' transaksi belum disimpan';
+    tb.innerHTML=list.length?list.map((x,i)=>{
+      const d=x.data||{};
+      const isCash=x.kind==='Penerimaan Uang';
+      const label=isCash?(x.marketplace||'Penerimaan Uang'):(x.product_name||d.product_name||'-');
+      const jenis=isCash?'Penerimaan Uang':'Produk Keluar';
+      const qty=isCash?0:Number(x.qty??d.qty??0);
+      const nominal=isCash?Number(x.amount??d.uang_bersih??d.omzet_produk??0):0;
+      const modal=isCash?0:Number(x.modal_hpp??d.modal_hpp??d.hpp??0);
+      return '<tr>'+
+        '<td>'+(i+1)+'</td>'+
+        '<td>'+esc(x.tanggal||d.tanggal||'-')+'</td>'+
+        '<td>'+esc(jenis)+'</td>'+
+        '<td>'+esc(label)+'</td>'+
+        '<td>'+ (qty?qty.toLocaleString('id-ID'):'—') +'</td>'+
+        '<td>'+money(nominal)+'</td>'+
+        '<td>'+money(modal)+'</td>'+
+        '<td><button type="button" class="mini del" data-online-draft-del="'+i+'">🗑 Hapus</button></td>'+
+      '</tr>';
+    }).join(''):'<tr><td colspan="8" class="empty">Belum ada transaksi sementara.</td></tr>';
+  }
+
+  function clearOnlineDrafts(){
+    window.__onlineDraftRows=[];
+    renderOnlineDrafts();
+    const out=byId('onlineDraftMsg');if(out)out.innerHTML='<div class="warn">Daftar transaksi Online sementara dikosongkan.</div>';
+  }
+
+  async function saveAllOnlineDrafts(){
+    const list=Array.isArray(window.__onlineDraftRows)?window.__onlineDraftRows:[];
+    const out=byId('onlineDraftMsg'), btn=byId('onlineDraftSaveAll');
+    if(!list.length){if(out)out.innerHTML='<div class="bad">Belum ada transaksi untuk disimpan.</div>';return;}
+    if(btn)btn.disabled=true;
+    const rowsToSave=list.map(x=>x.data).filter(Boolean);
+    try{
+      const r=await supabaseClient.from('penjualan').insert(rowsToSave).select('id');
+      if(r.error)throw r.error;
+      if((r.data||[]).length!==rowsToSave.length)throw new Error('Tidak semua transaksi Online berhasil disimpan.');
+      window.__onlineDraftRows=[];
+      renderOnlineDrafts();
+      if(out)out.innerHTML='<div class="ok">'+rowsToSave.length+' transaksi Online berhasil disimpan.</div>';
+      if(typeof refreshOnlineBatchHistory==='function')await refreshOnlineBatchHistory();
+      if(typeof refreshNewOnlineProfit==='function')await refreshNewOnlineProfit();
+      if(typeof load==='function')await load();
+    }catch(e){
+      console.error('Gagal menyimpan transaksi Online:',e);
+      if(out)out.innerHTML='<div class="bad">Gagal menyimpan: '+esc(e.message||e)+'</div>';
+    }finally{
+      if(btn)btn.disabled=false;
+    }
+  }
+
   function saveCash(){
     const tanggal=byId('cashTanggal').value,amount=Math.max(0,Math.round(Number(byId('cashAmount').value)||0)),marketplace=byId('cashMarketplace').value||'TikTok Shop',note=byId('cashNote').value.trim();
     if(!tanggal||amount<=0){setCashMsg('Tanggal dan Uang Bersih wajib diisi.',true);return;}
