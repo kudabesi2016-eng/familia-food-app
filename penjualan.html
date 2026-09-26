@@ -1985,6 +1985,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       if((r.data||[]).length!==rowsToSave.length)throw new Error('Tidak semua transaksi Online berhasil disimpan.');
       window.__onlineDraftRows=[];
       renderOnlineDrafts();
+      if(typeof setMsg==='function')setMsg('');
       if(out)out.innerHTML='<div class="ok">'+rowsToSave.length+' transaksi Online berhasil disimpan.</div>';
       if(typeof refreshOnlineBatchHistory==='function')await refreshOnlineBatchHistory();
       if(typeof refreshNewOnlineProfit==='function')await refreshNewOnlineProfit();
