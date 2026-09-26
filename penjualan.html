@@ -313,10 +313,6 @@ window.__ffEnsureXLSX=window.__ffEnsureXLSX||async function(){
   <div class="grid" style="margin-top:16px">
     <div class="field"><label>Tanggal</label><input id="ffExpenseDate" type="date"/></div>
     <div class="field"><label>Kategori</label><select id="ffExpenseCategory"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
-    <div class="field"><label>Cara Bayar</label><select id="ffExpensePayMethod"><option>Tunai</option><option>Hutang</option></select></div>
-    <div class="field"><label>Pihak / Supplier</label><input id="ffExpenseParty" placeholder="Wajib bila Hutang"/></div>
-    <div class="field"><label>Kategori Hutang</label><select id="ffExpenseDebtCategory"><option>Produktif</option><option>Konsumtif</option><option>Usaha</option><option>Lainnya</option></select></div>
-    <div class="field"><label>Jatuh Tempo</label><input id="ffExpenseDueDate" type="date"/></div>
     <div class="field" style="grid-column:1/-1"><label>Keterangan Transaksi</label><input id="ffExpenseNote" placeholder="Contoh: belanja bahan untuk produksi"/></div>
   </div>
 
@@ -501,10 +497,6 @@ function ffExpenseAddLine(data={}){
 function ffExpenseResetForm(){
   const d=document.getElementById('ffExpenseDate');if(d)d.value=today();
   const c=document.getElementById('ffExpenseCategory');if(c)c.value='Bahan Baku';
-  const p=document.getElementById('ffExpensePayMethod');if(p)p.value='Tunai';
-  const party=document.getElementById('ffExpenseParty');if(party)party.value='';
-  const debt=document.getElementById('ffExpenseDebtCategory');if(debt)debt.value='Produktif';
-  const due=document.getElementById('ffExpenseDueDate');if(due)due.value='';
   const note=document.getElementById('ffExpenseNote');if(note)note.value='';
   const host=document.getElementById('ffExpenseLines');if(host){host.innerHTML='';ffExpenseAddLine();}
   const msgBox=document.getElementById('ffExpenseMsg');if(msgBox)msgBox.innerHTML='';
@@ -513,10 +505,6 @@ function ffExpenseResetForm(){
 function ffExpenseSaveDraft(){
   const date=document.getElementById('ffExpenseDate')?.value||today();
   const category=document.getElementById('ffExpenseCategory')?.value||'Lainnya';
-  const payMethod=document.getElementById('ffExpensePayMethod')?.value||'Tunai';
-  const party=(document.getElementById('ffExpenseParty')?.value||'').trim();
-  const debtCategory=document.getElementById('ffExpenseDebtCategory')?.value||'Lainnya';
-  const dueDate=document.getElementById('ffExpenseDueDate')?.value||null;
   const note=(document.getElementById('ffExpenseNote')?.value||'').trim();
   const out=document.getElementById('ffExpenseMsg');
   const lines=[...document.querySelectorAll('#ffExpenseLines .ff-exp-line')].map(row=>({
@@ -531,13 +519,10 @@ function ffExpenseSaveDraft(){
   if(invalid>=0){if(out)out.innerHTML='<div class="bad">Item '+(invalid+1)+' belum lengkap. Isi nama, qty, dan harga satuan.</div>';return;}
   const total=lines.reduce((sum,x)=>sum+x.subtotal,0);
   if(total<=0){if(out)out.innerHTML='<div class="bad">Total pengeluaran harus lebih dari 0.</div>';return;}
-  if(payMethod==='Hutang'&&!party){if(out)out.innerHTML='<div class="bad">Pihak / Supplier wajib diisi bila Cara Bayar = Hutang.</div>';return;}
   window.__offlineDraftExpenses=window.__offlineDraftExpenses||[];
   window.__offlineDraftExpenses.push({
-    data:{periode:date.slice(0,7),tanggal:date,kategori:category,keterangan:note,nominal:total,cara_bayar:payMethod,kategori_hutang:payMethod==='Hutang'?debtCategory:null},
+    data:{periode:date.slice(0,7),tanggal:date,kategori:category,keterangan:note,nominal:total},
     items:lines,
-    party,
-    dueDate,
     _seq:Date.now()+Math.random()
   });
   renderOfflineDrafts();
@@ -607,15 +592,6 @@ async function saveAllOfflineDrafts(){
         if((ir.data||[]).length!==detailRows.length)throw new Error('Tidak semua item pengeluaran berhasil disimpan.');
       }
 
-      if(x.data.cara_bayar==='Hutang'){
-        const debt={
-          tanggal:x.data.tanggal,jenis:'Hutang',kategori:x.data.kategori_hutang||'Lainnya',pihak:x.party||'',
-          keterangan:x.data.keterangan||items.map(i=>i.nama_item).join(', '),jatuh_tempo:x.dueDate||null,
-          nominal_awal:x.data.nominal,status:'Belum Lunas',pengeluaran_id:expenseId
-        };
-        const dr=await supabaseClient.from('ff_hutang_piutang').insert([debt]).select('id').single();
-        if(dr.error)throw dr.error;
-      }
     }
 
     window.__offlineDraftSales=[];window.__offlineDraftExpenses=[];resetOfflineCurrentOrder();renderOfflineDrafts();
