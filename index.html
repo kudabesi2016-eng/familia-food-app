@@ -127,22 +127,11 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Retur Penjualan</small><b id="opReturn">Rp 0</b></div>
       <div class="mini"><small>Supplier Aktif</small><b id="opSupplier">0</b></div>
     </div>
-    <div class="note">Ringkasan operasional ditampilkan terpisah supaya tidak mengganti perhitungan Rekap Offline/Online yang sudah dikunci.</div>
-  </div>
-
-  <div class="channel">
-    <div class="channel-head"><h2>💳 Hutang & Piutang</h2><span class="badge">Tidak mengubah laba usaha</span></div>
-    <div class="channel-grid">
-      <div class="mini"><small>Total Hutang Tersisa</small><b id="dashHutang">Rp 0</b></div>
-      <div class="mini"><small>Total Piutang Tersisa</small><b id="dashPiutang">Rp 0</b></div>
-      <div class="mini"><small>Bayar Hutang Bulan Ini</small><b id="dashBayarHutang">Rp 0</b></div>
-      <div class="mini"><small>Terima Piutang Bulan Ini</small><b id="dashTerimaPiutang">Rp 0</b></div>
-    </div>
-    <div class="note">Pembayaran Hutang dicatat sebagai pelunasan kewajiban, bukan Pengeluaran baru. Penerimaan Piutang dicatat sebagai pelunasan piutang, bukan Pemasukan baru.</div>
+    <div class="note">Hutang & Piutang dikelola terpisah dan tidak masuk perhitungan Dashboard.</div>
   </div>
 
   <div class="section"><h2>Akses Cepat</h2><div class="quick">
-    <a href="penjualan.html">💰 POS / Penjualan</a><a href="operasional.html">🧾 Operasional</a><a href="rekap.html">📊 Rekap + Lihat Data</a><a href="produk.html">📦 Produk</a><a href="hpp.html">🧮 HPP</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="data-lama.html">📁 Data Lama</a><a href="hutang-piutang.html">💳 Hutang & Piutang</a><a href="pengaturan.html">⚙️ Pengaturan</a>
+    <a href="penjualan.html">💰 POS / Penjualan</a><a href="operasional.html">🧾 Operasional</a><a href="rekap.html">📊 Rekap + Lihat Data</a><a href="produk.html">📦 Produk</a><a href="hpp.html">🧮 HPP</a><a href="bahan-baku.html">🥣 Bahan Baku</a><a href="resep.html">📋 Resep</a><a href="data-lama.html">📁 Data Lama</a><a href="pengaturan.html">⚙️ Pengaturan</a>
   </div></div>
 
   <div class="status" id="statusBox"><strong>Status:</strong> <span id="statusText">Memuat data dari database...</span></div>
@@ -354,10 +343,9 @@ async function loadDashboard(){
   try{
     const results=await Promise.allSettled([
       fetchAll('produk'),fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran'),fetchAll('produk'),fetchAll('hpp'),
-      fetchAll('ff_pembelian'),fetchAll('ff_retur_penjualan'),fetchAll('ff_supplier'),
-      fetchAll('ff_hutang_piutang'),fetchAll('ff_hutang_piutang_bayar')
+      fetchAll('ff_pembelian'),fetchAll('ff_retur_penjualan'),fetchAll('ff_supplier')
     ]);
-    const [rp,rs,rd,re,rprod,rhpp,rpurchase,rreturn,rsupplier,rDebt,rDebtPay]=results;
+    const [rp,rs,rd,re,rprod,rhpp,rpurchase,rreturn,rsupplier]=results;
     const errors=[];
     const products=rp.status==='fulfilled'?rp.value:[]; if(rp.status!=='fulfilled') errors.push('Produk');
     const sales=rs.status==='fulfilled'?rs.value:[]; if(rs.status!=='fulfilled') errors.push('Penjualan');
@@ -368,42 +356,20 @@ async function loadDashboard(){
     const purchaseRows=rpurchase.status==='fulfilled'?rpurchase.value:[];
     const returnRows=rreturn.status==='fulfilled'?rreturn.value:[];
     const supplierRows=rsupplier.status==='fulfilled'?rsupplier.value:[];
-    const debtRows=rDebt.status==='fulfilled'?rDebt.value:[];
-    const debtPayRows=rDebtPay.status==='fulfilled'?rDebtPay.value:[];
  if(rhpp.status!=='fulfilled') errors.push('Produk/HPP');
 
     window.__FF_DASHBOARD_STATE={sales,productMaster,hppRows};
 
     const activeProducts=products.filter(active).length;
     const currentMonth=new Date().toISOString().slice(0,7);
-    const validExpenseRows=expenseRows.filter(x=>/^20\d{2}-\d{2}$/.test(String(x.periode||'').trim()));
+    const validExpenseRows=expenseRows.filter(x=>
+      /^20\d{2}-\d{2}$/.test(String(x.periode||'').trim()) &&
+      String(x.cara_bayar||'Tunai')!=='Hutang'
+    );
     const opPurchase=purchaseRows.filter(x=>String(x.tanggal||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.total)),0);
     const opExpense=validExpenseRows.filter(x=>String(x.periode||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.nominal)),0);
     const opReturn=returnRows.filter(x=>String(x.tanggal||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.nominal)),0);
     const opSupplier=supplierRows.filter(active).length;
-
-    // HUTANG & PIUTANG: ringkasan terpisah; tidak masuk laba/pemasukan/pengeluaran.
-    const debtPaidById={};
-    debtPayRows.forEach(p=>{const id=Number(p.hutang_piutang_id);debtPaidById[id]=(debtPaidById[id]||0)+num(p.nominal);});
-    let dashHutang=0,dashPiutang=0;
-    debtRows.forEach(x=>{
-      const s=Math.max(0,num(x.nominal_awal)-num(debtPaidById[Number(x.id)]||0));
-      if(String(x.jenis)==='Hutang')dashHutang+=s;
-      if(String(x.jenis)==='Piutang')dashPiutang+=s;
-    });
-    const dashMonth=currentMonth;
-    let dashBayarHutang=0,dashTerimaPiutang=0;
-    debtPayRows.filter(p=>monthOf(p.tanggal)===dashMonth).forEach(p=>{
-      const rec=debtRows.find(x=>Number(x.id)===Number(p.hutang_piutang_id));
-      if(rec?.jenis==='Hutang')dashBayarHutang+=num(p.nominal);
-      if(rec?.jenis==='Piutang')dashTerimaPiutang+=num(p.nominal);
-    });
-    setNumber('dashHutang',dashHutang);
-    setNumber('dashPiutang',dashPiutang);
-    setNumber('dashBayarHutang',dashBayarHutang);
-    setNumber('dashTerimaPiutang',dashTerimaPiutang);
-
-
 
     // OFFLINE: Data Lama + transaksi baru.
     const offOld=old;
