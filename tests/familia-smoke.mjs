@@ -73,6 +73,11 @@ assert(produk.includes('Data produk, HPP, resep, penjualan, dan histori tetap di
 assert(!/\\.from\\(["']hpp["']\\)\\s*\\.delete\\(/.test(produk),'Produk must not hard-delete HPP records');
 assert(!/\\.from\\(["']produk["']\\)\\s*\\.delete\\(/.test(produk),'Produk must not hard-delete product records');
 
+const bahan=await read('bahan-baku.html');
+assert(bahan.includes('toggleStatusBahan'),'Bahan Baku must use status toggle instead of hard delete');
+assert(bahan.includes('Arsipkan'),'Bahan Baku archive action missing');
+assert(!/\\.from\\([\"']bahan_baku[\"']\\)\\s*\\.delete\\(/.test(bahan),'Bahan Baku must not hard-delete material records');
+
 const penjualan=await read('penjualan.html');
 assert(!penjualan.includes("supabaseClient.from('produk').select('id,nama_produk,hpp_offline"),'Forbidden hpp_offline select regression found in penjualan.html');
 assert(penjualan.includes("await loadCustomerMaster();"),'Customer master is not loaded at POS startup');
