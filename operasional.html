@@ -70,7 +70,7 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
 
 <main>
   <div class="top">
-    <div><h1>🧾 Operasional</h1><div class="sub">Lengkapi Familia Food dengan Supplier, Pembelian, Pelanggan, Retur, dan Pengeluaran tanpa mengubah modul inti.</div></div>
+    <div><h1>🧾 Operasional</h1><div class="sub">Lengkapi Familia Food dengan Supplier, Pembelian, Pelanggan, Retur, dan Pengeluaran usaha tanpa mencampurkan Hutang/Piutang.</div></div>
     <span class="badge">Tidak termasuk: pembayaran • stok • mutasi stok • multi outlet • user/akses</span>
   </div>
 
@@ -163,10 +163,9 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
       <div class="grid" style="margin-top:12px">
         <div class="field"><label>Tanggal / Periode</label><input id="expDate" type="date"></div>
         <div class="field"><label>Kategori Pengeluaran</label><select id="expCategory"><option>Bahan Baku</option><option>Operasional</option><option>Gaji</option><option>Alat & Perlengkapan</option><option>Retur</option><option>Lainnya</option></select></div>
-        <div class="field"><label>Cara Bayar</label><select id="expPayMethod"><option>Tunai</option><option>Hutang</option></select></div>
-        <div class="field"><label>Pihak / Supplier</label><input id="expParty" placeholder="Wajib diisi bila Cara Bayar = Hutang"></div>
-        <div class="field"><label>Kategori Hutang</label><select id="expDebtCategory"><option>Produktif</option><option>Konsumtif</option><option>Usaha</option><option>Lainnya</option></select></div>
-        <div class="field"><label>Jatuh Tempo</label><input id="expDueDate" type="date"></div>
+        <div class="field full" style="grid-column:1/-1">
+          <div class="notice ok">💡 Pengeluaran baru di sini adalah <b>pengeluaran tunai/biaya usaha</b>. Pencatatan <b>Hutang/Piutang</b> dilakukan hanya di menu Hutang &amp; Piutang, supaya tidak tercampur dan tidak menggandakan pengeluaran.</div>
+        </div>
         <div class="field full" style="grid-column:1/-1"><label>Keterangan Transaksi</label><input id="expNote" placeholder="Contoh: Pembelian bahan baku untuk produksi"></div>
       </div>
       <h3 style="margin:18px 0 8px">Item Pengeluaran</h3>
@@ -551,10 +550,6 @@ async function saveExpense(){
   if(!state.tables.pengeluaran){$('expenseStatus').textContent='Database Pengeluaran belum aktif.';return}
   if(!state.tables.pengeluaran_item){$('expenseStatus').textContent='Detail pengeluaran belum aktif. Muat ulang setelah struktur database diperbarui.';return}
   const d=$('expDate').value||today();
-  const payMethod=$('expPayMethod').value;
-  const party=$('expParty').value.trim();
-  const debtCategory=$('expDebtCategory').value;
-  const dueDate=$('expDueDate').value||null;
   const lines=[...document.querySelectorAll('.expense-line')].map(row=>({
     bahan_id:row.querySelector('.exp-line-mat')?.value?Number(row.querySelector('.exp-line-mat').value):null,
     nama_item:(row.querySelector('.exp-line-name')?.value||'').trim(),
@@ -568,12 +563,11 @@ async function saveExpense(){
   if(invalid>=0){$('expenseStatus').textContent='Item '+(invalid+1)+' belum lengkap. Isi nama, qty, dan harga satuan.';return}
   const total=lines.reduce((a,x)=>a+x.subtotal,0);
   if(total<=0){$('expenseStatus').textContent='Total pengeluaran harus lebih dari 0.';return}
-  if(payMethod==='Hutang'&&!party){$('expenseStatus').textContent='Pihak / Supplier wajib diisi bila Cara Bayar = Hutang.';return}
 
   const data={
     periode:d.slice(0,7),tanggal:d,kategori:$('expCategory').value,
-    keterangan:$('expNote').value.trim(),nominal:total,cara_bayar:payMethod,
-    kategori_hutang:payMethod==='Hutang'?debtCategory:null
+    keterangan:$('expNote').value.trim(),nominal:total,cara_bayar:'Tunai',
+    kategori_hutang:null
   };
   let expenseId=null;
   try{
@@ -585,24 +579,11 @@ async function saveExpense(){
     if(ir.error)throw ir.error;
     if((ir.data||[]).length!==detailRows.length)throw new Error('Tidak semua item pengeluaran berhasil disimpan.');
 
-    if(payMethod==='Hutang'){
-      const debt={
-        tanggal:d,jenis:'Hutang',kategori:debtCategory,pihak:party,
-        keterangan:data.keterangan||lines.map(x=>x.nama_item).join(', '),
-        jatuh_tempo:dueDate,nominal_awal:data.nominal,status:'Belum Lunas',
-        pengeluaran_id:expenseId
-      };
-      const dr=await supabaseClient.from('ff_hutang_piutang').insert([debt]).select('id').single();
-      if(dr.error)throw dr.error;
-    }
-
-    $('expenseStatus').textContent=payMethod==='Hutang'
-      ? '✅ 1 transaksi pengeluaran + '+lines.length+' item tersimpan dan Hutang otomatis masuk.'
-      : '✅ 1 transaksi pengeluaran + '+lines.length+' item tersimpan.';
+    $('expenseStatus').textContent='✅ 1 transaksi pengeluaran tunai + '+lines.length+' item tersimpan.';
     state.expense=await loadTable('pengeluaran');
     await loadExpenseItems();
     renderExpenses();renderStats();
-    $('expNote').value='';$('expParty').value='';$('expDueDate').value='';
+    $('expNote').value='';
     renderExpenseLines();
   }catch(e){
     if(expenseId){
