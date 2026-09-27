@@ -101,6 +101,13 @@ assert(aiSafety.includes("pengeluaran_item"),'AI expense detail integration miss
 assert(aiSafety.includes("cara_bayar||'Tunai')!=='Hutang'"),'AI local finance must exclude opening Hutang');
 assert((aiSafety.match(/function resolveProduct\(q\)\{/g)||[]).length===1,'AI must have exactly one product resolver');
 
+assert(operationalSafety.includes('toggleSupplierStatus'),'Supplier must archive/activate instead of hard delete');
+assert(operationalSafety.includes('toggleCustomerStatus'),'Customer must archive/activate instead of hard delete');
+assert(!/\\.from\\([\"']ff_supplier[\"']\\)\\s*\\.delete\\(/.test(operationalSafety),'Supplier must not hard-delete master records');
+assert(!/\\.from\\([\"']ff_pelanggan[\"']\\)\\s*\\.delete\\(/.test(operationalSafety),'Customer must not hard-delete master records');
+assert(operationalSafety.includes('cancelPurchase'),'Purchase history must be cancelled, not deleted');
+assert(operationalSafety.includes("status:'Aktif'"),'New purchases must have active status');
+
 const bahan=await read('bahan-baku.html');
 assert(bahan.includes('toggleStatusBahan'),'Bahan Baku must use status toggle instead of hard delete');
 assert(bahan.includes('Arsipkan'),'Bahan Baku archive action missing');
