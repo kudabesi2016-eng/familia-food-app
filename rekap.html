@@ -577,10 +577,12 @@ td{
   }
   async function boot(){
     try{
-      const [sales,olds,expenses]=await Promise.all([
-        all('penjualan','id,tanggal,channel,source,qty,harga,total,hpp,omzet_produk,uang_bersih,modal_hpp,biaya_platform,product_name,variation,order_id'),
+      const [sales,olds,expenses,products,hpps]=await Promise.all([
+        all('penjualan','id,tanggal,channel,source,qty,harga,total,hpp,omzet_produk,uang_bersih,modal_hpp,biaya_platform,product_name,variation,order_id,produk_id'),
         all('data_lama','id,periode,jenis,keterangan,nominal,catatan'),
-        all('pengeluaran','id,periode,tanggal,kategori,keterangan,nominal,cara_bayar')
+        all('pengeluaran','id,periode,tanggal,kategori,keterangan,nominal,cara_bayar'),
+        all('produk','id,nama_produk,status,statustext'),
+        all('hpp','produk_id,hpp_unit')
       ]);
       const months=new Set();
       sales.forEach(x=>{const m=monthOf(x.tanggal);if(m)months.add(m)});
@@ -604,6 +606,46 @@ td{
           .reduce((a,x)=>a+Math.round(safeNum(x.nominal)),0);
         return [oldRev+newRev,expense,oldRev+newRev-expense];
       }
+      function normalizeProductName(v){
+        return String(v||'').toLowerCase()
+          .replace(/\bisi\b/g,' ')
+          .replace(/\bpcs\b/g,' ')
+          .replace(/\+saus\b/g,'+saus')
+          .replace(/\s+/g,' ')
+          .trim();
+      }
+      const productHpp=new Map();
+      (hpps||[]).forEach(h=>{
+        const unit=Number(h.hpp_unit||0);
+        if(unit>0)productHpp.set(String(h.produk_id),unit);
+      });
+      const productIdsByName=new Map((products||[]).map(p=>[normalizeProductName(p.nama_produk),p]));
+      function resolveHppByName(name){
+        let key=normalizeProductName(name);
+        if(key==='cireng crispy')key='cireng biasa';
+        if(key==='cibay 10')key='cibay';
+        const p=productIdsByName.get(key) || productIdsByName.get(key.replace(/^naget\s+/,'naget '));
+        if(!p)return null;
+        const unit=productHpp.get(String(p.id));
+        return unit>0?unit:null;
+      }
+      function offlineHpp(m){
+        let total=0,known=true;
+        olds.filter(x=>String(x.periode||'').slice(0,7)===m).forEach(x=>{
+          const qty=Math.max(0,Number(x.catatan||0));
+          const unit=resolveHppByName(x.jenis);
+          if(qty>0 && !unit)known=false;
+          if(unit)total+=Math.round(qty*unit);
+        });
+        sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m).forEach(x=>{
+          const qty=Math.max(0,Number(x.qty||0));
+          const unit=productHpp.get(String(x.produk_id)) || resolveHppByName(x.product_name);
+          if(qty>0 && !unit)known=false;
+          if(unit)total+=Math.round(qty*unit);
+        });
+        return {known,total};
+      }
+
       function onlineFinance(m){
         const hist=sales.filter(x=>x.channel==='Online'&&x.source==='online_standard_finance'&&monthOf(x.tanggal)===m);
         const cash=sales.filter(x=>x.channel==='Online'&&x.source==='online_pencairan'&&monthOf(x.tanggal)===m);
@@ -619,14 +661,16 @@ td{
       }
       function render(){
         const m=month.value, off=channel.value==='Offline';
-        const v=off?offlineFinance(m):onlineFinance(m), h=off?null:onlineHpp(m);
+        const v=off?offlineFinance(m):onlineFinance(m);
+        const h=off?offlineHpp(m):{known:true,total:onlineHpp(m)};
         document.getElementById('rev').textContent=rupiah(v[0]);
         document.getElementById('out').textContent=rupiah(v[1]);
         document.getElementById('net').textContent=rupiah(v[2]);
-        document.getElementById('hpp').textContent=off?'—':rupiah(h);
-        const profit=off?v[2]:v[2]-h;
-        document.getElementById('profit').textContent=rupiah(profit);
-        document.getElementById('margin').textContent=(v[0]>0?(profit/v[0]*100):0).toFixed(2)+'%';
+        document.getElementById('hpp').textContent=h.known?rupiah(h.total):'—';
+        const profit=h.known?v[2]-h.total:null;
+        document.getElementById('profit').textContent=profit===null?'—':rupiah(profit);
+        const marginBase=v[2];
+        document.getElementById('margin').textContent=(profit!==null&&marginBase>0?(profit/marginBase*100):0).toFixed(2)+'%';
         document.getElementById('pageTitle').textContent=off?'📊 Rekap Offline':'📊 Rekap Online';
         document.getElementById('pageSub').textContent=off?'Rekap penjualan Offline Familia Food per bulan.':'Rekap penjualan Online Shop Familia Food per bulan.';
         document.getElementById('outLabel').textContent=off?'Pengeluaran':'Potongan Online Shop';
@@ -634,12 +678,14 @@ td{
         document.getElementById('monthlyTitle').textContent=off?'Rekap Offline Bulanan':'Rekap Online Bulanan';
         document.getElementById('noticeChannel').textContent=off?'🟢 Rekap Offline':'🔵 Rekap Online';
         document.getElementById('noticeText').innerHTML=off
-          ?'Pemasukan berasal dari <b>Data Lama + Transaksi Offline Baru</b>.<br>Pengeluaran ditampilkan terpisah.<br><b>Hasil Bersih Offline = Pemasukan − Pengeluaran.</b>'
-          :'Pemasukan berasal dari <b>Data Lama Online + Penerimaan Uang Online</b>.<br>Penerimaan baru sudah berupa <b>Uang Bersih</b> setelah potongan.<br>HPP/Modal produk keluar ditampilkan terpisah.';
+          ?'Pemasukan berasal dari <b>Data Lama + Transaksi Offline Baru</b>.<br>Pengeluaran ditampilkan terpisah.<br><b>Profit = Uang Bersih − HPP/modal.</b><br>Uang Bersih Offline = Pemasukan − Pengeluaran Tunai.'
+          :'Pemasukan berasal dari <b>Data Lama Online + Penerimaan Uang Online</b>.<br>Penerimaan baru sudah berupa <b>Uang Bersih</b> setelah potongan.<br><b>Profit = Uang Bersih − HPP/modal.</b><br>HPP/Modal produk keluar ditampilkan terpisah.';
         const tbody=document.getElementById('monthly');
         tbody.innerHTML=ms.map(mm=>{
-          const z=off?offlineFinance(mm):onlineFinance(mm), hh=off?null:onlineHpp(mm), pp=off?z[2]:(z[2]-hh);
-          return '<tr><td><b>'+label(mm)+'</b></td><td>'+rupiah(z[0])+'</td><td>'+rupiah(z[1])+'</td><td><b>'+rupiah(z[2])+'</b></td><td>'+ (hh==null?'—':rupiah(hh)) +'</td><td><b>'+rupiah(pp)+'</b><div class="hint">Margin '+(z[0]>0?(pp/z[0]*100):0).toFixed(2)+'%</div></td></tr>';
+          const z=off?offlineFinance(mm):onlineFinance(mm), hh=off?offlineHpp(mm):{known:true,total:onlineHpp(mm)};
+          const pp=hh.known?(z[2]-hh.total):null;
+          const base=z[2];
+          return '<tr><td><b>'+label(mm)+'</b></td><td>'+rupiah(z[0])+'</td><td>'+rupiah(z[1])+'</td><td><b>'+rupiah(z[2])+'</b></td><td>'+ (hh.known?rupiah(hh.total):'—') +'</td><td>'+ (pp===null?'—':'<b>'+rupiah(pp)+'</b><div class="hint">Margin '+(base>0?(pp/base*100):0).toFixed(2)+'%</div>') +'</td></tr>';
         }).join('')||'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>';
         renderTransactions();
       }
