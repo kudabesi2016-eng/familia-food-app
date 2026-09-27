@@ -604,10 +604,10 @@
           </button>
 
           <button
-            class="btn-delete"
-            onclick="hapusBahan(${bahan.id}, '${escapeJs(bahan.nama_bahan || "")}')"
+            class="${String(bahan.status || "Aktif").toLowerCase()==="aktif" ? "btn-delete" : "btn-primary"}"
+            onclick="toggleStatusBahan(${bahan.id})"
           >
-            Hapus
+            ${String(bahan.status || "Aktif").toLowerCase()==="aktif" ? "Arsipkan" : "Aktifkan"}
           </button>
 
         </td>
@@ -817,51 +817,58 @@
 
 
   // =========================
-  // HAPUS BAHAN
+  // ARSIP / AKTIFKAN BAHAN
   // =========================
 
-  async function hapusBahan(id, nama) {
+  async function toggleStatusBahan(id) {
 
-    const yakin = confirm(
-      "Hapus bahan \"" +
-      nama +
-      "\"?"
-    );
+    const { data: bahan, error: loadError } = await supabaseClient
+      .from("bahan_baku")
+      .select("id,nama_bahan,status")
+      .eq("id", id)
+      .single();
 
-
-    if (!yakin) {
+    if (loadError || !bahan) {
+      tampilPesan(
+        "Gagal membaca bahan: " + (loadError?.message || "Bahan tidak ditemukan."),
+        "error"
+      );
       return;
     }
 
+    const currentStatus = bahan.status || "Aktif";
+    const nextStatus = String(currentStatus).toLowerCase() === "aktif" ? "Arsip" : "Aktif";
+    const actionText = nextStatus === "Arsip" ? "mengarsipkan" : "mengaktifkan kembali";
+
+    const yakin = confirm(
+      'Yakin ingin ' + actionText + ' bahan "' + (bahan.nama_bahan || "-") +
+      '"?\n\nData bahan, resep, HPP, dan histori pengeluaran tetap dipertahankan.'
+    );
+
+    if (!yakin) return;
 
     const { error } = await supabaseClient
       .from("bahan_baku")
-      .delete()
+      .update({ status: nextStatus })
       .eq("id", id);
 
-
     if (error) {
-
       console.error(error);
-
       tampilPesan(
-        "Gagal menghapus bahan: " +
-        error.message,
+        "Gagal mengubah status bahan: " + error.message,
         "error"
       );
-
       return;
     }
 
-
     tampilPesan(
-      "Bahan berhasil dihapus.",
+      nextStatus === "Aktif"
+        ? "Bahan berhasil diaktifkan kembali."
+        : "Bahan berhasil diarsipkan. Data tidak dihapus.",
       "success"
     );
 
-
-    loadBahan();
-
+    await loadBahan();
   }
 
 
