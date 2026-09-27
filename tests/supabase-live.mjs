@@ -17,7 +17,7 @@ const headers = {
 async function signInAnonymously(){
   const res = await fetch(BASE + '/auth/v1/signup',{
     method:'POST',
-    headers:{...headers,Prefer:undefined},
+    headers:{apikey:KEY,'Content-Type':'application/json'},
     body:'{}'
   });
   const text = await res.text();
