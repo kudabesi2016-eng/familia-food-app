@@ -5,6 +5,7 @@
 <title>Hutang & Piutang - Familia Food</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script><script src="app-settings.js"></script>
+<link rel="stylesheet" href="android-shell.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5faf7;color:#26352d}
 .sidebar{position:fixed;left:0;top:0;bottom:0;width:230px;background:#fff;border-right:1px solid #dce8e1;padding:20px 14px}
@@ -370,44 +371,9 @@ $('debtMonthRows').addEventListener('click',e=>{const b=e.target.closest('[data-
 $('debtDetailRows').addEventListener('click',e=>{const b=e.target.closest('[data-pay]');if(b)openPayTarget(b.dataset.pay)});
 $('closeDebtDetail').onclick=()=>{$('debtDetailCard').style.display='none'};
 $('closePayment').onclick=()=>{$('paymentCard').style.display='none'};
-async function reconcileDebtFromExpenses(){
-  // Hanya untuk menjaga kompatibilitas dengan data lama yang memang sudah
-  // mempunyai cara_bayar=Hutang. Pembayaran baru tidak memakai jalur ini.
-  const e=await supabaseClient.from('pengeluaran').select('*').eq('cara_bayar','Hutang').order('tanggal',{ascending:false});
-  if(e.error)return;
-  const expenses=e.data||[];
-  let current=records||[];
-  for(const x of expenses){
-    if(!x.id || Number(x.nominal||0)<=0)continue;
-    let linked=current.find(d=>Number(d.pengeluaran_id)===Number(x.id));
-    if(linked)continue;
-    linked=current.find(d=>
-      d.jenis==='Hutang' &&
-      String(d.tanggal||'')===String(x.tanggal||x.periode+'-01') &&
-      String(d.kategori||'')===String(x.kategori_hutang||'Usaha') &&
-      Number(d.nominal_awal||0)===Number(x.nominal||0) &&
-      String(d.keterangan||'')===String(x.keterangan||'')
-    );
-    if(linked){
-      await supabaseClient.from('ff_hutang_piutang').update({pengeluaran_id:x.id}).eq('id',linked.id);
-      linked.pengeluaran_id=x.id;
-      continue;
-    }
-    const d={
-      tanggal:x.tanggal||x.periode+'-01',
-      jenis:'Hutang',
-      kategori:x.kategori_hutang||'Usaha',
-      pihak:'Pihak lain',
-      keterangan:x.keterangan||'Hutang dari Pengeluaran Lama',
-      jatuh_tempo:null,
-      nominal_awal:Number(x.nominal)||0,
-      status:'Belum Lunas',
-      pengeluaran_id:x.id
-    };
-    const ins=await supabaseClient.from('ff_hutang_piutang').insert([d]).select('*').single();
-    if(!ins.error)current.push(ins.data);
-  }
-}
+// Data hutang lama sudah direkonsiliasi. Modul ini sekarang hanya membaca
+// tabel Hutang/Piutang; membuka halaman tidak lagi melakukan INSERT/UPDATE otomatis.
+
 
 async function load(){
   const [r,p]=await Promise.all([
@@ -416,9 +382,6 @@ async function load(){
   ]);
   if(r.error)throw r.error;if(p.error)throw p.error;
   records=r.data||[];payments=p.data||[];
-  await reconcileDebtFromExpenses();
-  const rr=await supabaseClient.from('ff_hutang_piutang').select('*').order('tanggal',{ascending:false}).order('id',{ascending:false});
-  if(!rr.error)records=rr.data||[];
   renderDrafts();renderStats();renderLists();
 }
 
@@ -431,4 +394,5 @@ load().catch(e=>{
   if(box)box.innerHTML='<tr><td colspan="6" class="empty">'+esc(e.message)+'</td></tr>';
 });
 </script>
+<script src="android-shell.js" defer></script>
 </body></html>
