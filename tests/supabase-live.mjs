@@ -14,6 +14,26 @@ const headers = {
   Prefer: 'return=representation'
 };
 
+async function signInAnonymously(){
+  const res = await fetch(BASE + '/auth/v1/signup',{
+    method:'POST',
+    headers:{...headers,Prefer:undefined},
+    body:'{}'
+  });
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch {}
+  if(!res.ok){
+    throw new Error('Anonymous auth failed: HTTP '+res.status+' '+text.slice(0,500));
+  }
+  const token = data?.access_token || data?.session?.access_token;
+  if(!token) throw new Error('Anonymous auth returned no access token');
+  headers.Authorization = 'Bearer ' + token;
+  return data;
+}
+
+await signInAnonymously();
+
 async function request(path,{method='GET',body}={}) {
   const res = await fetch(BASE + '/rest/v1/' + path,{
     method, headers,
