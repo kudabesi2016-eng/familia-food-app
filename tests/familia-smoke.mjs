@@ -73,6 +73,33 @@ assert(produk.includes('Data produk, HPP, resep, penjualan, dan histori tetap di
 assert(!/\\.from\\(["']hpp["']\\)\\s*\\.delete\\(/.test(produk),'Produk must not hard-delete HPP records');
 assert(!/\\.from\\(["']produk["']\\)\\s*\\.delete\\(/.test(produk),'Produk must not hard-delete product records');
 
+const resep=await read('resep.html');
+assert(resep.includes('status-aktif'),'Resep status support missing');
+assert(resep.includes('toggleStatusResep'),'Resep must archive/activate instead of hard delete');
+assert(resep.includes('data-action="toggle-resip"'),'Resep archive action marker missing');
+assert(!/\\.from\\([\"']resep[\"']\\)\\s*\\.delete\\(/.test(resep),'Resep must not hard-delete recipe rows');
+
+const hpp=await read('hpp.html');
+assert(hpp.includes('.eq("status","Aktif")'),'HPP must ignore archived recipe rows');
+const debt=await read('hutang-piutang.html');
+assert(!debt.includes('await reconcileDebtFromExpenses();'),'Hutang page must not write/reconcile automatically on load');
+assert(debt.includes('android-shell.css'),'Hutang page missing Android shell css');
+assert(debt.includes('android-shell.js'),'Hutang page missing Android shell js');
+
+assert(operational.includes('cara_bayar:'Tunai''),'Operational new expenses must always be cash');
+assert(!operational.includes("payMethod==='Hutang'"),'Operational new expense flow must not create Hutang');
+assert(operational.includes('Pencatatan <b>Hutang/Piutang</b> dilakukan hanya di menu Hutang &amp; Piutang'),'Operational debt separation notice missing');
+
+const settings=await read('app-settings.js');
+assert(settings.includes("from('pengaturan')"),'Global settings must read branding from Supabase');
+assert(settings.includes('FF_SETTINGS'),'Global settings runtime state missing');
+
+assert(ai.includes("mutableSale(row)"),'AI sale mutation guard missing');
+assert(ai.includes("mutableExpense(row)"),'AI expense mutation guard missing');
+assert(ai.includes("pengeluaran_item"),'AI expense detail integration missing');
+assert(ai.includes("cara_bayar||'Tunai')!=='Hutang'"),'AI local finance must exclude opening Hutang');
+assert((ai.match(/function resolveProduct\(q\)\{/g)||[]).length===1,'AI must have exactly one product resolver');
+
 const bahan=await read('bahan-baku.html');
 assert(bahan.includes('toggleStatusBahan'),'Bahan Baku must use status toggle instead of hard delete');
 assert(bahan.includes('Arsipkan'),'Bahan Baku archive action missing');
