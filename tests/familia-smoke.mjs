@@ -190,13 +190,12 @@ for(const forbiddenHpp of [
 }
 
 const supabaseConfig=await read('supabase.js');
-assert(supabaseConfig.includes('signInAnonymously'),'Supabase app bootstrap must create an anonymous authenticated session');
-assert(supabaseConfig.includes('FF_AUTH_READY'),'Supabase auth readiness promise missing');
-assert(supabaseConfig.includes('authorizedFetch'),'Supabase data fetches must wait for authenticated session');
+assert(supabaseConfig.includes('createClient(SUPABASE_URL, SUPABASE_KEY)'),'Supabase client bootstrap missing');
+assert(!supabaseConfig.includes('signInAnonymously'),'Loginless app must not require anonymous-auth provider at startup');
 
 const rls=await read('SUPABASE-RLS-AUTH.sql');
 for(const table of ['produk','bahan_baku','resep','hpp','penjualan','data_lama','pengeluaran','pengeluaran_item','pengaturan','ff_hutang_piutang','ff_hutang_piutang_bayar']){
-  assert(new RegExp('on public\\.'+table+' for all to authenticated','i').test(rls),'Authenticated RLS policy missing for '+table);
+  assert(new RegExp('on public\\.'+table+' for all to anon, authenticated','i').test(rls),'Loginless RLS policy missing for '+table);
 }
 
 const sql=await read('SUPABASE-EXPANSION.sql');
