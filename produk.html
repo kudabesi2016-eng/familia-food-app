@@ -210,8 +210,12 @@
       background: #2563eb;
     }
 
-    .delete-btn {
-      background: #dc2626;
+    .archive-btn {
+      background: #6b7280;
+    }
+
+    .restore-btn {
+      background: #087443;
     }
 
     .empty {
@@ -341,7 +345,8 @@
         <b>Master HPP hanya berasal dari Kalkulator HPP.</b><br>
         Menu Produk hanya digunakan untuk nama produk, satuan, isi per bungkus,
         status, serta harga jual Offline/Online. HPP yang tampil di tabel adalah
-        HPP tersimpan dari Kalkulator HPP dan tidak dapat ditentukan dari menu ini.
+        HPP tersimpan dari Kalkulator HPP dan tidak dapat ditentukan dari menu ini.<br>
+        <b>Produk tidak dihapus dari database.</b> Gunakan <b>Arsipkan</b> untuk menghentikan produk dari penggunaan aktif.
       </div>
 
       <form id="produkForm">
@@ -671,10 +676,17 @@
             ? "status-aktif"
             : "status-nonaktif";
 
+        const isAktif =
+          (produk.statustext || produk.status) === "aktif";
+
         const statusText =
-          (produk.statustext || produk.status) === "aktif"
-            ? "Aktif"
-            : "Nonaktif";
+          isAktif ? "Aktif" : "Nonaktif";
+
+        const statusActionLabel =
+          isAktif ? "Arsipkan" : "Aktifkan";
+
+        const statusActionClass =
+          isAktif ? "archive-btn" : "restore-btn";
 
         tr.innerHTML = `
 
@@ -975,67 +987,53 @@
       });
     }
 
-    async function hapusProduk(id) {
-
-      const yakin =
-        confirm(
-          "Yakin ingin menghapus produk ini?"
-        );
-
-      if (!yakin) {
-        return;
-      }
+    async function toggleStatusProduk(id) {
 
       sembunyikanPesan();
 
-      /*
-        Hapus HPP terlebih dahulu.
-      */
+      const { data: produk, error: loadError } = await supabaseClient
+        .from("produk")
+        .select("id,nama_produk,status,statustext")
+        .eq("id", id)
+        .single();
 
-      const {
-        error: hppError
-      } = await supabaseClient
-        .from("hpp")
-        .delete()
-        .eq("produk_id", id);
-
-      if (hppError) {
-
+      if (loadError || !produk) {
         tampilkanError(
-          "Gagal menghapus HPP: " +
-          hppError.message
+          "Gagal membaca produk: " +
+          (loadError?.message || "Produk tidak ditemukan.")
         );
-
         return;
       }
 
-      /*
-        Kemudian hapus produk.
-      */
+      const currentStatus = produk.statustext || produk.status || "aktif";
+      const nextStatus = currentStatus === "aktif" ? "nonaktif" : "aktif";
+      const actionText = nextStatus === "nonaktif" ? "mengarsipkan" : "mengaktifkan kembali";
 
-      const {
-        error
-      } = await supabaseClient
+      const yakin = confirm(
+        "Yakin ingin " + actionText + ' produk "' + (produk.nama_produk || "-") + '"?\n\nData produk, HPP, resep, penjualan, dan histori tetap dipertahankan."
+      );
+
+      if (!yakin) return;
+
+      const { error } = await supabaseClient
         .from("produk")
-        .delete()
+        .update({ status: nextStatus })
         .eq("id", id);
 
       if (error) {
-
         console.error(error);
-
         tampilkanError(
-          "Gagal menghapus produk: " +
-          error.message
+          "Gagal mengubah status produk: " + error.message
         );
-
         return;
       }
 
       await loadProduk();
 
       tampilkanSuccess(
-        "Produk berhasil dihapus."
+        nextStatus === "aktif"
+          ? "Produk berhasil diaktifkan kembali."
+          : "Produk berhasil diarsipkan. Data tetap aman dan tidak dihapus."
       );
     }
 
