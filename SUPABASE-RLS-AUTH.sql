@@ -1,4 +1,7 @@
--- Live target for Familia Food RLS. Apply after deploying the supabase.js auth bootstrap.
+-- Familia Food: RLS access after Anonymous Auth bootstrap.
+-- This is the exact live target migration: old anon/public ALL policies are
+-- removed, then the application keeps ALL access only for authenticated
+-- anonymous sessions created by supabase.js.
 -- Familia Food: RLS access after Anonymous Auth bootstrap.
 -- Application data is exposed only to the authenticated role.
 -- No business-data rows or table structures are changed.
