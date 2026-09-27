@@ -94,11 +94,12 @@ const settings=await read('app-settings.js');
 assert(settings.includes("from('pengaturan')"),'Global settings must read branding from Supabase');
 assert(settings.includes('FF_SETTINGS'),'Global settings runtime state missing');
 
-assert(ai.includes("mutableSale(row)"),'AI sale mutation guard missing');
-assert(ai.includes("mutableExpense(row)"),'AI expense mutation guard missing');
-assert(ai.includes("pengeluaran_item"),'AI expense detail integration missing');
-assert(ai.includes("cara_bayar||'Tunai')!=='Hutang'"),'AI local finance must exclude opening Hutang');
-assert((ai.match(/function resolveProduct\(q\)\{/g)||[]).length===1,'AI must have exactly one product resolver');
+const aiSafety=await read('ai-agent.html');
+assert(aiSafety.includes("mutableSale(row)"),'AI sale mutation guard missing');
+assert(aiSafety.includes("mutableExpense(row)"),'AI expense mutation guard missing');
+assert(aiSafety.includes("pengeluaran_item"),'AI expense detail integration missing');
+assert(aiSafety.includes("cara_bayar||'Tunai')!=='Hutang'"),'AI local finance must exclude opening Hutang');
+assert((aiSafety.match(/function resolveProduct\(q\)\{/g)||[]).length===1,'AI must have exactly one product resolver');
 
 const bahan=await read('bahan-baku.html');
 assert(bahan.includes('toggleStatusBahan'),'Bahan Baku must use status toggle instead of hard delete');
