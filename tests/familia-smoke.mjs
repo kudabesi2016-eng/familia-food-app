@@ -82,7 +82,7 @@ assert(!/\.from\(["']resep["']\)\s*\.delete\(/.test(resep),'Resep must not hard-
 const operational=await read('operasional.html');
 const hppArchive=await read('hpp.html');
 assert(hppArchive.includes('.eq("status","Aktif")'),'HPP must ignore archived recipe rows');
-assert(hppArchive.includes("status || 'aktif'"),'HPP must ignore archived products');
+assert(hppArchive.includes('statustext || p.status || "aktif"'),'HPP must ignore archived products');
 const debt=await read('hutang-piutang.html');
 assert(!debt.includes('await reconcileDebtFromExpenses();'),'Hutang page must not write/reconcile automatically on load');
 assert(debt.includes('android-shell.css'),'Hutang page missing Android shell css');
