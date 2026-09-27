@@ -130,7 +130,7 @@ assert(penjualan.includes("await loadCustomerMaster();"),'Customer master is not
 assert(penjualan.includes('ffCustomerList'),'POS customer datalist missing');
 assert(penjualan.includes('customerLinksReady'),'POS customer links must be database-backed');
 assert(!penjualan.includes('ff_sale_customers_v1'),'POS must not keep sale↔customer mapping only in localStorage');
-assert(/supabaseClient\\.from\\(['"]penjualan['"]\\)\\.update\\(oldSale\\.data\\)/.test(penjualan),'Editing a sale must rollback when customer mapping fails');
+assert(/supabaseClient\.from\(['"]penjualan['"]\)\.update\(oldSale\.data\)/.test(penjualan),'Editing a sale must rollback when customer mapping fails');
 
 const oldData=await read('data-lama.html');
 assert(oldData.includes('loadSaleCustomers'),'Historical data page must read persistent customer↔sale mapping');
