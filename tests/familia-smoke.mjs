@@ -81,15 +81,17 @@ assert(!/\\.from\\([\"']resep[\"']\\)\\s*\\.delete\\(/.test(resep),'Resep must n
 
 const hpp=await read('hpp.html');
 assert(hpp.includes('.eq("status","Aktif")'),'HPP must ignore archived recipe rows');
+assert(hpp.includes("status || 'aktif'"),'HPP must ignore archived products');
 const debt=await read('hutang-piutang.html');
 assert(!debt.includes('await reconcileDebtFromExpenses();'),'Hutang page must not write/reconcile automatically on load');
 assert(debt.includes('android-shell.css'),'Hutang page missing Android shell css');
 assert(debt.includes('android-shell.js'),'Hutang page missing Android shell js');
 
-assert(operational.includes('cara_bayar:'Tunai''),'Operational new expenses must always be cash');
+assert(operational.includes("cara_bayar:'Tunai'"),'Operational new expenses must always be cash');
 assert(!operational.includes("payMethod==='Hutang'"),'Operational new expense flow must not create Hutang');
 assert(operational.includes('Pencatatan <b>Hutang/Piutang</b> dilakukan hanya di menu Hutang &amp; Piutang'),'Operational debt separation notice missing');
 
+const operationalSafety=operational; // same source; kept explicit for safety assertions
 const settings=await read('app-settings.js');
 assert(settings.includes("from('pengaturan')"),'Global settings must read branding from Supabase');
 assert(settings.includes('FF_SETTINGS'),'Global settings runtime state missing');
@@ -112,6 +114,14 @@ const bahan=await read('bahan-baku.html');
 assert(bahan.includes('toggleStatusBahan'),'Bahan Baku must use status toggle instead of hard delete');
 assert(bahan.includes('Arsipkan'),'Bahan Baku archive action missing');
 assert(!/\\.from\\([\"']bahan_baku[\"']\\)\\s*\\.delete\\(/.test(bahan),'Bahan Baku must not hard-delete material records');
+
+const rekapPage=await read('rekap.html');
+assert(rekapPage.includes("function offlineHpp(m)"),'Rekap page must calculate offline HPP');
+assert(rekapPage.includes("const profit=h.known?v[2]-h.total:null"),'Rekap page profit must equal Uang Bersih minus HPP');
+assert(rekapPage.includes("Profit = Uang Bersih − HPP/modal"),'Rekap page formula notice missing');
+const rekapModule=await read('rekap.js');
+assert(rekapModule.includes('function offlineHpp(m)'), 'Rekap module offline HPP helper missing');
+assert(rekapModule.includes('const profit=h.known ? v[2]-h.total : null') || rekapModule.includes('const profit = modal !== null ? v[2] - modal : null'),'Rekap module profit formula must subtract HPP');
 
 const penjualan=await read('penjualan.html');
 assert(!penjualan.includes("supabaseClient.from('produk').select('id,nama_produk,hpp_offline"),'Forbidden hpp_offline select regression found in penjualan.html');
