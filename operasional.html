@@ -192,7 +192,7 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
       <div class="actions"><button class="btn" id="saveCustomer" type="button">+ Simpan Pelanggan</button></div>
       <div id="customerStatus" class="status"></div>
     </div>
-    <div class="card"><div class="tablewrap"><table><thead><tr><th>Nama</th><th>Telepon</th><th>Alamat</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="customerRows"></tbody></table></div></div>
+    <div class="card"><div class="tablewrap"><table><thead><tr><th>Nama</th><th>Telepon</th><th>Alamat</th><th>Catatan</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="customerRows"></tbody></table></div></div>
   </section>
 
   <section class="panel" data-panel="return">
@@ -246,9 +246,9 @@ function schemaMessage(){
     : '✅ Semua modul Operasional terhubung ke database Supabase. Data Supplier, Pembelian, Pengeluaran, Pelanggan, dan Retur memakai sumber data yang sama dengan Rekap/Dashboard.';
 }
 function supplierName(id){const x=state.supplier.find(s=>String(s.id)===String(id));return x?.nama||'-'}
-function materialOptions(selected=''){return '<option value="">Pilih bahan</option>'+window.bahan.map(b=>'<option value="'+esc(b.id)+'" '+(String(b.id)===String(selected)?'selected':'')+'>'+esc(b.nama_bahan)+'</option>').join('')}
+function materialOptions(selected=''){return '<option value="">Pilih bahan</option>'+window.bahan.filter(b=>String(b.status||'Aktif').toLowerCase()==='aktif').map(b=>'<option value="'+esc(b.id)+'" '+(String(b.id)===String(selected)?'selected':'')+'>'+esc(b.nama_bahan)+'</option>').join('')}
 function renderSupplierSelects(){
-  $('buySupplier').innerHTML='<option value="">Tanpa supplier</option>'+state.supplier.map(s=>'<option value="'+esc(s.id)+'">'+esc(s.nama)+'</option>').join('');
+  $('buySupplier').innerHTML='<option value="">Tanpa supplier</option>'+state.supplier.filter(s=>String(s.status||'Aktif').toLowerCase()==='aktif').map(s=>'<option value="'+esc(s.id)+'">'+esc(s.nama)+'</option>').join('');
 }
 function renderPurchaseLines(){
   const host=$('purchaseLines');
@@ -277,20 +277,25 @@ async function loadMaterials(){
 }
 function resetSupplier(){editSupplierId=null;$('supNama').value='';$('supTelp').value='';$('supAlamat').value='';$('supCatatan').value='';$('saveSupplier').textContent='+ Simpan Supplier'}
 function renderSuppliers(){
-  $('supplierRows').innerHTML=state.supplier.map(s=>'<tr><td>'+esc(s.nama)+'</td><td>'+esc(s.telepon||'-')+'</td><td>'+esc(s.alamat||'-')+'</td><td>'+esc(s.catatan||'-')+'</td><td>'+esc(s.status||'Aktif')+'</td><td><button class="btn light" data-edit-sup="'+esc(s.id)+'">Edit</button> <button class="btn danger" data-del-sup="'+esc(s.id)+'">Hapus</button></td></tr>').join('')||'<tr><td colspan="6" class="empty">Belum ada supplier.</td></tr>';
+  $('supplierRows').innerHTML=state.supplier.map(s=>{
+    const active=String(s.status||'Aktif').toLowerCase()==='aktif';
+    return '<tr><td>'+esc(s.nama)+'</td><td>'+esc(s.telepon||'-')+'</td><td>'+esc(s.alamat||'-')+'</td><td>'+esc(s.catatan||'-')+'</td><td>'+esc(s.status||'Aktif')+'</td><td><button class="btn light" data-edit-sup="'+esc(s.id)+'">Edit</button> <button class="btn '+(active?'danger':'')+'" data-toggle-sup="'+esc(s.id)+'">'+(active?'Arsipkan':'Aktifkan')+'</button></td></tr>';
+  }).join('')||'<tr><td colspan="6" class="empty">Belum ada supplier.</td></tr>';
   document.querySelectorAll('[data-edit-sup]').forEach(b=>b.onclick=()=>editSupplier(b.dataset.editSup));
-  document.querySelectorAll('[data-del-sup]').forEach(b=>b.onclick=()=>deleteSupplier(b.dataset.delSup));
+  document.querySelectorAll('[data-toggle-sup]').forEach(b=>b.onclick=()=>toggleSupplierStatus(b.dataset.toggleSup));
 }
 async function editSupplier(id){
   const s=state.supplier.find(x=>String(x.id)===String(id));if(!s)return;
   editSupplierId=id;$('supNama').value=s.nama||'';$('supTelp').value=s.telepon||'';$('supAlamat').value=s.alamat||'';$('supCatatan').value=s.catatan||'';$('saveSupplier').textContent='Simpan Perubahan';
   document.querySelector('[data-tab="supplier"]').click();window.scrollTo({top:0,behavior:'smooth'});
 }
-async function deleteSupplier(id){
-  if(!confirm('Hapus supplier ini?'))return;
-  if(!state.tables.ff_supplier){$('supplierStatus').textContent='Database Supplier belum aktif. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
-  const r=await supabaseClient.from('ff_supplier').delete().eq('id',id);
-  if(r.error){$('supplierStatus').textContent='Gagal: '+r.error.message;return}
+async function toggleSupplierStatus(id){
+  const row=state.supplier.find(x=>String(x.id)===String(id));if(!row)return;
+  const active=String(row.status||'Aktif').toLowerCase()==='aktif';
+  const next=active?'Nonaktif':'Aktif';
+  if(!confirm('Yakin ingin '+(active?'mengarsipkan':'mengaktifkan kembali')+' supplier "'+(row.nama||'-')+'"?\n\nData supplier dan histori pembelian tetap dipertahankan.'))return;
+  const r=await supabaseClient.from('ff_supplier').update({status:next}).eq('id',id);
+  if(r.error){$('supplierStatus').textContent='Gagal mengubah status supplier: '+r.error.message;return}
   state.supplier=await loadTable('ff_supplier');renderSuppliers();renderSupplierSelects();renderStats();
 }
 async function saveSupplier(){
@@ -414,7 +419,7 @@ async function deletePurchase(id){
 }
 
 function expenseMaterialOptions(selected=''){
-  return '<option value="">Bahan manual / pilih bahan</option>'+((window.bahan||[]).map(b=>'<option value="'+esc(b.id)+'" '+(String(b.id)===String(selected)?'selected':'')+'>'+esc(b.nama_bahan)+' • '+esc(b.satuan||'')+'</option>').join(''));
+  return '<option value="">Bahan manual / pilih bahan</option>'+((window.bahan||[]).filter(b=>String(b.status||'Aktif').toLowerCase()==='aktif').map(b=>'<option value="'+esc(b.id)+'" '+(String(b.id)===String(selected)?'selected':'')+'>'+esc(b.nama_bahan)+' • '+esc(b.satuan||'')+'</option>').join(''));
 }
 function calcExpenseLine(row){
   const qty=Math.max(0,Number(row.querySelector('.exp-line-qty')?.value)||0);
@@ -595,8 +600,11 @@ async function saveExpense(){
   }
 }
 function renderCustomers(){
-  $('customerRows').innerHTML=state.customer.map(c=>'<tr><td>'+esc(c.nama)+'</td><td>'+esc(c.telepon||'-')+'</td><td>'+esc(c.alamat||'-')+'</td><td>'+esc(c.catatan||'-')+'</td><td><button class="btn danger" data-del-cus="'+esc(c.id)+'">Hapus</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pelanggan.</td></tr>';
-  document.querySelectorAll('[data-del-cus]').forEach(b=>b.onclick=()=>deleteCustomer(b.dataset.delCus));
+  $('customerRows').innerHTML=state.customer.map(c=>{
+    const active=String(c.status||'Aktif').toLowerCase()==='aktif';
+    return '<tr><td>'+esc(c.nama)+'</td><td>'+esc(c.telepon||'-')+'</td><td>'+esc(c.alamat||'-')+'</td><td>'+esc(c.catatan||'-')+'</td><td>'+esc(c.status||'Aktif')+'</td><td><button class="btn light" data-toggle-cus="'+esc(c.id)+'">'+(active?'Arsipkan':'Aktifkan')+'</button></td></tr>';
+  }).join('')||'<tr><td colspan="6" class="empty">Belum ada pelanggan.</td></tr>';
+  document.querySelectorAll('[data-toggle-cus]').forEach(b=>b.onclick=()=>toggleCustomerStatus(b.dataset.toggleCus));
 }
 async function saveCustomer(){
   const data={nama:$('cusNama').value.trim(),telepon:$('cusTelp').value.trim(),alamat:$('cusAlamat').value.trim(),catatan:$('cusCatatan').value.trim(),status:'Aktif'};
@@ -607,10 +615,16 @@ async function saveCustomer(){
   state.customer=await loadTable('ff_pelanggan');
   $('cusNama').value='';$('cusTelp').value='';$('cusAlamat').value='';$('cusCatatan').value='';$('customerStatus').textContent='Pelanggan berhasil disimpan.';renderCustomers();renderStats();
 }
-async function deleteCustomer(id){
-  if(!confirm('Hapus pelanggan ini?'))return;
-  if(state.tables.ff_pelanggan){const r=await supabaseClient.from('ff_pelanggan').delete().eq('id',id);if(r.error){$('customerStatus').textContent='Gagal: '+r.error.message;return}}
-  state.customer=state.customer.filter(x=>String(x.id)!==String(id));renderCustomers();renderStats();
+async function toggleCustomerStatus(id){
+  const row=state.customer.find(x=>String(x.id)===String(id));if(!row)return;
+  const active=String(row.status||'Aktif').toLowerCase()==='aktif';
+  const next=active?'Nonaktif':'Aktif';
+  if(!confirm('Yakin ingin '+(active?'mengarsipkan':'mengaktifkan kembali')+' pelanggan "'+(row.nama||'-')+'"?\n\nRiwayat penjualan pelanggan tetap dipertahankan.'))return;
+  if(state.tables.ff_pelanggan){
+    const r=await supabaseClient.from('ff_pelanggan').update({status:next}).eq('id',id);
+    if(r.error){$('customerStatus').textContent='Gagal mengubah status pelanggan: '+r.error.message;return}
+  }
+  state.customer=await loadTable('ff_pelanggan');renderCustomers();renderStats();
 }
 function renderReturnSales(){
   const channel=$('retChannel').value;
