@@ -164,7 +164,7 @@ body.ff-android .ai-card{
   const $=id=>document.getElementById(id);
   const history=[];
   const endpoint=(window.FF_AI_ENDPOINT||'https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai');
-  const data={sales:[],olds:[],expenses:[],products:[],hpps:[],materials:[],recipes:[],purchases:[],purchaseItems:[],suppliers:[],customers:[],returns:[],settings:[]};
+  const data={sales:[],olds:[],expenses:[],expenseItems:[],products:[],hpps:[],materials:[],recipes:[],purchases:[],purchaseItems:[],suppliers:[],customers:[],returns:[],settings:[]};
 
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function norm(v){return String(v??'').trim().toLowerCase().replace(/\s+/g,' ');}
@@ -212,7 +212,7 @@ body.ff-android .ai-card{
 
   async function loadData(){
     const jobs=[
-      ['penjualan','sales'],['data_lama','olds'],['pengeluaran','expenses'],['produk','products'],['hpp','hpps'],
+      ['penjualan','sales'],['data_lama','olds'],['pengeluaran','expenses'],['pengeluaran_item','expenseItems'],['produk','products'],['hpp','hpps'],
       ['bahan_baku','materials'],['resep','recipes'],['ff_pembelian','purchases'],['ff_pembelian_item','purchaseItems'],
       ['ff_supplier','suppliers'],['ff_pelanggan','customers'],['ff_retur_penjualan','returns'],['pengaturan','settings']
     ];
@@ -368,6 +368,21 @@ body.ff-android .ai-card{
     return {tanggal:extractDate(q)||existing?.tanggal||todayLocal(),channel,product,qty:Math.round(qty),harga:Math.round(harga),hppUnit:Math.round(unitHpp),hppTotal,laba,total};
   }
 
+  function mutableSale(row){
+    const source=String(row?.source||'manual');
+    return source==='manual' || source==='online_batch';
+  }
+
+  function expenseDetailRows(expenseId){
+    return data.expenseItems.filter(x=>String(x.pengeluaran_id)===String(expenseId));
+  }
+
+  function mutableExpense(row){
+    if(!row)return false;
+    if(String(row.cara_bayar||'Tunai')==='Hutang')return false;
+    return expenseDetailRows(row.id).length>0;
+  }
+
   function parseSaleAction(q){
     const s=norm(q);
     const isDelete=/\b(hapus|delete|hapuskan|batalkan)\b/.test(s) && /\b(transaksi|penjualan)\b/.test(s);
@@ -381,6 +396,7 @@ body.ff-android .ai-card{
     if(isDelete||isEdit){
       const row=data.sales.find(x=>Number(x.id)===id);
       if(!row)return {intent:true,error:'Transaksi dengan ID '+id+' tidak ditemukan.'};
+      if(!mutableSale(row))return {intent:true,error:'Transaksi ID '+id+' adalah data historis/import atau pencairan dan dilindungi. Agen AI hanya boleh mengubah transaksi baru (manual/online_batch).'};
       if(isDelete)return {intent:true,action:{kind:'delete-sale',id,row}};
 
       const details=parseTransactionDetails(q,row);
@@ -456,6 +472,7 @@ body.ff-android .ai-card{
     if(isDelete||isEdit){
       const row=data.expenses.find(x=>Number(x.id)===id);
       if(!row)return {intent:true,error:'Pengeluaran dengan ID '+id+' tidak ditemukan.'};
+      if(!mutableExpense(row))return {intent:true,error:'Pengeluaran ID '+id+' bukan transaksi pengeluaran baru yang memiliki detail item, atau merupakan Hutang. Untuk menjaga histori, ubah/hapus dari menu transaksi terkait.'};
       if(isDelete)return {intent:true,action:{kind:'delete-expense',id,row}};
 
       const channel=extractChannel(q)||expenseChannelFromNote(row);
@@ -529,38 +546,89 @@ body.ff-android .ai-card{
     if(action.kind==='add-sale'){
       const x=action.details;
       const row={tanggal:x.tanggal,produk_id:x.product.id,qty:x.qty,channel:x.channel,harga:x.harga,total:x.total,hpp:x.hppTotal,laba:x.laba,source:'manual',product_name:x.product.nama_produk,omzet_produk:x.total,modal_hpp:x.hppTotal,profit_online:x.channel==='Online'?x.laba:null};
-      const r=await supabaseClient.from('penjualan').insert([row]).select('id').single();if(r.error)throw r.error;
+      const r=await supabaseClient.from('penjualan').insert([row]).select('id').single();
+      if(r.error)throw r.error;
       data.sales.push({...row,id:r.data.id});
       return '✅ Penjualan tersimpan ke tabel Penjualan. ID transaksi: '+r.data.id+'.';
     }
+
     if(action.kind==='update-sale'){
+      if(!mutableSale(action.row))throw new Error('Transaksi historis/import tidak boleh diubah Agen AI.');
       const x=action.details;
       const row={tanggal:x.tanggal,produk_id:x.product.id,qty:x.qty,channel:x.channel,harga:x.harga,total:x.total,hpp:x.hppTotal,laba:x.laba,source:action.row.source||'manual',product_name:x.product.nama_produk,omzet_produk:x.total,modal_hpp:x.hppTotal,profit_online:x.channel==='Online'?x.laba:null};
       const r=await supabaseClient.from('penjualan').update(row).eq('id',action.id).select('id').single();if(r.error)throw r.error;
       data.sales=data.sales.map(z=>Number(z.id)===Number(action.id)?{...z,...row,id:action.id}:z);
       return '✅ Penjualan ID '+action.id+' berhasil diubah.';
     }
+
     if(action.kind==='delete-sale'){
+      if(!mutableSale(action.row))throw new Error('Transaksi historis/import tidak boleh dihapus Agen AI.');
       const r=await supabaseClient.from('penjualan').delete().eq('id',action.id);if(r.error)throw r.error;
       data.sales=data.sales.filter(z=>Number(z.id)!==Number(action.id));
-      return '✅ Penjualan ID '+action.id+' berhasil dihapus.';
+      return '✅ Penjualan ID '+action.id+' berhasil dihapus. Mapping pelanggan ikut dibersihkan oleh database.';
     }
-    if(action.kind==='add-expense'||action.kind==='update-expense'){
-      const r=action.kind==='add-expense'
-        ? await supabaseClient.from('pengeluaran').insert([action.data]).select('id').single()
-        : await supabaseClient.from('pengeluaran').update(action.data).eq('id',action.id).select('id').single();
+
+    if(action.kind==='add-expense'){
+      const x=action.data;
+      const r=await supabaseClient.from('pengeluaran').insert([{...x,cara_bayar:'Tunai',kategori_hutang:null}]).select('id').single();
       if(r.error)throw r.error;
-      if(action.kind==='add-expense')data.expenses.push({...action.data,id:r.data.id});
-      else data.expenses=data.expenses.map(z=>Number(z.id)===Number(action.id)?{...z,...action.data,id:action.id}:z);
-      return action.kind==='add-expense'?'✅ Pengeluaran tersimpan ke tabel Pengeluaran. ID: '+r.data.id+'.':'✅ Pengeluaran ID '+action.id+' berhasil diubah.';
+      const expenseId=Number(r.data.id);
+      const item={
+        pengeluaran_id:expenseId,
+        bahan_id:null,
+        nama_item:expensePlainNote(x)||'Pengeluaran',
+        qty:1,
+        satuan:'transaksi',
+        harga_satuan:Math.round(Number(x.nominal)||0),
+        subtotal:Math.round(Number(x.nominal)||0),
+        kategori:x.kategori||'Lainnya',
+        catatan:'Dicatat melalui Agen AI'
+      };
+      const ir=await supabaseClient.from('pengeluaran_item').insert([item]);
+      if(ir.error){
+        await supabaseClient.from('pengeluaran').delete().eq('id',expenseId);
+        throw ir.error;
+      }
+      data.expenses.push({...x,cara_bayar:'Tunai',kategori_hutang:null,id:expenseId});
+      data.expenseItems.push({...item,id:ir.data?.[0]?.id,pengeluaran_id:expenseId});
+      return '✅ Pengeluaran tersimpan ke tabel Pengeluaran beserta 1 detail item. ID: '+expenseId+'.';
     }
+
+    if(action.kind==='update-expense'){
+      if(!mutableExpense(action.row))throw new Error('Pengeluaran histori/Hutang tidak boleh diubah Agen AI.');
+      const details=expenseDetailRows(action.id);
+      if(details.length>1)throw new Error('Pengeluaran dengan banyak item harus diedit dari menu Operasional agar detail tidak rusak.');
+      const x={...action.data,cara_bayar:'Tunai',kategori_hutang:null};
+      const r=await supabaseClient.from('pengeluaran').update(x).eq('id',action.id).select('id').single();
+      if(r.error)throw r.error;
+      const base=details[0];
+      if(base){
+        const ir=await supabaseClient.from('pengeluaran_item').update({
+          nama_item:expensePlainNote(x)||base.nama_item||'Pengeluaran',
+          harga_satuan:Math.round(Number(x.nominal)||0),
+          subtotal:Math.round(Number(x.nominal)||0),
+          kategori:x.kategori||base.kategori||'Lainnya',
+          catatan:'Diperbarui melalui Agen AI'
+        }).eq('id',base.id);
+        if(ir.error)throw ir.error;
+      }
+      data.expenses=data.expenses.map(z=>Number(z.id)===Number(action.id)?{...z,...x,id:action.id}:z);
+      data.expenseItems=data.expenseItems.map(z=>String(z.pengeluaran_id)===String(action.id)&&Number(z.id)===Number(base?.id)?{...z,nama_item:expensePlainNote(x)||z.nama_item,harga_satuan:Math.round(Number(x.nominal)||0),subtotal:Math.round(Number(x.nominal)||0),kategori:x.kategori||z.kategori}:z);
+      return '✅ Pengeluaran ID '+action.id+' berhasil diubah dan detail item disinkronkan.';
+    }
+
     if(action.kind==='delete-expense'){
+      if(!mutableExpense(action.row))throw new Error('Pengeluaran histori/Hutang tidak boleh dihapus Agen AI.');
+      const ir=await supabaseClient.from('pengeluaran_item').delete().eq('pengeluaran_id',action.id);
+      if(ir.error)throw ir.error;
       const r=await supabaseClient.from('pengeluaran').delete().eq('id',action.id);if(r.error)throw r.error;
       data.expenses=data.expenses.filter(z=>Number(z.id)!==Number(action.id));
-      return '✅ Pengeluaran ID '+action.id+' berhasil dihapus.';
+      data.expenseItems=data.expenseItems.filter(z=>String(z.pengeluaran_id)!==String(action.id));
+      return '✅ Pengeluaran ID '+action.id+' berhasil dihapus beserta detail itemnya.';
     }
     throw new Error('Jenis aksi tidak dikenal.');
   }
+
 
   async function confirmPending(ok,dom){
     if(!pendingAction)return;
@@ -596,7 +664,7 @@ body.ff-android .ai-card{
   }
 
   function calcMonth(m){
-    const oldOff=data.olds.filter(x=>monthOf(x.periode)===m),newOff=data.sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m),ex=data.expenses.filter(x=>expenseMonth(x)===m);
+    const oldOff=data.olds.filter(x=>monthOf(x.periode)===m),newOff=data.sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m),ex=data.expenses.filter(x=>expenseMonth(x)===m&&String(x.cara_bayar||'Tunai')!=='Hutang');
     let offlineRev=oldOff.reduce((a,x)=>a+Number(x.nominal||x.omzet||0),0),offlineModal=0,offlineHppKnown=true;
     for(const x of oldOff){const qty=Number(x.catatan||0),h=resolveHpp(x.jenis);if(qty>0&&!h)offlineHppKnown=false;if(h)offlineModal+=qty*h;}
     for(const x of newOff){const qty=Number(x.qty||0);offlineRev+=Number(x.omzet_produk??qty*Number(x.harga||0));const h=x.modal_hpp!=null?Number(x.modal_hpp):(x.hpp!=null?Number(x.hpp):(resolveHpp(x.product_name)||0)*qty);const known=x.modal_hpp!=null||x.hpp!=null||!!resolveHpp(x.product_name);if(qty>0&&!known)offlineHppKnown=false;offlineModal+=h;}
