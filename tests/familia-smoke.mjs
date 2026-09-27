@@ -188,6 +188,16 @@ for(const forbiddenHpp of [
   assert(!hpp.includes(forbiddenHpp),'HPP calculator must not hardcode HPP/price: '+forbiddenHpp);
 }
 
+const supabaseConfig=await read('supabase.js');
+assert(supabaseConfig.includes('signInAnonymously'),'Supabase app bootstrap must create an anonymous authenticated session');
+assert(supabaseConfig.includes('FF_AUTH_READY'),'Supabase auth readiness promise missing');
+assert(supabaseConfig.includes('authorizedFetch'),'Supabase data fetches must wait for authenticated session');
+
+const rls=await read('SUPABASE-RLS-AUTH.sql');
+for(const table of ['produk','bahan_baku','resep','hpp','penjualan','data_lama','pengeluaran','pengeluaran_item','pengaturan','ff_hutang_piutang','ff_hutang_piutang_bayar']){
+  assert(new RegExp('on public\\.'+table+' for all to authenticated','i').test(rls),'Authenticated RLS policy missing for '+table);
+}
+
 const sql=await read('SUPABASE-EXPANSION.sql');
 assert(sql.includes('ff_penjualan_pelanggan'),'Customer↔sale mapping table missing from expansion SQL');
 const forbidden = ['stok','mutasi_stok','multi_outlet','user_role','pembayaran'];
