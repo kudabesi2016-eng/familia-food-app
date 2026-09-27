@@ -667,7 +667,7 @@ function renderMonthly(){
 
       const offline = $('channel').value === 'Offline';
       const profit = modal !== null ? v[0] - modal : null;
-      const marginBase = Number(v[2] || v[0]);
+      const marginBase = offline ? Number(v[0]) : Number(v[2]);
       const margin = profit !== null && marginBase > 0 ? (profit / marginBase) * 100 : 0;
 
 
