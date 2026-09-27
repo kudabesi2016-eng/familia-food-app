@@ -79,9 +79,9 @@ assert(resep.includes('toggleStatusResep'),'Resep must archive/activate instead 
 assert(resep.includes('data-action="toggle-resip"'),'Resep archive action marker missing');
 assert(!/\.from\(["']resep["']\)\s*\.delete\(/.test(resep),'Resep must not hard-delete recipe rows');
 
-const hpp=await read('hpp.html');
-assert(hpp.includes('.eq("status","Aktif")'),'HPP must ignore archived recipe rows');
-assert(hpp.includes("status || 'aktif'"),'HPP must ignore archived products');
+const hppArchive=await read('hpp.html');
+assert(hppArchive.includes('.eq("status","Aktif")'),'HPP must ignore archived recipe rows');
+assert(hppArchive.includes("status || 'aktif'"),'HPP must ignore archived products');
 const debt=await read('hutang-piutang.html');
 assert(!debt.includes('await reconcileDebtFromExpenses();'),'Hutang page must not write/reconcile automatically on load');
 assert(debt.includes('android-shell.css'),'Hutang page missing Android shell css');
