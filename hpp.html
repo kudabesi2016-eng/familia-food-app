@@ -677,7 +677,9 @@ async function loadProduk(){
     return;
   }
 
-  produkData = data || [];
+  produkData = (data || []).filter(function(p){
+    return String(p.statustext || p.status || "aktif").toLowerCase() === "aktif";
+  });
   const select = document.getElementById("produkSelect");
   select.innerHTML = '<option value="">Pilih Produk</option>';
 
