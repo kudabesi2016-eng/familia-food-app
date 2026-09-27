@@ -387,7 +387,7 @@ function updateChannelUI(){
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran ditampilkan terpisah.<br><b>Hasil Bersih Offline = Pemasukan − Pengeluaran.</b><br>HPP Produk Keluar ditampilkan terpisah agar biaya tidak dihitung dua kali.<br>Margin = Hasil Bersih ÷ Pemasukan × 100%.'
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran operasional ditampilkan terpisah.<br><b>Profit Offline = Uang Bersih/Pemasukan − HPP.</b><br>Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur.<br>Margin = Profit ÷ Uang Bersih × 100%.'
     : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
 }
 
@@ -436,8 +436,8 @@ function renderCards(){
   $('net').textContent=money(v[2]);
 
   if(offline){
-    const profit=v[2];
-    const margin=v[0]>0 ? (profit/v[0])*100 : null;
+    const profit=h.known ? v[0]-h.total : null;
+    const margin=v[0]>0 && profit!==null ? (profit/v[0])*100 : null;
     $('hpp').textContent=h.known?money(h.total):'—';
     $('profit').textContent=profit===null?'—':money(profit);
     if(marginEl)marginEl.textContent=margin===null?'—':margin.toFixed(2)+'%';
@@ -666,8 +666,8 @@ function renderMonthly(){
 
 
       const offline = $('channel').value === 'Offline';
-      const profit = offline ? v[2] : (modal !== null ? v[2] - modal : null);
-      const marginBase = Number(v[0]);
+      const profit = modal !== null ? v[0] - modal : null;
+      const marginBase = Number(v[2] || v[0]);
       const margin = profit !== null && marginBase > 0 ? (profit / marginBase) * 100 : 0;
 
 
