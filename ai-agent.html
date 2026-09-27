@@ -229,38 +229,7 @@ body.ff-android .ai-card{
     return unit>0?unit:null;
   }
 
-  function resolveProduct(q){
-    const raw=norm(q);
-    const cleaned=raw
-      .replace(/\b(masukkan|input|catat|simpan|transaksi|tambah|jual|penjualan|offline|online|tiktok|sebanyak|qty|jumlah)\b/g,' ')
-      .replace(/\bisi\b/g,' ')
-      .replace(/\b(bungkus|pack|paket)\b/g,' ')
-      .replace(/\s+/g,' ')
-      .trim();
-
-    const exact=data.products.find(p=>{
-      const n=norm(p.nama_produk).replace(/\bisi\b/g,' ').replace(/\s+/g,' ').trim();
-      return n && new RegExp('(^|\\\\s)'+n.replace(/[.*+?^{}()|[\\]\\\\]/g,'\\\\$&')+'($|\\\\s)','i').test(cleaned);
-    });
-    if(exact)return exact;
-
-    // Khusus produk Naget: izinkan kata "isi", channel, dan kata pengantar
-    // berada di posisi mana pun selama varian angkanya jelas.
-    const nagetMatch=raw.match(/\bnaget\b(?:\s+(?:isi)?)?\s*(10|12|20|25|30|40|50)\b/i);
-    if(nagetMatch){
-      const variant=nagetMatch[1];
-      const target=data.products.filter(function(p){
-      return String(p.statustext || p.status || 'aktif').toLowerCase() === 'aktif';
-    }).find(p=>{
-        const n=norm(p.nama_produk);
-        return n===('naget '+variant) || (variant==='25' && n==='naget 25+saus');
-      });
-      if(target)return target;
-    }
-
-    return null;
-  }
-  function parseDate(q){
+    function parseDate(q){
     const m=String(q).match(/(?:tanggal|tgl)\s*(\d{1,2})[\/-](\d{1,2})(?:[\/-](20\d{2}))?/i);
     if(!m)return todayLocal();
     const y=m[3]||String(new Date().getFullYear()),d=String(Number(m[1])).padStart(2,'0'),mo=String(Number(m[2])).padStart(2,'0');
@@ -282,10 +251,22 @@ body.ff-android .ai-card{
     const list=data.products.filter(function(p){
       return String(p.statustext || p.status || 'aktif').toLowerCase() === 'aktif';
     }).slice().sort((a,b)=>cleanProductKey(b.nama_produk).length-cleanProductKey(a.nama_produk).length);
-    return list.find(p=>{
+    const exact = list.find(p=>{
       const pk=cleanProductKey(p.nama_produk);
       return pk && key.includes(pk);
-    })||null;
+    });
+    if(exact)return exact;
+
+    const nagetMatch=norm(q).match(/\bnaget\b(?:\s+(?:isi)?)?\s*(10|12|20|25|30|40|50)\b/i);
+    if(nagetMatch){
+      const variant=nagetMatch[1];
+      return list.find(p=>{
+        const n=norm(p.nama_produk);
+        return n===('naget '+variant) || (variant==='25' && n==='naget 25+saus');
+      }) || null;
+    }
+
+    return null;
   }
 
   function extractChannel(q){
