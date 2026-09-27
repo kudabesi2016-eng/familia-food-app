@@ -122,7 +122,7 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
       <div id="purchaseStatus" class="status"></div>
     </div>
     <div class="card">
-      <div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Supplier</th><th>Total</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="purchaseRows"></tbody></table></div>
+      <div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Supplier</th><th>Total</th><th>Catatan</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="purchaseRows"></tbody></table></div>
     </div>
   </section>
 
@@ -308,8 +308,11 @@ async function saveSupplier(){
   resetSupplier();renderSuppliers();renderSupplierSelects();$('supplierStatus').textContent='Supplier berhasil disimpan.';renderStats();
 }
 function renderPurchases(){
-  $('purchaseRows').innerHTML=state.purchase.slice().sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))).map(p=>'<tr><td>'+esc(fmtDate(p.tanggal))+'</td><td>'+esc(supplierName(p.supplier_id))+'</td><td>'+rupiah(p.total)+'</td><td>'+esc(p.catatan||'-')+'</td><td><button class="btn danger" data-del-buy="'+esc(p.id)+'">Hapus</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">Belum ada pembelian.</td></tr>';
-  document.querySelectorAll('[data-del-buy]').forEach(b=>b.onclick=()=>deletePurchase(b.dataset.delBuy));
+  $('purchaseRows').innerHTML=state.purchase.slice().sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))).map(p=>{
+    const active=String(p.status||'Aktif').toLowerCase()==='aktif';
+    return '<tr><td>'+esc(fmtDate(p.tanggal))+'</td><td>'+esc(supplierName(p.supplier_id))+'</td><td>'+rupiah(p.total)+'</td><td>'+esc(p.catatan||'-')+'</td><td>'+esc(p.status||'Aktif')+'</td><td><button class="btn '+(active?'danger':'light')+'" data-del-buy="'+esc(p.id)+'">'+(active?'Batalkan':'Dibatalkan')+'</button></td></tr>';
+  }).join('')||'<tr><td colspan="6" class="empty">Belum ada pembelian.</td></tr>';
+  document.querySelectorAll('[data-del-buy]').forEach(b=>b.onclick=()=>cancelPurchase(b.dataset.delBuy));
 }
 async function syncLastPurchasePrices(rows){
   const warnings=[];
@@ -332,7 +335,7 @@ async function savePurchase(){
   if(!rows.length){$('purchaseStatus').textContent='Minimal satu bahan harus dipilih.';return}
   const total=rows.reduce((a,x)=>a+x.subtotal,0);
   if(state.tables.ff_pembelian && state.tables.ff_pembelian_item){
-    const h=await supabaseClient.from('ff_pembelian').insert([{tanggal,supplier_id:supplierId?Number(supplierId):null,total,catatan}]).select().single();
+    const h=await supabaseClient.from('ff_pembelian').insert([{tanggal,supplier_id:supplierId?Number(supplierId):null,total,catatan,status:'Aktif'}]).select().single();
     if(h.error){$('purchaseStatus').textContent='Gagal header pembelian: '+h.error.message;return}
     const items=rows.map(x=>({pembelian_id:h.data.id,bahan_id:x.bahan_id?Number(x.bahan_id):null,nama_bahan:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).nama_bahan||'-',qty:x.qty,satuan:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).satuan||null,harga_beli:x.harga_beli,subtotal:x.subtotal}));
     const d=await supabaseClient.from('ff_pembelian_item').insert(items);
@@ -364,7 +367,11 @@ async function savePurchase(){
 async function refreshMaterialLastPrices(bahanIds){
   const ids=[...new Set((bahanIds||[]).map(Number).filter(Boolean))];
   if(!ids.length)return [];
-  const items=await supabaseClient.from('ff_pembelian_item').select('bahan_id,harga_beli,pembelian_id').in('bahan_id',ids);
+  const purchases=await supabaseClient.from('ff_pembelian').select('id,status').eq('status','Aktif');
+  if(purchases.error)throw purchases.error;
+  const activeIds=(purchases.data||[]).map(x=>Number(x.id)).filter(Boolean);
+  if(!activeIds.length)return [];
+  const items=await supabaseClient.from('ff_pembelian_item').select('bahan_id,harga_beli,pembelian_id').in('bahan_id',ids).in('pembelian_id',activeIds);
   if(items.error)throw items.error;
   const latest=new Map();
   for(const x of (items.data||[])){
@@ -384,35 +391,36 @@ async function refreshMaterialLastPrices(bahanIds){
   }
   return warnings;
 }
-async function deletePurchase(id){
+async function cancelPurchase(id){
   if(!state.tables.ff_pembelian || !state.tables.ff_pembelian_item){$('purchaseStatus').textContent='Database Pembelian belum aktif lengkap.';return}
-  if(!confirm('Hapus pembelian ini?'))return;
+  const purchase=state.purchase.find(x=>String(x.id)===String(id));
+  if(!purchase)return;
+  if(String(purchase.status||'Aktif').toLowerCase()!=='aktif'){
+    $('purchaseStatus').textContent='Pembelian ini sudah dibatalkan.';
+    return;
+  }
+  if(!confirm('Batalkan pembelian ini?\n\nData pembelian tetap disimpan sebagai histori dan tidak dihapus.'))return;
+
   const oldItems=await supabaseClient.from('ff_pembelian_item').select('bahan_id').eq('pembelian_id',id);
   if(oldItems.error){$('purchaseStatus').textContent='Gagal membaca item pembelian: '+oldItems.error.message;return}
   const bahanIds=[...new Set((oldItems.data||[]).map(x=>Number(x.bahan_id)).filter(Boolean))];
-  const previous={};
-  for(const idBahan of bahanIds){
-    const b=window.bahan.find(x=>String(x.id)===String(idBahan));
-    if(b)previous[String(idBahan)]=money(b.harga_beli);
-  }
-  const r=await supabaseClient.from('ff_pembelian').delete().eq('id',id);
-  if(r.error){$('purchaseStatus').textContent='Gagal: '+r.error.message;return}
+
+  const r=await supabaseClient.from('ff_pembelian').update({status:'Batal'}).eq('id',id);
+  if(r.error){$('purchaseStatus').textContent='Gagal membatalkan pembelian: '+r.error.message;return}
+
   let warnings=[];
   try{
     warnings=await refreshMaterialLastPrices(bahanIds);
   }catch(e){
     warnings=['Sinkronisasi harga bahan gagal: '+(e.message||e)];
   }
+
   if(warnings.length){
-    for(const idBahan of bahanIds){
-      if(previous[String(idBahan)]==null)continue;
-      const rr=await supabaseClient.from('bahan_baku').update({harga_beli:previous[String(idBahan)]}).eq('id',idBahan);
-      if(rr.error)console.warn('Gagal memulihkan harga bahan',idBahan,rr.error);
-    }
-    $('purchaseStatus').textContent='Pembelian sudah dihapus, tetapi sinkronisasi harga bahan gagal. Harga sebelumnya dipertahankan; cek Bahan Baku.';
+    $('purchaseStatus').textContent='Pembelian dibatalkan, tetapi sinkronisasi harga bahan perlu dicek: '+warnings.join(', ')+'.';
   }else{
-    $('purchaseStatus').textContent='Pembelian dihapus dan harga bahan mengikuti pembelian terakhir yang masih ada.';
+    $('purchaseStatus').textContent='Pembelian dibatalkan. Harga bahan mengikuti pembelian aktif terakhir.';
   }
+
   state.purchase=await loadTable('ff_pembelian');
   await loadMaterials();
   renderPurchases();renderStats();
