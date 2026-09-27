@@ -70,7 +70,8 @@ const produk=await read('produk.html');
 assert(produk.includes('toggleStatusProduk'),'Produk must use status toggle instead of hard delete');
 assert(produk.includes('Arsipkan'),'Produk archive action missing');
 assert(produk.includes('Data produk, HPP, resep, penjualan, dan histori tetap dipertahankan'),'Product archive warning missing');
-assert(!produk.includes('.from("hpp")\\n        .delete()') && !produk.includes('.from("produk")\\n        .delete()'),'Produk must not hard-delete product/HPP records');
+assert(!/\\.from\\(["']hpp["']\\)\\s*\\.delete\\(/.test(produk),'Produk must not hard-delete HPP records');
+assert(!/\\.from\\(["']produk["']\\)\\s*\\.delete\\(/.test(produk),'Produk must not hard-delete product records');
 
 const penjualan=await read('penjualan.html');
 assert(!penjualan.includes("supabaseClient.from('produk').select('id,nama_produk,hpp_offline"),'Forbidden hpp_offline select regression found in penjualan.html');
