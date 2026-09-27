@@ -70,14 +70,14 @@ const produk=await read('produk.html');
 assert(produk.includes('toggleStatusProduk'),'Produk must use status toggle instead of hard delete');
 assert(produk.includes('Arsipkan'),'Produk archive action missing');
 assert(produk.includes('Data produk, HPP, resep, penjualan, dan histori tetap dipertahankan'),'Product archive warning missing');
-assert(!/\\.from\\(["']hpp["']\\)\\s*\\.delete\\(/.test(produk),'Produk must not hard-delete HPP records');
-assert(!/\\.from\\(["']produk["']\\)\\s*\\.delete\\(/.test(produk),'Produk must not hard-delete product records');
+assert(!/\.from\(["']hpp["']\)\s*\.delete\(/.test(produk),'Produk must not hard-delete HPP records');
+assert(!/\.from\(["']produk["']\)\s*\.delete\(/.test(produk),'Produk must not hard-delete product records');
 
 const resep=await read('resep.html');
 assert(resep.includes('status-aktif'),'Resep status support missing');
 assert(resep.includes('toggleStatusResep'),'Resep must archive/activate instead of hard delete');
 assert(resep.includes('data-action="toggle-resip"'),'Resep archive action marker missing');
-assert(!/\\.from\\([\"']resep[\"']\\)\\s*\\.delete\\(/.test(resep),'Resep must not hard-delete recipe rows');
+assert(!/\.from\(["']resep["']\)\s*\.delete\(/.test(resep),'Resep must not hard-delete recipe rows');
 
 const hpp=await read('hpp.html');
 assert(hpp.includes('.eq("status","Aktif")'),'HPP must ignore archived recipe rows');
@@ -105,15 +105,15 @@ assert((aiSafety.match(/function resolveProduct\(q\)\{/g)||[]).length===1,'AI mu
 
 assert(operationalSafety.includes('toggleSupplierStatus'),'Supplier must archive/activate instead of hard delete');
 assert(operationalSafety.includes('toggleCustomerStatus'),'Customer must archive/activate instead of hard delete');
-assert(!/\\.from\\([\"']ff_supplier[\"']\\)\\s*\\.delete\\(/.test(operationalSafety),'Supplier must not hard-delete master records');
-assert(!/\\.from\\([\"']ff_pelanggan[\"']\\)\\s*\\.delete\\(/.test(operationalSafety),'Customer must not hard-delete master records');
+assert(!/\.from\(["']ff_supplier["']\)\s*\.delete\(/.test(operationalSafety),'Supplier must not hard-delete master records');
+assert(!/\.from\(["']ff_pelanggan["']\)\s*\.delete\(/.test(operationalSafety),'Customer must not hard-delete master records');
 assert(operationalSafety.includes('cancelPurchase'),'Purchase history must be cancelled, not deleted');
 assert(operationalSafety.includes("status:'Aktif'"),'New purchases must have active status');
 
 const bahan=await read('bahan-baku.html');
 assert(bahan.includes('toggleStatusBahan'),'Bahan Baku must use status toggle instead of hard delete');
 assert(bahan.includes('Arsipkan'),'Bahan Baku archive action missing');
-assert(!/\\.from\\([\"']bahan_baku[\"']\\)\\s*\\.delete\\(/.test(bahan),'Bahan Baku must not hard-delete material records');
+assert(!/\.from\(["']bahan_baku["']\)\s*\.delete\(/.test(bahan),'Bahan Baku must not hard-delete material records');
 
 const rekapPage=await read('rekap.html');
 assert(rekapPage.includes("function offlineHpp(m)"),'Rekap page must calculate offline HPP');
