@@ -79,6 +79,7 @@ assert(resep.includes('toggleStatusResep'),'Resep must archive/activate instead 
 assert(resep.includes('data-action="toggle-resip"'),'Resep archive action marker missing');
 assert(!/\.from\(["']resep["']\)\s*\.delete\(/.test(resep),'Resep must not hard-delete recipe rows');
 
+const operational=await read('operasional.html');
 const hppArchive=await read('hpp.html');
 assert(hppArchive.includes('.eq("status","Aktif")'),'HPP must ignore archived recipe rows');
 assert(hppArchive.includes("status || 'aktif'"),'HPP must ignore archived products');
@@ -91,7 +92,7 @@ assert(operational.includes("cara_bayar:'Tunai'"),'Operational new expenses must
 assert(!operational.includes("payMethod==='Hutang'"),'Operational new expense flow must not create Hutang');
 assert(operational.includes('Pencatatan <b>Hutang/Piutang</b> dilakukan hanya di menu Hutang &amp; Piutang'),'Operational debt separation notice missing');
 
-const operationalSafety=operational; // same source; kept explicit for safety assertions
+const operationalSafety=operational;
 const settings=await read('app-settings.js');
 assert(settings.includes("from('pengaturan')"),'Global settings must read branding from Supabase');
 assert(settings.includes('FF_SETTINGS'),'Global settings runtime state missing');
@@ -137,7 +138,6 @@ const index=await read('index.html');
 assert(index.includes('const validExpenseRows='),'Dashboard expense validation missing');
 assert(index.indexOf('const validExpenseRows=') < index.indexOf('const opExpense='),'Dashboard operational expense order is invalid');
 
-const operational=await read('operasional.html');
 assert(operational.includes("update({harga_beli:price})"),'Purchase does not sync latest raw-material price');
 assert(operational.includes("ff_pembelian_item"),'Purchase item table integration missing');
 assert(operational.includes("ff_retur_penjualan"),'Return table integration missing');
