@@ -400,6 +400,7 @@ td{
           <th>Harga Saat Ini</th>
           <th>Jumlah Dipakai</th>
           <th>Biaya Bahan</th>
+          <th>Status</th>
           <th>Aksi</th>
         </tr>
       </thead>
@@ -407,7 +408,7 @@ td{
       <tbody id="tabelResep">
 
         <tr>
-          <td colspan="6" class="empty">
+          <td colspan="7" class="empty">
             Pilih produk terlebih dahulu.
           </td>
         </tr>
@@ -708,7 +709,7 @@ async function loadBahan(){
   select.innerHTML =
     '<option value="">Pilih bahan</option>';
 
-  daftarBahan.forEach(function(bahan){
+  daftarBahan.filter(function(bahan){ return String(bahan.status || "Aktif").toLowerCase() === "aktif"; }).forEach(function(bahan){
 
     const option =
       document.createElement("option");
@@ -932,6 +933,13 @@ async function tampilkanResep(){
 
       <td>
 
+        <span class="status ${String(resep.status || "Aktif").toLowerCase() === "aktif" ? "status-aktif" : "status-nonaktif"}">
+          ${escapeHtml(resep.status || "Aktif")}
+        </span>
+
+      </td>
+
+      <td>
         <button
           type="button"
           class="btn-edit"
@@ -944,10 +952,10 @@ async function tampilkanResep(){
         <button
           type="button"
           class="btn-danger"
-          data-action="hapus-resip"
+          data-action="toggle-resip"
           data-id="${resep.id}"
         >
-          Hapus
+          ${String(resep.status || "Aktif").toLowerCase() === "aktif" ? "Arsipkan" : "Aktifkan"}
         </button>
 
       </td>
@@ -1022,7 +1030,8 @@ function hitungTotal(){
     daftarResep.filter(function(r){
 
       return Number(r.produk_id) ===
-        Number(produkId);
+        Number(produkId) &&
+        String(r.status || "Aktif").toLowerCase() === "aktif";
 
     });
 
@@ -1422,7 +1431,12 @@ document.getElementById("formResep")
           jumlah,
 
         biaya_bahan:
-          biaya
+          biaya,
+
+        status:
+          modeEdit
+            ? (daftarResep.find(function(r){ return Number(r.id) === Number(id); })?.status || "Aktif")
+            : "Aktif"
 
       };
 
@@ -1542,56 +1556,56 @@ async function editResep(id){
    HAPUS RESEP
 ========================= */
 
-async function hapusResep(id){
+async function toggleStatusResep(id){
 
-  const yakin =
-    confirm(
-      "Hapus bahan ini dari resep?"
-    );
+  const resep =
+    daftarResep.find(function(r){
+      return Number(r.id) === Number(id);
+    });
 
-
-  if(!yakin){
+  if(!resep){
+    tampilPesan("Data resep tidak ditemukan.","error");
     return;
   }
 
+  const currentStatus = String(resep.status || "Aktif");
+  const nextStatus = currentStatus.toLowerCase() === "aktif" ? "Arsip" : "Aktif";
+  const actionText = nextStatus === "Arsip" ? "mengarsipkan" : "mengaktifkan kembali";
 
-  const { error } =
-    await supabaseClient
-      .from("resep")
-      .delete()
-      .eq("id", id);
-
-
-  if(error){
-
-    console.error(error);
-
-    tampilPesan(
-      "Gagal menghapus resep: " +
-      error.message,
-      "error"
-    );
-
-    return;
-  }
-
-
-  tampilPesan(
-    "Bahan berhasil dihapus dari resep.",
-    "success"
+  const bahan = daftarBahan.find(function(b){ return Number(b.id) === Number(resep.bahan_id); });
+  const yakin = confirm(
+    'Yakin ingin ' + actionText + ' bahan "' +
+    String((bahan || {}).nama_bahan || "-") +
+    '" pada resep?\n\nData resep tidak dihapus dan histori HPP tetap aman.'
   );
 
+  if(!yakin) return;
+
+  const { error } = await supabaseClient
+    .from("resep")
+    .update({status: nextStatus})
+    .eq("id", id);
+
+  if(error){
+    console.error(error);
+    tampilPesan("Gagal mengubah status resep: " + error.message,"error");
+    return;
+  }
+
+  tampilPesan(
+    nextStatus === "Aktif"
+      ? "Bahan berhasil diaktifkan kembali pada resep."
+      : "Bahan resep berhasil diarsipkan. Data tidak dihapus."
+    ,"success");
 
   await loadResep();
-
   await tampilkanResep();
-
 }
 
 
 /* =========================
    AKSI TOMBOL RESEP
-   Delegated click handler agar tombol Edit/Hapus
+   Delegated click handler agar tombol Edit/Arsipkan
    tetap bekerja walaupun baris tabel dibuat dinamis.
 ========================= */
 
@@ -1607,14 +1621,14 @@ document.getElementById("tabelResep").addEventListener("click", function(e){
     editResep(id);
   }
 
-  if(tombol.dataset.action === "hapus-resip"){
-    hapusResep(id);
+  if(tombol.dataset.action === "toggle-resip"){
+    toggleStatusResep(id);
   }
 });
 
 // Pastikan fungsi juga tersedia pada window untuk kompatibilitas lama.
 window.editResep = editResep;
-window.hapusResep = hapusResep;
+window.toggleStatusResep = toggleStatusResep;
 
 
 /* =========================
