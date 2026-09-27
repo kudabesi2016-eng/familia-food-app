@@ -355,20 +355,50 @@ function onlineHpp(m){
   }
 }
 
+function normalizeProductName(v){
+  return String(v||'').toLowerCase()
+    .replace(/\bisi\b/g,' ')
+    .replace(/\bpcs\b/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function resolveHppByProductName(name){
+  let key=normalizeProductName(name);
+  if(key==='cireng crispy')key='cireng biasa';
+  if(/^cireng\s+\d+$/.test(key))key='cireng isi';
+  if(key==='cibay 10')key='cibay';
+  const p=(products||[]).find(x=>normalizeProductName(x.nama_produk)===key);
+  if(!p)return null;
+  const h=(hpps||[]).find(x=>String(x.produk_id)===String(p.id));
+  const unit=Number(h?.hpp_unit||0);
+  return unit>0?unit:null;
+}
 function offlineHpp(m){
   try{
-    const rows=FF.productSummary(m,'Offline',data())||[];
-    let total=0;
-    for(const x of rows){
-      if(x.hppKnown===false)return {known:false,total:0};
-      if(x.hpp==null)return {known:false,total:0};
-      total+=Math.trunc(Number(x.hpp)||0);
-    }
-    return {known:true,total:Math.trunc(total)};
+    let total=0,known=true;
+    (olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m).forEach(x=>{
+      const qty=Math.max(0,Number(x.catatan||0));
+      const unit=resolveHppByProductName(x.jenis);
+      if(qty>0&&!unit)known=false;
+      if(unit)total+=Math.round(qty*unit);
+    });
+    (sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m).forEach(x=>{
+      const qty=Math.max(0,Number(x.qty||0));
+      let unit=null;
+      if(x.produk_id){
+        const h=(hpps||[]).find(z=>String(z.produk_id)===String(x.produk_id));
+        unit=Number(h?.hpp_unit||0)>0?Number(h.hpp_unit):null;
+      }
+      if(!unit)unit=resolveHppByProductName(x.product_name);
+      if(qty>0&&!unit)known=false;
+      if(unit)total+=Math.round(qty*unit);
+    });
+    return {known,total};
   }catch(e){
     return {known:false,total:0};
   }
 }
+
 
 function finance(m){
   return $('channel').value==='Offline' ? offlineFinance(m) : onlineFinance(m);
@@ -436,8 +466,8 @@ function renderCards(){
   $('net').textContent=money(v[2]);
 
   if(offline){
-    const profit=h.known ? v[0]-h.total : null;
-    const margin=v[0]>0 && profit!==null ? (profit/v[0])*100 : null;
+    const profit=h.known ? v[2]-h.total : null;
+    const margin=v[2]>0 && profit!==null ? (profit/v[2])*100 : null;
     $('hpp').textContent=h.known?money(h.total):'—';
     $('profit').textContent=profit===null?'—':money(profit);
     if(marginEl)marginEl.textContent=margin===null?'—':margin.toFixed(2)+'%';
@@ -666,8 +696,8 @@ function renderMonthly(){
 
 
       const offline = $('channel').value === 'Offline';
-      const profit = modal !== null ? v[0] - modal : null;
-      const marginBase = offline ? Number(v[0]) : Number(v[2]);
+      const profit = modal !== null ? v[2] - modal : null;
+      const marginBase = Number(v[2]);
       const margin = profit !== null && marginBase > 0 ? (profit / marginBase) * 100 : 0;
 
 
