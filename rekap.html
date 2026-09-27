@@ -623,6 +623,7 @@ td{
       function resolveHppByName(name){
         let key=normalizeProductName(name);
         if(key==='cireng crispy')key='cireng biasa';
+        if(/^cireng\s+\d+$/.test(key))key='cireng isi';
         if(key==='cibay 10')key='cibay';
         const p=productIdsByName.get(key) || productIdsByName.get(key.replace(/^naget\s+/,'naget '));
         if(!p)return null;
