@@ -660,11 +660,6 @@ async function init(){
 }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $('retChannel').onchange=renderReturnSales;
-$('expPayMethod').onchange=()=>{
-  const debt=$('expPayMethod').value==='Hutang';
-  $('expDebtCategory').disabled=!debt;$('expParty').disabled=!debt;$('expDueDate').disabled=!debt;
-  if(!debt){$('expParty').value='';$('expDueDate').value='';}
-};
 $('saveSupplier').onclick=saveSupplier;$('cancelSupplier').onclick=resetSupplier;$('addPurchaseLine').onclick=()=>addPurchaseLine();$('savePurchase').onclick=savePurchase;$('saveExpense').onclick=saveExpense;$('saveCustomer').onclick=saveCustomer;$('saveReturn').onclick=saveReturn;
 $('expenseMasterCategory').onchange=()=>{resetExpenseItemMasterForm();renderExpenseItemMaster()};$('expenseMasterSave').onclick=saveExpenseItemMaster;
 document.addEventListener('click',async e=>{
