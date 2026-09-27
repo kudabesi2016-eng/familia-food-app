@@ -736,10 +736,10 @@
               </button>
 
               <button
-                class="delete-btn"
-                onclick="hapusProduk(${produk.id})"
+                class="${statusActionClass}"
+                onclick="toggleStatusProduk(${produk.id})"
               >
-                Hapus
+                ${statusActionLabel}
               </button>
 
             </div>
@@ -1010,7 +1010,7 @@
       const actionText = nextStatus === "nonaktif" ? "mengarsipkan" : "mengaktifkan kembali";
 
       const yakin = confirm(
-        "Yakin ingin " + actionText + ' produk "' + (produk.nama_produk || "-") + '"?\n\nData produk, HPP, resep, penjualan, dan histori tetap dipertahankan."
+        'Yakin ingin ' + actionText + ' produk "' + (produk.nama_produk || "-") + '"?\n\nData produk, HPP, resep, penjualan, dan histori tetap dipertahankan.'
       );
 
       if (!yakin) return;
