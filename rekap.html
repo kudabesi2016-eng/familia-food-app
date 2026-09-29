@@ -680,7 +680,7 @@ td{
         document.getElementById('monthlyTitle').textContent=off?'Rekap Offline Bulanan':'Rekap Online Bulanan';
         document.getElementById('noticeChannel').textContent=off?'🟢 Rekap Offline':'🔵 Rekap Online';
         document.getElementById('noticeText').innerHTML=off
-          ?'Pemasukan berasal dari <b>Data Lama + Transaksi Offline Baru</b>.<br>Pengeluaran ditampilkan terpisah.<br><b>Profit = Uang Bersih − HPP/modal.</b><br>Uang Bersih Offline = Pemasukan − Pengeluaran Tunai.'
+          ?'Pemasukan berasal dari <b>Data Lama + Transaksi Offline Baru</b>.<br>Pengeluaran tunai ditampilkan terpisah.<br><b>Profit Terukur Offline = Pemasukan − HPP − Beban di luar HPP.</b><br>Pengeluaran Bahan Baku tidak dipotong lagi karena sudah termasuk HPP.<br>Uang Bersih Offline = Pemasukan − seluruh Pengeluaran Tunai.'
           :'Pemasukan berasal dari <b>Data Lama Online + Penerimaan Uang Online</b>.<br>Penerimaan baru sudah berupa <b>Uang Bersih</b> setelah potongan.<br><b>Profit = Uang Bersih − HPP/modal.</b><br>HPP/Modal produk keluar ditampilkan terpisah.';
         const tbody=document.getElementById('monthly');
         tbody.innerHTML=ms.map(mm=>{
