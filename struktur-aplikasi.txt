@@ -5,7 +5,7 @@ MENU:
 2. Produk
 3. Bahan Baku
 4. Resep
-5. HPP
+5. Kalkulator HPP
 6. Penjualan
 7. Rekap
 8. Data Lama
@@ -34,3 +34,9 @@ ff_pelanggan
 ff_pembelian
 ff_pembelian_item
 ff_retur_penjualan
+
+AI AGENT KALKULATOR HPP:
+- Berada di dalam tab Kalkulator HPP.
+- Membaca Produk, Bahan Baku, Resep, Master HPP, dan Pengeluaran kategori Bahan Baku.
+- Tidak mengubah modul lain otomatis.
+- Perubahan HPP selalu meminta konfirmasi sebelum disimpan.

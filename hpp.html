@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#087443">
 
-<title>HPP - Familia Food</title>
+<title>Kalkulator HPP - Familia Food</title>
 
 <style>
 
@@ -272,7 +272,10 @@ grid-template-columns:1fr;
   .container button{width:100%}
 }
 </style>
-<link rel="stylesheet" href="android-shell.css"></head>
+<link rel="stylesheet" href="android-shell.css"><style id="hpp-ai-style">
+.hpp-ai{margin-top:16px;padding:0;overflow:hidden}.hpp-ai-head{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#087443,#14935a);color:#fff;padding:14px 16px}.hpp-ai-avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#d9fdd3;color:#075e54;font-size:22px;flex:0 0 42px}.hpp-ai-name{font-weight:800;font-size:16px}.hpp-ai-sub{font-size:11px;opacity:.9;margin-top:3px}.hpp-ai-body{padding:12px;background:#f5faf7}.hpp-ai-tools{display:grid;grid-template-columns:1fr 150px 150px;gap:8px;margin-bottom:10px}.hpp-ai-tools .box{margin:0;padding:10px}.hpp-ai-info{font-size:11px;line-height:1.45;color:#53635a;background:#fff;border:1px solid #dce9e0;border-radius:10px;padding:9px 10px;margin-bottom:9px}.hpp-ai-alert{background:#fff7df;border:1px solid #e7d59f;color:#674f12;border-radius:10px;padding:10px;font-size:12px;margin-bottom:8px}.hpp-ai-avg{background:#fff;border:1px solid #dde7e0;border-radius:10px;overflow:auto;margin-bottom:10px}.hpp-ai-avg table{min-width:620px}.hpp-ai-chat{display:flex;flex-direction:column;gap:7px;min-height:220px;max-height:420px;overflow:auto;background:#efeae2;border-radius:10px;padding:9px}.hpp-ai-empty,.hpp-ai-msg{max-width:88%;padding:8px 10px;border-radius:10px;font-size:12px;line-height:1.45;white-space:pre-wrap}.hpp-ai-empty{align-self:center;background:#fff;border:1px solid #ddd8d0;color:#68756e;text-align:center}.hpp-ai-msg.user{align-self:flex-end;background:#dcf8c6;border-top-right-radius:3px}.hpp-ai-msg.bot{align-self:flex-start;background:#fff;border-top-left-radius:3px}.hpp-ai-compose{display:flex;gap:7px;margin-top:8px}.hpp-ai-compose textarea{flex:1;min-height:42px;resize:vertical;padding:10px;border:1px solid #ccd9d1;border-radius:10px;font:inherit}.hpp-ai-compose button{width:50px;padding:10px}.hpp-ai-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.hpp-ai-action{border:1px solid #bdd5ca;background:#fff;color:#087443;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer}.hpp-ai-action.primary{background:#087443;color:#fff}@media(max-width:700px){.hpp-ai-tools{grid-template-columns:1fr 1fr}.hpp-ai-tools .wide{grid-column:1/-1}.hpp-ai-chat{max-height:48vh}}
+</style>
+</head>
 
 <body>
 
@@ -294,7 +297,7 @@ grid-template-columns:1fr;
 
 <a href="resep.html">📋 Resep</a>
 
-<a href="hpp.html" class="active">🧮 HPP</a>
+<a href="hpp.html" class="active">🧮 Kalkulator HPP</a>
 
 <a href="penjualan.html">💰 Penjualan</a>
 
@@ -315,10 +318,10 @@ grid-template-columns:1fr;
 
 <div class="container">
 
-<h1>🧮 Perhitungan HPP</h1>
+<h1>🧮 Kalkulator HPP</h1>
 
 <div class="subtitle">
-HPP dihitung otomatis berdasarkan resep dan harga bahan baku terbaru.
+HPP dihitung otomatis dari Resep + Bahan Baku + biaya produksi. AI Agent membantu membaca histori bahan dan melakukan analisis HPP dengan konfirmasi.
 </div>
 
 
@@ -568,6 +571,18 @@ Rp0
 <div id="status" class="status"></div>
 
 </div>
+
+<section class="container hpp-ai">
+<div class="hpp-ai-head"><div class="hpp-ai-avatar">🤖</div><div><div class="hpp-ai-name">AI Agent • Kalkulator HPP</div><div class="hpp-ai-sub">Baca data HPP lintas modul, tetapi bekerja hanya di Kalkulator HPP</div></div></div>
+<div class="hpp-ai-body">
+<div class="hpp-ai-tools"><div class="box wide"><label>Sumber Data</label><div style="font-size:12px;color:#68756e;line-height:1.5">Produk • Bahan Baku • Resep • Master HPP • Pengeluaran kategori Bahan Baku</div></div><div class="box"><label>Batas perubahan harga</label><input id="hppAiThreshold" type="number" min="0.1" max="100" step="0.1" value="5"></div><div class="box"><label>&nbsp;</label><button id="hppAiScan" type="button">🔎 Cek Harga</button></div></div>
+<div id="hppAiInfo" class="hpp-ai-info">AI menghitung <b>rata-rata harga tertimbang</b> dari histori Pengeluaran Bahan Baku. Contoh: Aci Rp340.000 ÷ 25 kg = Rp13.600/kg, berdasarkan ukuran kemasan di Master Bahan Baku.</div>
+<div id="hppAiAlerts"></div>
+<div class="hpp-ai-avg"><table><thead><tr><th>Bahan</th><th>Kemasan</th><th>Harga Master</th><th>Rata-rata Histori</th><th>Perubahan</th></tr></thead><tbody id="hppAiAvgBody"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody></table></div>
+<div id="hppAiChat" class="hpp-ai-chat"><div class="hpp-ai-empty">Halo bro 👋<br>Tulis bebas: “berapa rata-rata harga aci?”, “kenapa HPP Naget 12 naik?”, atau “hitung ulang HPP Naget isi 12”.</div></div>
+<form id="hppAiForm" class="hpp-ai-compose"><textarea id="hppAiInput" placeholder="Tanya bebas tentang HPP..." required></textarea><button type="submit">➤</button></form>
+<div id="hppAiActions" class="hpp-ai-actions"></div>
+</div></section>
 
 </div>
 
@@ -1301,6 +1316,45 @@ init();
 
 </script>
 
+<script id="hpp-ai-agent">
+(function(){
+const $=id=>document.getElementById(id);
+const state={products:[],materials:[],recipes:[],hpps:[],expenses:[],expenseItems:[],averages:[],baseline:{},proposal:null,threshold:5};
+const baselineKey='ff_hpp_ai_avg_baseline_v1';
+function norm(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,' ')}
+function money(v){return 'Rp'+Math.round(Number(v)||0).toLocaleString('id-ID')}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function addMsg(role,text){const d=document.createElement('div');d.className='hpp-ai-msg '+role;d.textContent=text;$('hppAiChat').appendChild(d);$('hppAiChat').scrollTop=$('hppAiChat').scrollHeight}
+async function all(table){let out=[],s=0;while(true){const r=await supabaseClient.from(table).select('*').range(s,s+999);if(r.error)throw r.error;out.push(...(r.data||[]));if((r.data||[]).length<1000)break;s+=1000}return out}
+async function load(){[state.products,state.materials,state.recipes,state.hpps,state.expenses,state.expenseItems]=await Promise.all(['produk','bahan_baku','resep','hpp','pengeluaran','pengeluaran_item'].map(all));state.averages=buildAvg();renderAvg();scan()}
+function same(a,b){const x=norm(a),y=norm(b);return x===y||x.includes(y)||y.includes(x)}
+function pack(m){const v=Number(m?.isi_kemasan||0);return v>0?v:null}
+function itemMaterial(i){if(i.bahan_id){const m=state.materials.find(x=>String(x.id)===String(i.bahan_id));if(m)return m}return state.materials.find(m=>same(m.nama_bahan,i.nama_item))||null}
+function expenseMaterial(e){return state.materials.find(m=>same(m.nama_bahan,e.keterangan))||null}
+function itemQty(m,i){const q=Number(i?.qty);const qty=(q>0?q:1);const unit=norm(i?.satuan),base=norm(m?.satuan);if(!unit||!base||unit===base)return qty;return pack(m)?qty*pack(m):qty}
+function buildAvg(){const map={};state.materials.forEach(m=>map[m.id]={m,total:0,qty:0});const ex=state.expenses.filter(e=>norm(e.kategori)==='bahan baku'&&norm(e.cara_bayar)!=='hutang');for(const e of ex){const ds=state.expenseItems.filter(i=>String(i.pengeluaran_id)===String(e.id));let hit=false;if(ds.length){for(const i of ds){const m=itemMaterial(i);if(!m||!map[m.id])continue;hit=true;const q=itemQty(m,i),cost=Number(i.subtotal||i.harga_satuan||0);if(q>0&&cost>0){map[m.id].qty+=q;map[m.id].total+=cost}}}if(!hit){const m=expenseMaterial(e),k=pack(m),cost=Number(e.nominal||0);if(m&&k&&cost>0){map[m.id].qty+=k;map[m.id].total+=cost}}}return Object.values(map).map(x=>({id:x.m.id,name:x.m.nama_bahan,unit:x.m.satuan,pack:x.m.isi_kemasan||null,master:Number(x.m.harga_satuan||x.m.harga_beli||0),avg:x.qty>0?x.total/x.qty:null,total:x.total,qty:x.qty}))}
+function pct(a,b){return b?((a-b)/b)*100:null}
+function renderAvg(){const b=$('hppAiAvgBody');b.innerHTML='';const rows=state.averages.filter(x=>x.avg!=null||x.master>0);if(!rows.length){b.innerHTML='<tr><td colspan="5" class="empty">Belum ada histori harga bahan yang bisa dihitung.</td></tr>';return}rows.forEach(x=>{const p=pct(x.avg,x.master),c=p==null?'':(p>=0?'style="color:#a44800;font-weight:700"':'style="color:#146b3a;font-weight:700"');const tr=document.createElement('tr');tr.innerHTML='<td>'+esc(x.name)+'</td><td>'+(x.pack?esc(x.pack)+' '+esc(x.unit||''):'-')+'</td><td>'+money(x.master)+'</td><td>'+(x.avg!=null?money(x.avg)+'/'+esc(x.unit||'satuan'):'-')+'</td><td '+c+'>'+(p==null?'-':(p>=0?'+':'')+p.toFixed(2)+'%')+'</td>';b.appendChild(tr)})}
+function baseline(){try{return JSON.parse(localStorage.getItem(baselineKey)||'{}')||{}}catch(e){return {}}}
+function saveBaseline(x){localStorage.setItem(baselineKey,JSON.stringify(x))}
+function scan(){state.threshold=Math.max(.1,Number($('hppAiThreshold').value||5));state.baseline=baseline();const now={};state.averages.forEach(x=>{if(x.avg!=null)now[x.id]=x.avg});const alerts=[];Object.keys(now).forEach(id=>{const prev=Number(state.baseline[id]);const cur=Number(now[id]);if(!prev){state.baseline[id]=cur;return}const p=pct(cur,prev);if(Math.abs(p)>=state.threshold){const m=state.materials.find(x=>String(x.id)===String(id));alerts.push({id,name:m?.nama_bahan||('Bahan #'+id),prev,now:cur,pct:p})}});saveBaseline(state.baseline);const box=$('hppAiAlerts');box.innerHTML='';if(alerts.length){state.proposal=null;const d=document.createElement('div');d.className='hpp-ai-alert';d.innerHTML='<b>⚠️ Harga bahan melewati batas '+state.threshold+'%</b><br>'+alerts.map(a=>esc(a.name)+': '+money(a.prev)+' → '+money(a.now)+' ('+(a.pct>=0?'+':'')+a.pct.toFixed(2)+'%)').join('<br>')+'<div class="hpp-ai-actions"><button class="hpp-ai-action primary" type="button" id="hppAiRecalc">🔄 Hitung ulang HPP untuk produk terdampak</button></div>';box.appendChild(d);$('hppAiRecalc').onclick=()=>propose(alerts)}}
+function findProduct(q){const s=norm(q),n=s.match(/\bnaget\b(?:\s+isi)?\s*(10|12|20|25|30|40|50)\b/);if(n){const z=n[1];return state.products.find(p=>norm(p.nama_produk)==='naget '+z||(z==='25'&&norm(p.nama_produk)==='naget 25+saus'))||null}return state.products.slice().sort((a,b)=>norm(b.nama_produk).length-norm(a.nama_produk).length).find(p=>s.includes(norm(p.nama_produk)))||null}
+function recipesFor(p){let r=state.recipes.filter(x=>String(x.produk_id)===String(p.id));if(!r.length&&norm(p.nama_produk).includes('naget')){const base=state.products.find(x=>norm(x.nama_produk)==='naget 10'||norm(x.nama_produk)==='naget isi 10');if(base)r=state.recipes.filter(x=>String(x.produk_id)===String(base.id))}return r}
+function priceFor(id){const a=state.averages.find(x=>String(x.id)===String(id));const m=state.materials.find(x=>String(x.id)===String(id));return a?.avg!=null?a.avg:Number(m?.harga_beli||0)}
+function recipeCost(i,price){const q=Number(i.jumlah_pakai||0),m=state.materials.find(x=>String(x.id)===String(i.bahan_id)),n=norm(m?.nama_bahan);if(n.includes('bumbu'))return q<=1?price*q:price*q/100;if(n.includes('plastik'))return price*q/240;return price*q}
+function calc(p){const h=state.hpps.find(x=>String(x.produk_id)===String(p.id));if(!h)return null;let materialTotal=0;for(const i of recipesFor(p))materialTotal+=recipeCost(i,priceFor(i.bahan_id));const oh=Number(h.biaya_produksi||0),batch=Number(h.jumlah_batch||0),isi=Number(p.isi_per_bungkus||10),packs=isi>0?batch/isi:0,total=materialTotal+oh,packHpp=packs>0?total/packs:0;return{product:p,h,materialTotal,oh,batch,isi,total,packHpp,pc:isi?packHpp/isi:0}}
+function affected(c,alerts){const ids=recipesFor(c.product).map(i=>String(i.bahan_id));return alerts.some(a=>ids.includes(String(a.id)))}
+function propose(alerts){const target=findProduct($('hppAiInput').value),all=target?[calc(target)]:state.products.map(calc).filter(Boolean),list=all.filter(c=>!alerts.length||affected(c,alerts));state.proposal={list,alerts};$('hppAiActions').innerHTML='';const box=document.createElement('div');box.className='hpp-ai-actions';const ok=document.createElement('button');ok.className='hpp-ai-action primary';ok.textContent='✅ Konfirmasi simpan HPP';const no=document.createElement('button');no.className='hpp-ai-action';no.textContent='❌ Batal';box.append(ok,no);$('hppAiActions').appendChild(box);addMsg('bot','Simulasi selesai. HPP belum berubah. Saya mempertahankan OH, batch produksi, dan harga jual yang sekarang.');ok.onclick=saveProposal;no.onclick=()=>{$('hppAiActions').innerHTML='';state.proposal=null;addMsg('bot','Dibatalkan. Tidak ada HPP yang diubah.')}}
+async function saveProposal(){if(!state.proposal)return;const list=state.proposal.list;let n=0;try{for(const c of list){const h=c.h,off=Number(h.harga_offline||c.product.harga_offline||0),on=Number(h.harga_online||c.product.harga_online||0);const data={total_bahan:c.materialTotal,biaya_produksi:c.oh,jumlah_batch:c.batch,total_modal:c.total,hpp_unit:c.packHpp,hpp_per_pcs:c.pc,untung_offline:off>0?off-c.packHpp:null,untung_online:on>0?on-c.packHpp:null};const r=await supabaseClient.from('hpp').update(data).eq('id',h.id);if(r.error)throw r.error;n++;state.hpps=state.hpps.map(x=>String(x.id)===String(h.id)?{...x,...data}:x)}const b={...state.baseline};(state.proposal.alerts||[]).forEach(a=>b[a.id]=a.now);saveBaseline(b);state.baseline=b;$('hppAiActions').innerHTML='';state.proposal=null;addMsg('bot','✅ '+n+' HPP diperbarui dari hasil Kalkulator. Harga jual, Penjualan, Rekap, dan transaksi lama tidak diubah.');scan()}catch(e){addMsg('bot','⚠️ Gagal menyimpan hasil HPP: '+e.message)}}
+function avgAnswer(q){const s=norm(q),a=state.averages.find(x=>s.includes(norm(x.name)));if(!a)return false;addMsg('bot','Harga rata-rata tertimbang '+a.name+' = '+(a.avg?money(a.avg):'-')+'/'+(a.unit||'satuan')+'. Dasar histori: '+money(a.total||0)+' untuk '+(a.qty||0)+' '+(a.unit||'satuan')+'.');return true}
+async function remote(q){if(/\b(catat|simpan|ubah|hapus|input|buat|transaksi|pengeluaran baru)\b/i.test(q))return null;try{const s=await supabaseClient.auth.getSession(),token=s?.data?.session?.access_token;if(!token)return null;const ctx={products:state.products.map(p=>({name:p.nama_produk,isi:p.isi_per_bungkus})),materials:state.averages.map(x=>({name:x.name,unit:x.unit,pack:x.pack,master:x.master,avg:x.avg})),hpp:state.hpps.map(h=>({produk_id:h.produk_id,hpp:h.hpp_unit,oh:h.biaya_produksi,batch:h.jumlah_batch}))};const r=await fetch('https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({message:'MODE KALKULATOR HPP SAJA. Jangan menulis data atau mengubah modul lain. Analisis konteks berikut: '+JSON.stringify(ctx)+' Pertanyaan pengguna: '+q,history:[{role:'user',content:q}]})});if(!r.ok)return null;const d=await r.json();return String(d.answer||d.output_text||'').trim()||null}catch(e){return null}}
+async function answer(q){const s=norm(q),p=findProduct(q);if(/hitung ulang|hitung kembali|recalculate/.test(s)){propose([]);return}if(/rata-rata|rata rata|average/.test(s)&&avgAnswer(q))return;if(p&&/hpp/.test(s)){const c=calc(p),cur=Number(c?.h?.hpp_unit||0);if(!c){addMsg('bot','Master HPP produk itu belum tersedia.');return}addMsg('bot',p.nama_produk+': HPP saat ini '+money(cur)+' / bungkus. Dengan rata-rata histori bahan, simulasi menjadi '+money(c.packHpp)+' / bungkus ('+(pct(c.packHpp,cur)>=0?'+':'')+pct(c.packHpp,cur).toFixed(2)+'%).');return}const r=await remote(q);if(r){addMsg('bot',r);return}addMsg('bot','Saya fokus di Kalkulator HPP. Coba: “rata-rata harga aci”, “kenapa HPP Naget 12 naik?”, atau “hitung ulang HPP Naget isi 12”.')}
+$('hppAiThreshold').addEventListener('change',scan);
+$('hppAiScan').addEventListener('click',async()=>{state.averages=buildAvg();renderAvg();scan();addMsg('bot','✅ Histori Pengeluaran kategori Bahan Baku sudah dibaca ulang.')});
+$('hppAiForm').addEventListener('submit',async e=>{e.preventDefault();const q=$('hppAiInput').value.trim();if(!q)return;$('hppAiInput').value='';addMsg('user',q);await answer(q)});
+(async()=>{try{await load();addMsg('bot','AI Agent siap. Saya boleh membaca Produk, Bahan Baku, Resep, Master HPP, dan Pengeluaran Bahan Baku untuk kebutuhan HPP. Saya tidak mengubah tab lain secara otomatis.')}catch(e){$('hppAiInfo').textContent='⚠️ Gagal membaca data HPP: '+e.message}})();
+})();
+</script>
 <script src="android-shell.js" defer></script>
 </body>
 </html>
