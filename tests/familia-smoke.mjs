@@ -130,6 +130,7 @@ assert(rekapModule.includes('const profit=h.measured ? v[2]-h.total : null'),'Re
 assert(!rekapModule.includes("key==='cireng crispy'"),'Rekap must not silently merge Cireng crispy into Cireng biasa');
 assert(rekapModule.includes("String(x.status||'Aktif').toLowerCase()==='aktif'"),'Rekap purchase KPI must ignore cancelled purchases');
 assert(rekapModule.includes('partial:!known && total>0'),'Rekap must expose partial HPP state');
+assert(rekapModule.includes("expenseInHpp=expenseRows.filter(x=>String(x.kategori||'').trim().toLowerCase()==='bahan baku')"),'Rekap must separate HPP-included expenses from other cash expenses');
 
 
 const penjualan=await read('penjualan.html');
@@ -145,8 +146,10 @@ assert(oldData.includes('loadSaleCustomers'),'Historical data page must read per
 const index=await read('index.html');
 assert(index.includes('const validExpenseRows='),'Dashboard expense validation missing');
 assert(index.indexOf('const validExpenseRows=') < index.indexOf('const opExpense='),'Dashboard operational expense order is invalid');
-assert(index.includes("const offProfit=offHppMeasured ? offNet-offHpp : null;"),'Dashboard offline profit must calculate from measured HPP without suppressing the channel');
+assert(index.includes("const offExpenseInHpp=validExpenseRows.filter(x=>String(x.kategori||'').trim().toLowerCase()==='bahan baku').reduce((s,x)=>s+Math.round(num(x.nominal)),0);"),'Dashboard must identify HPP-included cash expenses');
+assert(index.includes("const offProfit=offHppMeasured ? offNet+offExpenseInHpp-offHpp : null;"),'Dashboard offline profit must remove HPP-included expense once, not double-count it');
 assert(index.includes("const totalProfit=offProfitKnown && Number.isFinite(Number(onProfit)) ? Number(offProfit)+Number(onProfit) : null;"),'Dashboard combined profit must combine measured channel profits');
+assert(index.includes('Bahan Baku tidak dipotong lagi karena sudah termasuk HPP'),'Dashboard must explain HPP expense is not double-counted');
 assert(index.includes('&& String(x.status||\'Aktif\').toLowerCase()===\'aktif\''),'Dashboard purchase KPI must ignore cancelled purchases');
 
 
