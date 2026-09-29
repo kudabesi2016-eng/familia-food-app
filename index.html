@@ -92,7 +92,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Profit Terukur</small><b id="offProfit">—</b></div>
       <div class="mini"><small>Produk Keluar</small><b id="offQty">0</b></div>
     </div>
-    <div class="note">Offline: Uang Bersih = Pemasukan − Pengeluaran. Profit = Uang Bersih − HPP. HPP Produk Keluar tetap ditampilkan terpisah. <span id="offlineHppAudit">Memeriksa HPP produk keluar…</span></div>
+    <div class="note">Offline: Uang Bersih = Pemasukan − seluruh Pengeluaran. Profit = Pemasukan − HPP − Beban di luar HPP. Pengeluaran Bahan Baku tidak dipotong lagi karena sudah termasuk HPP. <span id="offlineHppAudit">Memeriksa HPP produk keluar…</span></div>
   </div>
 
   <div class="channel">
@@ -380,8 +380,9 @@ async function loadDashboard(){
     // Pengeluaran Offline: hanya baris pengeluaran dengan periode YYYY-MM yang valid,
     // sama seperti Rekap/Data Lama. Baris tanpa periode valid tidak boleh masuk total.
     const offExpense=validExpenseRows.reduce((s,x)=>s+Math.round(num(x.nominal)),0);
-    // Offline: Uang Bersih/Laba Offline = Pemasukan − Pengeluaran.
-    // HPP ditampilkan terpisah dan tidak dikurangkan lagi dari Profit Offline.
+    const offExpenseInHpp=validExpenseRows.filter(x=>String(x.kategori||'').trim().toLowerCase()==='bahan baku').reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    const offExpenseOutsideHpp=offExpense-offExpenseInHpp;
+    // Uang Bersih = Pemasukan − seluruh pengeluaran tunai.
     const offNet=offRevenue-offExpense;
     const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty ?? x.catatan)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
 
@@ -403,7 +404,7 @@ async function loadDashboard(){
     });
     // Profit Terukur Offline = Uang Bersih − HPP yang memang sudah tersedia.
     // Satu listing tanpa HPP tidak boleh mematikan profit seluruh channel.
-    const offProfit=offHppMeasured ? offNet-offHpp : null;
+    const offProfit=offHppMeasured ? offNet+offExpenseInHpp-offHpp-offExpenseOutsideHpp : null;
     const offProfitKnown=offHppMeasured;
 
     // ONLINE: STANDARD historis + transaksi online baru.
@@ -508,9 +509,9 @@ async function loadDashboard(){
     const offlineAudit=document.getElementById('offlineHppAudit');
     if(offlineAudit){
       offlineAudit.textContent=offHppKnown
-        ? '✅ HPP lengkap. Profit Offline = Uang Bersih − HPP.'
+        ? '✅ HPP lengkap. Profit = Pemasukan − HPP − Beban di luar HPP. Pengeluaran Bahan Baku tidak dipotong lagi karena sudah termasuk HPP.'
         : (offHppMeasured
-          ? '🟠 Profit Terukur = Uang Bersih − HPP yang tersedia. HPP listing yang belum tersedia tidak memblokir profit.'
+          ? '🟠 Profit Terukur = Pemasukan − HPP terukur − Beban di luar HPP. Pengeluaran Bahan Baku tidak dihitung dua kali.'
           : '🟠 HPP belum tersedia. Profit Offline belum dapat dihitung.');
     }
 
