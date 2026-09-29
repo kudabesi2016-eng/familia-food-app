@@ -151,7 +151,7 @@
       }
     }
     const hppMeasured = hpp > 0;
-    const profit = hppMeasured ? (net + expenseInHpp - hpp - expenseOutsideHpp) : null;
+    const profit = hppMeasured ? (net + expenseInHpp - hpp) : null;
     return {rev,out,net,hpp,hppKnown,hppMeasured,expenseInHpp,expenseOutsideHpp,profit,productRows};
   }
 
