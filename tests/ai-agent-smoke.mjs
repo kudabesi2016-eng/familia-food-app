@@ -19,6 +19,9 @@ if(!hpp.includes('Konfirmasi simpan HPP')) throw new Error('HPP AI confirmation 
 if(!hpp.includes('Tulis pertanyaan apa saja tentang HPP')) throw new Error('HPP AI must accept natural-language questions');
 if(!hpp.includes('Pengguna boleh bertanya dengan bahasa bebas/natural')) throw new Error('Natural-language AI instruction missing');
 if(!hpp.includes('master_hpp:productHpp')) throw new Error('Natural-language HPP context must include product names');
+if(!hpp.includes('function localNaturalAnswer')) throw new Error('HPP AI local natural-language fallback missing');
+if(!hpp.includes('a==null||b==null||Number(b)===0')) throw new Error('HPP AI change percentage must treat missing history as unknown');
+
 
 if(!ai.includes('Buka Kalkulator HPP')) throw new Error('Compatibility AI page must point to HPP calculator');
 if(!fn.includes('OPENAI_API_KEY')) throw new Error('AI server secret missing');
