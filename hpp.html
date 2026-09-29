@@ -1472,7 +1472,7 @@ function buildAvg(){
     sources:x.sources
   }));
 }
-function pct(a,b){return b?((a-b)/b)*100:null}
+function pct(a,b){return a==null||b==null||Number(b)===0?null:((Number(a)-Number(b))/Number(b))*100}
 function renderAvg(){
   const b=$("hppAiAvgBody");
   b.innerHTML="";
@@ -1498,6 +1498,48 @@ function baseline(){try{return JSON.parse(localStorage.getItem(baselineKey)||'{}
 function saveBaseline(x){localStorage.setItem(baselineKey,JSON.stringify(x))}
 function scan(){state.threshold=Math.max(.1,Number($('hppAiThreshold').value||5));state.baseline=baseline();const now={};state.averages.forEach(x=>{if(x.avg!=null)now[x.id]=x.avg});const alerts=[];Object.keys(now).forEach(id=>{const prev=Number(state.baseline[id]);const cur=Number(now[id]);if(!prev){state.baseline[id]=cur;return}const p=pct(cur,prev);if(Math.abs(p)>=state.threshold){const m=state.materials.find(x=>String(x.id)===String(id));alerts.push({id,name:m?.nama_bahan||('Bahan #'+id),prev,now:cur,pct:p})}});saveBaseline(state.baseline);const box=$('hppAiAlerts');box.innerHTML='';if(alerts.length){state.proposal=null;const d=document.createElement('div');d.className='hpp-ai-alert';d.innerHTML='<b>⚠️ Harga bahan melewati batas '+state.threshold+'%</b><br>'+alerts.map(a=>esc(a.name)+': '+money(a.prev)+' → '+money(a.now)+' ('+(a.pct>=0?'+':'')+a.pct.toFixed(2)+'%)').join('<br>')+'<div class="hpp-ai-actions"><button class="hpp-ai-action primary" type="button" id="hppAiRecalc">🔄 Hitung ulang HPP untuk produk terdampak</button></div>';box.appendChild(d);$('hppAiRecalc').onclick=()=>propose(alerts)}}
 function findProduct(q){const s=norm(q),n=s.match(/\bnaget\b(?:\s+isi)?\s*(10|12|20|25|30|40|50)\b/);if(n){const z=n[1];return state.products.find(p=>norm(p.nama_produk)==='naget '+z||(z==='25'&&norm(p.nama_produk)==='naget 25+saus'))||null}return state.products.slice().sort((a,b)=>norm(b.nama_produk).length-norm(a.nama_produk).length).find(p=>s.includes(norm(p.nama_produk)))||null}
+function findProductsByName(q){
+  const s=norm(q);
+  const exact=state.products.filter(p=>p.nama_produk && s.includes(norm(p.nama_produk)));
+  if(exact.length)return exact;
+  if(/\bnaget\b/.test(s))return state.products.filter(p=>/^naget(\s|$)/i.test(String(p.nama_produk||"")));
+  return [];
+}
+function localNaturalAnswer(q){
+  const s=norm(q);
+  if(/\bhpp\b/.test(s)&&/\bnaget\b/.test(s)){
+    const products=findProductsByName(q);
+    const size=(s.match(/\bnaget(?:\s+isi)?\s*(10|12|20|25|30|40|50)\b/)||[])[1];
+    const filtered=size?products.filter(p=>norm(p.nama_produk).includes('naget '+size)||(size==='25'&&norm(p.nama_produk).includes('naget 25+saus'))):products;
+    const rows=filtered.map(p=>{
+      const h=state.hpps.find(x=>String(x.produk_id)===String(p.id));
+      return h&&Number(h.hpp_unit)>0?{name:p.nama_produk,hpp:h.hpp_unit,pcs:h.hpp_per_pcs,off:h.harga_offline,on:h.harga_online}:null;
+    }).filter(Boolean);
+    if(rows.length){
+      if(rows.length===1){
+        const x=rows[0];
+        addMsg('bot',x.name+': HPP '+money(x.hpp)+' per bungkus'+(x.pcs!=null?' ('+money(x.pcs)+' per pcs)':'')+'. Harga jual offline '+(x.off!=null?money(x.off):'belum diisi')+', online '+(x.on!=null?money(x.on):'belum diisi')+'.');
+      }else{
+        addMsg('bot','Saya menemukan beberapa varian Naget:\n'+rows.map(x=>'• '+x.name+' = '+money(x.hpp)+' / bungkus').join('\n'));
+      }
+      return true;
+    }
+  }
+  if(/(rata-rata|rata rata|harga).*(bahan|aci|tepung|mie|stik|lumpia|bumbu|garam|saus|plastik)|bahan.*(rata-rata|rata rata|harga)/.test(s)){
+    const hit=state.averages.find(x=>s.includes(norm(x.name)));
+    if(hit)return avgAnswer(q);
+  }
+  if(/bahan apa.*(naik|berubah)|harga bahan.*(naik|berubah)/.test(s)){
+    const rows=state.averages.filter(x=>x.avg!=null&&pct(x.avg,x.master)!=null).sort((a,b)=>pct(b.avg,b.master)-pct(a.avg,a.master));
+    if(rows.length){
+      const top=rows.slice(0,5);
+      addMsg('bot','Bahan dengan kenaikan relatif terhadap harga master:\n'+top.map(x=>x.name+': '+(pct(x.avg,x.master)>=0?'+':'')+pct(x.avg,x.master).toFixed(2)+'%').join('\n'));
+    }else addMsg('bot','Belum ada histori bahan yang cukup untuk membandingkan perubahan harga.');
+    return true;
+  }
+  return false;
+}
+
 function recipesFor(p){let r=state.recipes.filter(x=>String(x.produk_id)===String(p.id));if(!r.length&&norm(p.nama_produk).includes('naget')){const base=state.products.find(x=>norm(x.nama_produk)==='naget 10'||norm(x.nama_produk)==='naget isi 10');if(base)r=state.recipes.filter(x=>String(x.produk_id)===String(base.id))}return r}
 function priceFor(id){const a=state.averages.find(x=>String(x.id)===String(id));const m=state.materials.find(x=>String(x.id)===String(id));return a?.avg!=null?a.avg:Number(m?.harga_beli||0)}
 function recipeCost(i,price){const q=Number(i.jumlah_pakai||0),m=state.materials.find(x=>String(x.id)===String(i.bahan_id)),n=norm(m?.nama_bahan);if(n.includes('bumbu'))return q<=1?price*q:price*q/100;if(n.includes('plastik'))return price*q/240;return price*q}
@@ -1569,18 +1611,12 @@ async function remote(q){
   }catch(e){return null}
 }
 async function answer(q){
-  const s=norm(q),p=findProduct(q);
+  const s=norm(q);
   if(/hitung ulang|hitung kembali|recalculate/.test(s)){propose([]);return}
-  if(/rata-rata|rata rata|average/.test(s)&&avgAnswer(q))return;
+  if(localNaturalAnswer(q))return;
   const r=await remote(q);
   if(r){addMsg('bot',r);return}
-  if(p&&/hpp/.test(s)){
-    const c=calc(p),cur=Number(c?.h?.hpp_unit||0);
-    if(!c){addMsg('bot','Master HPP produk itu belum tersedia.');return}
-    addMsg('bot',p.nama_produk+': HPP saat ini '+money(cur)+' / bungkus. Simulasi dengan rata-rata histori bahan: '+money(c.packHpp)+' / bungkus ('+(pct(c.packHpp,cur)>=0?'+':'')+pct(c.packHpp,cur).toFixed(2)+'%).');
-    return;
-  }
-  addMsg('bot','Data AI sedang tidak terjangkau. Coba lagi beberapa saat.');
+  addMsg('bot','Saya belum bisa mengambil analisis lanjutan dari server AI saat ini. Namun pertanyaan HPP, harga bahan, dan histori dasar tetap bisa saya jawab dari data yang sudah terbaca di Kalkulator HPP.');
 }
 $('hppAiThreshold').addEventListener('change',scan);
 $('hppAiScan').addEventListener('click',async()=>{state.averages=buildAvg();renderAvg();scan();addMsg('bot','✅ Histori Pengeluaran kategori Bahan Baku sudah dibaca ulang.')});
