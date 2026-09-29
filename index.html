@@ -390,20 +390,21 @@ async function loadDashboard(){
     // sebagai "—" agar Dashboard tidak menyebut Uang Bersih sebagai Profit.
     const dashboardData={sales,olds:offOld,expenses:expenseRows,products:productMaster,hpps:hppRows};
     const offlineMonths=FFCore.monthsOfData(dashboardData);
-    let offHpp=0,offHppKnown=true;
+    let offHpp=0,offHppKnown=true,offHppMeasured=false;
     offlineMonths.forEach(m=>{
       try{
         const f=FFCore.financeFor(m,'Offline',dashboardData);
         if(!f.hppKnown) offHppKnown=false;
+        if(Number(f.hpp||0)>0) offHppMeasured=true;
         offHpp+=Math.round(Number(f.hpp)||0);
       }catch(e){
         offHppKnown=false;
       }
     });
-    // Hasil Bersih Offline = Pemasukan − Pengeluaran.
-    // HPP tetap ditampilkan terpisah agar tidak terjadi pengurangan biaya dua kali.
-    const offProfit=offHppKnown ? offNet-offHpp : null;
-    const offProfitKnown=offHppKnown;
+    // Profit Terukur Offline = Uang Bersih − HPP yang memang sudah tersedia.
+    // Satu listing tanpa HPP tidak boleh mematikan profit seluruh channel.
+    const offProfit=offHppMeasured ? offNet-offHpp : null;
+    const offProfitKnown=offHppMeasured;
 
     // ONLINE: STANDARD historis + transaksi online baru.
     const onlineFinanceRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_finance');
@@ -477,7 +478,7 @@ async function loadDashboard(){
     const totalNet=offNet+onNet;
     const totalHpp=(offHpp+onHpp);
     const overallProfitKnown=true;
-    const totalProfit=offProfitKnown ? Number(offProfit)+onProfit : null;
+    const totalProfit=offProfitKnown && Number.isFinite(Number(onProfit)) ? Number(offProfit)+Number(onProfit) : null;
     const totalMargin=totalProfit!==null && totalNet ? totalProfit/totalNet*100 : null;
 
     setNumber('totalRevenue',totalRevenue);
@@ -505,7 +506,13 @@ async function loadDashboard(){
     document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
     const offlineProfitEl=document.getElementById('offProfit');
     const offlineAudit=document.getElementById('offlineHppAudit');
-    if(offlineAudit){offlineAudit.textContent=offHppKnown ? '✅ HPP terukur. Profit Offline = Uang Bersih − HPP, sama dengan Rekap.' : '🟠 Sebagian HPP histori belum punya master. Profit Offline belum dapat dihitung penuh.';}
+    if(offlineAudit){
+      offlineAudit.textContent=offHppKnown
+        ? '✅ HPP lengkap. Profit Offline = Uang Bersih − HPP.'
+        : (offHppMeasured
+          ? '🟠 Profit Terukur = Uang Bersih − HPP yang tersedia. HPP listing yang belum tersedia tidak memblokir profit.'
+          : '🟠 HPP belum tersedia. Profit Offline belum dapat dihitung.');
+    }
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
     document.getElementById('onProductRows').textContent=onlineProductRows.length.toLocaleString('id-ID');
