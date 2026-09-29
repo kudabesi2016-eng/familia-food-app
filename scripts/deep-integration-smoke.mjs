@@ -41,12 +41,9 @@ for(const file of htmlFiles){
 }
 
 const ai=read('ai-agent.html');
-if(!/href=["']index\.html["'][^>]*>[^<]*🏠\s*Beranda/i.test(ai) && !/href=["']index\.html["'][^>]*aria-label=["'][^"']*Beranda/i.test(ai)){
-  fail('Agen AI must provide a direct Beranda link');
-}
-for(const table of requiredTables){
-  if(!ai.includes("'"+table+"'") && !ai.includes('"'+table+'"')) fail('Agen AI missing Supabase table reference: '+table);
-}
+const hppAi=read('hpp.html');
+if(!hppAi.includes('AI Agent • Kalkulator HPP')) fail('Kalkulator HPP must contain the active Agen AI');
+if(!ai.includes('Buka Kalkulator HPP')) fail('Agen AI compatibility page must point to Kalkulator HPP');
 
 const dashboard=read('index.html');
 if(!dashboard.includes("const overallProfitKnown=true;")) fail('Dashboard must expose measured Profit even when historical HPP is incomplete');
