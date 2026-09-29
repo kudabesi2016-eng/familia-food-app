@@ -98,11 +98,12 @@ assert(settings.includes("from('pengaturan')"),'Global settings must read brandi
 assert(settings.includes('FF_SETTINGS'),'Global settings runtime state missing');
 
 const aiSafety=await read('ai-agent.html');
-assert(aiSafety.includes("mutableSale(row)"),'AI sale mutation guard missing');
-assert(aiSafety.includes("mutableExpense(row)"),'AI expense mutation guard missing');
-assert(aiSafety.includes("pengeluaran_item"),'AI expense detail integration missing');
-assert(aiSafety.includes("cara_bayar||'Tunai')!=='Hutang'"),'AI local finance must exclude opening Hutang');
-assert((aiSafety.match(/function resolveProduct\(q\)\{/g)||[]).length===1,'AI must have exactly one product resolver');
+const hppAiSafety=await read('hpp.html');
+assert(hppAiSafety.includes('AI Agent • Kalkulator HPP'),'AI Agent must be embedded in Kalkulator HPP');
+assert(hppAiSafety.includes('Pengeluaran kategori Bahan Baku'),'HPP AI material-expense source missing');
+assert(hppAiSafety.includes('ensureHppAiSession') || hppAiSafety.includes('signInAnonymously'),'HPP AI must establish anonymous Supabase session');
+assert(hppAiSafety.includes('hppAiThreshold'),'HPP AI price-change threshold missing');
+assert(hppAiSafety.includes('Konfirmasi simpan HPP'),'HPP AI confirmation flow missing');
 
 assert(operationalSafety.includes('toggleSupplierStatus'),'Supplier must archive/activate instead of hard delete');
 assert(operationalSafety.includes('toggleCustomerStatus'),'Customer must archive/activate instead of hard delete');
@@ -154,7 +155,7 @@ assert(shellCss.includes('body .sidebar{'),'Android shell must provide a safe mo
 assert(shellCss.includes('body.ff-android .sidebar{display:none!important}'),'Android shell must hide desktop sidebar when active');
 assert(shellCss.includes('.ff-mobile-bottom'),'Android shell bottom navigation missing');
 assert(shellJs.includes("['operasional.html','🧾','Operasional']"),'Android quick navigation must include Operasional');
-assert(shellJs.includes("ai-agent.html"),'Android drawer must include Agen AI');
+assert(!shellJs.match(/\['ai-agent\.html',/),'Standalone Agen AI must not be a navigation entry');
 const ai=await read('ai-agent.html');
 assert(ai.includes('href="index.html" aria-label="Kembali ke Beranda"') || ai.includes('href="index.html" class="btn"'),'Agen AI must provide a direct Beranda link');
 assert(ai.includes('Agen AI terhubung ke aplikasi'),'Agen AI health status UI missing');
