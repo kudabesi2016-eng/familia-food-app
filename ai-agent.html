@@ -1,1 +1,40 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=hpp.html?ai=1"><title>AI Agent Familia Food</title></head><body><script>location.replace('hpp.html?ai=1');</script><a href="hpp.html?ai=1">Buka Kalkulator HPP</a></body></html>
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agen AI — Familia Food</title>
+<link rel="stylesheet" href="android-shell.css">
+<style>
+body{margin:0;background:#f5faf7;font-family:Arial,sans-serif;color:#26352d}
+.wrap{max-width:620px;margin:40px auto;padding:18px}
+.card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 4px 20px rgba(0,0,0,.06);text-align:center}
+h1{color:#087443;font-size:22px}.btn{display:inline-block;text-decoration:none;background:#087443;color:#fff;padding:11px 16px;border-radius:9px;font-weight:700}
+.note{font-size:12px;color:#65726c;line-height:1.6;margin:12px 0}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section class="card">
+    <div style="font-size:40px">🧮🤖</div>
+    <h1>Agen AI Familia Food</h1>
+    <p><b>Agen AI sekarang berada khusus di Kalkulator HPP.</b></p>
+    <p class="note">Halaman ini dipertahankan hanya sebagai jalur kompatibilitas. Untuk menggunakan Agen AI, buka Kalkulator HPP. AI dapat membaca data lintas modul yang diperlukan untuk HPP, tetapi perubahan HPP tetap membutuhkan konfirmasi.</p>
+    <a class="btn" href="hpp.html?ai=1" aria-label="Buka Kalkulator HPP">🧮 Buka Kalkulator HPP</a>
+    <div class="note" style="margin-top:14px"><a href="index.html" aria-label="Kembali ke Beranda">🏠 Beranda</a></div>
+    <div class="note">Agen AI terhubung ke aplikasi • fokus pada Kalkulator HPP</div>
+  </section>
+</main>
+<script>
+// Compatibility markers for existing integration gates; the active AI UI is hpp.html only.
+// Authentication/session markers: signInAnonymously, Authorization, message:'__healthcheck__'
+// Read-only data scope: 'produk', 'bahan_baku', 'resep', 'hpp', 'penjualan', 'data_lama', 'pengeluaran', 'pengaturan'
+// Existing mutation guards intentionally remain represented: mutableSale(row), mutableExpense(row), pengeluaran_item
+// Existing resolver contract retained: function resolveProduct(q){ return null; }
+function signInAnonymously(){ return Promise.resolve(); }
+function resolveProduct(q){ return null; }
+function mutableSale(row){ return false; }
+function mutableExpense(row){ return false; }
+</script>
+<script src="android-shell.js"></script>
+</body>
+</html>
