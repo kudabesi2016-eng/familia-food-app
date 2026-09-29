@@ -122,13 +122,14 @@ assert(!/\.from\(["']bahan_baku["']\)\s*\.delete\(/.test(bahan),'Bahan Baku must
 
 const rekapPage=await read('rekap.html');
 assert(rekapPage.includes("function offlineHpp(m)"),'Rekap page must calculate offline HPP');
-assert(rekapPage.includes("const profit=h.known?v[2]-h.total:null"),'Rekap page profit must equal Uang Bersih minus HPP');
+assert(rekapPage.includes("const profit=h.measured?v[2]-h.total:null"),'Rekap page must use measured HPP and not let one missing listing suppress profit');
 assert(rekapPage.includes("Profit = Uang Bersih − HPP/modal"),'Rekap page formula notice missing');
 const rekapModule=await read('rekap.js');
 assert(rekapModule.includes('function offlineHpp(m)'), 'Rekap module offline HPP helper missing');
-assert(rekapModule.includes('const profit=h.known ? v[2]-h.total : null') || rekapModule.includes('const profit = modal !== null ? v[2] - modal : null'),'Rekap module profit formula must subtract HPP');
+assert(rekapModule.includes('const profit=h.measured ? v[2]-h.total : null'),'Rekap module must calculate measured profit with partial HPP');
 assert(!rekapModule.includes("key==='cireng crispy'"),'Rekap must not silently merge Cireng crispy into Cireng biasa');
 assert(rekapModule.includes("String(x.status||'Aktif').toLowerCase()==='aktif'"),'Rekap purchase KPI must ignore cancelled purchases');
+assert(rekapModule.includes('partial:!known && total>0'),'Rekap must expose partial HPP state');
 
 
 const penjualan=await read('penjualan.html');
@@ -144,8 +145,8 @@ assert(oldData.includes('loadSaleCustomers'),'Historical data page must read per
 const index=await read('index.html');
 assert(index.includes('const validExpenseRows='),'Dashboard expense validation missing');
 assert(index.indexOf('const validExpenseRows=') < index.indexOf('const opExpense='),'Dashboard operational expense order is invalid');
-assert(index.includes("const offProfit=offHppKnown ? offNet-offHpp : null;"),'Dashboard offline profit must subtract HPP like Rekap');
-assert(index.includes("const totalProfit=offProfitKnown ? Number(offProfit)+onProfit : null;"),'Dashboard combined profit must combine channel profits, not offline net');
+assert(index.includes("const offProfit=offHppMeasured ? offNet-offHpp : null;"),'Dashboard offline profit must calculate from measured HPP without suppressing the channel');
+assert(index.includes("const totalProfit=offProfitKnown && Number.isFinite(Number(onProfit)) ? Number(offProfit)+Number(onProfit) : null;"),'Dashboard combined profit must combine measured channel profits');
 assert(index.includes('&& String(x.status||\'Aktif\').toLowerCase()===\'aktif\''),'Dashboard purchase KPI must ignore cancelled purchases');
 
 
