@@ -111,6 +111,7 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
   <section class="panel" data-panel="purchase">
     <div class="card">
       <h2>🛒 Pembelian Bahan Baku</h2>
+      <div class="notice ok">✅ Setiap pembelian yang disimpan otomatis dicatat sekali sebagai <b>Pengeluaran Bahan Baku</b> agar Dashboard dan Rekap selalu membaca sumber kas yang sama. Jika pembelian dibatalkan, pengeluaran terkait otomatis dinonaktifkan.</div>
       <div class="grid">
         <div class="field"><label>Tanggal</label><input id="buyDate" type="date"></div>
         <div class="field"><label>Supplier</label><select id="buySupplier"></select></div>
@@ -328,6 +329,7 @@ async function syncLastPurchasePrices(rows){
   return warnings;
 }
 
+function purchaseExpenseMarker(id){return '[PEMBELIAN_BAHAN#'+String(id)+']';}
 async function savePurchase(){
   if(!state.tables.ff_pembelian || !state.tables.ff_pembelian_item){$('purchaseStatus').textContent='Database Pembelian belum aktif lengkap. Jalankan SUPABASE-EXPANSION.sql terlebih dahulu.';return}
   const tanggal=$('buyDate').value||today(),supplierId=$('buySupplier').value||null,catatan=$('buyNote').value.trim();
@@ -347,6 +349,7 @@ async function savePurchase(){
     }
     const priceWarnings=await syncLastPurchasePrices(rows);
     if(priceWarnings.length){
+      await supabaseClient.from('ff_pembelian_item').delete().eq('pembelian_id',h.data.id);
       await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);
       for(const x of rows){
         const oldPrice=previousPrices[String(x.bahan_id)];
@@ -358,8 +361,62 @@ async function savePurchase(){
       await loadMaterials();
       return;
     }
+
+    const expenseMarker=purchaseExpenseMarker(h.data.id);
+    const expenseNote=(catatan?catatan+' — ':'')+expenseMarker;
+    const expenseInsert=await supabaseClient.from('pengeluaran').insert([{
+      periode:tanggal.slice(0,7),
+      tanggal,
+      kategori:'Bahan Baku',
+      keterangan:expenseNote,
+      nominal:total,
+      cara_bayar:'Tunai'
+    }]).select().single();
+
+    if(expenseInsert.error){
+      await supabaseClient.from('ff_pembelian_item').delete().eq('pembelian_id',h.data.id);
+      await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);
+      for(const x of rows){
+        const oldPrice=previousPrices[String(x.bahan_id)];
+        if(oldPrice==null)continue;
+        const rr=await supabaseClient.from('bahan_baku').update({harga_beli:oldPrice}).eq('id',Number(x.bahan_id));
+        if(rr.error)console.warn('Gagal memulihkan harga bahan setelah rollback',x.bahan_id,rr.error);
+      }
+      $('purchaseStatus').textContent='Pembelian dibatalkan karena pencatatan Pengeluaran gagal: '+expenseInsert.error.message;
+      await loadMaterials();
+      return;
+    }
+
+    const expenseItems=rows.map(x=>({
+      pengeluaran_id:expenseInsert.data.id,
+      bahan_id:x.bahan_id?Number(x.bahan_id):null,
+      nama_item:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).nama_bahan||'-',
+      qty:Number(x.qty)||0,
+      satuan:(window.bahan.find(b=>String(b.id)===String(x.bahan_id))||{}).satuan||null,
+      harga_satuan:Number(x.harga_beli)||0,
+      subtotal:Number(x.subtotal)||0,
+      kategori:'Bahan Baku',
+      catatan:purchaseExpenseMarker(h.data.id)
+    }));
+    const expenseItemInsert=await supabaseClient.from('pengeluaran_item').insert(expenseItems);
+    if(expenseItemInsert.error){
+      await supabaseClient.from('pengeluaran').delete().eq('id',expenseInsert.data.id);
+      await supabaseClient.from('ff_pembelian_item').delete().eq('pembelian_id',h.data.id);
+      await supabaseClient.from('ff_pembelian').delete().eq('id',h.data.id);
+      for(const x of rows){
+        const oldPrice=previousPrices[String(x.bahan_id)];
+        if(oldPrice==null)continue;
+        const rr=await supabaseClient.from('bahan_baku').update({harga_beli:oldPrice}).eq('id',Number(x.bahan_id));
+        if(rr.error)console.warn('Gagal memulihkan harga bahan setelah rollback',x.bahan_id,rr.error);
+      }
+      $('purchaseStatus').textContent='Pembelian dibatalkan karena detail Pengeluaran gagal disimpan: '+expenseItemInsert.error.message;
+      await loadMaterials();
+      return;
+    }
+
     state.purchase=await loadTable('ff_pembelian');
-    $('purchaseStatus').textContent='Pembelian tersimpan, harga bahan diperbarui, dan HPP siap membaca harga terbaru.';
+    state.expense=await loadTable('pengeluaran');
+    $('purchaseStatus').textContent='Pembelian tersimpan dan otomatis masuk Rekap sebagai Pengeluaran Bahan Baku. Harga bahan juga diperbarui untuk HPP.';
 
     $('buyNote').value='';$('purchaseLines').innerHTML='';addPurchaseLine();renderPurchases();renderStats();
   }
@@ -405,8 +462,34 @@ async function cancelPurchase(id){
   if(oldItems.error){$('purchaseStatus').textContent='Gagal membaca item pembelian: '+oldItems.error.message;return}
   const bahanIds=[...new Set((oldItems.data||[]).map(x=>Number(x.bahan_id)).filter(Boolean))];
 
+  const expenseLookup=await supabaseClient
+    .from('pengeluaran')
+    .select('id,keterangan,nominal')
+    .like('keterangan',purchaseExpenseMarker(id)+'%');
+  if(expenseLookup.error){$('purchaseStatus').textContent='Gagal memeriksa Pengeluaran pembelian: '+expenseLookup.error.message;return}
+
   const r=await supabaseClient.from('ff_pembelian').update({status:'Batal'}).eq('id',id);
   if(r.error){$('purchaseStatus').textContent='Gagal membatalkan pembelian: '+r.error.message;return}
+
+  if((expenseLookup.data||[]).length){
+    const expenseIds=(expenseLookup.data||[]).map(x=>Number(x.id)).filter(Boolean);
+    const er=await supabaseClient
+      .from('pengeluaran')
+      .update({nominal:0,keterangan:purchaseExpenseMarker(id)+'[BATAL]'})
+      .in('id',expenseIds);
+    if(er.error){
+      $('purchaseStatus').textContent='Pembelian dibatalkan, tetapi pengeluaran terkait gagal dinonaktifkan: '+er.error.message;
+      return;
+    }
+    const ei=await supabaseClient
+      .from('pengeluaran_item')
+      .update({subtotal:0,catatan:purchaseExpenseMarker(id)+'[BATAL]'})
+      .in('pengeluaran_id',expenseIds);
+    if(ei.error){
+      $('purchaseStatus').textContent='Pembelian dibatalkan, tetapi detail pengeluaran terkait gagal dinonaktifkan: '+ei.error.message;
+      return;
+    }
+  }
 
   let warnings=[];
   try{
@@ -422,6 +505,7 @@ async function cancelPurchase(id){
   }
 
   state.purchase=await loadTable('ff_pembelian');
+  state.expense=await loadTable('pengeluaran');
   await loadMaterials();
   renderPurchases();renderStats();
 }

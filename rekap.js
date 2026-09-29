@@ -364,8 +364,7 @@ function normalizeProductName(v){
 }
 function resolveHppByProductName(name){
   let key=normalizeProductName(name);
-  if(key==='cireng crispy')key='cireng biasa';
-  if(/^cireng\s+\d+$/.test(key))key='cireng isi';
+    if(/^cireng\s+\d+$/.test(key))key='cireng isi';
   if(key==='cibay 10')key='cibay';
   const p=(products||[]).find(x=>normalizeProductName(x.nama_produk)===key);
   if(!p)return null;
@@ -539,7 +538,7 @@ function renderOnlineConnection(selectedMonth){
   if(modeBadge)modeBadge.textContent=modeOnline?'🔵 Online':'🟢 Offline';
 
   if(!modeOnline){
-    const opsBuy=(purchases||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
+    const opsBuy=(purchases||[]).filter(x=>String(x.status||'Aktif').toLowerCase()==='aktif' && String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
     const opsRet=(returns||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && String(x.channel||'')==='Offline').reduce((a,x)=>a+Number(x.nominal||0),0);
     const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isCashExpense(x)).reduce((a,x)=>a+Number(x.nominal||0),0);
     note.innerHTML='Bulan <b>'+esc(label(m))+'</b>. Ringkasan Offline tetap memakai rumus penjualan Familia Food. Informasi Operasional ditampilkan terpisah.';
