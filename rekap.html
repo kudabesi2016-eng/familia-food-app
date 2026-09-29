@@ -672,7 +672,7 @@ td{
         const profit=h.measured?v[2]-h.total:null;
         document.getElementById('profit').textContent=profit===null?'—':rupiah(profit);
         const marginBase=v[2];
-        document.getElementById('margin').textContent=(profit!==null&&marginBase>0?(profit/marginBase*100).toFixed(2)+'%':'—');
+        document.getElementById('margin').textContent=(profit!==null&&marginBase!==0?(profit/marginBase*100).toFixed(2)+'%':'—');
         document.getElementById('pageTitle').textContent=off?'📊 Rekap Offline':'📊 Rekap Online';
         document.getElementById('pageSub').textContent=off?'Rekap penjualan Offline Familia Food per bulan.':'Rekap penjualan Online Shop Familia Food per bulan.';
         document.getElementById('outLabel').textContent=off?'Pengeluaran':'Potongan Online Shop';
