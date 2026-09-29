@@ -122,11 +122,12 @@ assert(!/\.from\(["']bahan_baku["']\)\s*\.delete\(/.test(bahan),'Bahan Baku must
 
 const rekapPage=await read('rekap.html');
 assert(rekapPage.includes("function offlineHpp(m)"),'Rekap page must calculate offline HPP');
-assert(rekapPage.includes("const profit=h.measured?v[2]-h.total:null"),'Rekap page must use measured HPP and not let one missing listing suppress profit');
-assert(rekapPage.includes("Profit = Uang Bersih − HPP/modal"),'Rekap page formula notice missing');
+assert(rekapPage.includes("const profit=h.measured?(offline?v[0]-h.total-v[3]:v[2]-h.total):null"),'Rekap page must separate HPP-included and non-HPP expenses');
+assert(!rekapPage.includes("Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur"),'Rekap page must not claim all expenses are excluded from profit');
+assert(rekapPage.includes("Profit Terukur Offline"),'Rekap page must describe measured Offline Profit');
 const rekapModule=await read('rekap.js');
 assert(rekapModule.includes('function offlineHpp(m)'), 'Rekap module offline HPP helper missing');
-assert(rekapModule.includes('const profit=h.measured ? v[2]-h.total : null'),'Rekap module must calculate measured profit with partial HPP');
+assert(rekapModule.includes('const profit=h.measured ? (offline ? v[0]-h.total-v[3] : v[2]-h.total) : null'),'Rekap module must calculate measured profit after HPP-included expense treatment');
 assert(!rekapModule.includes("key==='cireng crispy'"),'Rekap must not silently merge Cireng crispy into Cireng biasa');
 assert(rekapModule.includes("String(x.status||'Aktif').toLowerCase()==='aktif'"),'Rekap purchase KPI must ignore cancelled purchases');
 assert(rekapModule.includes('partial:!known && total>0'),'Rekap must expose partial HPP state');
