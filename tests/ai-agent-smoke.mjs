@@ -25,6 +25,10 @@ if(!hpp.includes('Total biaya bahan')) throw new Error('HPP AI HPP breakdown mis
 if(!hpp.includes('Rumus:')) throw new Error('HPP AI formula explanation missing');
 if(!hpp.includes('function contextualSourceAnswer')) throw new Error('HPP AI contextual source explanation missing');
 if(!hpp.includes('Angka tersebut cocok dengan beberapa HPP')) throw new Error('HPP AI ambiguous numeric context handling missing');
+if(!hpp.includes('conversation:[]')) throw new Error('HPP AI conversation memory missing');
+if(!hpp.includes('produk_aktif:getActiveHpp')) throw new Error('HPP AI active product context missing');
+if(!hpp.includes('history:state.conversation.slice(-8,-1)')) throw new Error('HPP AI server history forwarding missing');
+
 
 
 if(!hpp.includes('a==null||b==null||Number(b)===0')) throw new Error('HPP AI change percentage must treat missing history as unknown');
