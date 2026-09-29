@@ -9,6 +9,11 @@ if(!hpp.includes('signInAnonymously') && !hpp.includes('ensureHppAiSession')) th
 if(!hpp.includes('Authorization')) throw new Error('HPP AI must send Authorization to Edge Function');
 if(!hpp.includes('__healthcheck__') && !hpp.includes('familia-ai')) throw new Error('HPP AI endpoint integration missing');
 if(!hpp.includes('Pengeluaran kategori Bahan Baku')) throw new Error('HPP AI Bahan Baku expense source missing');
+if(!hpp.includes('data_lama')) throw new Error('HPP AI must load Data Lama context');
+if(!hpp.includes('Data Lama + Data Baru')) throw new Error('HPP AI must expose combined history context');
+if(!hpp.includes('Tidak ada histori')) throw new Error('HPP AI must distinguish missing material history from a price decrease');
+if(!hpp.includes('Baris agregat')) throw new Error('HPP AI must avoid double-counting aggregate history periods');
+
 if(!hpp.includes('hppAiThreshold')) throw new Error('HPP AI threshold missing');
 if(!hpp.includes('Konfirmasi simpan HPP')) throw new Error('HPP AI confirmation missing');
 if(!ai.includes('Buka Kalkulator HPP')) throw new Error('Compatibility AI page must point to HPP calculator');
