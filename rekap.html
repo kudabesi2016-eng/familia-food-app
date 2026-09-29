@@ -8,7 +8,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="app-settings.js"></script>
-<script src="ff-core.js?v=20260926-1445"></script>
+<script src="ff-core.js?v=20260929-1855"></script>
+<script>window.__REKAP_JS_LOADED=false;</script>
+<script src="rekap.js?v=20260929-1855"></script>
 
 <style>
 :root{
@@ -581,7 +583,7 @@ td{
         all('penjualan','id,tanggal,channel,source,qty,harga,total,hpp,omzet_produk,uang_bersih,modal_hpp,biaya_platform,product_name,variation,order_id,produk_id'),
         all('data_lama','id,periode,jenis,keterangan,nominal,catatan'),
         all('pengeluaran','id,periode,tanggal,kategori,keterangan,nominal,cara_bayar'),
-        all('produk','id,nama_produk,status,statustext'),
+        all('produk','id,nama_produk,status'),
         all('hpp','produk_id,hpp_unit')
       ]);
       const months=new Set();
@@ -622,7 +624,6 @@ td{
       const productIdsByName=new Map((products||[]).map(p=>[normalizeProductName(p.nama_produk),p]));
       function resolveHppByName(name){
         let key=normalizeProductName(name);
-        if(key==='cireng crispy')key='cireng biasa';
         if(/^cireng\s+\d+$/.test(key))key='cireng isi';
         if(key==='cibay 10')key='cibay';
         const p=productIdsByName.get(key) || productIdsByName.get(key.replace(/^naget\s+/,'naget '));
@@ -671,7 +672,7 @@ td{
         const profit=h.known?v[2]-h.total:null;
         document.getElementById('profit').textContent=profit===null?'—':rupiah(profit);
         const marginBase=v[2];
-        document.getElementById('margin').textContent=(profit!==null&&marginBase>0?(profit/marginBase*100):0).toFixed(2)+'%';
+        document.getElementById('margin').textContent=(profit!==null&&marginBase>0?(profit/marginBase*100).toFixed(2)+'%':'—');
         document.getElementById('pageTitle').textContent=off?'📊 Rekap Offline':'📊 Rekap Online';
         document.getElementById('pageSub').textContent=off?'Rekap penjualan Offline Familia Food per bulan.':'Rekap penjualan Online Shop Familia Food per bulan.';
         document.getElementById('outLabel').textContent=off?'Pengeluaran':'Potongan Online Shop';
@@ -742,7 +743,7 @@ td{
     }
   }
   setTimeout(function(){
-    if(!window.__REKAP_FALLBACK_OK){
+    if(!window.__REKAP_JS_LOADED && !window.__REKAP_FALLBACK_OK){
       try{boot()}catch(e){console.error(e)}
     }
   },1200);
