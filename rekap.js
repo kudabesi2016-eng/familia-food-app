@@ -468,7 +468,7 @@ function renderCards(){
 
   if(offline){
     const profit=h.measured ? v[2]-h.total : null;
-    const margin=v[2]>0 && profit!==null ? (profit/v[2])*100 : null;
+    const margin=v[2]!==0 && profit!==null ? (profit/v[2])*100 : null;
     $('hpp').textContent=h.measured?money(h.total):'—';
     $('profit').textContent=profit===null?'—':money(profit);
     if(marginEl)marginEl.textContent=margin===null?'—':margin.toFixed(2)+'%';
@@ -699,7 +699,7 @@ function renderMonthly(){
       const offline = $('channel').value === 'Offline';
       const profit = modal !== null ? v[2] - modal : null;
       const marginBase = Number(v[2]);
-      const margin = profit !== null && marginBase > 0 ? (profit / marginBase) * 100 : 0;
+      const margin = profit !== null && marginBase !== 0 ? (profit / marginBase) * 100 : 0;
 
 
       return `
