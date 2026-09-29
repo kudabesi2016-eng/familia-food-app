@@ -16,6 +16,10 @@ if(!hpp.includes('Baris agregat')) throw new Error('HPP AI must avoid double-cou
 
 if(!hpp.includes('hppAiThreshold')) throw new Error('HPP AI threshold missing');
 if(!hpp.includes('Konfirmasi simpan HPP')) throw new Error('HPP AI confirmation missing');
+if(!hpp.includes('Tulis pertanyaan apa saja tentang HPP')) throw new Error('HPP AI must accept natural-language questions');
+if(!hpp.includes('Pengguna boleh bertanya dengan bahasa bebas/natural')) throw new Error('Natural-language AI instruction missing');
+if(!hpp.includes('master_hpp:productHpp')) throw new Error('Natural-language HPP context must include product names');
+
 if(!ai.includes('Buka Kalkulator HPP')) throw new Error('Compatibility AI page must point to HPP calculator');
 if(!fn.includes('OPENAI_API_KEY')) throw new Error('AI server secret missing');
 if(!fn.includes('SUPABASE_PUBLISHABLE_KEYS')) throw new Error('AI data adapter missing Supabase publishable key');
