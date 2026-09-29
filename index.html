@@ -73,7 +73,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
   <div class="cards">
     <div class="card"><div class="card-title">Total Pemasukan</div><div class="card-number" id="totalRevenue">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Pengeluaran / Potongan + Biaya Online</div><div class="card-number" id="totalOut">Rp 0</div></div>
-    <div class="card"><div class="card-title">Total Uang Bersih</div><div class="card-number" id="totalNet">Rp 0</div></div>
+    <div class="card"><div class="card-title">Uang Bersih (sebelum Biaya Online Lainnya)</div><div class="card-number" id="totalNet">Rp 0</div></div>
     <div class="card"><div class="card-title">HPP / Modal Terukur</div><div class="card-number" id="totalHpp">Rp 0</div></div>
     <div class="card"><div class="card-title">Profit Gabungan</div><div class="card-number" id="totalProfit">Rp 0</div></div>
     <div class="card"><div class="card-title">Margin Terukur</div><div class="card-number" id="totalMargin">0.00%</div></div>
@@ -485,7 +485,8 @@ async function loadDashboard(){
     setNumber('totalNet',totalNet);
     setNumber('totalHpp',totalHpp);
     const totalProfitEl=document.getElementById('totalProfit');
-    setNumber('totalProfit',totalProfit===null ? 0 : totalProfit);
+    if(totalProfit===null || Number.isNaN(Number(totalProfit))){ totalProfitEl.textContent='—'; totalProfitEl.classList.remove('negative'); }
+    else { setNumber('totalProfit',totalProfit); }
     const tm=document.getElementById('totalMargin');
     tm.textContent=totalProfit===null ? '—' : pct(totalMargin);
     tm.classList.toggle('negative',totalMargin<0);
@@ -498,10 +499,11 @@ async function loadDashboard(){
 
     document.getElementById('offOldCount').textContent=offOld.length.toLocaleString('id-ID')+' baris';
     document.getElementById('offNewCount').textContent=offNew.length.toLocaleString('id-ID');
-    setNumber('offRevenue',offRevenue); setNumber('offExpense',offExpense); setNumber('offNet',offNet); setNumber('offProfit',offProfit);
+    setNumber('offRevenue',offRevenue); setNumber('offExpense',offExpense); setNumber('offNet',offNet);
+    if(offProfit===null || Number.isNaN(Number(offProfit))){ document.getElementById('offProfit').textContent='—'; document.getElementById('offProfit').classList.remove('negative'); }
+    else { setNumber('offProfit',offProfit); }
     document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
     const offlineProfitEl=document.getElementById('offProfit');
-    setNumber('offProfit',offProfit);
     const offlineAudit=document.getElementById('offlineHppAudit');
     if(offlineAudit){offlineAudit.textContent=offHppKnown ? '✅ HPP terukur. Profit Offline = Uang Bersih − HPP, sama dengan Rekap.' : '🟠 Sebagian HPP histori belum punya master. Profit Offline belum dapat dihitung penuh.';}
 
