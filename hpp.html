@@ -1505,6 +1505,60 @@ function findProductsByName(q){
   if(/\bnaget\b/.test(s))return state.products.filter(p=>/^naget(\s|$)/i.test(String(p.nama_produk||"")));
   return [];
 }
+function sourceExplanationForProduct(p,h){
+  if(!p||!h)return false;
+  const isi=Number(p.isi_per_bungkus||10);
+  const batch=Number(h.jumlah_batch||0);
+  const packs=isi>0?batch/isi:0;
+  const bahan=Number(h.total_bahan||0);
+  const oh=Number(h.biaya_produksi||0);
+  const modal=Number(h.total_modal||bahan+oh);
+  const hpp=Number(h.hpp_unit||0);
+  const pcs=Number(h.hpp_per_pcs|| (isi>0?hpp/isi:0));
+  const lines=[
+    'Rincian sumber HPP '+money(hpp)+' untuk '+p.nama_produk+':',
+    '• Sumber: tabel Master HPP, berasal dari hasil Kalkulator HPP.',
+    '• Total biaya bahan: '+money(bahan),
+    '• Biaya produksi / OH: '+money(oh),
+    '• Total modal: '+money(modal),
+    '• Hasil produksi: '+Math.round(batch).toLocaleString('id-ID')+' pcs',
+    '• Isi per bungkus: '+isi+' pcs',
+    '• Jumlah bungkus: '+Math.round(packs).toLocaleString('id-ID'),
+    '• Rumus: '+money(modal)+' ÷ '+Math.round(packs).toLocaleString('id-ID')+' bungkus = '+money(hpp)+' / bungkus',
+    '• HPP per pcs: '+money(pcs),
+    '• Harga jual offline: '+(h.harga_offline!=null?money(h.harga_offline):'belum diisi')+' | online: '+(h.harga_online!=null?money(h.harga_online):'belum diisi')
+  ];
+  addMsg('bot',lines.join('\n'));
+  return true;
+}
+function contextualSourceAnswer(q){
+  const s=norm(q);
+  const asksSource=/(dari mana|asal|sumber|rincian|detail|tunjukin|tunjukkan|data(nya)?|jelaskan|dasar|perhitungan|hitung)/.test(s);
+  if(!asksSource)return false;
+  const nums=[...s.matchAll(/(?:rp\s*)?([0-9]{3,}(?:[\.,][0-9]+)?)/g)].map(m=>Number(String(m[1]).replace(/\./g,'').replace(',','.'))).filter(Number.isFinite);
+  let candidates=[];
+  for(const h of state.hpps){
+    const p=state.products.find(x=>String(x.id)===String(h.produk_id));
+    if(!p||Number(h.hpp_unit)<=0)continue;
+    let score=0;
+    if(/naget/.test(s)&&/naget/.test(norm(p.nama_produk)))score+=5;
+    for(const n of nums){
+      const hu=Number(h.hpp_unit||0),hp=Number(h.hpp_per_pcs||0);
+      if(Math.abs(hu-Math.round(n))<1||Math.abs(hp-Math.round(n))<1||Math.abs(hu-n)<0.01||Math.abs(hp-n)<0.01)score+=10;
+      if(Math.abs(hu/1000-n/1000)<0.01)score+=1;
+    }
+    if(score) candidates.push({score,p,h});
+  }
+  candidates.sort((a,b)=>b.score-a.score);
+  if(candidates.length===1)return sourceExplanationForProduct(candidates[0].p,candidates[0].h);
+  if(candidates.length>1){
+    const top=candidates.filter(x=>x.score===candidates[0].score);
+    if(top.length===1)return sourceExplanationForProduct(top[0].p,top[0].h);
+    addMsg('bot','Angka tersebut cocok dengan beberapa HPP: '+top.map(x=>x.p.nama_produk+' '+money(x.h.hpp_unit)+'/bungkus').join('; ')+'. Sebutkan produknya agar saya tunjukkan rincian sumber yang tepat.');
+    return true;
+  }
+  return false;
+}
 function localNaturalAnswer(q){
   const s=norm(q);
   if(/\bhpp\b/.test(s)&&/\bnaget\b/.test(s)){
@@ -1637,6 +1691,7 @@ async function remote(q){
 async function answer(q){
   const s=norm(q);
   if(/hitung ulang|hitung kembali|recalculate/.test(s)){propose([]);return}
+  if(contextualSourceAnswer(q))return;
   if(localNaturalAnswer(q))return;
   const r=await remote(q);
   if(r){addMsg('bot',r);return}
