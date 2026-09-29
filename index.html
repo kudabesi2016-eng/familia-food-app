@@ -72,7 +72,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
 
   <div class="cards">
     <div class="card"><div class="card-title">Total Pemasukan</div><div class="card-number" id="totalRevenue">Rp 0</div></div>
-    <div class="card"><div class="card-title">Total Pengeluaran / Potongan</div><div class="card-number" id="totalOut">Rp 0</div></div>
+    <div class="card"><div class="card-title">Total Pengeluaran / Potongan + Biaya Online</div><div class="card-number" id="totalOut">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Uang Bersih</div><div class="card-number" id="totalNet">Rp 0</div></div>
     <div class="card"><div class="card-title">HPP / Modal Terukur</div><div class="card-number" id="totalHpp">Rp 0</div></div>
     <div class="card"><div class="card-title">Profit Gabungan</div><div class="card-number" id="totalProfit">Rp 0</div></div>
@@ -473,7 +473,7 @@ async function loadDashboard(){
 
     // GABUNGAN: hasil akhir menggabungkan kondisi riil dua channel.
     const totalRevenue=offRevenue+onRevenue;
-    const totalOut=offExpense+onFee;
+    const totalOut=offExpense+onFee+((onNet>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0);
     const totalNet=offNet+onNet;
     const totalHpp=(offHpp+onHpp);
     const overallProfitKnown=true;
