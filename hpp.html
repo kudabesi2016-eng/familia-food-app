@@ -575,8 +575,8 @@ Rp0
 <section class="container hpp-ai">
 <div class="hpp-ai-head"><div class="hpp-ai-avatar">🤖</div><div><div class="hpp-ai-name">AI Agent • Kalkulator HPP</div><div class="hpp-ai-sub">Baca data HPP lintas modul, tetapi bekerja hanya di Kalkulator HPP</div></div></div>
 <div class="hpp-ai-body">
-<div class="hpp-ai-tools"><div class="box wide"><label>Sumber Data</label><div style="font-size:12px;color:#68756e;line-height:1.5">Produk • Bahan Baku • Resep • Master HPP • Pengeluaran kategori Bahan Baku</div></div><div class="box"><label>Batas perubahan harga</label><input id="hppAiThreshold" type="number" min="0.1" max="100" step="0.1" value="5"></div><div class="box"><label>&nbsp;</label><button id="hppAiScan" type="button">🔎 Cek Harga</button></div></div>
-<div id="hppAiInfo" class="hpp-ai-info">AI menghitung <b>rata-rata harga tertimbang</b> dari histori Pengeluaran Bahan Baku. Contoh: Aci Rp340.000 ÷ 25 kg = Rp13.600/kg. Jika histori hanya menyimpan nominal tanpa jumlah karung, AI menandainya sebagai <b>estimasi</b> dan tidak menganggap angka itu pasti.</div>
+<div class="hpp-ai-tools"><div class="box wide"><label>Sumber Data</label><div style="font-size:12px;color:#68756e;line-height:1.5">Produk • Bahan Baku • Resep • Master HPP • Data Lama • Data Baru • Pengeluaran kategori Bahan Baku</div></div><div class="box"><label>Batas perubahan harga</label><input id="hppAiThreshold" type="number" min="0.1" max="100" step="0.1" value="5"></div><div class="box"><label>&nbsp;</label><button id="hppAiScan" type="button">🔎 Cek Harga</button></div></div>
+<div id="hppAiInfo" class="hpp-ai-info">AI membaca <b>Data Lama + Data Baru</b>. Harga bahan dihitung dari histori Pengeluaran kategori Bahan Baku dan detail qty bila tersedia. Data Lama tetap dibaca sebagai konteks histori usaha, tetapi tidak dipaksakan menjadi harga beli bahan. Bila histori hanya menyimpan nominal tanpa jumlah karung/kg, hasil diberi label <b>estimasi</b>.</div>
 <div id="hppAiAlerts"></div>
 <div class="hpp-ai-avg"><table><thead><tr><th>Bahan</th><th>Kemasan</th><th>Harga Master</th><th>Rata-rata Histori</th><th>Perubahan</th></tr></thead><tbody id="hppAiAvgBody"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody></table></div>
 <div id="hppAiChat" class="hpp-ai-chat"><div class="hpp-ai-empty">Halo bro 👋<br>Tulis bebas: “berapa rata-rata harga aci?”, “kenapa HPP Naget 12 naik?”, atau “hitung ulang HPP Naget isi 12”.</div></div>
@@ -1319,22 +1319,181 @@ init();
 <script id="hpp-ai-agent">
 (function(){
 const $=id=>document.getElementById(id);
-const state={products:[],materials:[],recipes:[],hpps:[],expenses:[],expenseItems:[],averages:[],baseline:{},proposal:null,threshold:5};
+const state={products:[],materials:[],recipes:[],hpps:[],expenses:[],expenseItems:[],legacy:[],averages:[],baseline:{},proposal:null,threshold:5};
 const baselineKey='ff_hpp_ai_avg_baseline_v1';
 function norm(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,' ')}
 function money(v){return 'Rp'+Math.round(Number(v)||0).toLocaleString('id-ID')}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function addMsg(role,text){const d=document.createElement('div');d.className='hpp-ai-msg '+role;d.textContent=text;$('hppAiChat').appendChild(d);$('hppAiChat').scrollTop=$('hppAiChat').scrollHeight}
 async function all(table){let out=[],s=0;while(true){const r=await supabaseClient.from(table).select('*').range(s,s+999);if(r.error)throw r.error;out.push(...(r.data||[]));if((r.data||[]).length<1000)break;s+=1000}return out}
-async function load(){[state.products,state.materials,state.recipes,state.hpps,state.expenses,state.expenseItems]=await Promise.all(['produk','bahan_baku','resep','hpp','pengeluaran','pengeluaran_item'].map(all));state.averages=buildAvg();renderAvg();scan()}
+function buildLegacySummary(){
+  const by={};
+  for(const r of state.legacy){
+    const k=String(r.jenis||"Tidak diketahui").trim()||"Tidak diketahui";
+    if(!by[k])by[k]={jenis:k,rows:0,total:0};
+    by[k].rows++;
+    by[k].total+=Number(r.nominal||0);
+  }
+  return {
+    rows:state.legacy.length,
+    total:state.legacy.reduce((s,r)=>s+Number(r.nominal||0),0),
+    periods:[...new Set(state.legacy.map(r=>String(r.periode||"").trim()).filter(Boolean))],
+    byJenis:Object.values(by).sort((a,b)=>b.total-a.total).slice(0,20),
+    note:"Data Lama berisi histori penjualan/listing produk; harga bahan tidak dipaksakan dari sumber ini."
+  };
+}
+function buildExpenseSummary(){
+  const ex=state.expenses.filter(e=>norm(e.kategori)==="bahan baku");
+  const by={};
+  for(const e of ex){
+    const name=String(e.keterangan||"").trim()||"Tanpa nama";
+    if(!by[name])by[name]={name,rows:0,total:0};
+    by[name].rows++;
+    by[name].total+=Number(e.nominal||0);
+  }
+  return {
+    rows:ex.length,
+    total:ex.reduce((s,e)=>s+Number(e.nominal||0),0),
+    bahan:Object.values(by).sort((a,b)=>b.total-a.total).slice(0,50)
+  };
+}
+async function load(){
+  [state.products,state.materials,state.recipes,state.hpps,state.expenses,state.expenseItems,state.legacy]=await Promise.all(
+    ["produk","bahan_baku","resep","hpp","pengeluaran","pengeluaran_item","data_lama"].map(all)
+  );
+  state.averages=buildAvg();
+  renderAvg();
+  scan();
+  const legacy=buildLegacySummary(), expense=buildExpenseSummary();
+  $("hppAiInfo").innerHTML="AI sudah membaca <b>Data Lama + Data Baru</b>. Data Lama: <b>"+legacy.rows+"</b> baris. Data Baru: <b>"+expense.rows+"</b> transaksi Pengeluaran kategori Bahan Baku. Harga bahan dihitung dari histori bahan baku; Data Lama dipakai sebagai konteks histori usaha, bukan dipaksakan menjadi harga beli.";
+}
 function same(a,b){const x=norm(a),y=norm(b);return x===y||x.includes(y)||y.includes(x)}
 function pack(m){const v=Number(m?.isi_kemasan||0);return v>0?v:null}
 function itemMaterial(i){if(i.bahan_id){const m=state.materials.find(x=>String(x.id)===String(i.bahan_id));if(m)return m}return state.materials.find(m=>same(m.nama_bahan,i.nama_item))||null}
 function expenseMaterial(e){return state.materials.find(m=>same(m.nama_bahan,e.keterangan))||null}
 function itemQty(m,i){const q=Number(i?.qty);const qty=(q>0?q:1);const unit=norm(i?.satuan),base=norm(m?.satuan);if(!unit||!base||unit===base)return qty;return pack(m)?qty*pack(m):qty}
-function buildAvg(){const map={};state.materials.forEach(m=>map[m.id]={m,total:0,qty:0,estimated:false});const ex=state.expenses.filter(e=>norm(e.kategori)==='bahan baku'&&norm(e.cara_bayar)!=='hutang');for(const e of ex){const ds=state.expenseItems.filter(i=>String(i.pengeluaran_id)===String(e.id));let hit=false;if(ds.length){for(const i of ds){const m=itemMaterial(i);if(!m||!map[m.id])continue;hit=true;const q=itemQty(m,i),cost=Number(i.subtotal||i.harga_satuan||0);if(q>0&&cost>0){map[m.id].qty+=q;map[m.id].total+=cost}}}if(hit)continue;const m=expenseMaterial(e),k=pack(m),cost=Number(e.nominal||0);if(!m||!k||cost<=0)continue;const text=norm(e.keterangan);const explicit=text.match(/(\\d+(?:[\\.,]\\d+)?)\\s*(karung|sak|kg|kilogram|pack|pak)/i);let packages=explicit?Number(String(explicit[1]).replace(',','.')):0;if(packages<=0){const masterKg=Number(m.harga_satuan||m.harga_beli||0);const perPack=masterKg*k;if(cost<=perPack*2.25)packages=1;else if(perPack>0){packages=Math.max(1,Math.round(cost/perPack));map[m.id].estimated=true}}const q=packages*k;if(q>0){map[m.id].qty+=q;map[m.id].total+=cost}}return Object.values(map).map(x=>({id:x.m.id,name:x.m.nama_bahan,unit:x.m.satuan,pack:x.m.isi_kemasan||null,master:Number(x.m.harga_satuan||x.m.harga_beli||0),avg:x.qty>0?x.total/x.qty:null,total:x.total,qty:x.qty,estimated:x.estimated}))}
+function parsePeriodRange(v){
+  const s=String(v||"").trim();
+  const m=s.match(/^(\\d{4}-\\d{2})\\s*s\\/d\\s*(\\d{4}-\\d{2})$/i);
+  return m?{start:m[1],end:m[2]}:null;
+}
+function periodInside(month,start,end){
+  return !!month && (!start||month>=start) && (!end||month<=end);
+}
+function hasSpecificRowsForRange(materialId,start,end,ignoreId){
+  return state.expenses.some(x=>{
+    if(String(x.id)===String(ignoreId))return false;
+    if(norm(x.kategori)!=="bahan baku")return false;
+    const m=expenseMaterial(x);
+    const sameMaterial=m && String(m.id)===String(materialId);
+    if(!sameMaterial)return false;
+    const month=String(x.periode||"").match(/^\\d{4}-\\d{2}$/)?.[0] || monthOf(x.periode);
+    return periodInside(month,start,end);
+  });
+}
+function buildAvg(){
+  const map={};
+  state.materials.forEach(m=>map[m.id]={m,total:0,qty:0,estimated:false,sources:0});
+  const ex=state.expenses.filter(e=>norm(e.kategori)==="bahan baku");
+  for(const e of ex){
+    const ds=state.expenseItems.filter(i=>String(i.pengeluaran_id)===String(e.id));
+    let hit=false;
+
+    if(ds.length){
+      for(const i of ds){
+        const m=itemMaterial(i);
+        if(!m||!map[m.id])continue;
+        const q=itemQty(m,i);
+        const cost=Number(i.subtotal||0) || (Number(i.harga_satuan||0)*Number(i.qty||0));
+        if(q>0&&cost>0){
+          map[m.id].qty+=q;
+          map[m.id].total+=cost;
+          map[m.id].sources++;
+          hit=true;
+        }
+      }
+      if(hit)continue;
+    }
+
+    const m=expenseMaterial(e);
+    const k=pack(m);
+    const cost=Number(e.nominal||0);
+    if(!m||!k||cost<=0)continue;
+
+    const range=parsePeriodRange(e.periode);
+    if(range && hasSpecificRowsForRange(m.id,range.start,range.end,e.id)){
+      // Baris agregat (mis. Jan s/d Agustus) tidak dihitung dua kali
+      // bila periode bulanan yang lebih spesifik sudah tersedia.
+      continue;
+    }
+
+    const text=norm(e.keterangan);
+    const explicit=text.match(/(\\d+(?:[\\.,]\\d+)?)\\s*(karung|sak|kg|kilogram|pack|pak)/i);
+    let packages=explicit?Number(String(explicit[1]).replace(",",".")):0;
+
+    if(packages>0 && /\\b(kg|kilogram)\\b/i.test(explicit[2]||"")){
+      const qKg=packages;
+      map[m.id].qty+=qKg;
+      map[m.id].total+=cost;
+      map[m.id].sources++;
+      continue;
+    }
+
+    if(packages<=0){
+      const masterKg=Number(m.harga_satuan||m.harga_beli||0);
+      const perPack=masterKg*k;
+      if(cost<=perPack*2.25){
+        packages=1;
+      }else if(perPack>0){
+        packages=Math.max(1,Math.round(cost/perPack));
+        map[m.id].estimated=true;
+      }
+    }
+
+    const q=packages*k;
+    if(q>0){
+      map[m.id].qty+=q;
+      map[m.id].total+=cost;
+      map[m.id].sources++;
+      if(!explicit)map[m.id].estimated=true;
+    }
+  }
+
+  return Object.values(map).map(x=>({
+    id:x.m.id,
+    name:x.m.nama_bahan,
+    unit:x.m.satuan,
+    pack:x.m.isi_kemasan||null,
+    master:Number(x.m.harga_satuan||x.m.harga_beli||0),
+    avg:x.qty>0?x.total/x.qty:null,
+    total:x.total,
+    qty:x.qty,
+    estimated:x.estimated,
+    sources:x.sources
+  }));
+}
 function pct(a,b){return b?((a-b)/b)*100:null}
-function renderAvg(){const b=$('hppAiAvgBody');b.innerHTML='';const rows=state.averages.filter(x=>x.avg!=null||x.master>0);if(!rows.length){b.innerHTML='<tr><td colspan="5" class="empty">Belum ada histori harga bahan yang bisa dihitung.</td></tr>';return}rows.forEach(x=>{const p=pct(x.avg,x.master),c=p==null?'':(p>=0?'style="color:#a44800;font-weight:700"':'style="color:#146b3a;font-weight:700"');const tr=document.createElement('tr');tr.innerHTML='<td>'+esc(x.name)+'</td><td>'+(x.pack?esc(x.pack)+' '+esc(x.unit||''):'-')+'</td><td>'+money(x.master)+'</td><td>'+(x.avg!=null?money(x.avg)+'/'+esc(x.unit||'satuan'):'-')+'</td><td '+c+'>'+(p==null?'-':(p>=0?'+':'')+p.toFixed(2)+'%')+'</td>';b.appendChild(tr)})}
+function renderAvg(){
+  const b=$("hppAiAvgBody");
+  b.innerHTML="";
+  const rows=state.averages.filter(x=>x.avg!=null||x.master>0);
+  if(!rows.length){
+    b.innerHTML="<tr><td colspan=\"5\" class=\"empty\">Belum ada histori harga bahan yang bisa dihitung.</td></tr>";
+    return;
+  }
+  rows.forEach(x=>{
+    const p=pct(x.avg,x.master);
+    const c=p==null?"":(p>=0?'style="color:#a44800;font-weight:700"':'style="color:#146b3a;font-weight:700"');
+    const history=x.avg!=null
+      ?money(x.avg)+"/"+esc(x.unit||"satuan")
+      :(x.master>0?"Tidak ada histori":"-");
+    const change=p==null?"":((p>=0?"+":"")+p.toFixed(2)+"%");
+    const quality=x.estimated?' <span style="color:#806c27">• estimasi</span>':"";
+    const tr=document.createElement("tr");
+    tr.innerHTML="<td>"+esc(x.name)+"</td><td>"+(x.pack?esc(x.pack)+" "+esc(x.unit||""):"-")+"</td><td>"+money(x.master)+"</td><td>"+history+quality+"</td><td "+c+">"+change+"</td>";
+    b.appendChild(tr);
+  });
+}
 function baseline(){try{return JSON.parse(localStorage.getItem(baselineKey)||'{}')||{}}catch(e){return {}}}
 function saveBaseline(x){localStorage.setItem(baselineKey,JSON.stringify(x))}
 function scan(){state.threshold=Math.max(.1,Number($('hppAiThreshold').value||5));state.baseline=baseline();const now={};state.averages.forEach(x=>{if(x.avg!=null)now[x.id]=x.avg});const alerts=[];Object.keys(now).forEach(id=>{const prev=Number(state.baseline[id]);const cur=Number(now[id]);if(!prev){state.baseline[id]=cur;return}const p=pct(cur,prev);if(Math.abs(p)>=state.threshold){const m=state.materials.find(x=>String(x.id)===String(id));alerts.push({id,name:m?.nama_bahan||('Bahan #'+id),prev,now:cur,pct:p})}});saveBaseline(state.baseline);const box=$('hppAiAlerts');box.innerHTML='';if(alerts.length){state.proposal=null;const d=document.createElement('div');d.className='hpp-ai-alert';d.innerHTML='<b>⚠️ Harga bahan melewati batas '+state.threshold+'%</b><br>'+alerts.map(a=>esc(a.name)+': '+money(a.prev)+' → '+money(a.now)+' ('+(a.pct>=0?'+':'')+a.pct.toFixed(2)+'%)').join('<br>')+'<div class="hpp-ai-actions"><button class="hpp-ai-action primary" type="button" id="hppAiRecalc">🔄 Hitung ulang HPP untuk produk terdampak</button></div>';box.appendChild(d);$('hppAiRecalc').onclick=()=>propose(alerts)}}
@@ -1346,7 +1505,19 @@ function calc(p){const h=state.hpps.find(x=>String(x.produk_id)===String(p.id));
 function affected(c,alerts){const ids=recipesFor(c.product).map(i=>String(i.bahan_id));return alerts.some(a=>ids.includes(String(a.id)))}
 function propose(alerts){const target=findProduct($('hppAiInput').value),all=target?[calc(target)]:state.products.map(calc).filter(Boolean),list=all.filter(c=>!alerts.length||affected(c,alerts));state.proposal={list,alerts};$('hppAiActions').innerHTML='';const box=document.createElement('div');box.className='hpp-ai-actions';const ok=document.createElement('button');ok.className='hpp-ai-action primary';ok.textContent='✅ Konfirmasi simpan HPP';const no=document.createElement('button');no.className='hpp-ai-action';no.textContent='❌ Batal';box.append(ok,no);$('hppAiActions').appendChild(box);addMsg('bot','Simulasi selesai. HPP belum berubah. Saya mempertahankan OH, batch produksi, dan harga jual yang sekarang.');ok.onclick=saveProposal;no.onclick=()=>{$('hppAiActions').innerHTML='';state.proposal=null;addMsg('bot','Dibatalkan. Tidak ada HPP yang diubah.')}}
 async function saveProposal(){if(!state.proposal)return;const list=state.proposal.list;let n=0;try{for(const c of list){const h=c.h,off=Number(h.harga_offline||c.product.harga_offline||0),on=Number(h.harga_online||c.product.harga_online||0);const data={total_bahan:c.materialTotal,biaya_produksi:c.oh,jumlah_batch:c.batch,total_modal:c.total,hpp_unit:c.packHpp,hpp_per_pcs:c.pc,untung_offline:off>0?off-c.packHpp:null,untung_online:on>0?on-c.packHpp:null};const r=await supabaseClient.from('hpp').update(data).eq('id',h.id);if(r.error)throw r.error;n++;state.hpps=state.hpps.map(x=>String(x.id)===String(h.id)?{...x,...data}:x)}const b={...state.baseline};(state.proposal.alerts||[]).forEach(a=>b[a.id]=a.now);saveBaseline(b);state.baseline=b;$('hppAiActions').innerHTML='';state.proposal=null;addMsg('bot','✅ '+n+' HPP diperbarui dari hasil Kalkulator. Harga jual, Penjualan, Rekap, dan transaksi lama tidak diubah.');scan()}catch(e){addMsg('bot','⚠️ Gagal menyimpan hasil HPP: '+e.message)}}
-function avgAnswer(q){const s=norm(q),a=state.averages.find(x=>s.includes(norm(x.name)));if(!a)return false;addMsg('bot','Harga rata-rata tertimbang '+a.name+' = '+(a.avg?money(a.avg):'-')+'/'+(a.unit||'satuan')+'. Dasar histori: '+money(a.total||0)+' untuk '+(a.qty||0)+' '+(a.unit||'satuan')+'.');return true}
+function avgAnswer(q){
+  const s=norm(q),a=state.averages.find(x=>s.includes(norm(x.name)));
+  if(!a)return false;
+  if(a.avg==null){
+    addMsg("bot","Belum ada histori harga "+a.name+" yang cukup untuk dihitung. Harga master saat ini "+money(a.master)+"/"+(a.unit||"satuan")+".");
+    return true;
+  }
+  const status=a.estimated
+    ?" Sebagian dasar qty merupakan estimasi karena histori lama hanya menyimpan nominal."
+    :" Dasar qty berasal dari detail histori.";
+  addMsg("bot","Harga rata-rata tertimbang "+a.name+" = "+money(a.avg)+"/"+(a.unit||"satuan")+". Total histori yang dipakai: "+money(a.total||0)+" untuk sekitar "+(a.qty||0)+" "+(a.unit||"satuan")+". Jumlah sumber "+(a.sources||0)+" transaksi."+status);
+  return true;
+}
 let hppAiSessionPromise=null;
 async function ensureHppAiSession(){
   if(hppAiSessionPromise)return hppAiSessionPromise;
@@ -1359,7 +1530,13 @@ async function ensureHppAiSession(){
   })();
   try{return await hppAiSessionPromise;}finally{hppAiSessionPromise=null}
 }
-async function remote(q){if(/\b(catat|simpan|ubah|hapus|input|buat|transaksi|pengeluaran baru)\b/i.test(q))return null;try{const session=await ensureHppAiSession(),token=session?.access_token;if(!token)return null;const ctx={products:state.products.map(p=>({name:p.nama_produk,isi:p.isi_per_bungkus})),materials:state.averages.map(x=>({name:x.name,unit:x.unit,pack:x.pack,master:x.master,avg:x.avg})),hpp:state.hpps.map(h=>({produk_id:h.produk_id,hpp:h.hpp_unit,oh:h.biaya_produksi,batch:h.jumlah_batch}))};const r=await fetch('https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({message:'MODE KALKULATOR HPP SAJA. Jangan menulis data atau mengubah modul lain. Analisis konteks berikut: '+JSON.stringify(ctx)+' Pertanyaan pengguna: '+q,history:[{role:'user',content:q}]})});if(!r.ok)return null;const d=await r.json();return String(d.answer||d.output_text||'').trim()||null}catch(e){return null}}
+async function remote(q){if(/\b(catat|simpan|ubah|hapus|input|buat|transaksi|pengeluaran baru)\b/i.test(q))return null;try{const session=await ensureHppAiSession(),token=session?.access_token;if(!token)return null;const ctx={
+  products:state.products.map(p=>({name:p.nama_produk,isi:p.isi_per_bungkus})),
+  materials:state.averages.map(x=>({name:x.name,unit:x.unit,pack:x.pack,master:x.master,avg:x.avg,total:x.total,qty:x.qty,estimated:x.estimated,sources:x.sources})),
+  hpp:state.hpps.map(h=>({produk_id:h.produk_id,hpp:h.hpp_unit,oh:h.biaya_produksi,batch:h.jumlah_batch})),
+  data_lama:buildLegacySummary(),
+  data_baru_pengeluaran:buildExpenseSummary()
+};const r=await fetch('https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({message:'MODE KALKULATOR HPP SAJA. Jangan menulis data atau mengubah modul lain. Analisis konteks berikut: '+JSON.stringify(ctx)+' Pertanyaan pengguna: '+q,history:[{role:'user',content:q}]})});if(!r.ok)return null;const d=await r.json();return String(d.answer||d.output_text||'').trim()||null}catch(e){return null}}
 async function answer(q){const s=norm(q),p=findProduct(q);if(/hitung ulang|hitung kembali|recalculate/.test(s)){propose([]);return}if(/rata-rata|rata rata|average/.test(s)&&avgAnswer(q))return;if(p&&/hpp/.test(s)){const c=calc(p),cur=Number(c?.h?.hpp_unit||0);if(!c){addMsg('bot','Master HPP produk itu belum tersedia.');return}addMsg('bot',p.nama_produk+': HPP saat ini '+money(cur)+' / bungkus. Dengan rata-rata histori bahan, simulasi menjadi '+money(c.packHpp)+' / bungkus ('+(pct(c.packHpp,cur)>=0?'+':'')+pct(c.packHpp,cur).toFixed(2)+'%).');return}const r=await remote(q);if(r){addMsg('bot',r);return}addMsg('bot','Saya fokus di Kalkulator HPP. Coba: “rata-rata harga aci”, “kenapa HPP Naget 12 naik?”, atau “hitung ulang HPP Naget isi 12”.')}
 $('hppAiThreshold').addEventListener('change',scan);
 $('hppAiScan').addEventListener('click',async()=>{state.averages=buildAvg();renderAvg();scan();addMsg('bot','✅ Histori Pengeluaran kategori Bahan Baku sudah dibaca ulang.')});
