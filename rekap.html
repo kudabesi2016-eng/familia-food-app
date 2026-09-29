@@ -645,7 +645,7 @@ td{
           if(qty>0 && !unit)known=false;
           if(unit)total+=Math.round(qty*unit);
         });
-        return {known,total};
+        return {known,total,partial:!known&&total>0,measured:total>0};
       }
 
       function onlineFinance(m){
@@ -668,8 +668,8 @@ td{
         document.getElementById('rev').textContent=rupiah(v[0]);
         document.getElementById('out').textContent=rupiah(v[1]);
         document.getElementById('net').textContent=rupiah(v[2]);
-        document.getElementById('hpp').textContent=h.known?rupiah(h.total):'—';
-        const profit=h.known?v[2]-h.total:null;
+        document.getElementById('hpp').textContent=h.measured?rupiah(h.total):'—';
+        const profit=h.measured?v[2]-h.total:null;
         document.getElementById('profit').textContent=profit===null?'—':rupiah(profit);
         const marginBase=v[2];
         document.getElementById('margin').textContent=(profit!==null&&marginBase>0?(profit/marginBase*100).toFixed(2)+'%':'—');
@@ -685,7 +685,7 @@ td{
         const tbody=document.getElementById('monthly');
         tbody.innerHTML=ms.map(mm=>{
           const z=off?offlineFinance(mm):onlineFinance(mm), hh=off?offlineHpp(mm):{known:true,total:onlineHpp(mm)};
-          const pp=hh.known?(z[2]-hh.total):null;
+          const pp=hh.measured?(z[2]-hh.total):null;
           const base=z[2];
           return '<tr><td><b>'+label(mm)+'</b></td><td>'+rupiah(z[0])+'</td><td>'+rupiah(z[1])+'</td><td><b>'+rupiah(z[2])+'</b></td><td>'+ (hh.known?rupiah(hh.total):'—') +'</td><td>'+ (pp===null?'—':'<b>'+rupiah(pp)+'</b><div class="hint">Margin '+(base>0?(pp/base*100):0).toFixed(2)+'%</div>') +'</td></tr>';
         }).join('')||'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>';
