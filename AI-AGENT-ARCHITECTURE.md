@@ -4,11 +4,11 @@
 Agen AI bukan chatbot generik. Ia harus membaca angka Familia Food dari database yang sama dengan POS, Rekap, dan Dashboard.
 
 ## Alur
-1. Android/Web membuka **Agen AI**.
-2. Aplikasi membuat sesi Supabase Anonymous Auth secara transparan; tidak ada menu User/Hak Akses.
+1. Android/Web membuka **Kalkulator HPP**, lalu Agen AI aktif di dalam tab tersebut.
+2. Aplikasi membuat sesi Supabase Anonymous Auth secara transparan; tidak ada menu User/Hak Akses dan tidak ada menu Agen AI terpisah.
 3. Pertanyaan dikirim ke Edge Function `familia-ai` dengan JWT sesi.
 4. Edge Function membaca data melalui Supabase menggunakan publishable key + JWT pengguna.
-5. Server membentuk **snapshot read-only**: periode, Offline, Online, HPP/modal, produk teratas, pembelian, pengeluaran, retur, supplier/pelanggan aktif, dan kualitas data.
+5. Server membentuk **snapshot read-only** untuk kebutuhan analisis HPP dan data usaha: periode, Offline, Online, HPP/modal, produk, pembelian, pengeluaran, retur, supplier/pelanggan aktif, dan kualitas data.
 6. Snapshot + pertanyaan diberikan ke OpenAI Responses API.
 7. Jawaban dikembalikan ke aplikasi.
 8. Tidak ada operasi INSERT/UPDATE/DELETE dari Agen AI pada tahap ini.
@@ -19,7 +19,8 @@ Agen AI bukan chatbot generik. Ia harus membaca angka Familia Food dari database
 - Online Baru sudah berupa **Uang Bersih setelah potongan**, sehingga potongan tidak dihitung dua kali.
 - Profit hanya ditampilkan bila modal/HPP tersedia.
 - Data Lama dan Data Baru tidak ditimpa atau digandakan.
-- HPP Familia Food mengikuti master HPP yang sudah ada.
+- HPP Familia Food berasal dari hasil Kalkulator HPP.
+- Agen AI boleh membaca Bahan Baku, Resep, Produk, Master HPP, dan Pengeluaran kategori Bahan Baku untuk analisis.
 - Tidak menyentuh stok, pembayaran, mutasi stok, multi outlet, atau User/Hak Akses.
 
 ## Tahap berikutnya
