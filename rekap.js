@@ -1,4 +1,5 @@
 window.__REKAP_JS_LOADED=true;
+window.__REKAP_JS_READY=false;
 
 /* =====================================================
    ELEMENT
@@ -1216,4 +1217,13 @@ async function init(){
    START
 ===================================================== */
 
-bootRekap();
+function startRekap(){
+  window.__REKAP_JS_READY=true;
+  bootRekap();
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',startRekap,{once:true});
+}else{
+  startRekap();
+}

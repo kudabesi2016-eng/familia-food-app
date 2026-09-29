@@ -743,7 +743,7 @@ td{
     }
   }
   setTimeout(function(){
-    if(!window.__REKAP_JS_LOADED && !window.__REKAP_FALLBACK_OK){
+    if(!window.__REKAP_JS_READY && !window.__REKAP_FALLBACK_OK){
       try{boot()}catch(e){console.error(e)}
     }
   },1200);
