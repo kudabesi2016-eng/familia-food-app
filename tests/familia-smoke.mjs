@@ -124,6 +124,9 @@ assert(rekapPage.includes("Profit = Uang Bersih − HPP/modal"),'Rekap page form
 const rekapModule=await read('rekap.js');
 assert(rekapModule.includes('function offlineHpp(m)'), 'Rekap module offline HPP helper missing');
 assert(rekapModule.includes('const profit=h.known ? v[2]-h.total : null') || rekapModule.includes('const profit = modal !== null ? v[2] - modal : null'),'Rekap module profit formula must subtract HPP');
+assert(!rekapModule.includes("key==='cireng crispy'"),'Rekap must not silently merge Cireng crispy into Cireng biasa');
+assert(rekapModule.includes("String(x.status||'Aktif').toLowerCase()==='aktif'"),'Rekap purchase KPI must ignore cancelled purchases');
+
 
 const penjualan=await read('penjualan.html');
 assert(!penjualan.includes("supabaseClient.from('produk').select('id,nama_produk,hpp_offline"),'Forbidden hpp_offline select regression found in penjualan.html');
@@ -138,6 +141,10 @@ assert(oldData.includes('loadSaleCustomers'),'Historical data page must read per
 const index=await read('index.html');
 assert(index.includes('const validExpenseRows='),'Dashboard expense validation missing');
 assert(index.indexOf('const validExpenseRows=') < index.indexOf('const opExpense='),'Dashboard operational expense order is invalid');
+assert(index.includes("const offProfit=offHppKnown ? offNet-offHpp : null;"),'Dashboard offline profit must subtract HPP like Rekap');
+assert(index.includes("const totalProfit=offProfitKnown ? Number(offProfit)+onProfit : null;"),'Dashboard combined profit must combine channel profits, not offline net');
+assert(index.includes('&& String(x.status||\'Aktif\').toLowerCase()===\'aktif\''),'Dashboard purchase KPI must ignore cancelled purchases');
+
 
 assert(operational.includes("update({harga_beli:price})"),'Purchase does not sync latest raw-material price');
 assert(operational.includes("ff_pembelian_item"),'Purchase item table integration missing');
