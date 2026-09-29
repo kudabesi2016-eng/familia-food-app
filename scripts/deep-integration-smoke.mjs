@@ -49,7 +49,7 @@ const dashboard=read('index.html');
 if(!dashboard.includes("const overallProfitKnown=true;")) fail('Dashboard must expose measured Profit even when historical HPP is incomplete');
 if(!dashboard.includes("const offNet=offRevenue-offExpense;")) fail('Dashboard must calculate Offline Uang Bersih from Pemasukan minus Pengeluaran');
 if(!dashboard.includes("const offProfit=offHppKnown ? offNet-offHpp : null;")) fail('Dashboard must calculate Offline Profit from Uang Bersih minus measured HPP');
-if(!dashboard.includes("id="offProfit">—")) fail('Dashboard Offline Profit must start unavailable instead of Rp 0');
+if(!dashboard.includes('id="offProfit">—')) fail('Dashboard Offline Profit must start unavailable instead of Rp 0');
 
 const rekapHtml=read('rekap.html');
 const rekapJs=read('rekap.js');
