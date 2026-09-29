@@ -1374,7 +1374,7 @@ function expenseMaterial(e){return state.materials.find(m=>same(m.nama_bahan,e.k
 function itemQty(m,i){const q=Number(i?.qty);const qty=(q>0?q:1);const unit=norm(i?.satuan),base=norm(m?.satuan);if(!unit||!base||unit===base)return qty;return pack(m)?qty*pack(m):qty}
 function parsePeriodRange(v){
   const s=String(v||"").trim();
-  const m=s.match(/^(\\d{4}-\\d{2})\\s*s\\/d\\s*(\\d{4}-\\d{2})$/i);
+  const m=s.match(/^(\d{4}-\d{2})\s*s\/d\s*(\d{4}-\d{2})$/i);
   return m?{start:m[1],end:m[2]}:null;
 }
 function periodInside(month,start,end){
@@ -1387,7 +1387,7 @@ function hasSpecificRowsForRange(materialId,start,end,ignoreId){
     const m=expenseMaterial(x);
     const sameMaterial=m && String(m.id)===String(materialId);
     if(!sameMaterial)return false;
-    const month=String(x.periode||"").match(/^\\d{4}-\\d{2}$/)?.[0] || monthOf(x.periode);
+    const month=String(x.periode||"").match(/^\d{4}-\d{2}$/)?.[0] || "";
     return periodInside(month,start,end);
   });
 }
@@ -1428,10 +1428,10 @@ function buildAvg(){
     }
 
     const text=norm(e.keterangan);
-    const explicit=text.match(/(\\d+(?:[\\.,]\\d+)?)\\s*(karung|sak|kg|kilogram|pack|pak)/i);
+    const explicit=text.match(/(\d+(?:[\.,]\d+)?)\s*(karung|sak|kg|kilogram|pack|pak)/i);
     let packages=explicit?Number(String(explicit[1]).replace(",",".")):0;
 
-    if(packages>0 && /\\b(kg|kilogram)\\b/i.test(explicit[2]||"")){
+    if(packages>0 && /\b(kg|kilogram)\b/i.test(explicit[2]||"")){
       const qKg=packages;
       map[m.id].qty+=qKg;
       map[m.id].total+=cost;
