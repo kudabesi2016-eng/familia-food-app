@@ -1319,12 +1319,12 @@ init();
 <script id="hpp-ai-agent">
 (function(){
 const $=id=>document.getElementById(id);
-const state={products:[],materials:[],recipes:[],hpps:[],expenses:[],expenseItems:[],legacy:[],averages:[],baseline:{},proposal:null,threshold:5};
+const state={products:[],materials:[],recipes:[],hpps:[],expenses:[],expenseItems:[],legacy:[],averages:[],baseline:{},proposal:null,threshold:5,conversation:[],activeProductId:null};
 const baselineKey='ff_hpp_ai_avg_baseline_v1';
 function norm(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,' ')}
 function money(v){return 'Rp'+Math.round(Number(v)||0).toLocaleString('id-ID')}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function addMsg(role,text){const d=document.createElement('div');d.className='hpp-ai-msg '+role;d.textContent=text;$('hppAiChat').appendChild(d);$('hppAiChat').scrollTop=$('hppAiChat').scrollHeight}
+function addMsg(role,text){const clean=String(text||'');const d=document.createElement('div');d.className='hpp-ai-msg '+role;d.textContent=clean;$('hppAiChat').appendChild(d);$('hppAiChat').scrollTop=$('hppAiChat').scrollHeight;if(clean)state.conversation.push({role:role==='bot'?'assistant':'user',content:clean});if(state.conversation.length>20)state.conversation=state.conversation.slice(-20)}
 async function all(table){let out=[],s=0;while(true){const r=await supabaseClient.from(table).select('*').range(s,s+999);if(r.error)throw r.error;out.push(...(r.data||[]));if((r.data||[]).length<1000)break;s+=1000}return out}
 function buildLegacySummary(){
   const by={};
@@ -1531,10 +1531,20 @@ function sourceExplanationForProduct(p,h){
   addMsg('bot',lines.join('\n'));
   return true;
 }
+function getActiveHpp(){
+  if(!state.activeProductId)return null;
+  const p=state.products.find(x=>String(x.id)===String(state.activeProductId));
+  const h=p?state.hpps.find(x=>String(x.produk_id)===String(p.id)):null;
+  return p&&h?{p,h}:null;
+}
 function contextualSourceAnswer(q){
   const s=norm(q);
-  const asksSource=/(dari mana|asal|sumber|rincian|detail|tunjukin|tunjukkan|data(nya)?|jelaskan|dasar|perhitungan|hitung)/.test(s);
+  const asksSource=/(dari mana|asal|sumber|rincian|detail|tunjukin|tunjukkan|data(nya)?|jelaskan|dasar|perhitungan|hitung|kok bisa|kenapa)/.test(s);
   if(!asksSource)return false;
+  const active=getActiveHpp();
+  const mentionsProduct=/\bnaget\b|\bcireng\b|\bcibay\b/.test(s);
+  const followupContext=/(itu|tadi|tersebut|angka(\s+tadi)?|nilai|data(\s+tadi)?|hpp(\s+tadi)?)/.test(s);
+  if(active&&(!mentionsProduct||followupContext))return sourceExplanationForProduct(active.p,active.h);
   const nums=[...s.matchAll(/(?:rp\s*)?([0-9]{3,}(?:[\.,][0-9]+)?)/g)].map(m=>Number(String(m[1]).replace(/\./g,'').replace(',','.'))).filter(Number.isFinite);
   let candidates=[];
   for(const h of state.hpps){
@@ -1544,22 +1554,21 @@ function contextualSourceAnswer(q){
     if(/naget/.test(s)&&/naget/.test(norm(p.nama_produk)))score+=5;
     for(const n of nums){
       const hu=Number(h.hpp_unit||0),hp=Number(h.hpp_per_pcs||0);
-      if(Math.abs(hu-Math.round(n))<1||Math.abs(hp-Math.round(n))<1||Math.abs(hu-n)<0.01||Math.abs(hp-n)<0.01)score+=10;
-      if(Math.abs(hu/1000-n/1000)<0.01)score+=1;
+      if(Math.abs(hu-n)<=1||Math.abs(hp-n)<=1)score+=10;
     }
-    if(score) candidates.push({score,p,h});
+    if(score)candidates.push({score,p,h});
   }
   candidates.sort((a,b)=>b.score-a.score);
   if(candidates.length===1)return sourceExplanationForProduct(candidates[0].p,candidates[0].h);
   if(candidates.length>1){
     const top=candidates.filter(x=>x.score===candidates[0].score);
     if(top.length===1)return sourceExplanationForProduct(top[0].p,top[0].h);
-    addMsg('bot','Angka tersebut cocok dengan beberapa HPP: '+top.map(x=>x.p.nama_produk+' '+money(x.h.hpp_unit)+'/bungkus').join('; ')+'. Sebutkan produknya agar saya tunjukkan rincian sumber yang tepat.');
+    addMsg('bot','Saya menemukan lebih dari satu HPP yang cocok. Sebutkan nama produknya atau lanjutkan dari pertanyaan sebelumnya.');
     return true;
   }
   return false;
 }
-function localNaturalAnswer(q){
+function localNaturalAnswerfunction localNaturalAnswer(q){
   const s=norm(q);
   if(/\bhpp\b/.test(s)&&/\bnaget\b/.test(s)){
     const products=findProductsByName(q);
@@ -1663,6 +1672,8 @@ async function remote(q){
       bahan:state.averages.map(x=>({id:x.id,name:x.name,unit:x.unit,pack:x.pack,master:x.master,avg:x.avg,total_histori:x.total,qty_histori:x.qty,estimated:x.estimated,sources:x.sources})),
       resep:state.recipes.map(r=>({produk_id:r.produk_id,bahan_id:r.bahan_id,jumlah_pakai:r.jumlah_pakai,status:r.status})),
       master_hpp:productHpp,
+      konteks_percakapan:state.conversation.slice(-8),
+      produk_aktif:(getActiveHpp()?{id:getActiveHpp().p.id,name:getActiveHpp().p.nama_produk,hpp_bungkus:getActiveHpp().h.hpp_unit,hpp_pcs:getActiveHpp().h.hpp_per_pcs}:null),
       data_lama:buildLegacySummary(),
       pengeluaran_bahan_baku:buildExpenseSummary()
     };
@@ -1681,7 +1692,7 @@ async function remote(q){
     const r=await fetch('https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({message:instruction+'\nKONTEKS DATA:\n'+JSON.stringify(ctx)+'\nPERTANYAAN PENGGUNA:\n'+q,history:[]})
+      body:JSON.stringify({message:instruction+'\nKONTEKS DATA:\n'+JSON.stringify(ctx)+'\nPERTANYAAN TERAKHIR:\n'+q,history:state.conversation.slice(-8,-1)})
     });
     if(!r.ok)return null;
     const d=await r.json();
@@ -1690,12 +1701,14 @@ async function remote(q){
 }
 async function answer(q){
   const s=norm(q);
+  const explicit=findProduct(q);
+  if(explicit)state.activeProductId=explicit.id;
   if(/hitung ulang|hitung kembali|recalculate/.test(s)){propose([]);return}
   if(contextualSourceAnswer(q))return;
   if(localNaturalAnswer(q))return;
   const r=await remote(q);
   if(r){addMsg('bot',r);return}
-  addMsg('bot','Saya belum bisa mengambil analisis lanjutan dari server AI saat ini. Namun pertanyaan HPP, harga bahan, dan histori dasar tetap bisa saya jawab dari data yang sudah terbaca di Kalkulator HPP.');
+  addMsg('bot','Saya belum bisa mengambil analisis lanjutan dari server AI saat ini. Namun saya tetap mengingat produk/HPP yang sedang kita bicarakan dan bisa menjawab pertanyaan lanjutannya.');
 }
 $('hppAiThreshold').addEventListener('change',scan);
 $('hppAiScan').addEventListener('click',async()=>{state.averages=buildAvg();renderAvg();scan();addMsg('bot','✅ Histori Pengeluaran kategori Bahan Baku sudah dibaca ulang.')});
