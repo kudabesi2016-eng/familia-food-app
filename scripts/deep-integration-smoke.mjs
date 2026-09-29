@@ -47,8 +47,16 @@ if(!ai.includes('Buka Kalkulator HPP')) fail('Agen AI compatibility page must po
 
 const dashboard=read('index.html');
 if(!dashboard.includes("const overallProfitKnown=true;")) fail('Dashboard must expose measured Profit even when historical HPP is incomplete');
-if(!dashboard.includes("const offProfit=offNet;")) fail('Dashboard must calculate Offline Hasil Bersih from Pemasukan minus Pengeluaran');
-if(!dashboard.includes("setNumber('offProfit',offProfit);")) fail('Dashboard must display measured Offline Profit');
+if(!dashboard.includes("const offNet=offRevenue-offExpense;")) fail('Dashboard must calculate Offline Uang Bersih from Pemasukan minus Pengeluaran');
+if(!dashboard.includes("const offProfit=offHppKnown ? offNet-offHpp : null;")) fail('Dashboard must calculate Offline Profit from Uang Bersih minus measured HPP');
+if(!dashboard.includes("id="offProfit">—")) fail('Dashboard Offline Profit must start unavailable instead of Rp 0');
+
+const rekapHtml=read('rekap.html');
+const rekapJs=read('rekap.js');
+if(!rekapHtml.includes('rekap.js?v=20260929-1855')) fail('Rekap HTML must load the primary rekap.js module');
+if(rekapHtml.includes('statustext')) fail('Rekap HTML must not query missing produk.statustext column');
+if(!rekapHtml.includes('__REKAP_JS_READY')) fail('Rekap fallback must wait for primary module readiness');
+if(!rekapJs.includes("document.addEventListener('DOMContentLoaded',startRekap")) fail('Rekap JS must start after DOM is ready');
 
 const core=read('ff-core.js');
 if(!core.includes("online_standard_finance")) fail('Shared reporting core must recognize online_standard_finance historical source');
