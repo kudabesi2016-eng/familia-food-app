@@ -1568,7 +1568,7 @@ function contextualSourceAnswer(q){
   }
   return false;
 }
-function localNaturalAnswerfunction localNaturalAnswer(q){
+function localNaturalAnswer(q){
   const s=norm(q);
   if(/\bhpp\b/.test(s)&&/\bnaget\b/.test(s)){
     const products=findProductsByName(q);
