@@ -579,8 +579,8 @@ Rp0
 <div id="hppAiInfo" class="hpp-ai-info">AI membaca <b>Data Lama + Data Baru</b>. Harga bahan dihitung dari histori Pengeluaran kategori Bahan Baku dan detail qty bila tersedia. Data Lama tetap dibaca sebagai konteks histori usaha, tetapi tidak dipaksakan menjadi harga beli bahan. Bila histori hanya menyimpan nominal tanpa jumlah karung/kg, hasil diberi label <b>estimasi</b>.</div>
 <div id="hppAiAlerts"></div>
 <div class="hpp-ai-avg"><table><thead><tr><th>Bahan</th><th>Kemasan</th><th>Harga Master</th><th>Rata-rata Histori</th><th>Perubahan</th></tr></thead><tbody id="hppAiAvgBody"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody></table></div>
-<div id="hppAiChat" class="hpp-ai-chat"><div class="hpp-ai-empty">Halo bro 👋<br>Tulis bebas: “berapa rata-rata harga aci?”, “kenapa HPP Naget 12 naik?”, atau “hitung ulang HPP Naget isi 12”.</div></div>
-<form id="hppAiForm" class="hpp-ai-compose"><textarea id="hppAiInput" placeholder="Tanya bebas tentang HPP..." required></textarea><button type="submit">➤</button></form>
+<div id="hppAiChat" class="hpp-ai-chat"><div class="hpp-ai-empty">Halo bro 👋<br>Tulis dengan bahasa biasa. Contoh: “tunjukkan HPP Naget sekarang”, “harga Aci rata-rata berapa?”, atau “kenapa HPP Naget naik?”.</div></div>
+<form id="hppAiForm" class="hpp-ai-compose"><textarea id="hppAiInput" placeholder="Tulis pertanyaan apa saja tentang HPP, bahan, resep, atau histori..." required></textarea><button type="submit">➤</button></form>
 <div id="hppAiActions" class="hpp-ai-actions"></div>
 </div></section>
 
@@ -1530,18 +1530,62 @@ async function ensureHppAiSession(){
   })();
   try{return await hppAiSessionPromise;}finally{hppAiSessionPromise=null}
 }
-async function remote(q){if(/\b(catat|simpan|ubah|hapus|input|buat|transaksi|pengeluaran baru)\b/i.test(q))return null;try{const session=await ensureHppAiSession(),token=session?.access_token;if(!token)return null;const ctx={
-  products:state.products.map(p=>({name:p.nama_produk,isi:p.isi_per_bungkus})),
-  materials:state.averages.map(x=>({name:x.name,unit:x.unit,pack:x.pack,master:x.master,avg:x.avg,total:x.total,qty:x.qty,estimated:x.estimated,sources:x.sources})),
-  hpp:state.hpps.map(h=>({produk_id:h.produk_id,hpp:h.hpp_unit,oh:h.biaya_produksi,batch:h.jumlah_batch})),
-  data_lama:buildLegacySummary(),
-  data_baru_pengeluaran:buildExpenseSummary()
-};const r=await fetch('https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({message:'MODE KALKULATOR HPP SAJA. Jangan menulis data atau mengubah modul lain. Analisis konteks berikut: '+JSON.stringify(ctx)+' Pertanyaan pengguna: '+q,history:[{role:'user',content:q}]})});if(!r.ok)return null;const d=await r.json();return String(d.answer||d.output_text||'').trim()||null}catch(e){return null}}
-async function answer(q){const s=norm(q),p=findProduct(q);if(/hitung ulang|hitung kembali|recalculate/.test(s)){propose([]);return}if(/rata-rata|rata rata|average/.test(s)&&avgAnswer(q))return;if(p&&/hpp/.test(s)){const c=calc(p),cur=Number(c?.h?.hpp_unit||0);if(!c){addMsg('bot','Master HPP produk itu belum tersedia.');return}addMsg('bot',p.nama_produk+': HPP saat ini '+money(cur)+' / bungkus. Dengan rata-rata histori bahan, simulasi menjadi '+money(c.packHpp)+' / bungkus ('+(pct(c.packHpp,cur)>=0?'+':'')+pct(c.packHpp,cur).toFixed(2)+'%).');return}const r=await remote(q);if(r){addMsg('bot',r);return}addMsg('bot','Saya fokus di Kalkulator HPP. Coba: “rata-rata harga aci”, “kenapa HPP Naget 12 naik?”, atau “hitung ulang HPP Naget isi 12”.')}
+async function remote(q){
+  try{
+    const session=await ensureHppAiSession(),token=session?.access_token;
+    if(!token)return null;
+    const productHpp=state.hpps.map(h=>{
+      const p=state.products.find(x=>String(x.id)===String(h.produk_id));
+      return {product_id:h.produk_id,name:p?.nama_produk||'-',isi:p?.isi_per_bungkus||null,hpp_bungkus:h.hpp_unit,hpp_pcs:h.hpp_per_pcs,oh:h.biaya_produksi,batch:h.jumlah_batch,harga_offline:h.harga_offline,harga_online:h.harga_online};
+    });
+    const ctx={
+      produk:state.products.map(p=>({id:p.id,name:p.nama_produk,isi:p.isi_per_bungkus,harga_offline:p.harga_offline,harga_online:p.harga_online,status:p.status})),
+      bahan:state.averages.map(x=>({id:x.id,name:x.name,unit:x.unit,pack:x.pack,master:x.master,avg:x.avg,total_histori:x.total,qty_histori:x.qty,estimated:x.estimated,sources:x.sources})),
+      resep:state.recipes.map(r=>({produk_id:r.produk_id,bahan_id:r.bahan_id,jumlah_pakai:r.jumlah_pakai,status:r.status})),
+      master_hpp:productHpp,
+      data_lama:buildLegacySummary(),
+      pengeluaran_bahan_baku:buildExpenseSummary()
+    };
+    const instruction=[
+      'Kamu adalah AI internal Familia Food di modul Kalkulator HPP.',
+      'Pengguna boleh bertanya dengan bahasa bebas/natural. Jangan menuntut format pertanyaan tertentu.',
+      'Jawab berdasarkan konteks data yang diberikan dan jangan mengarang angka.',
+      'Semua qty produk gunakan bungkus; untuk bahan gunakan satuan bahan yang tersedia.',
+      'Data Lama dan Data Baru harus dibaca sebagai konteks. Harga bahan dihitung dari histori Pengeluaran Bahan Baku; jika estimasi, sebutkan estimasi.',
+      'Master HPP dibaca dari hasil Kalkulator HPP.',
+      'AI ini read-only. Untuk permintaan perubahan/simpan/hapus, jelaskan bahwa tindakan membutuhkan konfirmasi pengguna dan jangan melakukan perubahan database.',
+      'Untuk pertanyaan HPP produk, sebut nama produk, HPP per bungkus, HPP per pcs bila tersedia, dan harga jual bila ada.',
+      'Untuk pertanyaan histori bahan, sebut harga master, rata-rata histori, dasar qty/nominal, dan status estimasi bila ada.',
+      'Untuk pertanyaan yang ambigu, gunakan konteks data untuk menafsirkan maksud paling masuk akal dan jawab langsung; hanya minta klarifikasi bila benar-benar tidak bisa ditentukan.'
+    ].join(' ');
+    const r=await fetch('https://zaqdjyhosksbdlafhluc.supabase.co/functions/v1/familia-ai',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({message:instruction+'\nKONTEKS DATA:\n'+JSON.stringify(ctx)+'\nPERTANYAAN PENGGUNA:\n'+q,history:[]})
+    });
+    if(!r.ok)return null;
+    const d=await r.json();
+    return String(d.answer||d.output_text||'').trim()||null;
+  }catch(e){return null}
+}
+async function answer(q){
+  const s=norm(q),p=findProduct(q);
+  if(/hitung ulang|hitung kembali|recalculate/.test(s)){propose([]);return}
+  if(/rata-rata|rata rata|average/.test(s)&&avgAnswer(q))return;
+  const r=await remote(q);
+  if(r){addMsg('bot',r);return}
+  if(p&&/hpp/.test(s)){
+    const c=calc(p),cur=Number(c?.h?.hpp_unit||0);
+    if(!c){addMsg('bot','Master HPP produk itu belum tersedia.');return}
+    addMsg('bot',p.nama_produk+': HPP saat ini '+money(cur)+' / bungkus. Simulasi dengan rata-rata histori bahan: '+money(c.packHpp)+' / bungkus ('+(pct(c.packHpp,cur)>=0?'+':'')+pct(c.packHpp,cur).toFixed(2)+'%).');
+    return;
+  }
+  addMsg('bot','Data AI sedang tidak terjangkau. Coba lagi beberapa saat.');
+}
 $('hppAiThreshold').addEventListener('change',scan);
 $('hppAiScan').addEventListener('click',async()=>{state.averages=buildAvg();renderAvg();scan();addMsg('bot','✅ Histori Pengeluaran kategori Bahan Baku sudah dibaca ulang.')});
 $('hppAiForm').addEventListener('submit',async e=>{e.preventDefault();const q=$('hppAiInput').value.trim();if(!q)return;$('hppAiInput').value='';addMsg('user',q);await answer(q)});
-(async()=>{try{await load();addMsg('bot','AI Agent siap. Saya boleh membaca Produk, Bahan Baku, Resep, Master HPP, dan Pengeluaran Bahan Baku untuk kebutuhan HPP. Saya tidak mengubah tab lain secara otomatis.')}catch(e){$('hppAiInfo').textContent='⚠️ Gagal membaca data HPP: '+e.message}})();
+(async()=>{try{await load();addMsg('bot','AI Agent siap. Tanya dengan bahasa bebas—tidak perlu format atau kata kunci tertentu. Saya membaca Produk, Bahan Baku, Resep, Master HPP, Data Lama, dan Data Baru untuk kebutuhan HPP.');}catch(e){$('hppAiInfo').textContent='⚠️ Gagal membaca data HPP: '+e.message}})();
 })();
 </script>
 <script src="android-shell.js" defer></script>
