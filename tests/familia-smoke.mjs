@@ -59,6 +59,9 @@ for(const [file, needles] of Object.entries(mustContain)){
   for(const n of needles) assert(c.includes(n), file+' missing required marker: '+n);
 }
 
+const core=await read('ff-core.js');
+assert(!core.includes("['cireng crispy','Cireng biasa']"),'Shared core must not silently merge Cireng crispy into Cireng biasa');
+
 const rekap=await read('rekap.js');
 assert(count(rekap,'function data(){')===0,'Duplicate legacy function data() found in rekap.js');
 assert(count(rekap,'const data = () =>')===1,'Expected one rekap data() helper');
