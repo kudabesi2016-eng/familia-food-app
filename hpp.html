@@ -1513,10 +1513,34 @@ function localNaturalAnswer(q){
     const filtered=size?products.filter(p=>norm(p.nama_produk).includes('naget '+size)||(size==='25'&&norm(p.nama_produk).includes('naget 25+saus'))):products;
     const rows=filtered.map(p=>{
       const h=state.hpps.find(x=>String(x.produk_id)===String(p.id));
-      return h&&Number(h.hpp_unit)>0?{name:p.nama_produk,hpp:h.hpp_unit,pcs:h.hpp_per_pcs,off:h.harga_offline,on:h.harga_online}:null;
+      return h&&Number(h.hpp_unit)>0?{p,h,name:p.nama_produk,hpp:h.hpp_unit,pcs:h.hpp_per_pcs,off:h.harga_offline,on:h.harga_online}:null;
     }).filter(Boolean);
+
     if(rows.length){
-      if(rows.length===1){
+      const wantsDetail=/(dari mana|asal|sumber|rincian|detail|jelaskan|kenapa|bagaimana|hitung|perhitung|dasar)/.test(s);
+      if(rows.length===1 && wantsDetail){
+        const x=rows[0],h=x.h,p=x.p;
+        const isi=Number(p.isi_per_bungkus||10);
+        const batch=Number(h.jumlah_batch||0);
+        const packs=isi>0?batch/isi:0;
+        const bahan=Number(h.total_bahan||0),oh=Number(h.biaya_produksi||0),modal=Number(h.total_modal||bahan+oh);
+        const calcHpp=packs>0?modal/packs:Number(h.hpp_unit||0);
+        const calcPcs=isi>0?calcHpp/isi:Number(h.hpp_per_pcs||0);
+        const lines=[
+          'Sumber angka '+money(h.hpp_unit)+' untuk '+x.name+':',
+          '• Master HPP: hasil Kalkulator HPP, bukan angka yang dibuat AI.',
+          '• Total biaya bahan: '+money(bahan),
+          '• Biaya produksi / OH: '+money(oh),
+          '• Total modal: '+money(modal),
+          '• Hasil produksi: '+Math.round(batch).toLocaleString('id-ID')+' pcs',
+          '• Isi: '+isi+' pcs/bungkus',
+          '• Jumlah bungkus: '+(packs||0).toLocaleString('id-ID'),
+          '• Rumus: '+money(modal)+' ÷ '+(packs||0).toLocaleString('id-ID')+' = '+money(calcHpp)+'/bungkus',
+          '• HPP per pcs: '+money(calcPcs),
+          '• Harga jual offline: '+(x.off!=null?money(x.off):'belum diisi')+' | online: '+(x.on!=null?money(x.on):'belum diisi')
+        ];
+        addMsg('bot',lines.join('\n'));
+      }else if(rows.length===1){
         const x=rows[0];
         addMsg('bot',x.name+': HPP '+money(x.hpp)+' per bungkus'+(x.pcs!=null?' ('+money(x.pcs)+' per pcs)':'')+'. Harga jual offline '+(x.off!=null?money(x.off):'belum diisi')+', online '+(x.on!=null?money(x.on):'belum diisi')+'.');
       }else{
