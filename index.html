@@ -404,7 +404,7 @@ async function loadDashboard(){
     });
     // Profit Terukur Offline = Uang Bersih − HPP yang memang sudah tersedia.
     // Satu listing tanpa HPP tidak boleh mematikan profit seluruh channel.
-    const offProfit=offHppMeasured ? offNet+offExpenseInHpp-offHpp-offExpenseOutsideHpp : null;
+    const offProfit=offHppMeasured ? offNet+offExpenseInHpp-offHpp : null;
     const offProfitKnown=offHppMeasured;
 
     // ONLINE: STANDARD historis + transaksi online baru.
