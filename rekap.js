@@ -394,9 +394,9 @@ function offlineHpp(m){
       if(qty>0&&!unit)known=false;
       if(unit)total+=Math.round(qty*unit);
     });
-    return {known,total};
+    return {known,total,partial:!known && total>0,measured:total>0};
   }catch(e){
-    return {known:false,total:0};
+    return {known:false,total:0,partial:false,measured:false};
   }
 }
 
@@ -418,7 +418,7 @@ function updateChannelUI(){
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran operasional ditampilkan terpisah.<br><b>Profit Offline = Uang Bersih/Pemasukan − HPP.</b><br>Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur.<br>Margin = Profit ÷ Uang Bersih × 100%.'
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran operasional ditampilkan terpisah.<br><b>Profit Terukur Offline = Uang Bersih − HPP yang tersedia.</b><br>Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur.<br>Margin = Profit ÷ Uang Bersih × 100%.'
     : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
 }
 
@@ -467,9 +467,9 @@ function renderCards(){
   $('net').textContent=money(v[2]);
 
   if(offline){
-    const profit=h.known ? v[2]-h.total : null;
-    const margin=v[2]>0 && profit!==null ? (profit/v[2])*100 : null;
-    $('hpp').textContent=h.known?money(h.total):'—';
+    const profit=h.measured ? v[2]-h.total : null;
+    const margin=v[2]!==0 && profit!==null ? (profit/v[2])*100 : null;
+    $('hpp').textContent=h.measured?money(h.total):'—';
     $('profit').textContent=profit===null?'—':money(profit);
     if(marginEl)marginEl.textContent=margin===null?'—':margin.toFixed(2)+'%';
     return;
@@ -691,7 +691,7 @@ function renderMonthly(){
 
 
       const modal =
-        h.known
+        h.measured
           ? h.total
           : null;
 
@@ -699,7 +699,7 @@ function renderMonthly(){
       const offline = $('channel').value === 'Offline';
       const profit = modal !== null ? v[2] - modal : null;
       const marginBase = Number(v[2]);
-      const margin = profit !== null && marginBase > 0 ? (profit / marginBase) * 100 : 0;
+      const margin = profit !== null && marginBase !== 0 ? (profit / marginBase) * 100 : 0;
 
 
       return `
@@ -739,12 +739,12 @@ function renderMonthly(){
 
                 ? `
                   <b>${money(profit)}</b>
-                  <div class="hint" style="margin-top:4px">Margin ${margin.toFixed(2)}%</div>
+                  <div class="hint" style="margin-top:4px">Margin ${margin.toFixed(2)}%</div>${h.partial ? '<div class="hint" style="margin-top:4px">Profit terukur; ada HPP listing yang belum tersedia.</div>' : ''}
                 `
 
                 : `
                   <span class="hint">
-                    Modal belum tersedia
+                    HPP belum tersedia
                   </span>
                 `
             }
