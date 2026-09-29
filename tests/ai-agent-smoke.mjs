@@ -20,6 +20,10 @@ if(!hpp.includes('Tulis pertanyaan apa saja tentang HPP')) throw new Error('HPP 
 if(!hpp.includes('Pengguna boleh bertanya dengan bahasa bebas/natural')) throw new Error('Natural-language AI instruction missing');
 if(!hpp.includes('master_hpp:productHpp')) throw new Error('Natural-language HPP context must include product names');
 if(!hpp.includes('function localNaturalAnswer')) throw new Error('HPP AI local natural-language fallback missing');
+if(!hpp.includes('Sumber angka')) throw new Error('HPP AI source-explanation response missing');
+if(!hpp.includes('Total biaya bahan')) throw new Error('HPP AI HPP breakdown missing');
+if(!hpp.includes('Rumus:')) throw new Error('HPP AI formula explanation missing');
+
 if(!hpp.includes('a==null||b==null||Number(b)===0')) throw new Error('HPP AI change percentage must treat missing history as unknown');
 
 
