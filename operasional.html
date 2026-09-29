@@ -388,6 +388,7 @@ async function savePurchase(){
     }
 
     state.purchase=await loadTable('ff_pembelian');
+    state.expense=await loadTable('pengeluaran');
     $('purchaseStatus').textContent='Pembelian tersimpan dan otomatis masuk Rekap sebagai Pengeluaran Bahan Baku. Harga bahan juga diperbarui untuk HPP.';
 
     $('buyNote').value='';$('purchaseLines').innerHTML='';addPurchaseLine();renderPurchases();renderStats();
@@ -468,6 +469,7 @@ async function cancelPurchase(id){
   }
 
   state.purchase=await loadTable('ff_pembelian');
+  state.expense=await loadTable('pengeluaran');
   await loadMaterials();
   renderPurchases();renderStats();
 }
