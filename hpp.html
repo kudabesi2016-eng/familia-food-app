@@ -1369,8 +1369,8 @@ async function load(){
 }
 function same(a,b){const x=norm(a),y=norm(b);return x===y||x.includes(y)||y.includes(x)}
 function pack(m){const v=Number(m?.isi_kemasan||0);return v>0?v:null}
-function itemMaterial(i){if(i.bahan_id){const m=state.materials.find(x=>String(x.id)===String(i.bahan_id));if(m)return m}return state.materials.find(m=>same(m.nama_bahan,i.nama_item))||null}
-function expenseMaterial(e){return state.materials.find(m=>same(m.nama_bahan,e.keterangan))||null}
+function itemMaterial(i){if(i.bahan_id){const m=state.materials.find(x=>String(x.id)===String(i.bahan_id));if(m&&['arsip','nonaktif'].indexOf(norm(m.status))<0)return m}return state.materials.find(m=>['arsip','nonaktif'].indexOf(norm(m.status))<0&&same(m.nama_bahan,i.nama_item))||null}
+function expenseMaterial(e){return state.materials.find(m=>['arsip','nonaktif'].indexOf(norm(m.status))<0&&same(m.nama_bahan,e.keterangan))||null}
 function itemQty(m,i){const q=Number(i?.qty);const qty=(q>0?q:1);const unit=norm(i?.satuan),base=norm(m?.satuan);if(!unit||!base||unit===base)return qty;return pack(m)?qty*pack(m):qty}
 function parsePeriodRange(v){
   const s=String(v||"").trim();
@@ -1393,7 +1393,9 @@ function hasSpecificRowsForRange(materialId,start,end,ignoreId){
 }
 function buildAvg(){
   const map={};
-  state.materials.forEach(m=>map[m.id]={m,total:0,qty:0,estimated:false,sources:0});
+  state.materials
+    .filter(m=>['arsip','nonaktif'].indexOf(norm(m.status))<0)
+    .forEach(m=>map[m.id]={m,total:0,qty:0,estimated:false,sources:0});
   const ex=state.expenses.filter(e=>norm(e.kategori)==="bahan baku");
   for(const e of ex){
     const ds=state.expenseItems.filter(i=>String(i.pengeluaran_id)===String(e.id));
