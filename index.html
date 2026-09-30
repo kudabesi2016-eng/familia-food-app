@@ -102,7 +102,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
       <div class="mini"><small>Detail Produk Historis</small><b id="onProductRows">0</b></div>
       <div class="mini"><small>Pemasukan / Penerimaan</small><b id="onRevenue">Rp 0</b></div>
       <div class="mini"><small>Potongan Online Shop</small><b id="onFee">Rp 0</b></div>
-      <div class="mini"><small>Uang Bersih</small><b id="onNet">Rp 0</b></div>
+      <div class="mini"><small>Uang Bersih setelah Potongan</small><b id="onNet">Rp 0</b></div>
       <div class="mini"><small>Penerimaan Shopee</small><b id="onShopeeCash">Rp 0</b></div>
       <div class="mini"><small>HPP / Modal</small><b id="onHpp">Rp 0</b></div>
       <div class="mini"><small>Biaya Online Lainnya</small><b id="onOtherCost">Rp 0</b></div>
@@ -507,13 +507,14 @@ async function loadDashboard(){
     const onNetBeforeOther=onOldNet+onNewNet;
     const onHpp=onOldHpp+onNewHpp;
     const onOtherCost=(onNetBeforeOther>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0;
-    // Uang Bersih Online = seluruh penerimaan kas historis + transaksi baru - seluruh biaya/potongan Online.
-    const onNet=onNetBeforeOther-onOtherCost;
+    // Uang Bersih Online = penerimaan setelah potongan platform.
+    // Biaya Online Lainnya ditampilkan terpisah dan hanya dikurangi saat Profit Final.
+    const onNet=onNetBeforeOther;
     const onContributionProfit=onOldProfit+(onNewNet-onNewHpp);
     // Profit final Online dikurangi biaya agregat Online Lainnya yang sudah dikunci.
     const onProfit=onContributionProfit-onOtherCost;
     // Jan–Agustus 2026 memakai angka histori audit seller_center yang dikunci.
-    const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
+    const onQty=ONLINE_LOCKED_TOTAL;
 
     // RINGKASAN OFFLINE TERKUNCI: jangan dihitung ulang dari detail database.
     const OFFLINE_LOCKED_SUMMARY = Object.freeze({
