@@ -516,6 +516,7 @@ function updateChannelUI(){
   $('monthlyGrossHead').style.display=offline?'table-cell':'none';
   $('monthlyOutsideHead').style.display=offline?'table-cell':'none';
   $('monthlyResultHead').style.display=offline?'table-cell':'none';
+  $('monthlyProfitHead').style.display=offline?'none':'table-cell';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
     ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran operasional ditampilkan terpisah.<br><b>Profit Terukur Offline = Uang Bersih − HPP yang tersedia.</b><br>Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur.<br>Margin = Profit ÷ Uang Bersih × 100%.'
@@ -800,26 +801,34 @@ function renderMonthly(){
     if(!v)return '';
 
     const h=hppForChannel(m);
-    const modal=offline
-      ? (h.measured?h.total:null)
-      : (h.known?h.total:null);
-    const profit=modal!==null?(offline?v[0]-modal-v[3]:v[2]-modal):null;
+    const modal=offline?(h.measured?h.total:null):(h.known?h.total:null);
+
+    if(offline){
+      const gross=modal!==null?v[0]-modal:null;
+      const outside=Number(v[3]||0);
+      const result=gross!==null?gross-outside:null;
+      return '<tr>'+
+        '<td><b>'+label(m)+'</b></td>'+
+        '<td>'+money(v[0])+'</td>'+
+        '<td>'+money(v[1])+'</td>'+
+        '<td><b>'+money(v[2])+'</b></td>'+
+        '<td>'+(modal!==null?money(modal):'—')+'</td>'+
+        '<td>'+(gross!==null?money(gross):'—')+'</td>'+
+        '<td>'+money(outside)+'</td>'+
+        '<td>'+(result!==null?money(result):'—')+'</td>'+
+      '</tr>';
+    }
+
+    const profit=modal!==null?v[2]-modal:null;
     const marginBase=Number(v[2]);
     const margin=profit!==null&&marginBase!==0?profit/marginBase*100:0;
-    const gross=offline&&modal!==null?v[0]-modal:null;
-    const outside=offline&&Number(v[3]||0)>0?Number(v[3]):null;
-    const result=offline&&modal!==null?v[0]-modal-Number(v[3]||0):null;
-
     return '<tr>'+
       '<td><b>'+label(m)+'</b></td>'+
       '<td>'+money(v[0])+'</td>'+
       '<td>'+money(v[1])+'</td>'+
       '<td><b>'+money(v[2])+'</b></td>'+
       '<td>'+(modal!==null?money(modal):'—')+'</td>'+
-      '<td style="'+(offline?'display:table-cell':'display:none')+'">'+(gross!==null?money(gross):'—')+'</td>'+
-      '<td style="'+(offline?'display:table-cell':'display:none')+'">'+(outside!==null?money(outside):'—')+'</td>'+
-      '<td style="'+(offline?'display:table-cell':'display:none')+'">'+(result!==null?money(result):'—')+'</td>'+
-      (offline?'':'<td style="display:table-cell"><b>'+ (profit!==null?money(profit):'—') +'</b><div class="hint" style="margin-top:4px">'+(profit!==null?'Margin '+margin.toFixed(2)+'%':'HPP belum tersedia')+'</div></td>')+
+      '<td><b>'+(profit!==null?money(profit):'—')+'</b><div class="hint" style="margin-top:4px">'+(profit!==null?'Margin '+margin.toFixed(2)+'%':'HPP belum tersedia')+'</div></td>'+
     '</tr>';
   }).join('');
 }
