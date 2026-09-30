@@ -465,10 +465,10 @@ async function loadDashboard(){
     const onRevenue=onOldRevenue+onNewRevenue;
     const onFee=onOldFee+onNewFee;
     const onNetBeforeOther=onOldNet+onNewNet;
+    const onHpp=onOldHpp+onNewHpp;
     const onOtherCost=(onNetBeforeOther>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0;
     // Uang Bersih Online = seluruh penerimaan kas historis + transaksi baru - seluruh biaya/potongan Online.
     const onNet=onNetBeforeOther-onOtherCost;
-    const onHpp=onOldHpp+onNewHpp;
     const onContributionProfit=onOldProfit+(onNewNet-onNewHpp);
     // Profit final Online dikurangi biaya agregat Online Lainnya yang sudah dikunci.
     const onProfit=onContributionProfit-onOtherCost;
