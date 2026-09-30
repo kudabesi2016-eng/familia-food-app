@@ -374,37 +374,100 @@ function resolveHppByProductName(name){
   const unit=Number(h?.hpp_unit||0);
   return unit>0?unit:null;
 }
+/* =====================================================
+   HPP OFFLINE BERDASARKAN PERIODE
+   Jan–Apr 2026 = snapshot HPP lama
+   Mei–Ags 2026 = snapshot HPP baru
+   Setelah Agustus = master HPP aktif
+   Tujuan: perubahan master HPP sekarang tidak mengubah
+   histori yang sudah ditutup.
+===================================================== */
+const FF_OFFLINE_HPP_OLD = {
+  /* Snapshot HPP lama Jan–Apr: dari tabel HPP final lama.
+     Histori Jan–Apr yang tersimpan hanya memakai produk di bawah ini. */
+  'naget 10':3100,
+  'naget 12':3720,
+  'cireng isi':2900,
+  'cireng biasa':2700,
+  'cibay':3000
+};
+
+const FF_OFFLINE_HPP_NEW = {
+  'naget 10':3593,
+  'naget 12':4312,
+  'naget 20':7187,
+  'naget 25+saus':8984,
+  'naget 30':10780,
+  'naget 40':14374,
+  'naget 50':17968,
+  'cireng isi':2900,
+  'cireng biasa':2425,
+  'cibay':2900
+};
+
+function ffOfflineHppUnitForMonth(name,m){
+  const target=ffOfflineMasterTarget(name);
+  if(!target)return null;
+
+  if(m>='2026-01' && m<='2026-04'){
+    return FF_OFFLINE_HPP_OLD[target] ?? null;
+  }
+
+  if(m>='2026-05' && m<='2026-08'){
+    return FF_OFFLINE_HPP_NEW[target] ?? null;
+  }
+
+  /* Bulan di luar periode histori: gunakan HPP master aktif. */
+  const n=ffNormOfflineName(name);
+  const p=(products||[]).find(x=>ffNormOfflineName(x.nama_produk)===target) ||
+          (products||[]).find(x=>ffNormOfflineName(x.nama_produk).includes(target));
+  if(!p)return null;
+  const h=(hpps||[]).find(x=>String(x.produk_id)===String(p.id));
+  if(!h)return null;
+  if(h.hpp_unit!=null && Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
+  return null;
+}
+
 function offlineHpp(m){
   try{
     let total=0,known=true;
+
     (olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m).forEach(x=>{
       const qty=Math.max(0,Number(x.catatan||0));
-      const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.jenis) : !['naget isi 20','naget 20','naget isi 25+ saus','naget isi 25+saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(normalizeProductName(x.jenis));
+      const mappedOffline = FF.isOfflineProduct
+        ? FF.isOfflineProduct(x.jenis)
+        : !['naget isi 20','naget 20','naget isi 25+ saus','naget isi 25+saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(normalizeProductName(x.jenis));
+
       if(!mappedOffline){
         if(qty>0)known=false;
         return;
       }
-      const unit=resolveHppByProductName(x.jenis);
+
+      const unit=ffOfflineHppUnitForMonth(x.jenis,m);
       if(qty>0&&!unit)known=false;
       if(unit)total+=Math.round(qty*unit);
     });
+
     (sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m).forEach(x=>{
       const qty=Math.max(0,Number(x.qty||0));
       const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.product_name,x.variation) : true;
-      let unit=null;
       if(!mappedOffline){
         if(qty>0)known=false;
         return;
       }
-      if(x.produk_id){
-        const h=(hpps||[]).find(z=>String(z.produk_id)===String(x.produk_id));
-        unit=Number(h?.hpp_unit||0)>0?Number(h.hpp_unit):null;
-      }
-      if(!unit)unit=resolveHppByProductName(x.product_name);
+
+      const unit=ffOfflineHppUnitForMonth(x.product_name,m);
       if(qty>0&&!unit)known=false;
       if(unit)total+=Math.round(qty*unit);
     });
-    return {known,total,partial:!known && total>0,measured:total>0};
+
+    return {
+      known,
+      total,
+      partial:!known && total>0,
+      measured:total>0,
+      snapshot:m>='2026-01'&&m<='2026-04'?'HPP lama':(m>='2026-05'&&m<='2026-08'?'HPP baru':'Master aktif')
+    };
   }catch(e){
     return {known:false,total:0,partial:false,measured:false};
   }
@@ -429,7 +492,7 @@ function updateChannelUI(){
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
     ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran operasional ditampilkan terpisah.<br><b>Profit Terukur Offline = Uang Bersih − HPP yang tersedia.</b><br>Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur.<br>Margin = Profit ÷ Uang Bersih × 100%.'
-    : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
+    : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br><b>HPP Offline Jan–Apr dikunci ke snapshot HPP lama; Mei–Ags dikunci ke snapshot HPP baru.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
 }
 
 /* =====================================================
