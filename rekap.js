@@ -22,6 +22,19 @@ const OFFLINE_LOCKED_SUMMARY = Object.freeze({
   result: -8745642
 });
 
+const OFFLINE_LOCKED_MONTHLY = Object.freeze([
+  {m:'2026-01',revenue:26541100,hpp:22595940,grossProfit:3945160,outsideHpp:4510300,result:-565140},
+  {m:'2026-02',revenue:33617200,hpp:28079150,grossProfit:5538050,outsideHpp:3833000,result:1705050},
+  {m:'2026-03',revenue:27881100,hpp:24000160,grossProfit:3880940,outsideHpp:3736325,result:144615},
+  {m:'2026-04',revenue:22110700,hpp:17450890,grossProfit:4659810,outsideHpp:6046700,result:-1386890},
+  {m:'2026-05',revenue:17767500,hpp:15491091,grossProfit:2276409,outsideHpp:2490800,result:-214391},
+  {m:'2026-06',revenue:21577000,hpp:19354764,grossProfit:2222236,outsideHpp:3853000,result:-1630764},
+  {m:'2026-07',revenue:24144500,hpp:21640131,grossProfit:2504369,outsideHpp:5795500,result:-3291131},
+  {m:'2026-08',revenue:12185000,hpp:10948291,grossProfit:1236709,outsideHpp:4743700,result:-3506991}
+]);
+function offlineLockedMonth(m){return OFFLINE_LOCKED_MONTHLY.find(x=>x.m===m)||null;}
+
+
 /*
  * Jangan hentikan seluruh Rekap bila ff-core.js terlambat/gagal dimuat.
  * Pakai helper lokal sebagai fallback lalu gunakan FFCore bila tersedia.
@@ -500,6 +513,9 @@ function updateChannelUI(){
   $('outLabel').textContent=offline?'Potongan':'Potongan Online Shop';
   $('monthlyOutHead').textContent=offline?'Potongan':'Potongan Online Shop';
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
+  $('monthlyGrossHead').style.display=offline?'table-cell':'none';
+  $('monthlyOutsideHead').style.display=offline?'table-cell':'none';
+  $('monthlyResultHead').style.display=offline?'table-cell':'none';
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
     ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran operasional ditampilkan terpisah.<br><b>Profit Terukur Offline = Uang Bersih − HPP yang tersedia.</b><br>Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur.<br>Margin = Profit ÷ Uang Bersih × 100%.'
@@ -753,112 +769,59 @@ function renderOnlineFinalSummary(){
   if(p)p.style.color=profit<0?'#b42318':'';
 }
 function renderMonthly(){
-
-  const ms =
-    months();
+  const ms=months();
+  const offline=$('channel').value==='Offline';
 
   if(!ms.length){
-
-    $('monthly').innerHTML = `
-
-      <tr>
-        <td colspan="6" class="empty">
-          Belum ada data ${$('channel').value}.
-        </td>
-      </tr>
-
-    `;
-
+    $('monthly').innerHTML='<tr><td colspan="8" class="empty">Belum ada data '+$('channel').value+'.</td></tr>';
     return;
-
   }
 
-
-  $('monthly').innerHTML =
-
-    ms.map(m => {
-
-      const v =
-        finance(m);
-
-      if(!v){
-        return '';
+  $('monthly').innerHTML=ms.map(m=>{
+    if(offline){
+      const locked=offlineLockedMonth(m);
+      if(locked){
+        const marginGross=locked.revenue?locked.grossProfit/locked.revenue*100:0;
+        const marginResult=locked.revenue?locked.result/locked.revenue*100:0;
+        return '<tr>'+
+          '<td><b>'+label(m)+'</b></td>'+
+          '<td>'+money(locked.revenue)+'</td>'+
+          '<td>'+money(0)+'</td>'+
+          '<td><b>'+money(locked.revenue)+'</b></td>'+
+          '<td>'+money(locked.hpp)+'</td>'+
+          '<td><b>'+money(locked.grossProfit)+'</b><div class="hint" style="margin-top:4px">Margin laba kotor '+marginGross.toFixed(2)+'%</div></td>'+
+          '<td>'+money(locked.outsideHpp)+'</td>'+
+          '<td><b>'+money(locked.result)+'</b><div class="hint" style="margin-top:4px">Margin hasil usaha '+marginResult.toFixed(2)+'%</div></td>'+
+        '</tr>';
       }
+    }
 
+    const v=finance(m);
+    if(!v)return '';
 
-      const h =
-        hppForChannel(m);
+    const h=hppForChannel(m);
+    const modal=offline
+      ? (h.measured?h.total:null)
+      : (h.known?h.total:null);
+    const profit=modal!==null?(offline?v[0]-modal-v[3]:v[2]-modal):null;
+    const marginBase=Number(v[2]);
+    const margin=profit!==null&&marginBase!==0?profit/marginBase*100:0;
+    const gross=offline&&modal!==null?v[0]-modal:null;
+    const outside=offline&&Number(v[3]||0)>0?Number(v[3]):null;
+    const result=offline&&modal!==null?v[0]-modal-Number(v[3]||0):null;
 
-
-      // Offline memakai flag measured; Online memakai flag known.
-      // onlineHpp() mengembalikan {known,total}, bukan {measured,total}.
-      const modal =
-        $('channel').value === 'Offline'
-          ? (h.measured ? h.total : null)
-          : (h.known ? h.total : null);
-
-
-      const offline = $('channel').value === 'Offline';
-      const profit = modal !== null ? (offline ? v[0] - modal - v[3] : v[2] - modal) : null;
-      const marginBase = Number(v[2]);
-      const margin = profit !== null && marginBase !== 0 ? (profit / marginBase) * 100 : 0;
-
-
-      return `
-
-        <tr>
-
-          <td>
-            <b>${label(m)}</b>
-          </td>
-
-          <td>
-            ${money(v[0])}
-          </td>
-
-          <td>
-            ${money(v[1])}
-          </td>
-
-          <td>
-            <b>${money(v[2])}</b>
-          </td>
-
-          <td>
-
-            ${
-              modal !== null
-                ? money(modal)
-                : '—'
-            }
-
-          </td>
-
-          <td>
-
-            ${
-              profit !== null
-
-                ? `
-                  <b>${money(profit)}</b>
-                  <div class="hint" style="margin-top:4px">Margin ${margin.toFixed(2)}%</div>${h.partial ? '<div class="hint" style="margin-top:4px">Profit terukur; ada HPP listing yang belum tersedia.</div>' : ''}
-                `
-
-                : `
-                  <span class="hint">
-                    HPP belum tersedia
-                  </span>
-                `
-            }
-
-          </td>
-
-        </tr>
-
-      `;
-
-    }).join('');
-
+    return '<tr>'+
+      '<td><b>'+label(m)+'</b></td>'+
+      '<td>'+money(v[0])+'</td>'+
+      '<td>'+money(v[1])+'</td>'+
+      '<td><b>'+money(v[2])+'</b></td>'+
+      '<td>'+(modal!==null?money(modal):'—')+'</td>'+
+      '<td style="'+(offline?'display:table-cell':'display:none')+'">'+(gross!==null?money(gross):'—')+'</td>'+
+      '<td style="'+(offline?'display:table-cell':'display:none')+'">'+(outside!==null?money(outside):'—')+'</td>'+
+      '<td style="'+(offline?'display:table-cell':'display:none')+'">'+(result!==null?money(result):'—')+'</td>'+
+      (offline?'':'<td style="display:table-cell"><b>'+ (profit!==null?money(profit):'—') +'</b><div class="hint" style="margin-top:4px">'+(profit!==null?'Margin '+margin.toFixed(2)+'%':'HPP belum tersedia')+'</div></td>')+
+    '</tr>';
+  }).join('');
 }
 
 
