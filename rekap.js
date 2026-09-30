@@ -551,8 +551,22 @@ function months(){
 function renderCards(){
   const m=$('month').value;
   const offline=$('channel').value==='Offline';
-  const v=finance(m);
   const marginEl=$('margin');
+
+  if(offline){
+    const locked=offlineLockedMonth(m);
+    if(locked){
+      $('rev').textContent=money(locked.revenue);
+      $('out').textContent=money(0);
+      $('net').textContent=money(locked.revenue);
+      $('hpp').textContent=money(locked.hpp);
+      $('profit').textContent=money(locked.grossProfit);
+      if(marginEl)marginEl.textContent=(locked.revenue?locked.grossProfit/locked.revenue*100:0).toFixed(2)+'%';
+      return;
+    }
+  }
+
+  const v=finance(m);
   if(!v){
     $('rev').textContent='Rp 0';
     $('out').textContent='Rp 0';
@@ -562,13 +576,14 @@ function renderCards(){
     if(marginEl)marginEl.textContent='—';
     return;
   }
+
   const h=hppForChannel(m);
   $('rev').textContent=money(v[0]);
   $('out').textContent=money(v[1]);
   $('net').textContent=money(v[2]);
 
   if(offline){
-    const profit=h.measured ? (offline ? v[0]-h.total-v[3] : v[2]-h.total) : null;
+    const profit=h.measured ? v[0]-h.total-h[3] : null;
     const margin=v[2]!==0 && profit!==null ? (profit/v[2])*100 : null;
     $('hpp').textContent=h.measured?money(h.total):'—';
     $('profit').textContent=profit===null?'—':money(profit);
