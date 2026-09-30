@@ -18,8 +18,42 @@
     ['naget isi 40','Naget 40'], ['naget 40','Naget 40'],
     ['naget isi 50','Naget 50'], ['naget 50','Naget 50'],
     ['cireng isi 10','Cireng isi'], ['cireng isi','Cireng isi'],
-    ['cireng biasa','Cireng biasa'], ['cibay isi 10','Cibay'], ['cibay','Cibay']
+    ['cireng biasa','Cireng biasa'], ['cireng crispy','Cireng biasa'],
+    ['cibay isi 10','Cibay'], ['cibay','Cibay']
   ]);
+
+  const OFFLINE_PRODUCTS = new Set([
+    'naget 10','naget isi 10',
+    'naget 12','naget isi 12',
+    'cireng isi','cireng isi 10',
+    'cireng biasa','cireng crispy',
+    'cibay','cibay isi 10'
+  ]);
+
+  const ONLINE_ONLY_PRODUCTS = new Set([
+    'naget 20','naget isi 20',
+    'naget 25+saus','naget isi 25+ saus',
+    'naget 30','naget isi 30',
+    'naget 40','naget isi 40',
+    'naget 50','naget isi 50'
+  ]);
+
+  function productChannel(name, variation){
+    const n = norm(name);
+    const v = norm(variation);
+    if(v === 'dropship' || n === 'dropship' || n.includes(' dropship ')) return 'Online';
+    if(ONLINE_ONLY_PRODUCTS.has(n)) return 'Online';
+    if(OFFLINE_PRODUCTS.has(n) || aliasMap.has(n)) return 'Offline';
+    return null;
+  }
+
+  function isOfflineProduct(name, variation){
+    return productChannel(name, variation) === 'Offline';
+  }
+
+  function isOnlineProduct(name, variation){
+    return productChannel(name, variation) === 'Online';
+  }
 
   function findProduct(products, name, id){
     const byId = id != null ? (products || []).find(p => String(p.id) === String(id)) : null;
@@ -120,14 +154,18 @@
       const neu = offlineNewRows(sales,month);
       for(const r of old){
         rev += r.revenue; net += r.net;
-        const h = hppFor(products,hpps,r);
-        if(h == null) hppKnown=false; else hpp += r.qty*h;
-        productRows.push({...r, hpp:h != null ? r.qty*h : null, profit:h != null ? r.net-r.qty*h : null, knownHpp:h != null});
+        const channelMapped = isOfflineProduct(r.product_name);
+        const h = channelMapped ? hppFor(products,hpps,r) : null;
+        if(!channelMapped || h == null) hppKnown=false;
+        if(channelMapped && h != null) hpp += r.qty*h;
+        productRows.push({...r, hpp:(channelMapped && h != null) ? r.qty*h : null, profit:(channelMapped && h != null) ? r.net-r.qty*h : null, knownHpp:channelMapped && h != null});
       }
       for(const r of neu){
         rev += r.revenue; net += r.net;
-        if(r.knownHpp) hpp += Number(r.hpp||0); else hppKnown=false;
-        productRows.push(r);
+        const channelMapped = isOfflineProduct(r.product_name);
+        if(channelMapped && r.knownHpp) hpp += Number(r.hpp||0);
+        else hppKnown=false;
+        productRows.push({...r, knownHpp:channelMapped && r.knownHpp});
       }
       const ex = (expenses || []).filter(x => expenseMonth(x) === month && isCashExpense(x));
       const expenseTotal = ex.reduce((a,x)=>a+Number(x.nominal||0),0);
@@ -191,5 +229,5 @@
     return [...map.values()].sort((a,b)=>a.channel.localeCompare(b.channel)||a.name.localeCompare(b.name,'id'));
   }
 
-  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,isCashExpense,expenseIsInHpp,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary};
+  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,isCashExpense,expenseIsInHpp,productChannel,isOfflineProduct,isOnlineProduct,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary};
 })();
