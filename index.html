@@ -372,6 +372,7 @@ async function loadDashboard(){
     const opSupplier=supplierRows.filter(active).length;
 
     // OFFLINE: Data Lama + transaksi baru.
+    // Ringkasan keuangan Offline Jan–Agustus sudah dikunci sebagai dasar resmi.
     const offOld=old;
     const offNew=sales.filter(x=>String(x.channel||'')==='Offline' && !isHistoricalSource(x.source));
     const offOldRevenue=offOld.reduce((s,x)=>s+Math.round(num(x.nominal ?? x.omzet ?? x.total)),0);
@@ -514,13 +515,28 @@ async function loadDashboard(){
     // Jan–Agustus 2026 memakai angka histori audit seller_center yang dikunci.
     const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
 
-    // GABUNGAN: hasil akhir menggabungkan kondisi riil dua channel.
-    const totalRevenue=offRevenue+onRevenue;
-    const totalOut=offExpense+onFee+((onNet>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0);
+    // RINGKASAN OFFLINE TERKUNCI: jangan dihitung ulang dari detail database.
+    const OFFLINE_LOCKED_SUMMARY = Object.freeze({
+      revenue:185824100,
+      hpp:159560417,
+      grossProfit:26263683,
+      outsideHpp:35009325,
+      result:-8745642
+    });
+    const offlineLockedExpense=OFFLINE_LOCKED_SUMMARY.hpp+OFFLINE_LOCKED_SUMMARY.outsideHpp;
+    const dashboardOffRevenue=OFFLINE_LOCKED_SUMMARY.revenue;
+    const dashboardOffHpp=OFFLINE_LOCKED_SUMMARY.hpp;
+    const dashboardOffExpense=offlineLockedExpense;
+    const dashboardOffNet=OFFLINE_LOCKED_SUMMARY.result;
+    const dashboardOffProfit=OFFLINE_LOCKED_SUMMARY.result;
+
+    // GABUNGAN: gunakan ringkasan Offline terkunci + perhitungan Online.
+    const totalRevenue=dashboardOffRevenue+onRevenue;
+    const totalOut=dashboardOffExpense+onFee+((onNet>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0);
     const totalNet=totalRevenue-totalOut;
-    const totalHpp=(offHpp+onHpp);
+    const totalHpp=(dashboardOffHpp+onHpp);
     const overallProfitKnown=true;
-    const totalProfit=offProfitKnown && Number.isFinite(Number(onProfit)) ? Number(offProfit)+Number(onProfit) : null;
+    const totalProfit=Number.isFinite(Number(onProfit)) ? Number(dashboardOffProfit)+Number(onProfit) : null;
     const totalMargin=totalProfit!==null && totalNet ? totalProfit/totalNet*100 : null;
 
     setNumber('totalRevenue',totalRevenue);
@@ -542,18 +558,12 @@ async function loadDashboard(){
 
     document.getElementById('offOldCount').textContent=offOld.length.toLocaleString('id-ID')+' baris';
     document.getElementById('offNewCount').textContent=offNew.length.toLocaleString('id-ID');
-    setNumber('offRevenue',offRevenue); setNumber('offExpense',offExpense); setNumber('offNet',offNet);
-    if(offProfit===null || Number.isNaN(Number(offProfit))){ document.getElementById('offProfit').textContent='—'; document.getElementById('offProfit').classList.remove('negative'); }
-    else { setNumber('offProfit',offProfit); }
+    setNumber('offRevenue',dashboardOffRevenue); setNumber('offExpense',dashboardOffExpense); setNumber('offNet',dashboardOffNet);
+    setNumber('offProfit',dashboardOffProfit);
     document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
-    const offlineProfitEl=document.getElementById('offProfit');
     const offlineAudit=document.getElementById('offlineHppAudit');
     if(offlineAudit){
-      offlineAudit.textContent=offHppKnown
-        ? '✅ HPP lengkap. Profit = Pemasukan − HPP − Beban di luar HPP. Pengeluaran Bahan Baku tidak dipotong lagi karena sudah termasuk HPP.'
-        : (offHppMeasured
-          ? '🟠 Profit Terukur = Pemasukan − HPP terukur − Beban di luar HPP. Pengeluaran Bahan Baku tidak dihitung dua kali.'
-          : '🟠 HPP belum tersedia. Profit Offline belum dapat dihitung.');
+      offlineAudit.textContent='🔒 Ringkasan Offline Jan–Agustus 2026 terkunci sesuai dasar perhitungan resmi.';
     }
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');

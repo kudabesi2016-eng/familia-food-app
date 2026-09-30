@@ -10,7 +10,7 @@
 <script src="app-settings.js"></script>
 <script src="ff-core.js?v=20260929-1855"></script>
 <script>window.__REKAP_JS_LOADED=false;</script>
-<script src="rekap.js?v=20260930-2035"></script>
+<script src="rekap.js?v=20260930-2200"></script>
 
 <style>
 :root{
@@ -425,6 +425,22 @@ td{
 
   </div>
 
+
+  <div class="card" id="offlineFinalSummaryCard" style="margin-top:12px;display:none">
+    <h2 style="margin-top:0">🟢 Ringkasan Offline Terkunci Jan–Agustus 2026</h2>
+    <div class="notice">Angka ini menjadi <b>dasar resmi perhitungan Offline</b> yang sudah dikunci. Detail transaksi/database tidak diubah.</div>
+    <div class="cards" style="margin-top:12px">
+      <div class="stat"><small>Pemasukan Offline</small><strong id="offlineFinalRevenue">Rp 0</strong></div>
+      <div class="stat"><small>HPP Offline</small><strong id="offlineFinalHpp">Rp 0</strong></div>
+      <div class="stat"><small>Laba Kotor</small><strong id="offlineFinalGross">Rp 0</strong></div>
+      <div class="stat"><small>Beban di luar HPP</small><strong id="offlineFinalOutside">Rp 0</strong></div>
+      <div class="stat"><small>Total Pengeluaran</small><strong id="offlineFinalExpense">Rp 0</strong></div>
+      <div class="stat profit"><small>Hasil Usaha Offline</small><strong id="offlineFinalResult">Rp 0</strong></div>
+    </div>
+    <div class="hint" style="margin-top:10px">
+      Rumus: Laba Kotor = Pemasukan − HPP. Hasil Usaha = Laba Kotor − Beban di luar HPP.
+    </div>
+  </div>
 
   <div class="card" id="onlineFinalSummaryCard" style="margin-top:12px;display:none">
     <h2 style="margin-top:0">🔵 Profit Online Final Jan–Agustus 2026</h2>
