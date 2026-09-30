@@ -394,6 +394,7 @@ function ffOfflineMasterTarget(name){
 
   if(n==='naget 10' || n==='naget isi 10') return 'naget 10';
   if(n==='naget 12' || n==='naget isi 12') return 'naget 12';
+  if(n==='naget 20' || n==='naget isi 20') return 'naget 20';
   if(n==='cireng isi' || n==='cireng 10' || n==='cireng isi 10') return 'cireng isi';
   if(n==='cireng biasa' || n==='cireng crispy') return 'cireng biasa';
   if(n==='cibay' || n==='cibay 10' || n==='cibay isi 10') return 'cibay';
@@ -422,6 +423,7 @@ const FF_OFFLINE_HPP_OLD = {
 const FF_OFFLINE_HPP_NEW = {
   'naget 10':3593,
   'naget 12':4312,
+  'naget 20':7187,
   'naget 20':7187,
   'naget 25+saus':8984,
   'naget 30':10780,
@@ -461,9 +463,10 @@ function offlineHpp(m){
 
     (olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m).forEach(x=>{
       const qty=Math.max(0,Number(x.catatan||0));
-      const mappedOffline = FF.isOfflineProduct
-        ? FF.isOfflineProduct(x.jenis)
-        : !['naget isi 20','naget 20','naget isi 25+ saus','naget isi 25+saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(normalizeProductName(x.jenis));
+      // Data Lama di bagian Offline adalah sumber historis offline.
+      // Gunakan mapping HPP historis berdasarkan nama produk, termasuk
+      // Naget 20 yang memang tercatat pada data Offline Juli 2026.
+      const mappedOffline = !!ffOfflineMasterTarget(x.jenis);
 
       if(!mappedOffline){
         if(qty>0)known=false;
