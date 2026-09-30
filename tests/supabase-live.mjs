@@ -130,8 +130,12 @@ try {
   returnId = returns[0]?.id ?? null;
   if(returnId == null) throw new Error('Return insert returned no id');
 
-  const sales = await request('penjualan?select=id&limit=1');
-  saleId = sales?.[0]?.id ?? null;
+  // Pilih penjualan yang belum memiliki mapping pelanggan agar smoke test tetap idempotent.
+  const sales = await request('penjualan?select=id&limit=100');
+  const existingLinks = await request('ff_penjualan_pelanggan?select=penjualan_id&limit=1000');
+  const linkedSaleIds = new Set((existingLinks||[]).map(x=>String(x.penjualan_id)));
+  const candidateSale = (sales||[]).find(x=>x?.id!=null && !linkedSaleIds.has(String(x.id)));
+  saleId = candidateSale?.id ?? null;
   if(saleId){
     const links = await request('ff_penjualan_pelanggan',{
       method:'POST',
