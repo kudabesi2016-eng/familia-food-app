@@ -73,7 +73,7 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
   <div class="cards">
     <div class="card"><div class="card-title">Total Pemasukan</div><div class="card-number" id="totalRevenue">Rp 0</div></div>
     <div class="card"><div class="card-title">Total Pengeluaran / Potongan + Biaya Online</div><div class="card-number" id="totalOut">Rp 0</div></div>
-    <div class="card"><div class="card-title">Uang Bersih (sebelum Biaya Online Lainnya)</div><div class="card-number" id="totalNet">Rp 0</div></div>
+    <div class="card"><div class="card-title">Uang Bersih (setelah Semua Pengeluaran)</div><div class="card-number" id="totalNet">Rp 0</div></div>
     <div class="card"><div class="card-title">HPP / Modal Terukur</div><div class="card-number" id="totalHpp">Rp 0</div></div>
     <div class="card"><div class="card-title">Profit Gabungan (Terukur)</div><div class="card-number" id="totalProfit">—</div></div>
     <div class="card"><div class="card-title">Margin Terukur</div><div class="card-number" id="totalMargin">—</div></div>
@@ -464,11 +464,13 @@ async function loadDashboard(){
     const onNewMargin=onNewNet?onNewProfit/onNewNet*100:0;
     const onRevenue=onOldRevenue+onNewRevenue;
     const onFee=onOldFee+onNewFee;
-    const onNet=onOldNet+onNewNet;
+    const onNetBeforeOther=onOldNet+onNewNet;
+    const onOtherCost=(onNetBeforeOther>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0;
+    // Uang Bersih Online = seluruh penerimaan kas historis + transaksi baru - seluruh biaya/potongan Online.
+    const onNet=onNetBeforeOther-onOtherCost;
     const onHpp=onOldHpp+onNewHpp;
     const onContributionProfit=onOldProfit+(onNewNet-onNewHpp);
     // Profit final Online dikurangi biaya agregat Online Lainnya yang sudah dikunci.
-    const onOtherCost=(onNet>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0;
     const onProfit=onContributionProfit-onOtherCost;
     // Jan–Agustus 2026 memakai angka histori audit seller_center yang dikunci.
     const onQty=ONLINE_LOCKED_TOTAL+onNewQty;
@@ -476,7 +478,7 @@ async function loadDashboard(){
     // GABUNGAN: hasil akhir menggabungkan kondisi riil dua channel.
     const totalRevenue=offRevenue+onRevenue;
     const totalOut=offExpense+onFee+((onNet>0 || onHpp>0) ? ONLINE_OTHER_COST_LOCKED : 0);
-    const totalNet=offNet+onNet;
+    const totalNet=totalRevenue-totalOut;
     const totalHpp=(offHpp+onHpp);
     const overallProfitKnown=true;
     const totalProfit=offProfitKnown && Number.isFinite(Number(onProfit)) ? Number(offProfit)+Number(onProfit) : null;
