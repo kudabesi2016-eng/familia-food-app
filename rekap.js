@@ -845,7 +845,17 @@ function renderMonthly(){
       '<td>'+(modal!==null?money(modal):'—')+'</td>'+
       '<td><b>'+(profit!==null?money(profit):'—')+'</b><div class="hint" style="margin-top:4px">'+(profit!==null?'Margin '+margin.toFixed(2)+'%':'HPP belum tersedia')+'</div></td>'+
     '</tr>';
-  }).join('');
+  }).join('') +
+    (offline ? '<tr style="border-top:3px solid #0b7a45;background:#f0fbf5">'+
+      '<td><b>TOTAL JANUARI–AGUSTUS</b></td>'+
+      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.revenue)+'</b></td>'+
+      '<td><b>Rp 0</b></td>'+
+      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.revenue)+'</b></td>'+
+      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.hpp)+'</b></td>'+
+      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.grossProfit)+'</b></td>'+
+      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.outsideHpp)+'</b></td>'+
+      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.result)+'</b></td>'+
+    '</tr>' : '');
 }
 
 
