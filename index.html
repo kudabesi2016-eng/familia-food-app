@@ -386,18 +386,58 @@ async function loadDashboard(){
     const offNet=offRevenue-offExpense;
     const offQty=offOld.reduce((s,x)=>s+Math.round(num(x.qty ?? x.catatan)),0)+offNew.reduce((s,x)=>s+Math.round(num(x.qty)),0);
 
-    // HPP Offline memakai sumber per bulan yang sama dengan Rekap Offline.
-    // Jika satu bulan belum memiliki mapping HPP, Profit Offline tetap ditampilkan
-    // sebagai "—" agar Dashboard tidak menyebut Uang Bersih sebagai Profit.
+    // HPP Offline memakai snapshot periode yang sama dengan Rekap:
+    // Jan–Apr = HPP lama, Mei–Ags = HPP baru.
     const dashboardData={sales,olds:offOld,expenses:expenseRows,products:productMaster,hpps:hppRows};
     const offlineMonths=FFCore.monthsOfData(dashboardData);
+    const HPP_OFFLINE_OLD={
+      'naget 10':3593,'naget 12':4312,'naget 20':7187,'naget 25+saus':8984,
+      'naget 30':10780,'naget 40':14374,'naget 50':17968,
+      'cireng isi':2946,'cireng biasa':2473,'cibay':2900
+    };
+    const HPP_OFFLINE_NEW={
+      'naget 10':3593,'naget 12':4312,'naget 20':7187,'naget 25+saus':8984,
+      'naget 30':10780,'naget 40':14374,'naget 50':17968,
+      'cireng isi':2900,'cireng biasa':2425,'cibay':2900
+    };
+    const normOfflineName=v=>String(v||'').toLowerCase().trim().replace(/\s+/g,' ');
+    const offlineTarget=name=>{
+      const n=normOfflineName(name);
+      const m=n.match(/(?:naget|tempura aci)\s*(?:isi\s*)?(10|12|20|25|30|40|50)/i);
+      if(m){const size=Number(m[1]);return size===25?'naget 25+saus':'naget '+size;}
+      if(/cireng\s+isi/i.test(n))return 'cireng isi';
+      if(/cireng\s+biasa|cireng\s+crispy/i.test(n))return 'cireng biasa';
+      if(/\bcibay\b/i.test(n))return 'cibay';
+      return n;
+    };
+    const offlineUnitForMonth=(name,m)=>{
+      const target=offlineTarget(name);
+      if(m>='2026-01'&&m<='2026-04')return HPP_OFFLINE_OLD[target]??null;
+      if(m>='2026-05'&&m<='2026-08')return HPP_OFFLINE_NEW[target]??null;
+      const p=productMaster.find(x=>normOfflineName(x.nama_produk)===target)||productMaster.find(x=>normOfflineName(x.nama_produk).includes(target));
+      const h=p?hppRows.find(x=>String(x.produk_id)===String(p.id)):null;
+      return Number(h?.hpp_unit)>0?Math.trunc(Number(h.hpp_unit)):null;
+    };
     let offHpp=0,offHppKnown=true,offHppMeasured=false;
     offlineMonths.forEach(m=>{
       try{
-        const f=FFCore.financeFor(m,'Offline',dashboardData);
-        if(!f.hppKnown) offHppKnown=false;
-        if(Number(f.hpp||0)>0) offHppMeasured=true;
-        offHpp+=Math.round(Number(f.hpp)||0);
+        const oldRows=offOld.filter(x=>String(x.periode||'').slice(0,7)===m);
+        const newRows=offNew.filter(x=>monthOf(x.tanggal||x.created_time||'')===m);
+        for(const x of oldRows){
+          const qty=Math.max(0,Math.round(num(x.catatan)));
+          if(qty<=0)continue;
+          const unit=offlineUnitForMonth(x.jenis,m);
+          if(unit==null){offHppKnown=false;continue;}
+          offHpp+=Math.round(qty*unit); offHppMeasured=true;
+        }
+        for(const x of newRows){
+          const qty=Math.max(0,Math.round(num(x.qty)));
+          if(qty<=0)continue;
+          const name=x.product_name||productMaster.find(p=>String(p.id)===String(x.produk_id))?.nama_produk||'';
+          const unit=offlineUnitForMonth(name,m);
+          if(unit==null){offHppKnown=false;continue;}
+          offHpp+=Math.round(qty*unit); offHppMeasured=true;
+        }
       }catch(e){
         offHppKnown=false;
       }
