@@ -583,7 +583,7 @@ function renderCards(){
   $('net').textContent=money(v[2]);
 
   if(offline){
-    const profit=h.measured ? v[0]-h.total-h[3] : null;
+    const profit=h.measured ? v[0]-h.total-v[3] : null;
     const margin=v[2]!==0 && profit!==null ? (profit/v[2])*100 : null;
     $('hpp').textContent=h.measured?money(h.total):'—';
     $('profit').textContent=profit===null?'—':money(profit);
