@@ -367,6 +367,7 @@ function resolveHppByProductName(name){
   let key=normalizeProductName(name);
     if(/^cireng\s+\d+$/.test(key))key='cireng isi';
   if(key==='cibay 10')key='cibay';
+  if(key==='cireng crispy')key='cireng biasa';
   const p=(products||[]).find(x=>normalizeProductName(x.nama_produk)===key);
   if(!p)return null;
   const h=(hpps||[]).find(x=>String(x.produk_id)===String(p.id));
@@ -378,13 +379,23 @@ function offlineHpp(m){
     let total=0,known=true;
     (olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m).forEach(x=>{
       const qty=Math.max(0,Number(x.catatan||0));
+      const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.jenis) : !['naget isi 20','naget 20','naget isi 25+ saus','naget isi 25+saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(normalizeProductName(x.jenis));
+      if(!mappedOffline){
+        if(qty>0)known=false;
+        return;
+      }
       const unit=resolveHppByProductName(x.jenis);
       if(qty>0&&!unit)known=false;
       if(unit)total+=Math.round(qty*unit);
     });
     (sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m).forEach(x=>{
       const qty=Math.max(0,Number(x.qty||0));
+      const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.product_name,x.variation) : true;
       let unit=null;
+      if(!mappedOffline){
+        if(qty>0)known=false;
+        return;
+      }
       if(x.produk_id){
         const h=(hpps||[]).find(z=>String(z.produk_id)===String(x.produk_id));
         unit=Number(h?.hpp_unit||0)>0?Number(h.hpp_unit):null;
