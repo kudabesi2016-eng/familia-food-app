@@ -763,10 +763,12 @@ function renderMonthly(){
         hppForChannel(m);
 
 
+      // Offline memakai flag measured; Online memakai flag known.
+      // onlineHpp() mengembalikan {known,total}, bukan {measured,total}.
       const modal =
-        h.measured
-          ? h.total
-          : null;
+        $('channel').value === 'Offline'
+          ? (h.measured ? h.total : null)
+          : (h.known ? h.total : null);
 
 
       const offline = $('channel').value === 'Offline';
