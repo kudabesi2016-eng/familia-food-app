@@ -375,6 +375,35 @@ function resolveHppByProductName(name){
   return unit>0?unit:null;
 }
 /* =====================================================
+   NORMALISASI HPP OFFLINE
+   Menyatukan variasi nama historis ke master HPP yang
+   sesuai tanpa mengubah data transaksi.
+===================================================== */
+function ffNormOfflineName(v){
+  return String(v ?? '')
+    .toLowerCase()
+    .replace(/[+]/g,'+')
+    .replace(/\bisi\b/g,' ')
+    .replace(/\bpcs\b/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function ffOfflineMasterTarget(name){
+  const n=ffNormOfflineName(name);
+
+  if(n==='naget 10' || n==='naget isi 10') return 'naget 10';
+  if(n==='naget 12' || n==='naget isi 12') return 'naget 12';
+
+  if(n==='cireng isi' || n==='cireng 10' || n==='cireng isi 10') return 'cireng isi';
+  if(n==='cireng biasa' || n==='cireng crispy') return 'cireng biasa';
+
+  if(n==='cibay' || n==='cibay 10' || n==='cibay isi 10') return 'cibay';
+
+  return null;
+}
+
+/* =====================================================
    HPP OFFLINE BERDASARKAN PERIODE
    Jan–Apr 2026 = snapshot HPP lama
    Mei–Ags 2026 = snapshot HPP baru
