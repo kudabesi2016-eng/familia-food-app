@@ -102,12 +102,21 @@
     }));
   }
 
+  function isCashExpense(x){
+    return String(x?.cara_bayar || 'Tunai') !== 'Hutang';
+  }
+
+  function expenseIsInHpp(x){
+    return String(x?.kategori || '').trim().toLowerCase() === 'bahan baku';
+  }
+
   function financeFor(month, channel, data){
     const {sales=[],olds=[],expenses=[],products=[],hpps=[]} = data || {};
     let rev=0,out=0,net=0,hpp=0,hppKnown=true;
+    let expenseInHpp=0,expenseOutsideHpp=0;
     const productRows=[];
     if(channel === 'Offline' || channel === 'all'){
-      const old = offlineOldRows(olds,products).filter(r=>r.tanggal === month);
+      const old = offlineOldRows(olds,products).filter(r => r.tanggal === month);
       const neu = offlineNewRows(sales,month);
       for(const r of old){
         rev += r.revenue; net += r.net;
@@ -120,11 +129,10 @@
         if(r.knownHpp) hpp += Number(r.hpp||0); else hppKnown=false;
         productRows.push(r);
       }
-      // Pengeluaran sah untuk bulan berjalan. Gunakan periode bila valid,
-      // atau fallback ke tanggal. Jangan membuang data hanya karena periode
-      // berbentuk rentang/teks; yang penting bulan dapat ditentukan dengan aman.
-      const ex = (expenses || []).filter(x => expenseMonth(x) === month);
+      const ex = (expenses || []).filter(x => expenseMonth(x) === month && isCashExpense(x));
       const expenseTotal = ex.reduce((a,x)=>a+Number(x.nominal||0),0);
+      expenseInHpp = ex.filter(expenseIsInHpp).reduce((a,x)=>a+Number(x.nominal||0),0);
+      expenseOutsideHpp = expenseTotal - expenseInHpp;
       out += expenseTotal;
       net -= expenseTotal;
     }
@@ -142,8 +150,9 @@
         }
       }
     }
-    const profit = hppKnown ? net - hpp : null;
-    return {rev,out,net,hpp,hppKnown,profit,productRows};
+    const hppMeasured = hpp > 0;
+    const profit = hppMeasured ? (net + expenseInHpp - hpp) : null;
+    return {rev,out,net,hpp,hppKnown,hppMeasured,expenseInHpp,expenseOutsideHpp,profit,productRows};
   }
 
   function monthsOfData(data){
@@ -182,5 +191,5 @@
     return [...map.values()].sort((a,b)=>a.channel.localeCompare(b.channel)||a.name.localeCompare(b.name,'id'));
   }
 
-  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary};
+  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,isCashExpense,expenseIsInHpp,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary};
 })();

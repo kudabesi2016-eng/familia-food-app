@@ -178,14 +178,13 @@ function offlineFinance(m){
   const newRows=(sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m);
   const expenseRows=(expenses||[]).filter(x=>String(x.periode||'').trim()===m && isCashExpense(x));
   const oldRev=oldRows.reduce((a,x)=>a+Math.round(Number(x.nominal ?? x.omzet ?? x.total ?? 0)),0);
-  const newRev=newRows.reduce((a,x)=>a+Math.round(Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0))),0),0);
+  const newRev=newRows.reduce((a,x)=>a+Math.round(Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0)))),0);
   const rev=oldRev+newRev;
   const expense=expenseRows.reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
-  // Offline: Uang Bersih/Laba Offline = Pemasukan − Pengeluaran Tunai.
-  // Hutang dipisahkan dari arus kas dan ditampilkan di modul Hutang.
-  // HPP ditampilkan terpisah agar tidak dihitung dua kali.
+  const expenseInHpp=expenseRows.filter(x=>String(x.kategori||'').trim().toLowerCase()==='bahan baku').reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
+  const expenseOutsideHpp=expense-expenseInHpp;
   const net=rev-expense;
-  return [rev,expense,net];
+  return [rev,expense,net,expenseOutsideHpp,expenseInHpp];
 }
 
 function onlineFinance(m){
@@ -216,7 +215,7 @@ function onlineFinance(m){
   const totalRev=histRev+(newNetKnown?newNet:0);
   const totalNet=histNet+(newNetKnown?newNet:0);
   const totalFee=histFee;
-  return [totalRev,totalFee,totalNet];
+  return [totalRev,totalFee,totalNet,0,0];
 }
 
 /* =====================================================
@@ -467,7 +466,7 @@ function renderCards(){
   $('net').textContent=money(v[2]);
 
   if(offline){
-    const profit=h.measured ? v[2]-h.total : null;
+    const profit=h.measured ? (offline ? v[0]-h.total-v[3] : v[2]-h.total) : null;
     const margin=v[2]!==0 && profit!==null ? (profit/v[2])*100 : null;
     $('hpp').textContent=h.measured?money(h.total):'—';
     $('profit').textContent=profit===null?'—':money(profit);
@@ -697,7 +696,7 @@ function renderMonthly(){
 
 
       const offline = $('channel').value === 'Offline';
-      const profit = modal !== null ? v[2] - modal : null;
+      const profit = modal !== null ? (offline ? v[0] - modal - v[3] : v[2] - modal) : null;
       const marginBase = Number(v[2]);
       const margin = profit !== null && marginBase !== 0 ? (profit / marginBase) * 100 : 0;
 

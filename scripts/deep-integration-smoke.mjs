@@ -48,8 +48,9 @@ if(!ai.includes('Buka Kalkulator HPP')) fail('Agen AI compatibility page must po
 const dashboard=read('index.html');
 if(!dashboard.includes("const overallProfitKnown=true;")) fail('Dashboard must expose measured Profit even when historical HPP is incomplete');
 if(!dashboard.includes("const offNet=offRevenue-offExpense;")) fail('Dashboard must calculate Offline Uang Bersih from Pemasukan minus Pengeluaran');
-if(!dashboard.includes("const offProfit=offHppMeasured ? offNet-offHpp : null;")) fail('Dashboard must calculate Offline Profit from measured HPP without suppressing the channel');
+if(!dashboard.includes("const offProfit=offHppMeasured ? offNet+offExpenseInHpp-offHpp : null;")) fail('Dashboard must calculate Offline Profit after removing the HPP-included cash expense once');
 if(!dashboard.includes('offHppMeasured=false')) fail('Dashboard must track measured HPP separately from complete HPP');
+if(!dashboard.includes("String(x.kategori||'').trim().toLowerCase()==='bahan baku'")) fail('Dashboard must identify HPP-included Bahan Baku expenses');
 if(!dashboard.includes('id="offProfit">—')) fail('Dashboard Offline Profit must start unavailable instead of Rp 0');
 
 const rekapHtml=read('rekap.html');
