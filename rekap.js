@@ -375,34 +375,6 @@ function resolveHppByProductName(name){
   return unit>0?unit:null;
 }
 /* =====================================================
-   NORMALISASI HPP OFFLINE
-   Menyatukan variasi nama historis ke master HPP yang
-   sesuai tanpa mengubah data transaksi.
-===================================================== */
-function ffNormOfflineName(v){
-  return String(v ?? '')
-    .toLowerCase()
-    .replace(/[+]/g,'+')
-    .replace(/\bisi\b/g,' ')
-    .replace(/\bpcs\b/g,' ')
-    .replace(/\s+/g,' ')
-    .trim();
-}
-
-function ffOfflineMasterTarget(name){
-  const n=ffNormOfflineName(name);
-
-  if(n==='naget 10' || n==='naget isi 10') return 'naget 10';
-  if(n==='naget 12' || n==='naget isi 12') return 'naget 12';
-  if(n==='naget 20' || n==='naget isi 20') return 'naget 20';
-  if(n==='cireng isi' || n==='cireng 10' || n==='cireng isi 10') return 'cireng isi';
-  if(n==='cireng biasa' || n==='cireng crispy') return 'cireng biasa';
-  if(n==='cibay' || n==='cibay 10' || n==='cibay isi 10') return 'cibay';
-
-  return null;
-}
-
-/* =====================================================
    HPP OFFLINE BERDASARKAN PERIODE
    Jan–Apr 2026 = snapshot HPP lama
    Mei–Ags 2026 = snapshot HPP baru
@@ -423,7 +395,6 @@ const FF_OFFLINE_HPP_OLD = {
 const FF_OFFLINE_HPP_NEW = {
   'naget 10':3593,
   'naget 12':4312,
-  'naget 20':7187,
   'naget 20':7187,
   'naget 25+saus':8984,
   'naget 30':10780,
@@ -463,10 +434,9 @@ function offlineHpp(m){
 
     (olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m).forEach(x=>{
       const qty=Math.max(0,Number(x.catatan||0));
-      // Data Lama di bagian Offline adalah sumber historis offline.
-      // Gunakan mapping HPP historis berdasarkan nama produk, termasuk
-      // Naget 20 yang memang tercatat pada data Offline Juli 2026.
-      const mappedOffline = !!ffOfflineMasterTarget(x.jenis);
+      const mappedOffline = FF.isOfflineProduct
+        ? FF.isOfflineProduct(x.jenis)
+        : !['naget isi 20','naget 20','naget isi 25+ saus','naget isi 25+saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(normalizeProductName(x.jenis));
 
       if(!mappedOffline){
         if(qty>0)known=false;
@@ -480,16 +450,13 @@ function offlineHpp(m){
 
     (sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m).forEach(x=>{
       const qty=Math.max(0,Number(x.qty||0));
-      // Gunakan mapper Rekap sendiri agar nama transaksi baru
-      // konsisten dengan Data Lama dan tidak bergantung pada alias
-      // channel dari modul lain.
-      const mappedOffline = !!ffOfflineMasterTarget(x.product_name || x.variation);
+      const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.product_name,x.variation) : true;
       if(!mappedOffline){
         if(qty>0)known=false;
         return;
       }
 
-      const unit=ffOfflineHppUnitForMonth(x.product_name || x.variation,m);
+      const unit=ffOfflineHppUnitForMonth(x.product_name,m);
       if(qty>0&&!unit)known=false;
       if(unit)total+=Math.round(qty*unit);
     });
