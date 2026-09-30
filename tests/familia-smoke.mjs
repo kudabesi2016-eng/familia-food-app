@@ -60,6 +60,12 @@ for(const [file, needles] of Object.entries(mustContain)){
 }
 
 const core=await read('ff-core.js');
+assert(core.includes("['cireng crispy','Cireng biasa']"),'Cireng Crispy must map to Cireng biasa HPP.');
+assert(core.includes('const ONLINE_ONLY_PRODUCTS = new Set(['),'Locked Online-only product mapping missing in shared core.');
+assert(core.includes("'naget 20'"),'Naget 20 must be in Online-only mapping.');
+assert(core.includes("'naget 25+saus'"),'Naget 25+Saus must be in Online-only mapping.');
+assert(core.includes("v === 'dropship'"),'Dropship must be mapped to Online.');
+assert(core.includes('const channelMapped = isOfflineProduct(r.product_name);'),'Offline HPP must respect channel mapping for Data Lama.');
 assert(!core.includes("['cireng crispy','Cireng biasa']"),'Shared core must not silently merge Cireng crispy into Cireng biasa');
 
 const rekap=await read('rekap.js');
