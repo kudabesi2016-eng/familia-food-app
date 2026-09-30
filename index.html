@@ -561,16 +561,9 @@ async function loadDashboard(){
     setNumber('offRevenue',dashboardOffRevenue); setNumber('offExpense',dashboardOffExpense); setNumber('offNet',dashboardOffNet);
     setNumber('offProfit',dashboardOffProfit);
     document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
-    const offlineProfitEl=document.getElementById('offProfit');
-    const offlineLockedNote=document.getElementById('offlineHppAudit');
-    if(offlineLockedNote) offlineLockedNote.textContent='🔒 Ringkasan Offline Jan–Agustus terkunci sesuai dasar perhitungan resmi.';
     const offlineAudit=document.getElementById('offlineHppAudit');
     if(offlineAudit){
-      offlineAudit.textContent=offHppKnown
-        ? '✅ HPP lengkap. Profit = Pemasukan − HPP − Beban di luar HPP. Pengeluaran Bahan Baku tidak dipotong lagi karena sudah termasuk HPP.'
-        : (offHppMeasured
-          ? '🟠 Profit Terukur = Pemasukan − HPP terukur − Beban di luar HPP. Pengeluaran Bahan Baku tidak dihitung dua kali.'
-          : '🟠 HPP belum tersedia. Profit Offline belum dapat dihitung.');
+      offlineAudit.textContent='🔒 Ringkasan Offline Jan–Agustus 2026 terkunci sesuai dasar perhitungan resmi.';
     }
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
