@@ -11,6 +11,17 @@ const $ = id => document.getElementById(id);
 // modal dropship + gaji packing.
 const ONLINE_OTHER_COST_LOCKED = 35293500;
 
+// RINGKASAN OFFLINE TERKUNCI Jan–Agustus 2026.
+// Ini adalah angka dasar resmi yang dipakai untuk ringkasan keuangan.
+// Detail transaksi/database tidak dihapus atau diubah.
+const OFFLINE_LOCKED_SUMMARY = Object.freeze({
+  revenue: 185824100,
+  hpp: 159560417,
+  grossProfit: 26263683,
+  outsideHpp: 35009325,
+  result: -8745642
+});
+
 /*
  * Jangan hentikan seluruh Rekap bila ff-core.js terlambat/gagal dimuat.
  * Pakai helper lokal sebagai fallback lalu gunakan FFCore bila tersedia.
@@ -692,6 +703,22 @@ function renderOnlineConnection(selectedMonth){
   }
 }
 
+function renderOfflineFinalSummary(){
+  const card=$('offlineFinalSummaryCard');
+  if(!card)return;
+  const isOffline=$('channel').value==='Offline';
+  card.style.display=isOffline?'block':'none';
+  if(!isOffline)return;
+
+  const totalExpense=OFFLINE_LOCKED_SUMMARY.hpp+OFFLINE_LOCKED_SUMMARY.outsideHpp;
+  $('offlineFinalRevenue').textContent=money(OFFLINE_LOCKED_SUMMARY.revenue);
+  $('offlineFinalHpp').textContent=money(OFFLINE_LOCKED_SUMMARY.hpp);
+  $('offlineFinalGross').textContent=money(OFFLINE_LOCKED_SUMMARY.grossProfit);
+  $('offlineFinalOutside').textContent=money(OFFLINE_LOCKED_SUMMARY.outsideHpp);
+  $('offlineFinalResult').textContent=money(OFFLINE_LOCKED_SUMMARY.result);
+  $('offlineFinalExpense').textContent=money(totalExpense);
+}
+
 function renderOnlineFinalSummary(){
   const card=$('onlineFinalSummaryCard');
   if(!card)return;
@@ -925,6 +952,7 @@ function render(){
 
   renderMonthly();
   renderNewOnlineMonthly();
+  renderOfflineFinalSummary();
   renderOnlineFinalSummary();
   renderTransactionRecap();
 
