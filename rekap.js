@@ -480,13 +480,16 @@ function offlineHpp(m){
 
     (sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m).forEach(x=>{
       const qty=Math.max(0,Number(x.qty||0));
-      const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.product_name,x.variation) : true;
+      // Gunakan mapper Rekap sendiri agar nama transaksi baru
+      // konsisten dengan Data Lama dan tidak bergantung pada alias
+      // channel dari modul lain.
+      const mappedOffline = !!ffOfflineMasterTarget(x.product_name || x.variation);
       if(!mappedOffline){
         if(qty>0)known=false;
         return;
       }
 
-      const unit=ffOfflineHppUnitForMonth(x.product_name,m);
+      const unit=ffOfflineHppUnitForMonth(x.product_name || x.variation,m);
       if(qty>0&&!unit)known=false;
       if(unit)total+=Math.round(qty*unit);
     });
