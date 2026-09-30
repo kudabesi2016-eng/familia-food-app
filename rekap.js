@@ -383,16 +383,13 @@ function resolveHppByProductName(name){
    histori yang sudah ditutup.
 ===================================================== */
 const FF_OFFLINE_HPP_OLD = {
-  'naget 10':3593,
-  'naget 12':4312,
-  'naget 20':7187,
-  'naget 25+saus':8984,
-  'naget 30':10780,
-  'naget 40':14374,
-  'naget 50':17968,
-  'cireng isi':2946,
-  'cireng biasa':2473,
-  'cibay':2900
+  /* Snapshot HPP lama Jan–Apr: dari tabel HPP final lama.
+     Histori Jan–Apr yang tersimpan hanya memakai produk di bawah ini. */
+  'naget 10':3100,
+  'naget 12':3720,
+  'cireng isi':2900,
+  'cireng biasa':2700,
+  'cibay':3000
 };
 
 const FF_OFFLINE_HPP_NEW = {
