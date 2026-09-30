@@ -10,7 +10,7 @@
 <script src="app-settings.js"></script>
 <script src="ff-core.js?v=20260929-1855"></script>
 <script>window.__REKAP_JS_LOADED=false;</script>
-<script src="rekap.js?v=20260930-2200"></script>
+<script src="rekap.js?v=20260930-2230"></script>
 
 <style>
 :root{
@@ -403,8 +403,11 @@ td{
             <th>Pemasukan</th>
             <th id="monthlyOutHead">Potongan Online Shop</th>
             <th>Uang Bersih yang Diterima</th>
-            <th>Modal</th>
-            <th>Profit</th>
+            <th>Modal / HPP</th>
+            <th id="monthlyGrossHead" style="display:none">Laba Kotor</th>
+            <th id="monthlyOutsideHead" style="display:none">Beban di luar HPP</th>
+            <th id="monthlyResultHead" style="display:none">Hasil Usaha</th>
+            <th id="monthlyProfitHead">Profit</th>
           </tr>
 
         </thead>
@@ -412,7 +415,7 @@ td{
         <tbody id="monthly">
 
           <tr>
-            <td colspan="6" class="empty">
+            <td colspan="8" class="empty">
               Memuat...
             </td>
           </tr>
