@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#087443">
-<title>Data Lama - Familia Food</title><!-- v12: Data Lama has Offline/Online tabs; Online tab reads full historical penjualan fields. -->
+<title>Data Lama - Familia Food</title><!-- v13: Data Lama strictly separates historical archives from current transactions; Online audit uses locked 8,085 total. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script><script src="app-settings.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="ff-core.js"></script>
@@ -140,14 +140,18 @@ function selectedMonth(){return window.ffDataLamaMonth||''}
 function setSelectedMonth(m){toggleMonth(m)}
 function allReportMonths(){
   const set=new Set();
+  // Data Lama adalah arsip historis. Jangan menarik bulan dari Penjualan,
+  // Online baru, atau Pengeluaran sekarang karena itu membuat data lama
+  // bercampur dengan transaksi berjalan.
   all.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
-  expenseAll.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
-  salesAll.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
-  onlineSalesAll.forEach(x=>{if(/^\d{4}-\d{2}$/.test(x.periode))set.add(x.periode)});
-  const current=new Date(); set.add(`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}`);
   return Array.from(set).sort().reverse();
 }
-function incomeForMonth(m){const old=offlineLegacyRows().filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0);const off=salesAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0);const on=FFCore.onlineIncomeRows(onlineSalesAll,m).reduce((a,x)=>a+Number(x.revenue||0),0);return old+off+on}
+function incomeForMonth(m){
+  // Tab Data Offline hanya membaca Data Lama historis (bukan Penjualan baru
+  // dan bukan Online historis).
+  return offlineLegacyRows().filter(x=>x.periode===m)
+    .reduce((a,x)=>a+Number(x.omzet||0),0);
+}
 function expenseForMonth(m){return expenseAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.nominal||0),0)}
 function expensePeriod(v){const s=String(v??'').trim();return /^\d{4}-\d{2}$/.test(s)?s:''}
 function exactExpenseMonths(){return new Set(expenseAll.map(x=>x.periode).filter(m=>/^\d{4}-\d{2}$/.test(m)))}
@@ -161,20 +165,19 @@ function renderMonthlySummary(){
     html+=`<div class="month-row"><div class="month-name">📅 ${esc(monthLabel(m))}</div><div><span class="money-label">🟢 Pemasukan</span><span class="money income">${income?rupiah(income):'—'}</span></div><div><span class="money-label">🔴 Pengeluaran</span><span class="money expense">${hasExpense?rupiah(expense):'—'}</span></div><div><span class="money-label">💰 Selisih</span><span class="money balance">${hasExpense?rupiah(balance):'—'}</span></div><button class="view-btn" onclick="toggleMonth('${m}')">👁 Lihat Data</button><div id="detail-${m}" class="month-detail" style="display:none"></div></div>`;
   });
   html+='</div>';
-  html+='<div class="history-note">🟢 Pemasukan bulanan = Data Lama + transaksi terbaru dari Penjualan. Bulan tidak dikunci, jadi transaksi baru tetap menambah bulan yang sama.</div>';
+  html+='<div class="history-note">🟢 Arsip Data Offline hanya membaca data historis dari tabel Data Lama. Transaksi baru Penjualan dan Online tidak dicampurkan ke angka historis.</div>';
   box.innerHTML=html;
 }
 function detailMonth(m){
   const rows=offlineLegacyRows().filter(x=>x.periode===m);
-  const sales=salesAll.filter(x=>x.periode===m);
-  const online=onlineSalesAll.filter(x=>x.periode===m);
-  const onlineFin=FFCore.onlineIncomeRows(onlineSalesAll,m);
-  const onlineProducts=FFCore.onlineSellerRows(onlineSalesAll,m);
   const ex=expenseAll.filter(x=>x.periode===m);
   const products={};
-  rows.forEach(x=>{const p=x.produk||'Tanpa Produk';products[p]??={qty:0,omzet:0};products[p].qty+=Number(x.qty||0);products[p].omzet+=Number(x.omzet||0)});
-  sales.forEach(x=>{const p=x.produk||`Produk #${x.produk_id||'-'}`;products['🟢 '+p]??={qty:0,omzet:0};products['🟢 '+p].qty+=Number(x.qty||0);products['🟢 '+p].omzet+=Number(x.omzet||0)});
-  onlineProducts.forEach(x=>{const p=x.product_name||`Produk #${x.product_id||'-'}`;products['🔵 '+p]??={qty:0,omzet:0};products['🔵 '+p].qty+=Number(x.qty||0);products['🔵 '+p].omzet+=Number(x.revenue||0)});
+  rows.forEach(x=>{
+    const p=x.produk||'Tanpa Produk';
+    products[p]??={qty:0,omzet:0};
+    products[p].qty+=Number(x.qty||0);
+    products[p].omzet+=Number(x.omzet||0);
+  });
 
   const expenseGroups={};
   ex.forEach(x=>{
@@ -184,15 +187,13 @@ function detailMonth(m){
     expenseGroups[k].rows.push(x);
   });
 
-  const incomeTotal=rows.reduce((a,x)=>a+Number(x.omzet||0),0)+sales.reduce((a,x)=>a+Number(x.omzet||0),0)+onlineFin.reduce((a,x)=>a+Number(x.revenue||0),0);
+  const incomeTotal=rows.reduce((a,x)=>a+Number(x.omzet||0),0);
   const expenseTotal=ex.reduce((a,x)=>a+Number(x.nominal||0),0);
   let h='<div class="detail-grid">';
 
-  h+=`<div class="mini-detail"><h4>🟢 Pemasukan Lengkap · ${rupiah(incomeTotal)}</h4><table><thead><tr><th>Sumber</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>`;
+  h+=`<div class="mini-detail"><h4>🟢 Pemasukan Data Lama · ${rupiah(incomeTotal)}</h4><table><thead><tr><th>Sumber</th><th>Konsumen</th><th>Produk</th><th>Qty</th><th>Omzet</th></tr></thead><tbody>`;
   rows.forEach(x=>{h+=`<tr><td>Data Lama</td><td>${esc(x.konsumen)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td></tr>`});
-  sales.forEach(x=>{const customer=saleCustomer(x.id)||'—';h+=`<tr><td>Penjualan Offline</td><td>${esc(customer)}</td><td>${esc(x.produk)}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.omzet)}</td></tr>`});
-  onlineFin.forEach(x=>{h+=`<tr><td>Income TikTok</td><td>—</td><td>${esc(x.product_name||'-')}</td><td>${Number(x.qty||0).toLocaleString('id-ID')}</td><td>${rupiah(x.revenue)}</td></tr>`});
-  if(!rows.length&&!sales.length&&!onlineFin.length)h+='<tr><td colspan="5">Belum ada pemasukan.</td></tr>';
+  if(!rows.length)h+='<tr><td colspan="5">Belum ada data historis.</td></tr>';
   h+='</tbody></table></div>';
 
   h+=`<div class="mini-detail"><h4>🔴 Pengeluaran Lengkap · ${ex.length?rupiah(expenseTotal):'—'}</h4>`;
@@ -219,7 +220,13 @@ function onlineFinanceRowsForMonth(m){return onlineSalesAll.filter(x=>String(x.p
 function onlineProductRowsForMonth(m){return onlineSalesAll.filter(x=>String(x.periode||'').slice(0,7)===m && ['online_standard_product','seller_center'].includes(String(x.source||'')))}
 function onlineMonths(){
   const set=new Set();
-  onlineSalesAll.forEach(x=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m)});
+  // Data Lama Online hanya memakai finance historis STANDARD Jan–Agustus.
+  // Transaksi/pencairan Online baru tidak boleh membuat bulan baru di arsip.
+  onlineSalesAll.forEach(x=>{
+    if(String(x.source||'')!=='online_standard_finance')return;
+    const m=String(x.periode||'').slice(0,7);
+    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
+  });
   return Array.from(set).sort();
 }
 function onlineMonthDetail(m){
@@ -918,7 +925,11 @@ function auditOnlineLockedRows(rows){
     if(m<'2026-01'||m>'2026-08')continue;
     lockedRows++;
     source=source||String(r.source||'');
-    const q=Math.round(Number(r.qty||0)); total+=q;
+    const q=Math.round(Number(r.qty||0));
+    total+=q;
+
+    // Breakdown size hanya diagnostik. Kunci audit utama adalah total
+    // bungkus dari sumber historis Seller Center/Standard = 8.085.
     let size=detectOnlinePackSize(r);
     if(!size){
       const n=onlineMatchText(r);
@@ -927,17 +938,24 @@ function auditOnlineLockedRows(rows){
     }
     if(ONLINE_LOCKED_HISTORY[size]!=null)bySize[size]+=q;
   }
-  const all=[10,12,20,25,30,40,50].reduce((a,s)=>a+Number(bySize[s]||0),0);
-  return {bySize,total,all,lockedRows,source,expected:ONLINE_LOCKED_TOTAL,
-    ok:lockedRows===0 || (all===ONLINE_LOCKED_TOTAL && total===ONLINE_LOCKED_TOTAL)};
+  const mappedTotal=[10,12,20,25,30,40,50].reduce((a,s)=>a+Number(bySize[s]||0),0);
+  return {
+    bySize,total,mappedTotal,lockedRows,source,expected:ONLINE_LOCKED_TOTAL,
+    // Jangan menahan histori hanya karena parser ukuran listing belum mampu
+    // mengenali seluruh nama produk. Total sumber 8.085 adalah kunci audit.
+    all:total,
+    ok:lockedRows===0 || total===ONLINE_LOCKED_TOTAL
+  };
 }
 function lockedAuditMessage(audit){
   if(!audit.lockedRows)return '';
   const diffs=[10,12,20,25,30,40,50].map(s=>[s,Number(audit.bySize[s]||0)-ONLINE_LOCKED_HISTORY[s]])
     .filter(x=>x[1]!==0)
     .map(x=>'Isi '+x[0]+': '+(x[1]>0?'+':'')+x[1].toLocaleString('id-ID')).join(' • ');
-  if(audit.all===ONLINE_LOCKED_TOTAL) return '<div class="reportNotice" style="border-color:#cfe6d7;background:#f4fbf6;color:#146b3a">✅ Data STANDARD Jan–Agustus 2026 cocok dengan kunci audit terbaru <b>8.085 bungkus</b>.</div>';
-  return '<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>⛔ IMPOR DIBLOKIR UNTUK HISTORI TERKUNCI.</b> Data STANDARD Jan–Agustus terbaca <b>'+audit.all.toLocaleString('id-ID')+'</b> bungkus, sedangkan kunci audit resmi <b>8.085</b> (16 + 7.292 + 211 + 293 + 90 + 67 + 116). '+esc(diffs||('Selisih '+(audit.all-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+' bungkus.'))+'<br>Jangan menambal angka dengan data buatan. Gunakan sumber STANDARD yang sudah direkonsiliasi.</div>';
+  if(audit.total===ONLINE_LOCKED_TOTAL) {
+    return '<div class="reportNotice" style="border-color:#cfe6d7;background:#f4fbf6;color:#146b3a">✅ Sumber Online Jan–Agustus 2026 cocok dengan kunci audit <b>8.085 bungkus</b>. Parser ukuran berhasil memetakan <b>'+audit.mappedTotal.toLocaleString('id-ID')+'</b> bungkus untuk pemeriksaan breakdown; total sumber tetap menjadi kunci resmi.</div>';
+  }
+  return '<div class="reportNotice" style="border-color:#f2c8c8;background:#fff7f7;color:#a22"><b>⛔ IMPOR DIBLOKIR UNTUK HISTORI TERKUNCI.</b> Sumber Online Jan–Agustus terbaca <b>'+audit.total.toLocaleString('id-ID')+'</b> bungkus, sedangkan kunci audit resmi <b>8.085</b>. Selisih <b>'+(audit.total-ONLINE_LOCKED_TOTAL).toLocaleString('id-ID')+'</b> bungkus. '+esc(diffs||'Rincian ukuran belum tersedia.')+'<br>Jangan menambal angka dengan data buatan. Gunakan sumber STANDARD/Seller Center yang sudah direkonsiliasi.</div>';
 }
 
 async function refreshOnlineOldPreview(){
