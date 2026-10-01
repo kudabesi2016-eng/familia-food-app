@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#087443">
-<title>Data Lama - Familia Food</title><!-- v13: Data Lama strictly separates historical archives from current transactions; Online audit uses locked 8,085 total. -->
+<title>Data Lama - Familia Food</title><!-- v14: Data Lama paginates penjualan so Online audit reads all historical rows, including the locked 8,085 bundles. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script><script src="app-settings.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script src="ff-core.js"></script>
@@ -305,6 +305,19 @@ function setHistoryTab(tab){
 }
 $('tabOffline').onclick=()=>setHistoryTab('offline');
 $('tabOnline').onclick=()=>setHistoryTab('online');
+async function fetchAllPenjualanRows(){
+  const columns='id,tanggal,produk_id,qty,channel,harga,hpp,laba,source,product_name,variation,sku_id,seller_sku,omzet_produk,biaya_platform,uang_bersih,modal_hpp,profit_online,order_id,import_key';
+  const PAGE=1000;
+  const rows=[];
+  for(let from=0;;from+=PAGE){
+    const r=await supabaseClient.from('penjualan').select(columns).range(from,from+PAGE-1);
+    if(r.error)throw r.error;
+    const batch=r.data||[];
+    rows.push(...batch);
+    if(batch.length<PAGE)break;
+  }
+  return rows;
+}
 async function load(){
   try{
     const schema=await getDataLamaSchema();
@@ -319,9 +332,7 @@ async function load(){
     const pr=await supabaseClient.from('produk').select('id,nama_produk');
     if(pr.error)throw new Error('Gagal memuat produk: '+pr.error.message);
     productMap=Object.fromEntries((pr.data||[]).map(x=>[x.id,String(x.nama_produk||`Produk #${x.id}`)]));
-    const sr=await supabaseClient.from('penjualan').select('id,tanggal,produk_id,qty,channel,harga,hpp,laba,source,product_name,variation,sku_id,seller_sku,omzet_produk,biaya_platform,uang_bersih,modal_hpp,profit_online,order_id,import_key');
-    if(sr.error)throw new Error('Gagal memuat penjualan: '+sr.error.message);
-    const allSalesRows=sr.data||[];
+    const allSalesRows=await fetchAllPenjualanRows();
     await loadSaleCustomers();
     salesAll=allSalesRows.filter(x=>String(x.channel||'')==='Offline').map(x=>({id:x.id,periode:saleMonth(x.tanggal),produk_id:x.produk_id,produk:productMap[x.produk_id]||String(x.product_name||`Produk #${x.produk_id||'-'}`),qty:Number(x.qty||0),channel:String(x.channel||''),harga:Math.round(Number(x.harga)||0),omzet:Math.round(Number(x.omzet_produk??(Number(x.qty||0)*Number(x.harga||0)))||0)}));
     onlineSalesAll=allSalesRows.filter(x=>String(x.channel||'')==='Online').map(x=>({...x,periode:saleMonth(x.tanggal),produk:productMap[x.produk_id]||String(x.product_name||`Produk #${x.produk_id||'-'}`)}));
