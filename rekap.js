@@ -766,7 +766,9 @@ function renderRekapUsaha(){
   const wanted=['Bahan Baku','Gaji','Operasional','Lain-lain','Retur','Alat/Perlengkapan','Lainnya','Multi Kategori'];
   const catMap={};
   expenses.filter(isCashExpense).forEach(x=>{
-    const p=String(x.periode||'').slice(0,7);
+    const p=String(x.periode||'').trim();
+    // Hanya periode bulanan murni YYYY-MM. Abaikan data agregat
+    // seperti "2026-01 s/d 2026-08" agar tidak double count.
     if(!/^2026-0[1-8]$/.test(p))return;
     const k=String(x.kategori||'').trim()||'Tanpa Kategori';
     catMap[k]=(catMap[k]||0)+Math.round(Number(x.nominal||0));
