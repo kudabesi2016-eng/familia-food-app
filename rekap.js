@@ -735,6 +735,58 @@ function renderOnlineConnection(selectedMonth){
   }
 }
 
+function renderRekapUsaha(){
+  const card=$('rekapUsahaCard');
+  const monthlyBody=$('rekapUsahaMonthlyRows');
+  const catBody=$('rekapUsahaCategoryRows');
+  const classBody=$('rekapUsahaClassificationRows');
+  if(!card||!monthlyBody||!catBody||!classBody)return;
+
+  const rows=OFFLINE_LOCKED_MONTHLY;
+  monthlyBody.innerHTML=rows.map(r=>{
+    const margin=r.revenue ? (r.result/r.revenue*100) : 0;
+    return '<tr>'+
+      '<td><b>'+label(r.m)+'</b></td>'+
+      '<td>'+money(r.revenue)+'</td>'+
+      '<td>'+money(r.hpp)+'</td>'+
+      '<td>'+money(r.grossProfit)+'</td>'+
+      '<td>'+money(r.outsideHpp)+'</td>'+
+      '<td><b>'+money(r.result)+'</b><div class="hint" style="margin-top:4px">Margin '+margin.toFixed(2)+'%</div></td>'+
+    '</tr>';
+  }).join('')+
+  '<tr style="border-top:3px solid #0b7a45;background:#f0fbf5">'+
+    '<td><b>TOTAL JANUARI–AGUSTUS</b></td>'+
+    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.revenue)+'</b></td>'+
+    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.hpp)+'</b></td>'+
+    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.grossProfit)+'</b></td>'+
+    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.outsideHpp)+'</b></td>'+
+    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.result)+'</b></td>'+
+  '</tr>';
+
+  const wanted=['Bahan Baku','Gaji','Operasional','Lain-lain','Retur','Alat/Perlengkapan','Lainnya','Multi Kategori'];
+  const catMap={};
+  expenses.filter(isCashExpense).forEach(x=>{
+    const p=String(x.periode||'').slice(0,7);
+    if(!/^2026-0[1-8]$/.test(p))return;
+    const k=String(x.kategori||'').trim()||'Tanpa Kategori';
+    catMap[k]=(catMap[k]||0)+Math.round(Number(x.nominal||0));
+  });
+  const catRows=wanted.map(k=>({k,total:catMap[k]||0})).filter(x=>x.total>0);
+  catBody.innerHTML=catRows.map(x=>'<tr><td>'+esc(x.k)+'</td><td><b>'+money(x.total)+'</b></td></tr>').join('')+
+    '<tr style="border-top:2px solid #ddd"><td><b>Hutang & Piutang / Pembayaran Hutang (dipisah)</b></td><td><b>'+money(catMap['Pembayaran Hutang']||0)+'</b></td></tr>';
+
+  const cls=[
+    ['Operasional di luar HPP',15327025],
+    ['Lain-lain yang merupakan beban',7501000],
+    ['Retur',6531300],
+    ['Alat/Perlengkapan',3628000],
+    ['Lainnya',30000],
+    ['Multi Kategori di luar HPP',1992000]
+  ];
+  classBody.innerHTML=cls.map(x=>'<tr><td>'+esc(x[0])+'</td><td><b>'+money(x[1])+'</b></td></tr>').join('')+
+    '<tr style="border-top:2px solid #0b7a45;background:#f0fbf5"><td><b>TOTAL BEBAN DI LUAR HPP</b></td><td><b>'+money(OFFLINE_LOCKED_SUMMARY.outsideHpp)+'</b></td></tr>';
+}
+
 function renderOfflineFinalSummary(){
   const card=$('offlineFinalSummaryCard');
   if(!card)return;
@@ -950,6 +1002,7 @@ function render(){
   renderMonthly();
   renderNewOnlineMonthly();
   renderOfflineFinalSummary();
+  renderRekapUsaha();
   renderOnlineFinalSummary();
   renderTransactionRecap();
 
