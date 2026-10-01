@@ -391,7 +391,6 @@ function resolveHppByProductName(name){
   let key=normalizeProductName(name);
     if(/^cireng\s+\d+$/.test(key))key='cireng isi';
   if(key==='cibay 10')key='cibay';
-  if(key==='cireng crispy')key='cireng biasa';
   const p=(products||[]).find(x=>normalizeProductName(x.nama_produk)===key);
   if(!p)return null;
   const h=(hpps||[]).find(x=>String(x.produk_id)===String(p.id));
