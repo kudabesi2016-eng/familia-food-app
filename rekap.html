@@ -10,7 +10,7 @@
 <script src="app-settings.js"></script>
 <script src="ff-core.js?v=20260929-1855"></script>
 <script>window.__REKAP_JS_LOADED=false;</script>
-<script src="rekap.js?v=20260930-2300"></script>
+<script src="rekap.js?v=20261001-1525"></script>
 
 <style>
 :root{
@@ -428,6 +428,43 @@ td{
 
   </div>
 
+
+  <div class="card" id="rekapUsahaCard" style="margin-top:12px">
+    <h2 style="margin-top:0">📊 Rekap Usaha Offline • Januari–Agustus 2026</h2>
+    <div class="notice">
+      Rincian di bawah memakai <b>angka Offline yang sudah dikunci</b>. Pengeluaran dikelompokkan berdasarkan <b>kategori database</b>; Hutang & Piutang tetap dipisahkan.
+    </div>
+
+    <h3 style="margin:16px 0 8px">1. Hasil Usaha per Bulan</h3>
+    <div class="tablewrap">
+      <table class="cleanTable">
+        <thead><tr>
+          <th>Bulan</th><th>Pemasukan</th><th>HPP</th><th>Laba Kotor</th><th>Beban di luar HPP</th><th>Hasil Usaha</th>
+        </tr></thead>
+        <tbody id="rekapUsahaMonthlyRows"></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin:18px 0 8px">2. Pengeluaran berdasarkan Kategori</h3>
+    <div class="tablewrap">
+      <table class="cleanTable">
+        <thead><tr><th>Kategori</th><th>Total Jan–Ags</th></tr></thead>
+        <tbody id="rekapUsahaCategoryRows"></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin:18px 0 8px">3. Klasifikasi Beban di luar HPP</h3>
+    <div class="tablewrap">
+      <table class="cleanTable">
+        <thead><tr><th>Klasifikasi</th><th>Nilai</th></tr></thead>
+        <tbody id="rekapUsahaClassificationRows"></tbody>
+      </table>
+    </div>
+
+    <div class="hint" style="margin-top:10px">
+      HPP/OH yang sudah masuk perhitungan produk tidak dikurangi lagi dari laba kotor. Hutang & Piutang tidak masuk hasil usaha.
+    </div>
+  </div>
 
   <div class="card" id="offlineFinalSummaryCard" style="margin-top:12px;display:none">
     <h2 style="margin-top:0">🟢 Ringkasan Offline Terkunci Jan–Agustus 2026</h2>
