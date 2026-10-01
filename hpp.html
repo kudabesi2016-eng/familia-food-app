@@ -564,9 +564,10 @@ Rp0
 <br>
 
 <button id="btnSimpan" disabled>
-💾 Simpan HPP
+💾 Simpan HPP ke Master
 </button>
 
+<div id="hppSaveGuard" class="notice" style="margin-top:12px;display:block">⚠️ <b>Master HPP terkunci.</b> HPP di database hanya berubah setelah kamu menekan Simpan dan mengonfirmasi perubahan. HPP historis Rekap tidak ikut berubah.</div>
 
 <div id="status" class="status"></div>
 
@@ -1232,6 +1233,29 @@ async function(){
     return;
   }
 
+  // Guard: Master HPP tidak boleh tertimpa tanpa konfirmasi eksplisit.
+  // Riwayat Jan–Ags di Rekap memakai snapshot historis dan tidak diubah oleh ini.
+  const oldPack = hppLama ? Number(hppLama.hpp_unit || 0) : 0;
+  const deltaPack = oldPack ? hppOfflinePack - oldPack : 0;
+  const deltaPct = oldPack ? (deltaPack / oldPack) * 100 : null;
+  const summaryLines = [
+    "Produk: " + (produkTerpilih.nama_produk || "-"),
+    "HPP kalkulator: Rp" + Math.round(hppOfflinePack).toLocaleString("id-ID") + "/bungkus",
+    hppLama
+      ? "HPP master saat ini: Rp" + Math.round(oldPack).toLocaleString("id-ID") + "/bungkus"
+      : "HPP master saat ini: belum ada",
+    hppLama
+      ? "Perubahan: " + (deltaPack>=0?"+":"") + Math.round(deltaPack).toLocaleString("id-ID") +
+        "/bungkus" + (deltaPct===null?"":" (" + deltaPct.toFixed(2) + "%)")
+      : "Aksi: membuat Master HPP baru",
+    "",
+    "Klik OK hanya bila hasil kalkulator ini memang ingin dijadikan Master HPP terbaru."
+  ];
+  if(!window.confirm(summaryLines.join("\n"))){
+    tampilkanStatus("Penyimpanan dibatalkan. Master HPP tetap seperti sebelumnya.","error");
+    return;
+  }
+
   const dataHpp = {
     produk_id: produkTerpilih.id,
     total_bahan: totalBiayaBahan,
@@ -1272,7 +1296,7 @@ async function(){
   produkTerpilih.harga_offline = updateProduk.harga_offline;
   produkTerpilih.harga_online = updateProduk.harga_online;
 
-  tampilkanStatus("HPP " + produkTerpilih.nama_produk + " disimpan dari hasil kalkulator aktual.","success");
+  tampilkanStatus("Master HPP " + produkTerpilih.nama_produk + " berhasil diperbarui dari hasil kalkulator setelah konfirmasi.","success");
 }
 );
 
