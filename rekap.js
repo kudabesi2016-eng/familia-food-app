@@ -191,6 +191,10 @@ function monthOfSaleRow(x){
   return FF.monthOf(x.tanggal||x.paid_time||x.created_time||'') || String(x.periode||'').slice(0,7);
 }
 
+function isOfflineLegacyHistoricalRow(x){
+  const n=String(x?.jenis||'').trim().toLowerCase().replace(/\\s+/g,' ');
+  return !['naget 20','naget isi 20','naget 25+saus','naget isi 25+saus','naget 25+ saus','naget isi 25+ saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(n);
+}
 function isCashExpense(x){
   // Pengeluaran dengan cara_bayar=Hutang yang lama tetap bukan kas dibayar.
   // Pembayaran hutang baru dibuat sebagai pengeluaran Tunai saat pembayaran nyata,
@@ -198,7 +202,7 @@ function isCashExpense(x){
   return String(x?.cara_bayar||'Tunai').trim()!=='Hutang';
 }
 function offlineFinance(m){
-  const oldRows=(olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m);
+  const oldRows=(olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isOfflineLegacyHistoricalRow(x));
   const newRows=(sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m);
   const expenseRows=(expenses||[]).filter(x=>String(x.periode||'').trim()===m && isCashExpense(x));
   const oldRev=oldRows.reduce((a,x)=>a+Math.round(Number(x.nominal ?? x.omzet ?? x.total ?? 0)),0);
