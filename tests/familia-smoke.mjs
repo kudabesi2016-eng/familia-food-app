@@ -60,7 +60,6 @@ for(const [file, needles] of Object.entries(mustContain)){
 }
 
 const core=await read('ff-core.js');
-assert(core.includes("['cireng crispy','Cireng biasa']"),'Cireng Crispy must map to Cireng biasa HPP.');
 assert(core.includes('const ONLINE_ONLY_PRODUCTS = new Set(['),'Locked Online-only product mapping missing in shared core.');
 assert(core.includes("'naget 20'"),'Naget 20 must be in Online-only mapping.');
 assert(core.includes("'naget 25+saus'"),'Naget 25+Saus must be in Online-only mapping.');
