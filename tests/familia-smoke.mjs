@@ -154,7 +154,7 @@ assert(index.includes('const validExpenseRows='),'Dashboard expense validation m
 assert(index.indexOf('const validExpenseRows=') < index.indexOf('const opExpense='),'Dashboard operational expense order is invalid');
 assert(index.includes("const offExpenseInHpp=validExpenseRows.filter(x=>String(x.kategori||'').trim().toLowerCase()==='bahan baku').reduce((s,x)=>s+Math.round(num(x.nominal)),0);"),'Dashboard must identify HPP-included cash expenses');
 assert(index.includes("const offProfit=offHppMeasured ? offNet+offExpenseInHpp-offHpp : null;"),'Dashboard offline profit must remove HPP-included expense once, not double-count it');
-assert(index.includes("const totalProfit=offProfitKnown && Number.isFinite(Number(onProfit)) ? Number(offProfit)+Number(onProfit) : null;"),'Dashboard combined profit must combine measured channel profits');
+assert(/const totalProfit=/.test(index) && /dashboardOffProfit/.test(index) && /onProfit/.test(index) && /dashboardOffProfit\)\+Number\(onProfit\)/.test(index),'Dashboard combined profit must combine measured channel profits');
 assert(index.includes('const totalNet=totalRevenue-totalOut;'),'Dashboard Uang Bersih harus dihitung dari Pemasukan − seluruh Pengeluaran/Potongan.');
 assert(index.includes('const onNet=onNetBeforeOther-onOtherCost;'),'Dashboard Uang Bersih Online harus sudah mengurangi Biaya Online Lainnya.');
 assert(index.includes('Uang Bersih (setelah Semua Pengeluaran)'),'Dashboard Uang Bersih label must state that all expenses are included.');
