@@ -132,7 +132,7 @@ assert(!rekapPage.includes("Pengeluaran tidak dipotong lagi ke Profit agar HPP d
 assert(rekapPage.includes("Profit Terukur Offline = Pemasukan − HPP − Beban di luar HPP"),'Rekap page must describe measured Offline Profit');
 const rekapModule=await read('rekap.js');
 assert(rekapModule.includes('function offlineHpp(m)'), 'Rekap module offline HPP helper missing');
-assert(rekapModule.includes('const profit=h.measured ? (offline ? v[0]-h.total-v[3] : v[2]-h.total) : null'),'Rekap module must calculate measured profit after HPP-included expense treatment');
+assert(/const profit=h\.measured\s*\?\s*v\[0\]-h\.total-v\[3\]\s*:\s*null/.test(rekapModule),'Rekap module must calculate measured profit after HPP-included expense treatment');
 assert(!rekapModule.includes("key==='cireng crispy'"),'Rekap must not silently merge Cireng crispy into Cireng biasa');
 assert(rekapModule.includes("String(x.status||'Aktif').toLowerCase()==='aktif'"),'Rekap purchase KPI must ignore cancelled purchases');
 assert(rekapModule.includes('partial:!known && total>0'),'Rekap must expose partial HPP state');
