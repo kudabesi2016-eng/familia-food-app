@@ -55,7 +55,7 @@ if(!dashboard.includes('id="offProfit">—')) fail('Dashboard Offline Profit mus
 
 const rekapHtml=read('rekap.html');
 const rekapJs=read('rekap.js');
-if(!rekapHtml.includes('rekap.js?v=20260929-1855')) fail('Rekap HTML must load the primary rekap.js module');
+if(!/<script[^>]+src=["']rekap\.js(?:\?[^"']*)?["']/.test(rekapHtml)) fail('Rekap HTML must load the primary rekap.js module');
 if(rekapHtml.includes('statustext')) fail('Rekap HTML must not query missing produk.statustext column');
 if(!rekapHtml.includes('__REKAP_JS_READY')) fail('Rekap fallback must wait for primary module readiness');
 if(!rekapJs.includes("document.addEventListener('DOMContentLoaded',startRekap")) fail('Rekap JS must start after DOM is ready');
