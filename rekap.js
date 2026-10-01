@@ -773,9 +773,27 @@ function renderRekapUsaha(){
     const k=String(x.kategori||'').trim()||'Tanpa Kategori';
     catMap[k]=(catMap[k]||0)+Math.round(Number(x.nominal||0));
   });
-  const catRows=wanted.map(k=>({k,total:catMap[k]||0})).filter(x=>x.total>0);
+  // Lain-lain mengandung dua kelompok: beban usaha dan arus Hutang & Piutang.
+  // Keterangan yang sudah dikunci sebagai Hutang & Piutang dipisahkan.
+  const debtLikeLabels=new Set(['setoran bank','mekar','bri','hutang','arisan']);
+  const lainAll=(expenses||[]).filter(x=>{
+    const p=String(x.periode||'').trim();
+    return /^2026-0[1-8]$/.test(p) && isCashExpense(x) && String(x.kategori||'').trim()==='Lain-lain';
+  });
+  const debtLikeLain=lainAll.reduce((a,x)=>{
+    const k=String(x.keterangan||'').trim().toLowerCase();
+    return a+(debtLikeLabels.has(k)?Math.round(Number(x.nominal||0)):0);
+  },0);
+  const lainBeban=(catMap['Lain-lain']||0)-debtLikeLain;
+  const pembayaranHutang=catMap['Pembayaran Hutang']||0;
+  const hutangPiutangTotal=debtLikeLain+pembayaranHutang;
+
+  const catRows=wanted.map(k=>{
+    if(k==='Lain-lain')return {k,total:lainBeban};
+    return {k,total:catMap[k]||0};
+  }).filter(x=>x.total>0);
   catBody.innerHTML=catRows.map(x=>'<tr><td>'+esc(x.k)+'</td><td><b>'+money(x.total)+'</b></td></tr>').join('')+
-    '<tr style="border-top:2px solid #ddd"><td><b>Hutang & Piutang / Pembayaran Hutang (dipisah)</b></td><td><b>'+money(catMap['Pembayaran Hutang']||0)+'</b></td></tr>';
+    '<tr style="border-top:2px solid #ddd"><td><b>Hutang & Piutang (terpisah)</b></td><td><b>'+money(hutangPiutangTotal)+'</b></td></tr>';
 
   const cls=[
     ['Operasional di luar HPP',15327025],
