@@ -128,6 +128,14 @@ async function insertDataLamaResolved(out,schema){
   if(r.error)throw r.error;
   return {used:schema.map,rows:fresh,duplicateCount:out.length-fresh.length};
 }
+function isOfflineLegacyRow(x){
+  const p=FFCore.norm(x?.produk||'');
+  // Naget 20 sudah dikunci sebagai Online, bukan Offline.
+  return p!=='naget isi 20' && p!=='naget 20';
+}
+function offlineLegacyRows(){
+  return (all||[]).filter(isOfflineLegacyRow);
+}
 function selectedMonth(){return window.ffDataLamaMonth||''}
 function setSelectedMonth(m){toggleMonth(m)}
 function allReportMonths(){
@@ -139,7 +147,7 @@ function allReportMonths(){
   const current=new Date(); set.add(`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}`);
   return Array.from(set).sort().reverse();
 }
-function incomeForMonth(m){const old=all.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0);const off=salesAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0);const on=FFCore.onlineIncomeRows(onlineSalesAll,m).reduce((a,x)=>a+Number(x.revenue||0),0);return old+off+on}
+function incomeForMonth(m){const old=offlineLegacyRows().filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0);const off=salesAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.omzet||0),0);const on=FFCore.onlineIncomeRows(onlineSalesAll,m).reduce((a,x)=>a+Number(x.revenue||0),0);return old+off+on}
 function expenseForMonth(m){return expenseAll.filter(x=>x.periode===m).reduce((a,x)=>a+Number(x.nominal||0),0)}
 function expensePeriod(v){const s=String(v??'').trim();return /^\d{4}-\d{2}$/.test(s)?s:''}
 function exactExpenseMonths(){return new Set(expenseAll.map(x=>x.periode).filter(m=>/^\d{4}-\d{2}$/.test(m)))}
@@ -157,7 +165,7 @@ function renderMonthlySummary(){
   box.innerHTML=html;
 }
 function detailMonth(m){
-  const rows=all.filter(x=>x.periode===m);
+  const rows=offlineLegacyRows().filter(x=>x.periode===m);
   const sales=salesAll.filter(x=>x.periode===m);
   const online=onlineSalesAll.filter(x=>x.periode===m);
   const onlineFin=FFCore.onlineIncomeRows(onlineSalesAll,m);
