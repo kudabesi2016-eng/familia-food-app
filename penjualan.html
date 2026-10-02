@@ -680,14 +680,35 @@ async function ffExpenseLoadSaved(id){
     document.getElementById('ffExpenseNote').value=h.data.keterangan||'';
     const host=document.getElementById('ffExpenseLines');host.innerHTML='';
     const rows=it.data||[];
-    rows.forEach(item=>ffExpenseAddLine({
-      category:item.kategori||h.data.kategori||'Lainnya',
-      nama_item:item.nama_item||'',
-      harga_satuan:item.harga_satuan||item.subtotal||0,
-      master_id:(window.__ffExpenseItemsMaster||[]).find(x=>String(x.nama_item).toLowerCase()===String(item.nama_item||'').toLowerCase()&&String(x.kategori)===String(item.kategori||h.data.kategori||''))?.id||'',
-      bahan_id:item.bahan_id||null
-    }));
-    if(!rows.length)ffExpenseAddLine();
+    const normExpenseName=v=>String(v??'').trim().toLowerCase().replace(/\s+/g,' ');
+    rows.forEach(item=>{
+      const cat=item.kategori||h.data.kategori||'Lainnya';
+      const name=item.nama_item||'';
+      const master=(window.__ffExpenseItemsMaster||[]).find(x=>
+        normExpenseName(x.nama_item)===normExpenseName(name) &&
+        String(x.kategori||'')===String(cat||'')
+      );
+      ffExpenseAddLine({
+        category:cat,
+        nama_item:name,
+        harga_satuan:item.harga_satuan||item.subtotal||0,
+        master_id:master?.id||'',
+        bahan_id:item.bahan_id||null,
+        manual:!master
+      });
+    });
+    if(!rows.length){
+      const allowed=['Bahan Baku','Operasional','Gaji','Alat & Perlengkapan','Retur','Lainnya'];
+      const cat=allowed.includes(String(h.data.kategori||''))?String(h.data.kategori):'Lainnya';
+      const name=String(h.data.keterangan||'').trim();
+      ffExpenseAddLine({
+        category:cat,
+        nama_item:name,
+        harga_satuan:Number(h.data.nominal||0),
+        master_id:'',
+        manual:true
+      });
+    }
     window.__offlineExpenseEditId=Number(id);
     const saveBtn=document.getElementById('ffExpenseDraftSave');if(saveBtn)saveBtn.textContent='✅ Simpan Perubahan Pengeluaran';
     if(out)out.innerHTML='<div class="warn">Mode edit pengeluaran. Ubah kategori, item, atau harga lalu simpan perubahan.</div>';
@@ -1341,7 +1362,7 @@ async function refreshOfflineHistory(){
   try{
     const [salesR,expenseR,oldR,expenseItemR]=await Promise.all([
       supabaseClient.from('penjualan').select('id,tanggal,product_name,qty,harga,total,modal_hpp,hpp,laba,produk_id,channel,source').eq('channel','Offline').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000),
-      supabaseClient.from('pengeluaran').select('id,tanggal,periode,kategori,keterangan,nominal').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000),
+      supabaseClient.from('pengeluaran').select('id,tanggal,periode,kategori,keterangan,nominal,cara_bayar').order('tanggal',{ascending:false}).order('id',{ascending:false}).limit(1000),
       supabaseClient.from('data_lama').select('id,periode,jenis,keterangan,nominal,catatan').order('periode',{ascending:false}).order('id',{ascending:false}).limit(5000),
       supabaseClient.from('pengeluaran_item').select('id,pengeluaran_id,kategori,nama_item,harga_satuan,subtotal').order('id',{ascending:true}).limit(5000)
     ]);
@@ -1371,6 +1392,12 @@ async function refreshOfflineHistory(){
       ...(expenseR.data||[])
         .filter(x=>{
           const d=String(x.tanggal||'').trim(),p=String(x.periode||'').trim();
+          const cara=String(x.cara_bayar||'').trim().toLowerCase();
+          const kat=String(x.kategori||'').trim().toLowerCase();
+          // Hutang/Piutang berdiri sendiri. Catatan legacy yang dulu tersimpan
+          // sebagai pengeluaran dengan cara_bayar=Hutang tidak boleh tampil di
+          // Riwayat Offline.
+          if(cara==='hutang'||kat==='hutang'||kat==='pembayaran hutang')return false;
           return /^\d{4}-\d{2}-\d{2}$/.test(d)||/^\d{4}-\d{2}$/.test(p);
         })
         .map(x=>({...x,_jenis:'Pengeluaran',_tanggal:/^\d{4}-\d{2}-\d{2}$/.test(String(x.tanggal||''))?String(x.tanggal):String(x.periode||''),_source:'Pengeluaran',_expense_items:expenseItemsById[String(x.id)]||[]}))
