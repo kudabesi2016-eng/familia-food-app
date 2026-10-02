@@ -196,10 +196,13 @@ function isOfflineLegacyHistoricalRow(x){
   return !['naget 20','naget isi 20','naget 25+saus','naget isi 25+saus','naget 25+ saus','naget isi 25+ saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(n);
 }
 function isCashExpense(x){
-  // Pengeluaran dengan cara_bayar=Hutang yang lama tetap bukan kas dibayar.
-  // Pembayaran hutang baru dibuat sebagai pengeluaran Tunai saat pembayaran nyata,
-  // sehingga pembayaran tersebut memang masuk arus kas/pengeluaran satu kali.
-  return String(x?.cara_bayar||'Tunai').trim()!=='Hutang';
+  // CATATAN HUTANG BUKAN PENGELUARAN KAS.
+  // Semua baris dengan cara_bayar=Hutang tetap tersimpan sebagai catatan
+  // kewajiban, tetapi TIDAK masuk Dashboard, Rekap Pengeluaran, Hasil Kas,
+  // maupun Profit bulan berjalan.
+  // Pengeluaran kas baru masuk saat pembayaran nyata dicatat (mis. Bayar Hutang).
+  const cara=String(x?.cara_bayar||'Tunai').trim().toLowerCase();
+  return cara!=='hutang';
 }
 function offlineFinance(m){
   const oldRows=(olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isOfflineLegacyHistoricalRow(x));
