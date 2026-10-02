@@ -1825,7 +1825,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       const variation=isCash?'Uang Bersih':(x.variation||'Naget');
       const modalCell=isCash?money(Number(x.uang_bersih??x.omzet_produk??0)):money(unit);
       const totalCell=isCash?money(Number(x.uang_bersih??x.omzet_produk??0)):money(total);
-      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(variation)+'</td><td>'+esc(name)+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+modalCell+'</td><td>'+totalCell+'</td><td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
+      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(variation)+'</td><td>'+esc(name)+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+modalCell+'</td><td>'+totalCell+'</td><td><button class="mini edit" type="button" data-ff-online-edit="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
     }).join('');
     wrap.style.display='block';
     byId('onlineBatchHistoryMonthWrap')&&(byId('onlineBatchHistoryMonthWrap').style.display='none');
@@ -2443,7 +2443,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       const variation=isCash?'Uang Bersih':(x.variation||'Naget');
       const modalCell=isCash?money(Number(x.uang_bersih??x.omzet_produk??0)):money(unit);
       const totalCell=isCash?money(Number(x.uang_bersih??x.omzet_produk??0)):money(total);
-      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(variation)+'</td><td>'+esc(name)+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+modalCell+'</td><td>'+totalCell+'</td><td><button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
+      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(variation)+'</td><td>'+esc(name)+'</td><td>'+q.toLocaleString('id-ID')+'</td><td>'+modalCell+'</td><td>'+totalCell+'</td><td><button class="mini edit" type="button" data-ff-online-edit="'+x.id+'">✏ Edit</button> <button class="mini del" type="button" data-batch-history-del="'+x.id+'">🗑 Hapus</button></td></tr>';
     }).join('')||'<tr><td colspan="7">Tidak ada detail.</td></tr>';
     if(wrap)wrap.style.display='block';
     const mw=$id('onlineBatchHistoryMonthWrap'); if(mw)mw.style.display='none';
