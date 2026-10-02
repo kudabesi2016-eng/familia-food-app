@@ -563,7 +563,10 @@ function renderExpenseLines(){
 }
 function renderExpenses(){
   const m=today().slice(0,7);
-  const rows=state.expense.filter(x=>String(x.periode||'').slice(0,7)===m);
+  const rows=state.expense.filter(x=>{
+    const kategori=String(x.kategori||'').trim().toLowerCase();
+    return String(x.periode||'').slice(0,7)===m && kategori!=='pembayaran hutang';
+  });
   const itemCount=new Map();
   (state.expenseItems||[]).forEach(it=>itemCount.set(String(it.pengeluaran_id),(itemCount.get(String(it.pengeluaran_id))||0)+1));
   $('expenseRows').innerHTML=rows.slice().sort((a,b)=>String(b.periode).localeCompare(String(a.periode))).map(x=>{
@@ -744,7 +747,11 @@ async function saveReturn(){
 function renderStats(){
   $('statSupplier').textContent=state.supplier.length.toLocaleString('id-ID');
   $('statPurchase').textContent=state.purchase.length.toLocaleString('id-ID');
-  const m=today().slice(0,7);const ex=state.expense.filter(x=>String(x.periode||'').slice(0,7)===m).reduce((a,x)=>a+money(x.nominal),0);
+  const m=today().slice(0,7);const ex=state.expense.filter(x=>{
+    const kategori=String(x.kategori||'').trim().toLowerCase();
+    const cara=String(x.cara_bayar||'Tunai').trim().toLowerCase();
+    return String(x.periode||'').slice(0,7)===m && kategori!=='pembayaran hutang' && cara!=='hutang';
+  }).reduce((a,x)=>a+money(x.nominal),0);
   $('statExpense').textContent=rupiah(ex);$('statReturn').textContent=state.ret.length.toLocaleString('id-ID');
 }
 function switchTab(name){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===name))}
