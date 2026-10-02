@@ -384,6 +384,12 @@ async function loadDashboard(){
     const offNew=sales.filter(x=>String(x.channel||'')==='Offline' && !isHistoricalSource(x.source));
     const offOldRevenue=offOld.reduce((s,x)=>s+Math.round(num(x.nominal ?? x.omzet ?? x.total)),0);
     const offNewRevenue=offNew.reduce((s,x)=>s+Math.round(num(x.omzet_produk ?? (num(x.qty)*num(x.harga)))),0);
+    const offNewHpp=offNew.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? x.hpp ?? 0)),0);
+    const offNewProfit=offNew.reduce((s,x)=>{
+      const total=Math.round(num(x.omzet_produk ?? x.total ?? (num(x.qty)*num(x.harga))));
+      const hpp=Math.round(num(x.modal_hpp ?? x.hpp ?? 0));
+      return s+Math.round(num(x.laba ?? (total-hpp)));
+    },0);
     const offRevenue=offOldRevenue+offNewRevenue;
     // Pengeluaran Offline: hanya baris pengeluaran dengan periode YYYY-MM yang valid,
     // sama seperti Rekap/Data Lama. Baris tanpa periode valid tidak boleh masuk total.
@@ -532,11 +538,13 @@ async function loadDashboard(){
       result:-8745642
     });
     const offlineLockedExpense=OFFLINE_LOCKED_SUMMARY.hpp+OFFLINE_LOCKED_SUMMARY.outsideHpp;
-    const dashboardOffRevenue=OFFLINE_LOCKED_SUMMARY.revenue;
-    const dashboardOffHpp=OFFLINE_LOCKED_SUMMARY.hpp;
+    // Ringkasan lama tetap dikunci. Transaksi Offline baru yang sudah tersimpan
+    // ditambahkan di atas snapshot lama agar Dashboard membaca Data Lama + transaksi baru.
+    const dashboardOffRevenue=OFFLINE_LOCKED_SUMMARY.revenue+offNewRevenue;
+    const dashboardOffHpp=OFFLINE_LOCKED_SUMMARY.hpp+offNewHpp;
     const dashboardOffExpense=offlineLockedExpense;
-    const dashboardOffNet=OFFLINE_LOCKED_SUMMARY.result;
-    const dashboardOffProfit=OFFLINE_LOCKED_SUMMARY.result;
+    const dashboardOffNet=OFFLINE_LOCKED_SUMMARY.result+offNewRevenue;
+    const dashboardOffProfit=OFFLINE_LOCKED_SUMMARY.result+offNewProfit;
 
     // GABUNGAN: gunakan ringkasan Offline terkunci + perhitungan Online.
     const totalRevenue=dashboardOffRevenue+onRevenue;
@@ -571,7 +579,7 @@ async function loadDashboard(){
     document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
     const offlineAudit=document.getElementById('offlineHppAudit');
     if(offlineAudit){
-      offlineAudit.textContent='🔒 Ringkasan Offline Jan–Agustus 2026 terkunci sesuai dasar perhitungan resmi.';
+      offlineAudit.textContent='🔒 Data Lama Jan–Agustus 2026 tetap terkunci; transaksi Offline Baru ditambahkan dari database secara real-time.';
     }
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
