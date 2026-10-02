@@ -2407,10 +2407,14 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
     if(!g||!tb)return;
     const dates={};
     (g.rows||[]).forEach(x=>{
+      // Daftar tanggal di sini khusus transaksi produk online baru.
+      // Jangan tampilkan tanggal yang hanya berisi data kosong / pencairan uang.
+      const isCash=String(x.source)==='online_pencairan';
+      const q=Math.max(0,Number(x.qty)||0);
+      const modal=Math.round(Number(x.modal_hpp??x.hpp??0));
+      if(isCash || q<=0 || modal<=0)return;
       const d=String(x.tanggal||'Tanpa tanggal');
       if(!dates[d])dates[d]={rows:[],qty:0,modal:0};
-      const isCash=String(x.source)==='online_pencairan';
-      const q=isCash?0:Math.max(1,Number(x.qty)||1), modal=isCash?0:Math.round(Number(x.modal_hpp??x.hpp??0));
       dates[d].rows.push(x); dates[d].qty+=q; dates[d].modal+=modal;
     });
     window.__FF_STANDALONE_ONLINE_DATES={month,dates};
