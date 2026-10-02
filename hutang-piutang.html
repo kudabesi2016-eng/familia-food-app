@@ -15,7 +15,7 @@
 main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 6px;color:var(--brand-color,#087443)}.sub{color:#68736d;margin-bottom:18px}
 .card{background:#fff;border:1px solid #dce8e1;border-radius:14px;padding:18px;margin-bottom:16px}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-weight:700;margin-bottom:6px}.field input,.field select{width:100%;padding:10px;border:1px solid #ccd5cf;border-radius:9px;background:#fff}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:9px;padding:10px 14px;background:#087443;color:#fff;font-weight:700;cursor:pointer}.btn.gray{background:#777}.btn.blue{background:#2563eb}.btn.red{background:#b42318}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:9px;padding:10px 14px;background:#087443;color:#fff;font-weight:700;cursor:pointer}.btn.gray{background:#777}.btn.blue{background:#2563eb}.btn.red{background:#b42318}.btn.light{background:#eaf6ef;color:#087443;border:1px solid #b8d9c4}
 .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{background:#f7fbf8;border:1px solid #e2eee6;border-radius:12px;padding:14px}.stat small{display:block;color:#68736d}.stat b{display:block;font-size:20px;margin-top:6px}
 .tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:900px}th{background:#087443;color:#fff;padding:10px;text-align:left;white-space:nowrap}td{padding:10px;border-bottom:1px solid #e5e5e5;vertical-align:top}
 .badge{display:inline-flex;padding:6px 10px;border-radius:999px;background:#eef7f1;color:#087443;font-weight:700;font-size:12px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}.pill.hutang{background:#fff1f1;color:#b42318}.pill.piutang{background:#eef5ff;color:#2457a6}.pill.prod{background:#eef7f1;color:#087443}.pill.konsum{background:#fff8df;color:#8a6116}
@@ -83,7 +83,7 @@ main{margin-left:230px;padding:28px;max-width:1450px}h1{margin:0 0 6px;color:var
 
 <div class="card" id="debtDetailCard" style="display:none">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div><h2 id="debtDetailTitle" style="margin:0">Detail Hutang</h2><div class="note">Pembayaran dilakukan dari tombol 💵 Bayar pada hutang yang dipilih.</div></div>
+    <div><h2 id="debtDetailTitle" style="margin:0">Detail Hutang</h2><div class="note">Gunakan <b>✏️ Edit</b> untuk mengubah data hutang. Pembayaran tetap dicatat terpisah lewat tombol 💵 Bayar.</div></div>
     <button class="btn gray" id="closeDebtDetail">Tutup</button>
   </div>
   <div class="tablewrap" style="margin-top:12px">
@@ -256,8 +256,10 @@ function renderLists(){
 
   const row=(r)=>{
     const x=computed(r);
-    const action=x.sisa>0?'<button class="btn blue" type="button" data-pay="'+r.id+'">'+(r.jenis==='Piutang'?'💰 Terima':'💵 Bayar')+'</button>':'<span class="hint">Lunas</span>';
-    return '<tr><td>'+esc(r.tanggal||'-')+'</td><td>'+esc(r.kategori||'-')+'</td><td>'+esc(r.pihak||'-')+'</td><td>'+esc(r.jatuh_tempo||'-')+'</td><td>'+money(r.nominal_awal)+'</td><td>'+money(x.paid)+'</td><td class="money '+(x.sisa>0?'negative':'positive')+'">'+money(x.sisa)+'</td><td>'+esc(x.status)+'</td><td>'+action+'</td></tr>';
+    const edit='<button class="btn light" type="button" data-debt-edit="'+r.id+'">✏️ Edit</button>';
+    const pay=x.sisa>0?'<button class="btn blue" type="button" data-pay="'+r.id+'">'+(r.jenis==='Piutang'?'💰 Terima':'💵 Bayar')+'</button>':'<span class="hint">Lunas</span>';
+    const action=edit+' '+pay;
+    return '<tr><td>'+esc(r.tanggal||'-')+'</td><td>'+esc(r.kategori||'-')+'</td><td>'+esc(r.pihak||'-')+'</td><td>'+esc(r.jatuh_tempo||'-')+'</td><td>'+money(r.nominal_awal)+'</td><td>'+money(x.paid)+'</td><td class="money '+(x.sisa>0?'negative':'positive')+'">'+money(x.sisa)+'</td><td>'+esc(x.status)+'</td><td style="white-space:nowrap">'+action+'</td></tr>';
   };
   $('receivableListRows').innerHTML=pits.length?pits.map(row).join(''):'<tr><td colspan="9" class="empty">Belum ada piutang.</td></tr>';
 }
@@ -267,8 +269,10 @@ function renderDebtDetails(m){
   $('debtDetailTitle').textContent='📄 Detail Hutang • '+monthLabel(m);
   $('debtDetailRows').innerHTML=rows.length?rows.map(r=>{
     const x=computed(r);
-    const action=x.sisa>0?'<button class="btn blue" type="button" data-pay="'+r.id+'">💵 Bayar</button>':'<span class="hint">Lunas</span>';
-    return '<tr><td>'+esc(r.tanggal||'-')+'</td><td>'+esc(r.kategori||'-')+'</td><td>'+esc(r.pihak||'-')+'</td><td>'+esc(r.jatuh_tempo||'-')+'</td><td>'+money(r.nominal_awal)+'</td><td>'+money(x.paid)+'</td><td class="money '+(x.sisa>0?'negative':'positive')+'">'+money(x.sisa)+'</td><td>'+esc(x.status)+'</td><td>'+action+'</td></tr>';
+    const edit='<button class="btn light" type="button" data-debt-edit="'+r.id+'">✏️ Edit</button>';
+    const pay=x.sisa>0?'<button class="btn blue" type="button" data-pay="'+r.id+'">💵 Bayar</button>':'<span class="hint">Lunas</span>';
+    const action=edit+' '+pay;
+    return '<tr><td>'+esc(r.tanggal||'-')+'</td><td>'+esc(r.kategori||'-')+'</td><td>'+esc(r.pihak||'-')+'</td><td>'+esc(r.jatuh_tempo||'-')+'</td><td>'+money(r.nominal_awal)+'</td><td>'+money(x.paid)+'</td><td class="money '+(x.sisa>0?'negative':'positive')+'">'+money(x.sisa)+'</td><td>'+esc(x.status)+'</td><td style="white-space:nowrap">'+action+'</td></tr>';
   }).join(''):'<tr><td colspan="9" class="empty">Belum ada hutang pada bulan ini.</td></tr>';
   $('debtDetailCard').style.display='block';
   $('debtDetailCard').scrollIntoView({behavior:'smooth',block:'start'});
@@ -280,6 +284,60 @@ function renderStats(){
   payments.forEach(x=>{if(monthOf(x.tanggal)!==cur)return;const r=records.find(y=>Number(y.id)===Number(x.hutang_piutang_id));if(r?.jenis==='Hutang')bh+=Number(x.nominal||0);if(r?.jenis==='Piutang')bp+=Number(x.nominal||0)});
   $('sumHutang').textContent=money(h);$('sumPiutang').textContent=money(p);$('sumBayarHutang').textContent=money(bh);$('sumBayarPiutang').textContent=money(bp);
 }
+function openDebtEdit(id){
+  const r=records.find(x=>Number(x.id)===Number(id));
+  if(!r)return;
+  const paid=normPay(r);
+
+  const tanggal=window.prompt('Tanggal transaksi (YYYY-MM-DD):',r.tanggal||today());
+  if(tanggal===null)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)){alert('Format tanggal harus YYYY-MM-DD.');return}
+
+  const kategori=window.prompt('Kategori (Produktif / Konsumtif / Usaha / Lainnya):',r.kategori||'');
+  if(kategori===null)return;
+
+  const pihak=window.prompt('Pihak:',r.pihak||'');
+  if(pihak===null)return;
+  if(!pihak.trim()){alert('Pihak wajib diisi.');return}
+
+  const jatuhTempo=window.prompt('Jatuh tempo (YYYY-MM-DD), kosongkan bila tidak ada:',r.jatuh_tempo||'');
+  if(jatuhTempo===null)return;
+  if(jatuhTempo && !/^\d{4}-\d{2}-\d{2}$/.test(jatuhTempo)){alert('Format jatuh tempo harus YYYY-MM-DD.');return}
+
+  const nominalRaw=window.prompt('Nominal awal:',String(Number(r.nominal_awal)||0));
+  if(nominalRaw===null)return;
+  const nominal=Math.round(Number(nominalRaw)||0);
+  if(nominal<=0){alert('Nominal harus lebih dari 0.');return}
+  if(nominal<paid){
+    alert('Nominal awal tidak boleh lebih kecil dari total yang sudah dibayar ('+money(paid)+').');
+    return;
+  }
+
+  const keterangan=window.prompt('Keterangan:',r.keterangan||'');
+  if(keterangan===null)return;
+
+  const status=nominal<=paid?'Lunas':paid>0?'Sebagian':'Belum Lunas';
+  const u=await supabaseClient.from('ff_hutang_piutang').update({
+    tanggal,
+    kategori:kategori.trim()||r.kategori||'Lainnya',
+    pihak:pihak.trim(),
+    jatuh_tempo:jatuhTempo||null,
+    nominal_awal:nominal,
+    keterangan:keterangan.trim(),
+    status
+  }).eq('id',r.id);
+
+  if(u.error){
+    alert('Gagal mengubah data: '+u.error.message);
+    return;
+  }
+
+  await load();
+  if(r.jenis==='Hutang'){
+    renderDebtDetails(monthOf(tanggal));
+  }
+  $('paymentCard').style.display='none';
+}
 function openPayTarget(id){
   payTarget=Number(id);
   const r=records.find(x=>Number(x.id)===payTarget);
@@ -289,6 +347,11 @@ function openPayTarget(id){
   $('paymentMsg').innerHTML='';$('paymentCard').style.display='block';$('paymentCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
 document.addEventListener('click',e=>{
+  const edit=e.target.closest('[data-debt-edit]');
+  if(edit){
+    openDebtEdit(edit.dataset.debtEdit);
+    return;
+  }
   const b=e.target.closest('[data-pay]');
   if(!b)return;
   openPayTarget(b.dataset.pay);
