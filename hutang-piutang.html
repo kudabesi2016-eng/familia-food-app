@@ -159,8 +159,7 @@ function beginDraftEdit(i){
   editingDraftIndex=i;
   $('jenis').value=x.jenis;renderKategori();$('kategori').value=x.kategori;
   $('pihak').value=x.pihak||'';$('tanggal').value=x.tanggal||today();$('jatuhTempo').value=x.jatuh_tempo||'';
-  $('nominal').value=x.nominal_awal||'';$('keterangan').value=x.keterangan||'';$('expCategoryDebt').value=x.expense_category||'Bahan Baku';
-  $('save').textContent='💾 Simpan Perubahan';
+  $('nominal').value=x.nominal_awal||'';$('keterangan').value=x.keterangan||'';  $('save').textContent='💾 Simpan Perubahan';
   $('msg').innerHTML='<div class="ok">Mode edit aktif. Perubahan belum masuk database.</div>';
   renderDrafts();
   $('pihak').scrollIntoView({behavior:'smooth',block:'center'});
@@ -284,7 +283,7 @@ function renderStats(){
   payments.forEach(x=>{if(monthOf(x.tanggal)!==cur)return;const r=records.find(y=>Number(y.id)===Number(x.hutang_piutang_id));if(r?.jenis==='Hutang')bh+=Number(x.nominal||0);if(r?.jenis==='Piutang')bp+=Number(x.nominal||0)});
   $('sumHutang').textContent=money(h);$('sumPiutang').textContent=money(p);$('sumBayarHutang').textContent=money(bh);$('sumBayarPiutang').textContent=money(bp);
 }
-function openDebtEdit(id){
+async function openDebtEdit(id){
   const r=records.find(x=>Number(x.id)===Number(id));
   if(!r)return;
   const paid=normPay(r);
