@@ -196,13 +196,14 @@ function isOfflineLegacyHistoricalRow(x){
   return !['naget 20','naget isi 20','naget 25+saus','naget isi 25+saus','naget 25+ saus','naget isi 25+ saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(n);
 }
 function isCashExpense(x){
-  // CATATAN HUTANG BUKAN PENGELUARAN KAS.
-  // Semua baris dengan cara_bayar=Hutang tetap tersimpan sebagai catatan
-  // kewajiban, tetapi TIDAK masuk Dashboard, Rekap Pengeluaran, Hasil Kas,
-  // maupun Profit bulan berjalan.
-  // Pengeluaran kas baru masuk saat pembayaran nyata dicatat (mis. Bayar Hutang).
+  // MODUL HUTANG BERDIRI SENDIRI.
+  // Catatan pembelian/nominal Hutang dan histori Pembayaran Hutang
+  // tidak boleh masuk Rekap, Dashboard, Profit, atau Pengeluaran kas.
   const cara=String(x?.cara_bayar||'Tunai').trim().toLowerCase();
-  return cara!=='hutang';
+  const kategori=String(x?.kategori||'').trim().toLowerCase();
+  if(cara==='hutang')return false;
+  if(kategori==='pembayaran hutang')return false;
+  return true;
 }
 function offlineFinance(m){
   const oldRows=(olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isOfflineLegacyHistoricalRow(x));
@@ -1373,9 +1374,7 @@ async function init(){
   const extraJobs = [
     ['pengeluaran_item', 'expenseItems'],
     ['ff_pembelian', 'purchases'],
-    ['ff_retur_penjualan', 'returns'],
-    ['ff_hutang_piutang', 'debtRecords'],
-    ['ff_hutang_piutang_bayar', 'debtPayments']
+    ['ff_retur_penjualan', 'returns']
   ];
   const extraResults = await loadTableList(extraJobs);
 
