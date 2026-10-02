@@ -625,8 +625,24 @@ function ffExpenseAddLine(data={}){
   const manual=row.querySelector('.ff-exp-manual-name');
   if(category)category.value=data.category||'Bahan Baku';
   if(select){
-    select.innerHTML=ffExpenseItemOptions(category?.value||'Bahan Baku',data.master_id||'',data.nama_item||'');
-    if(data.manual){select.value='__MANUAL__';if(manual){manual.style.display='block';manual.value=data.nama_item||'';}}
+    const categoryValue=category?.value||'Bahan Baku';
+    select.innerHTML=ffExpenseItemOptions(categoryValue,data.master_id||'',data.nama_item||'');
+    if(data.manual){
+      select.value='__MANUAL__';
+      if(manual){manual.style.display='block';manual.value=data.nama_item||'';}
+    }else if(data.master_id && [...select.options].some(o=>String(o.value)===String(data.master_id))){
+      select.value=String(data.master_id);
+      if(manual){manual.style.display='none';manual.value='';}
+    }else if(data.nama_item){
+      const byName=[...select.options].find(o=>String(o.textContent||'').trim().toLowerCase()===String(data.nama_item||'').trim().toLowerCase());
+      if(byName){
+        select.value=byName.value;
+        if(manual){manual.style.display='none';manual.value='';}
+      }else{
+        select.value='__MANUAL__';
+        if(manual){manual.style.display='block';manual.value=data.nama_item||'';}
+      }
+    }
   }
   ffExpenseUpdateTotal();
 }
