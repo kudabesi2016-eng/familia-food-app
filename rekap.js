@@ -273,133 +273,485 @@ function offlineFinance(m){
 
 function onlineFinance(m){
   const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===m);
-  const histFinance=rows.filter(x=>String(x.source||'')==='online_standard_finance');
+
+  // DATA LAMA ONLINE: Income/Settlement historis.
+  const hist=rows.filter(x=>String(x.source||'')==='online_standard_finance');
+  const histRev=hist.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+  const histFee=hist.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
+  const histNet=hist.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+
+  // DATA TRANSAKSI ONLINE BARU: Produk keluar + penerimaan uang.
+  // Keduanya ditambahkan ke data lama, bukan menggantikan data lama.
   const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
   const newCash=rows.filter(x=>String(x.source||'')==='online_pencairan');
 
-  const histRev=histFinance.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
-  const histFee=histFinance.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
-  const histNet=histFinance.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+  const newNetKnown=newCash.length>0;
+  const newNet=newCash.reduce(
+    (a,x)=>a+Number(x.uang_bersih ?? x.omzet_produk ?? 0),0
+  );
 
-  const newQty=newProducts.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
-  const newModal=newProducts.reduce((a,x)=>a+Math.round(Number(x.modal_hpp??x.hpp??0)),0);
-  const newCashAmount=newCash.reduce((a,x)=>a+Number(x.uang_bersih??x.omzet_produk??0),0);
-
-  const opsBuy=(purchases||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
-  const opsRet=(returns||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && String(x.channel||'')==='Online').reduce((a,x)=>a+Number(x.nominal||0),0);
-  const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isCashExpense(x)).reduce((a,x)=>a+Number(x.nominal||0),0);
-
-  const totalHpp=hppForChannel(m);
-  const oldHppKnown=totalHpp.known;
-  const oldHpp=oldHppKnown?Math.max(0,totalHpp.total-newModal):null;
-  const newProfit=newCashAmount-newModal;
-  const newMargin=newCashAmount?newProfit/newCashAmount*100:0;
-  const totalNet=histNet+newCashAmount;
-
-  note.innerHTML='Bulan <b>'+esc(label(m))+'</b>. Detail dibuat <b>ringkas</b>: Data Lama, Transaksi Online Baru, HPP, dan penerimaan tanpa menampilkan puluhan/baris transaksi satu per satu.';
-
-  let list='<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">';
-  list+='<div class="stat"><small>📁 Data Lama</small><strong>'+money(histNet)+'</strong><div class="hint" style="margin-top:5px">Pemasukan '+money(histRev)+'<br>Potongan '+money(histFee)+'<br>HPP '+(oldHppKnown?money(oldHpp):'—')+'</div></div>';
-  list+='<div class="stat"><small>🆕 Transaksi Baru</small><strong>'+newQty.toLocaleString('id-ID')+' bungkus</strong><div class="hint" style="margin-top:5px">'+newProducts.length.toLocaleString('id-ID')+' baris produk<br>HPP '+money(newModal)+'</div></div>';
-  list+='<div class="stat profit"><small>💰 Penerimaan Baru</small><strong>'+money(newCashAmount)+'</strong><div class="hint" style="margin-top:5px">Profit baru '+money(newProfit)+'<br>Margin '+newMargin.toFixed(2)+'%</div></div>';
-  list+='</div>';
-
-  list+='<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px">';
-  list+='<div class="stat"><small>Uang Bersih Total</small><strong>'+money(totalNet)+'</strong></div>';
-  list+='<div class="stat"><small>🛒 Pembelian</small><strong>'+money(opsBuy)+'</strong></div>';
-  list+='<div class="stat"><small>💸 Pengeluaran</small><strong>'+money(opsExp)+'</strong></div>';
-  list+='<div class="stat"><small>↩️ Retur</small><strong>'+money(opsRet)+'</strong></div>';
-  list+='</div>';
-
-  body.innerHTML=list;
+  // TRANSAKSI ONLINE BARU:
+  // Nilai yang dicatat di "Penerimaan Uang Online" sudah merupakan
+  // UANG BERSIH setelah seluruh potongan online. Jadi tidak ada
+  // perhitungan potongan lagi untuk transaksi baru.
+  // Untuk rekap, nilai penerimaan baru diperlakukan sebagai pemasukan
+  // yang sudah bersih, lalu profit = uang bersih - modal.
+  const totalRev=histRev+(newNetKnown?newNet:0);
+  const totalNet=histNet+(newNetKnown?newNet:0);
+  const totalFee=histFee;
+  return [totalRev,totalFee,totalNet,0,0];
 }
 
-function ffTopRangeOffline(period){
-  const m=String(period||'').slice(0,7);
-  return /^2026-0[1-8]$/.test(m);
-}
-function ffTopProductName(v){
-  let n=String(v??'').trim().toLowerCase().replace(/\s+/g,' ');
-  let m=n.match(/^naget\s*(?:isi\s*)?(10|12|20|25|30|40|50)\s*pcs?$/);
-  if(m)return 'Naget '+m[1];
-  m=n.match(/^naget\s*(?:isi\s*)?(25)\s*\+\s*saus$/);
-  if(m)return 'Naget '+m[1]+'+saus';
-  if(n==='naget')return 'Naget';
-  if(n.startsWith('cireng isi'))return 'Cireng isi';
-  if(n.startsWith('cireng biasa'))return 'Cireng biasa';
-  if(n.startsWith('cibay'))return 'Cibay';
-  return n.replace(/\b\w/g,m=>m.toUpperCase());
-}
-function ffTopCustomerName(v){
-  const n=String(v??'').trim().replace(/\s+/g,' ');
-  return n ? n.replace(/\b\w/g,m=>m.toUpperCase()) : 'Tanpa Nama';
-}
-function renderTopProdukKonsumen(){
-  const productBody=$('rekapUsahaTopProductRows');
-  const customerBody=$('rekapUsahaTopCustomerRows');
-  if(!productBody||!customerBody)return;
+/* =====================================================
+   HPP / MODAL ONLINE
+===================================================== */
 
-  const productsMap=new Map();
-  (olds||[]).forEach((x,i)=>{
-    if(!ffTopRangeOffline(x.periode))return;
-    const name=ffTopProductName(x.jenis);
-    if(!name)return;
-    const qty=Math.max(0,Math.round(Number(x.catatan)||0));
-    const revenue=Math.max(0,Math.round(Number(x.nominal)||0));
-    const cur=productsMap.get(name)||{name,qty:0,revenue:0};
-    cur.qty+=qty; cur.revenue+=revenue; productsMap.set(name,cur);
-  });
+function ffNormOnline(v){
+  return String(v??'').toLowerCase().trim().replace(/\s+/g,' ');
+}
+function ffDetectPackSize(row){
+  const product=ffNormOnline(row?.product_name), variation=ffNormOnline(row?.variation);
+  const n=ffNormOnline([row?.product_name,row?.variation,row?.seller_sku].filter(Boolean).join(' | '));
+  const exactSku=String(row?.sku_id??'').trim();
+  if(exactSku==='1733751720824702091')return 12;
+  if(variation==='default' && /tempura aci naget/.test(product) && /bulat/.test(product) && !/(?:isi|pcs|bungkus)\s*(?:10|12|20|25|30|40|50)/.test(product))return 12;
+  let z=n.match(/\b(\d+)\s*bungkus\s*(?:isi|is)\s*(\d+)\s*pcs?\b/);
+  if(z){const packs=Number(z[1]),pcs=Number(z[2]),per=pcs/packs;if([10,12,20,25,30,40,50].includes(per))return per;}
+  z=n.match(/\bisi\s*(10|12|20|25|30|40|50)\s*pcs?\b/); if(z)return Number(z[1]);
+  z=n.match(/\b(10|12|20|25|30|40|50)\s*pcs?\b/); if(z)return Number(z[1]);
+  z=n.match(/\bisi\s*(10|12|20|25|30|40|50)\b/); if(z)return Number(z[1]);
+  return null;
+}
+function ffIsFamiliaOnline(row){
+  const n=ffNormOnline([row?.product_name,row?.variation].filter(Boolean).join(' | '));
+  if(/saus bantal|saos bakso/.test(n))return false;
+  return /\btempura aci\b|\bnaget\b/.test(n);
+}
+function ffMasterNameForSize(size){
+  const n=Number(size);
+  if(n===25)return 'naget 25+saus';
+  if([10,12,20,30,40,50].includes(n))return 'naget '+n;
+  return '';
+}
+function ffOnlineHppUnit(row){
+  if(!ffIsFamiliaOnline(row))return null;
+  const size=ffDetectPackSize(row);
+  const target=ffMasterNameForSize(size);
+  if(!target)return null;
+  const product=products.find(x=>ffNormOnline(x.nama_produk)===target);
+  if(!product)return null;
+  const h=hpps.find(x=>String(x.produk_id)===String(product.id));
+  if(!h)return null;
+  const price=Number(h.harga_online!=null?h.harga_online:(product.harga_online||0));
+  const untung=Number(h.untung_online||0);
+  if(price>0 && untung>=0 && price-untung>0)return Math.trunc(price-untung);
+  if(h.hpp_online!=null&&Number(h.hpp_online)>0)return Math.trunc(Number(h.hpp_online));
+  if(h.hpp_unit!=null&&Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
+  return null;
+}
+
+function onlineHpp(m){
+  try{
+    let total=0;
+
+    // Historis TikTok Jan–Agustus 2026: wajib audit 8.085 bungkus.
+    if(m>='2026-01' && m<='2026-08'){
+      const lockedRows=(sales||[]).filter(x=>
+        String(x.channel||'')==='Online' &&
+        String(x.source||'')==='seller_center' &&
+        monthOfSaleRow(x)===m
+      );
+
+      const lockedTotalAllMonths=(sales||[])
+        .filter(x=>
+          String(x.channel||'')==='Online' &&
+          String(x.source||'')==='seller_center' &&
+          monthOfSaleRow(x)>='2026-01' &&
+          monthOfSaleRow(x)<='2026-08'
+        )
+        .reduce((a,x)=>a+Math.trunc(Number(x.qty||0)),0);
+
+      const hasMissingHpp=lockedRows.some(x=>
+        Number(x.qty||0)>0 &&
+        Number(x.modal_hpp ?? (Number(x.qty||0)*Number(x.hpp||0)))<=0
+      );
+
+      if(lockedRows.length && (lockedTotalAllMonths!==8085 || hasMissingHpp)){
+        return {known:false,total:0};
+      }
+
+      total+=lockedRows.reduce((a,x)=>{
+        if(Number(x.qty||0)<=0)return a;
+        const modal=x.modal_hpp!=null
+          ? Number(x.modal_hpp)
+          : Number(x.qty||0)*Number(x.hpp||0);
+        return a+Math.trunc(modal||0);
+      },0);
+    }
+
+    // Transaksi Online Baru: tambahkan modal produk keluar.
+    const newProducts=(sales||[]).filter(x=>
+      String(x.channel||'')==='Online' &&
+      String(x.source||'')==='online_batch' &&
+      monthOfSaleRow(x)===m
+    );
+
+    for(const x of newProducts){
+      const modal=Number(x.modal_hpp ?? (Number(x.qty||0)*Number(x.hpp||0)));
+      if(!Number.isFinite(modal) || modal<=0){
+        return {known:false,total:0};
+      }
+      total+=Math.trunc(modal);
+    }
+
+    // Fallback lama bila belum ada sumber seller_center maupun transaksi baru.
+    const hasCurrent=(
+      ((sales||[]).some(x=>String(x.channel||'')==='Online' && String(x.source||'')==='seller_center' && monthOfSaleRow(x)===m)) ||
+      newProducts.length>0
+    );
+    if(!hasCurrent){
+      const standardProducts=(sales||[]).filter(x=>
+        String(x.channel||'')==='Online' &&
+        String(x.source||'')==='online_standard_product' &&
+        monthOfSaleRow(x)===m
+      );
+      if(standardProducts.length){
+        const familiaRows=standardProducts.filter(ffIsFamiliaOnline);
+        for(const x of familiaRows){
+          const unit=ffOnlineHppUnit(x);
+          if(unit==null)return {known:false,total:0};
+          total+=Math.trunc(Number(x.qty||0))*unit;
+        }
+      }
+      const standard=(sales||[]).filter(x=>
+        String(x.channel||'')==='Online' &&
+        String(x.source||'')==='online_standard_finance' &&
+        monthOfSaleRow(x)===m
+      );
+      if(standard.length){
+        const missing=standard.some(x=>x.modal_hpp==null);
+        if(missing)return {known:false,total:0};
+      }
+    }
+
+    return {known:true,total:Math.trunc(total)};
+  }catch(e){
+    return {known:false,total:0};
+  }
+}
+
+function normalizeProductName(v){
+  return String(v||'').toLowerCase()
+    .replace(/\bisi\b/g,' ')
+    .replace(/\bpcs\b/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function resolveHppByProductName(name){
+  let key=normalizeProductName(name);
+    if(/^cireng\s+\d+$/.test(key))key='cireng isi';
+  if(key==='cibay 10')key='cibay';
+  const p=(products||[]).find(x=>normalizeProductName(x.nama_produk)===key);
+  if(!p)return null;
+  const h=(hpps||[]).find(x=>String(x.produk_id)===String(p.id));
+  const unit=Number(h?.hpp_unit||0);
+  return unit>0?unit:null;
+}
+/* =====================================================
+   HPP OFFLINE BERDASARKAN PERIODE
+   Jan–Apr 2026 = snapshot HPP lama
+   Mei–Ags 2026 = snapshot HPP baru
+   Setelah Agustus = master HPP aktif
+   Tujuan: perubahan master HPP sekarang tidak mengubah
+   histori yang sudah ditutup.
+===================================================== */
+const FF_OFFLINE_HPP_OLD = {
+  /* Snapshot HPP lama Jan–Apr: dari tabel HPP final lama.
+     Histori Jan–Apr yang tersimpan hanya memakai produk di bawah ini. */
+  'naget 10':3100,
+  'naget 12':3720,
+  'cireng isi':2900,
+  'cireng biasa':2700,
+  'cibay':3000
+};
+
+const FF_OFFLINE_HPP_NEW = {
+  'naget 10':3593,
+  'naget 12':4312,
+  'naget 20':7187,
+  'naget 25+saus':8984,
+  'naget 30':10780,
+  'naget 40':14374,
+  'naget 50':17968,
+  'cireng isi':2900,
+  'cireng biasa':2425,
+  'cibay':2900
+};
+
+function ffOfflineHppUnitForMonth(name,m){
+  const target=ffOfflineMasterTarget(name);
+  if(!target)return null;
+
+  if(m>='2026-01' && m<='2026-04'){
+    return FF_OFFLINE_HPP_OLD[target] ?? null;
+  }
+
+  if(m>='2026-05' && m<='2026-08'){
+    return FF_OFFLINE_HPP_NEW[target] ?? null;
+  }
+
+  /* Bulan di luar periode histori: gunakan HPP master aktif. */
+  const n=ffNormOfflineName(name);
+  const p=(products||[]).find(x=>ffNormOfflineName(x.nama_produk)===target) ||
+          (products||[]).find(x=>ffNormOfflineName(x.nama_produk).includes(target));
+  if(!p)return null;
+  const h=(hpps||[]).find(x=>String(x.produk_id)===String(p.id));
+  if(!h)return null;
+  if(h.hpp_unit!=null && Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
+  return null;
+}
+
+function offlineHpp(m){
+  try{
+    let total=0,known=true;
+
+    (olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m).forEach(x=>{
+      const qty=Math.max(0,Number(x.catatan||0));
+      const mappedOffline = FF.isOfflineProduct
+        ? FF.isOfflineProduct(x.jenis)
+        : !['naget isi 20','naget 20','naget isi 25+ saus','naget isi 25+saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(normalizeProductName(x.jenis));
+
+      if(!mappedOffline){
+        if(qty>0)known=false;
+        return;
+      }
+
+      const unit=ffOfflineHppUnitForMonth(x.jenis,m);
+      if(qty>0&&!unit)known=false;
+      if(unit)total+=Math.round(qty*unit);
+    });
+
+    (sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m).forEach(x=>{
+      const qty=Math.max(0,Number(x.qty||0));
+      const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.product_name,x.variation) : true;
+      if(!mappedOffline){
+        if(qty>0)known=false;
+        return;
+      }
+
+      const unit=ffOfflineHppUnitForMonth(x.product_name,m);
+      if(qty>0&&!unit)known=false;
+      if(unit)total+=Math.round(qty*unit);
+    });
+
+    return {
+      known,
+      total,
+      partial:!known && total>0,
+      measured:total>0,
+      snapshot:m>='2026-01'&&m<='2026-04'?'HPP lama':(m>='2026-05'&&m<='2026-08'?'HPP baru':'Master aktif')
+    };
+  }catch(e){
+    return {known:false,total:0,partial:false,measured:false};
+  }
+}
+
+
+function finance(m){
+  return $('channel').value==='Offline' ? offlineFinance(m) : onlineFinance(m);
+}
+
+function hppForChannel(m){
+  return $('channel').value==='Offline' ? offlineHpp(m) : onlineHpp(m);
+}
+
+function updateChannelUI(){
+  const offline=$('channel').value==='Offline';
+  $('pageTitle').textContent=offline?'📊 Rekap Offline':'📊 Rekap Online';
+  $('pageSub').textContent=offline?'Rekap penjualan Offline Familia Food per bulan.':'Rekap penjualan Online Shop Familia Food per bulan.';
+  $('outLabel').textContent=offline?'Potongan':'Potongan Online Shop';
+  $('monthlyOutHead').textContent=offline?'Potongan':'Potongan Online Shop';
+  $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
+  $('monthlyGrossHead').style.display=offline?'table-cell':'none';
+  $('monthlyOutsideHead').style.display=offline?'table-cell':'none';
+  $('monthlyResultHead').style.display=offline?'table-cell':'none';
+  $('monthlyProfitHead').style.display=offline?'none':'table-cell';
+  $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
+  $('noticeText').innerHTML=offline
+    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran operasional ditampilkan terpisah.<br><b>Profit Terukur Offline = Uang Bersih − HPP yang tersedia.</b><br>Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur.<br>Margin = Profit ÷ Uang Bersih × 100%.'
+    : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br><b>HPP Offline Jan–Apr dikunci ke snapshot HPP lama; Mei–Ags dikunci ke snapshot HPP baru.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
+}
+
+/* =====================================================
+   BULAN
+===================================================== */
+
+function months(){
+  const set=new Set();
   (sales||[]).forEach(x=>{
-    if(String(x.channel||'')!=='Offline'||!ffTopRangeOffline(x.tanggal))return;
-    const name=ffTopProductName(x.product_name||x.variation);
-    if(!name)return;
-    const qty=Math.max(0,Math.round(Number(x.qty)||0));
-    const revenue=Math.max(0,Math.round(Number(x.omzet_produk ?? x.total ?? 0)||0));
-    const cur=productsMap.get(name)||{name,qty:0,revenue:0};
-    cur.qty+=qty; cur.revenue+=revenue; productsMap.set(name,cur);
+    const m=monthOfSaleRow(x);
+    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
   });
-
-  const topProducts=[...productsMap.values()]
-    .sort((a,b)=>b.qty-a.qty||b.revenue-a.revenue||a.name.localeCompare(b.name))
-    .slice(0,10);
-  productBody.innerHTML=topProducts.length
-    ? topProducts.map((x,i)=>'<tr><td><b>'+(i+1)+'</b></td><td>'+esc(x.name)+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td><td><b>'+money(x.revenue)+'</b></td></tr>').join('')
-    : '<tr><td colspan="4" class="empty">Belum ada data produk.</td></tr>';
-
-  const namesBySale=new Map();
-  (pelangganLinks||[]).forEach(x=>{
-    const pid=String(x.penjualan_id);
-    const customer=(pelanggan||[]).find(c=>String(c.id)===String(x.pelanggan_id));
-    if(customer?.nama)namesBySale.set(pid,customer.nama);
-  });
-
-  const customersMap=new Map();
   (olds||[]).forEach(x=>{
-    if(!ffTopRangeOffline(x.periode))return;
-    const name=ffTopCustomerName(x.keterangan);
-    if(name==='Tanpa Nama')return;
-    const qty=Math.max(0,Math.round(Number(x.catatan)||0));
-    const revenue=Math.max(0,Math.round(Number(x.nominal)||0));
-    const cur=customersMap.get(name)||{name,qty:0,revenue:0,orders:0};
-    cur.qty+=qty; cur.revenue+=revenue; cur.orders+=1; customersMap.set(name,cur);
+    const m=String(x.periode||'').slice(0,7);
+    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
   });
-  (sales||[]).forEach(x=>{
-    if(String(x.channel||'')!=='Offline'||!ffTopRangeOffline(x.tanggal))return;
-    const name=ffTopCustomerName(namesBySale.get(String(x.id))||'Tanpa Nama');
-    if(name==='Tanpa Nama')return;
-    const qty=Math.max(0,Math.round(Number(x.qty)||0));
-    const revenue=Math.max(0,Math.round(Number(x.omzet_produk ?? x.total ?? 0)||0));
-    const cur=customersMap.get(name)||{name,qty:0,revenue:0,orders:0};
-    cur.qty+=qty; cur.revenue+=revenue; cur.orders+=1; customersMap.set(name,cur);
-  });
-
-  const topCustomers=[...customersMap.values()]
-    .sort((a,b)=>b.revenue-a.revenue||b.qty-a.qty||a.name.localeCompare(b.name))
-    .slice(0,10);
-  customerBody.innerHTML=topCustomers.length
-    ? topCustomers.map((x,i)=>'<tr><td><b>'+(i+1)+'</b></td><td>'+esc(x.name)+'</td><td>'+x.orders.toLocaleString('id-ID')+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td><td><b>'+money(x.revenue)+'</b></td></tr>').join('')
-    : '<tr><td colspan="5" class="empty">Belum ada data konsumen.</td></tr>';
+  (purchases||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m);});
+  (returns||[]).forEach(x=>{const m=String(x.tanggal||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))set.add(m);});
+  try{FF.monthsOfData(data()).forEach(m=>set.add(m));}catch(e){}
+  return [...set].sort();
 }
+
+
+/* =====================================================
+   RENDER KARTU
+===================================================== */
+
+function renderCards(){
+  const m=$('month').value;
+  const offline=$('channel').value==='Offline';
+  const marginEl=$('margin');
+
+  if(offline){
+    const locked=offlineLockedMonth(m);
+    if(locked){
+      const add=offlineNewSummary(m);
+      const revenue=locked.revenue+add.revenue;
+      const hpp=locked.hpp+add.hpp;
+      const gross=locked.grossProfit+add.profit;
+      $('rev').textContent=money(revenue);
+      $('out').textContent=money(0);
+      $('net').textContent=money(revenue);
+      $('hpp').textContent=money(hpp);
+      $('profit').textContent=money(gross);
+      if(marginEl)marginEl.textContent=(revenue?gross/revenue*100:0).toFixed(2)+'%';
+      return;
+    }
+  }
+
+  const v=finance(m);
+  if(!v){
+    $('rev').textContent='Rp 0';
+    $('out').textContent='Rp 0';
+    $('net').textContent='Rp 0';
+    $('hpp').textContent='—';
+    $('profit').textContent='—';
+    if(marginEl)marginEl.textContent='—';
+    return;
+  }
+
+  const h=hppForChannel(m);
+  $('rev').textContent=money(v[0]);
+  $('out').textContent=money(v[1]);
+  $('net').textContent=money(v[2]);
+
+  if(offline){
+    const profit=h.measured ? v[0]-h.total-v[3] : null;
+    const margin=v[2]!==0 && profit!==null ? (profit/v[2])*100 : null;
+    $('hpp').textContent=h.measured?money(h.total):'—';
+    $('profit').textContent=profit===null?'—':money(profit);
+    if(marginEl)marginEl.textContent=margin===null?'—':margin.toFixed(2)+'%';
+    return;
+  }
+
+  if(h.known){
+    const profit=v[2]-h.total;
+    const margin=v[2]?(profit/v[2])*100:0;
+    $('hpp').textContent=money(h.total);
+    $('profit').textContent=money(profit);
+    if(marginEl)marginEl.textContent=margin.toFixed(2)+'%';
+  }else{
+    $('hpp').textContent='—';
+    $('profit').textContent='—';
+    if(marginEl)marginEl.textContent='—';
+  }
+}
+
+/* =====================================================
+   RENDER TABEL
+===================================================== */
+
+function renderNewOnlineMonthly(){
+  const tb=document.getElementById('newOnlineMonthly'); if(!tb)return;
+  const ms=months();
+  if(!ms.length){tb.innerHTML='<tr><td colspan="8" class="empty">Belum ada data.</td></tr>';return;}
+  tb.innerHTML=ms.map(m=>{
+    const productRows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_batch' && monthOfSaleRow(x)===m);
+    const cashRows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_pencairan' && monthOfSaleRow(x)===m);
+    const qty=productRows.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
+    let familia=0,dropship=0;
+    productRows.forEach(x=>{const v=Math.round(Number(x.modal_hpp??x.hpp??0)); if(String(x.variation||'').toLowerCase()==='dropship')dropship+=v; else familia+=v;});
+    const cash=cashRows.reduce((a,x)=>a+Math.round(Number(x.uang_bersih??x.omzet_produk??0)),0);
+    const profit=cash-(familia+dropship);
+    const margin=cash?profit/cash*100:0;
+    return `<tr><td><b>${label(m)}</b></td><td>${qty.toLocaleString('id-ID')}</td><td>${money(familia)}</td><td><b>${money(cash)}</b></td><td><b style="color:${profit<0?'#b42318':''}">${money(profit)}</b></td><td>${productRows.filter(x=>String(x.variation||'').toLowerCase()==='dropship').reduce((a,x)=>a+Math.round(Number(x.qty||0)),0).toLocaleString('id-ID')} bungkus</td><td>${money(dropship)}</td><td>${margin.toFixed(2)}%</td></tr>`;
+  }).join('');
+}
+
+window.viewOnlineMonth=function(m){
+  const card=$('onlineConnectionCard');
+  const body=$('onlineConnectionBody');
+  const title=$('onlineConnectionTitle');
+  const note=$('onlineConnectionNote');
+  if(!card||!body)return;
+  const month=/^\d{4}-\d{2}$/.test(String(m||''))?String(m):$('month').value;
+  card.style.display='block';
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+
+  if($('channel').value==='Offline'){
+    const locked=offlineLockedMonth(month);
+    const add=offlineNewSummary(month);
+    const labelMonth=label(month);
+    if(title)title.textContent='📋 Detail Rekap Offline • '+labelMonth;
+    if(!locked){
+      if(note)note.textContent='Belum ada snapshot Offline untuk bulan ini.';
+      body.innerHTML='<div class="notice">Tidak ada ringkasan Offline terkunci untuk '+esc(labelMonth)+'.</div>';
+      return;
+    }
+    const revenue=locked.revenue+add.revenue;
+    const hpp=locked.hpp+add.hpp;
+    const gross=locked.grossProfit+add.profit;
+    const outside=locked.outsideHpp;
+    const result=locked.result+add.profit;
+    if(note)note.innerHTML='Ringkasan bulan terpilih. Data Lama tetap terkunci; transaksi Offline Baru ditambahkan.';
+    body.innerHTML=
+      '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
+      '<div class="stat"><small>Pemasukan</small><strong>'+money(revenue)+'</strong></div>'+
+      '<div class="stat"><small>HPP</small><strong>'+money(hpp)+'</strong></div>'+
+      '<div class="stat"><small>Beban di luar HPP</small><strong>'+money(outside)+'</strong></div>'+
+      '<div class="stat profit"><small>Hasil Usaha</small><strong>'+money(result)+'</strong><div class="hint" style="margin-top:5px">Laba Kotor '+money(gross)+'</div></div>'+
+      '</div>'+
+      '<div class="hint" style="margin-top:10px">Transaksi Offline Baru: <b>'+add.qty.toLocaleString('id-ID')+' bungkus</b> • '+add.rows.length.toLocaleString('id-ID')+' baris.</div>';
+    return;
+  }
+
+  const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===month);
+  const hist=rows.filter(x=>String(x.source||'')==='online_standard_finance');
+  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
+  const newCashRows=rows.filter(x=>String(x.source||'')==='online_pencairan');
+  const histRev=hist.reduce((a,x)=>a+Math.round(Number(x.omzet_produk||0)),0);
+  const histFee=hist.reduce((a,x)=>a+Math.round(Number(x.biaya_platform||0)),0);
+  const histNet=hist.reduce((a,x)=>a+Math.round(Number(x.uang_bersih||0)),0);
+  const newQty=newProducts.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
+  const newHpp=newProducts.reduce((a,x)=>a+Math.round(Number(x.modal_hpp??x.hpp??0)),0);
+  const newCashAmount=newCashRows.reduce((a,x)=>a+Math.round(Number(x.uang_bersih??x.omzet_produk??0)),0);
+  const totalNet=histNet+newCashAmount;
+  const newProfit=newCashAmount-newHpp;
+  const newMargin=newCashAmount?newProfit/newCashAmount*100:0;
+  const totalHpp=hppForChannel(month);
+  const oldHpp=totalHpp.known?Math.max(0,totalHpp.total-newHpp):null;
+
+  if(title)title.textContent='📋 Detail Rekap Online • '+label(month);
+  if(note)note.innerHTML='Ringkasan bulan terpilih. Tidak menampilkan daftar transaksi satu per satu.';
+  body.innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
+    '<div class="stat"><small>Data Lama</small><strong>'+money(histNet)+'</strong><div class="hint" style="margin-top:5px">Pemasukan '+money(histRev)+'<br>Potongan '+money(histFee)+'<br>HPP '+(oldHpp===null?'—':money(oldHpp))+'</div></div>'+
+    '<div class="stat"><small>Transaksi Baru</small><strong>'+newQty.toLocaleString('id-ID')+' bungkus</strong><div class="hint" style="margin-top:5px">'+newProducts.length.toLocaleString('id-ID')+' baris produk<br>HPP '+money(newHpp)+'</div></div>'+
+    '<div class="stat"><small>Penerimaan Baru</small><strong>'+money(newCashAmount)+'</strong><div class="hint" style="margin-top:5px">Profit '+money(newProfit)+'<br>Margin '+newMargin.toFixed(2)+'%</div></div>'+
+    '<div class="stat profit"><small>Uang Bersih Total</small><strong>'+money(totalNet)+'</strong></div>'+
+    '</div>';
+};
+
 
 function renderRekapUsaha(){
   const card=$('rekapUsahaCard');
@@ -531,98 +883,6 @@ function renderOnlineFinalSummary(){
   const p=$('onlineFinalProfit');
   if(p)p.style.color=profit<0?'#b42318':'';
 }
-function months(){
-  const set=new Set();
-  (sales||[]).forEach(x=>{
-    const m=monthOfSaleRow(x);
-    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
-  });
-  (olds||[]).forEach(x=>{
-    const m=String(x.periode||'').slice(0,7);
-    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
-  });
-  (expenses||[]).forEach(x=>{
-    const m=String(x.periode||'').slice(0,7);
-    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
-  });
-  (purchases||[]).forEach(x=>{
-    const m=String(x.tanggal||'').slice(0,7);
-    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
-  });
-  (returns||[]).forEach(x=>{
-    const m=String(x.tanggal||'').slice(0,7);
-    if(/^\d{4}-\d{2}$/.test(m))set.add(m);
-  });
-  return [...set].sort();
-}
-
-window.viewOnlineMonth=function(m){
-  const card=$('onlineConnectionCard');
-  const body=$('onlineConnectionBody');
-  const title=$('onlineConnectionTitle');
-  const note=$('onlineConnectionNote');
-  if(!card||!body)return;
-  const month=/^\d{4}-\d{2}$/.test(String(m||''))?String(m):$('month').value;
-  card.style.display='block';
-  card.scrollIntoView({behavior:'smooth',block:'start'});
-
-  const offline=$('channel').value==='Offline';
-  const labelMonth=label(month);
-
-  if(offline){
-    const locked=offlineLockedMonth(month);
-    const add=offlineNewSummary(month);
-    if(!locked){
-      title.textContent='📋 Detail Rekap Offline • '+labelMonth;
-      note.textContent='Belum ada snapshot Offline untuk bulan ini.';
-      body.innerHTML='<div class="notice">Tidak ada ringkasan Offline terkunci pada bulan '+esc(labelMonth)+'.</div>';
-      return;
-    }
-    const revenue=locked.revenue+add.revenue;
-    const hpp=locked.hpp+add.hpp;
-    const gross=locked.grossProfit+add.profit;
-    const outside=locked.outsideHpp;
-    const result=locked.result+add.profit;
-    title.textContent='📋 Detail Rekap Offline • '+labelMonth;
-    note.innerHTML='Ringkasan bulan terpilih. Data Lama tetap terkunci; transaksi Offline Baru ditambahkan.';
-    body.innerHTML=
-      '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
-      '<div class="stat"><small>Pemasukan</small><strong>'+money(revenue)+'</strong></div>'+
-      '<div class="stat"><small>HPP</small><strong>'+money(hpp)+'</strong></div>'+
-      '<div class="stat"><small>Beban di luar HPP</small><strong>'+money(outside)+'</strong></div>'+
-      '<div class="stat profit"><small>Hasil Usaha</small><strong>'+money(result)+'</strong><div class="hint" style="margin-top:5px">Laba Kotor '+money(gross)+'</div></div>'+
-      '</div>'+
-      '<div class="hint" style="margin-top:10px">Transaksi Offline Baru: <b>'+add.qty.toLocaleString('id-ID')+' bungkus</b> • '+add.rows.length.toLocaleString('id-ID')+' baris.</div>';
-    return;
-  }
-
-  const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===month);
-  const hist=rows.filter(x=>String(x.source||'')==='online_standard_finance');
-  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
-  const newCashRows=rows.filter(x=>String(x.source||'')==='online_pencairan');
-  const histNet=hist.reduce((a,x)=>a+Math.round(Number(x.uang_bersih||0)),0);
-  const histFee=hist.reduce((a,x)=>a+Math.round(Number(x.biaya_platform||0)),0);
-  const histRev=hist.reduce((a,x)=>a+Math.round(Number(x.omzet_produk||0)),0);
-  const newQty=newProducts.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
-  const newHpp=newProducts.reduce((a,x)=>a+Math.round(Number(x.modal_hpp??x.hpp??0)),0);
-  const newCashAmount=newCashRows.reduce((a,x)=>a+Math.round(Number(x.uang_bersih??x.omzet_produk??0)),0);
-  const totalNet=histNet+newCashAmount;
-  const newProfit=newCashAmount-newHpp;
-  const newMargin=newCashAmount?newProfit/newCashAmount*100:0;
-  const totalHpp=hppForChannel(month);
-  const oldHpp=totalHpp.known?Math.max(0,totalHpp.total-newHpp):null;
-
-  title.textContent='📋 Detail Rekap Online • '+labelMonth;
-  note.innerHTML='Ringkasan bulan terpilih. Tidak menampilkan daftar transaksi satu per satu.';
-  body.innerHTML=
-    '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
-    '<div class="stat"><small>Data Lama</small><strong>'+money(histNet)+'</strong><div class="hint" style="margin-top:5px">Pemasukan '+money(histRev)+'<br>Potongan '+money(histFee)+'<br>HPP '+(oldHpp===null?'—':money(oldHpp))+'</div></div>'+
-    '<div class="stat"><small>Transaksi Baru</small><strong>'+newQty.toLocaleString('id-ID')+' bungkus</strong><div class="hint" style="margin-top:5px">'+newProducts.length.toLocaleString('id-ID')+' baris<br>HPP '+money(newHpp)+'</div></div>'+
-    '<div class="stat"><small>Penerimaan Baru</small><strong>'+money(newCashAmount)+'</strong><div class="hint" style="margin-top:5px">Profit '+money(newProfit)+'<br>Margin '+newMargin.toFixed(2)+'%</div></div>'+
-    '<div class="stat profit"><small>Uang Bersih Total</small><strong>'+money(totalNet)+'</strong></div>'+
-    '</div>';
-}
-
 function renderMonthly(){
   const ms=months();
   const offline=$('channel').value==='Offline';
