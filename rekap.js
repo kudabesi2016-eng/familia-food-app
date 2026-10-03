@@ -690,6 +690,7 @@ window.viewOnlineMonth=function(m){
   const card=$('onlineConnectionCard');
   if(!card)return;
   card.style.display='block';
+  card.scrollIntoView({behavior:'smooth',block:'start'});
   if($('channel').value==='Online'){
     renderOnlineConnection(m);
   }else{
