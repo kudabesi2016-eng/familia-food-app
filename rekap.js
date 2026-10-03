@@ -805,9 +805,11 @@ function ffTopRangeOffline(period){
 }
 function ffTopProductName(v){
   let n=String(v??'').trim().toLowerCase().replace(/\s+/g,' ');
-  n=n.replace(/\bisi\s*\d+\s*pcs?\b/g,'').replace(/\bisi\s*\d+\b/g,'').replace(/\bpcs?\b/g,'').trim();
+  let m=n.match(/^naget\s*(?:isi\s*)?(10|12|20|25|30|40|50)\s*pcs?$/);
+  if(m)return 'Naget '+m[1];
+  m=n.match(/^naget\s*(?:isi\s*)?(25)\s*\+\s*saus$/);
+  if(m)return 'Naget '+m[1]+'+saus';
   if(n==='naget')return 'Naget';
-  if(n.startsWith('naget '))return 'Naget '+n.slice(6).trim();
   if(n.startsWith('cireng isi'))return 'Cireng isi';
   if(n.startsWith('cireng biasa'))return 'Cireng biasa';
   if(n.startsWith('cibay'))return 'Cibay';
