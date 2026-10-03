@@ -930,7 +930,7 @@ function renderMonthly(){
   const offline=$('channel').value==='Offline';
 
   if(!ms.length){
-    $('monthly').innerHTML='<tr><td colspan="8" class="empty">Belum ada data '+$('channel').value+'.</td></tr>';
+    $('monthly').innerHTML='<tr><td colspan="9" class="empty">Belum ada data '+$('channel').value+'.</td></tr>';
     return;
   }
 
@@ -955,6 +955,7 @@ function renderMonthly(){
           '<td><b>'+money(gross)+'</b><div class="hint" style="margin-top:4px">Margin laba kotor '+marginGross.toFixed(2)+'%</div></td>'+
           '<td>'+money(outside)+'</td>'+
           '<td><b>'+money(result)+'</b><div class="hint" style="margin-top:4px">Margin hasil usaha '+marginResult.toFixed(2)+'%</div></td>'+
+          '<td><button class="mini viewbtn" type="button" onclick="viewOnlineMonth(\''+esc(m)+'\')">👁 Lihat Data</button></td>'+
         '</tr>';
       }
     }
@@ -978,6 +979,7 @@ function renderMonthly(){
         '<td>'+(gross!==null?money(gross):'—')+'</td>'+
         '<td>'+money(outside)+'</td>'+
         '<td>'+(result!==null?money(result):'—')+'</td>'+
+        '<td><button class="mini viewbtn" type="button" onclick="viewOnlineMonth(\''+esc(m)+'\')">👁 Lihat Data</button></td>'+
       '</tr>';
     }
 
@@ -991,6 +993,7 @@ function renderMonthly(){
       '<td><b>'+money(v[2])+'</b></td>'+
       '<td>'+(modal!==null?money(modal):'—')+'</td>'+
       '<td><b>'+(profit!==null?money(profit):'—')+'</b><div class="hint" style="margin-top:4px">'+(profit!==null?'Margin '+margin.toFixed(2)+'%':'HPP belum tersedia')+'</div></td>'+
+      '<td><button class="mini viewbtn" type="button" onclick="viewOnlineMonth(\''+esc(m)+'\')">👁 Lihat Data</button></td>'+
     '</tr>';
   }).join('') +
     (offline ? '<tr style="border-top:3px solid #0b7a45;background:#f0fbf5">'+
@@ -1002,6 +1005,7 @@ function renderMonthly(){
       '<td><b>'+money(offlineCombinedLockedSummary().grossProfit)+'</b></td>'+
       '<td><b>'+money(offlineCombinedLockedSummary().outsideHpp)+'</b></td>'+
       '<td><b>'+money(offlineCombinedLockedSummary().result)+'</b></td>'+
+      '<td>—</td>'+
     '</tr>' : '');
 }
 
