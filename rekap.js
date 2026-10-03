@@ -803,8 +803,6 @@ function render(){
   renderOnlineFinalSummary();
   renderTransactionRecap();
 
-  viewOnlineMonth($('month').value);
-
 }
 
 
