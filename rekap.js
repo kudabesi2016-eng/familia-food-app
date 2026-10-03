@@ -586,6 +586,41 @@ function updateChannelUI(){
    BULAN
 ===================================================== */
 
+function highlightNegativeRekap(){
+  const roots=[
+    document.getElementById('monthly'),
+    document.getElementById('newOnlineMonthly'),
+    document.getElementById('rekapUsahaMonthlyRows'),
+    document.getElementById('rekapUsahaCategoryRows'),
+    document.getElementById('rekapUsahaClassificationRows'),
+    document.getElementById('rekapUsahaTopProductRows'),
+    document.getElementById('rekapUsahaTopCustomerRows'),
+    document.getElementById('onlineConnectionBody'),
+    document.getElementById('offlineFinalSummaryCard'),
+    document.getElementById('onlineFinalSummaryCard'),
+    document.getElementById('transactionRecapRows')
+  ].filter(Boolean);
+
+  roots.forEach(root=>{
+    root.querySelectorAll('td, strong, b, .hint').forEach(el=>{
+      const t=String(el.textContent||'').trim();
+      const negativeMoney=/^Rp\s*-/.test(t) || /(?:^|\s)Rp\s*-\d/.test(t);
+      const negativePercent=/-\d+(?:[.,]\d+)?%/.test(t);
+      if(negativeMoney || negativePercent){
+        el.style.color='#b42318';
+      }
+    });
+  });
+
+  ['profit','margin','onlineFinalProfit','offlineFinalResult','trxNet'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const t=String(el.textContent||'').trim();
+    if(/^Rp\s*-/.test(t)||/-\d+(?:[.,]\d+)?%/.test(t))el.style.color='#b42318';
+    else el.style.removeProperty('color');
+  });
+}
+
 function months(){
   const set=new Set();
   (sales||[]).forEach(x=>{
@@ -1236,6 +1271,7 @@ function render(){
   renderRekapUsaha();
   renderOnlineFinalSummary();
   renderTransactionRecap();
+  highlightNegativeRekap();
 
 }
 
