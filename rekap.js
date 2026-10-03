@@ -34,6 +34,53 @@ const OFFLINE_LOCKED_MONTHLY = Object.freeze([
 ]);
 function offlineLockedMonth(m){return OFFLINE_LOCKED_MONTHLY.find(x=>x.m===m)||null;}
 
+/* =====================================================
+   OFFLINE BARU + DATA LAMA TERKUNCI
+   Dasar perhitungan harus sama dengan Dashboard:
+   Jan–Ags = snapshot resmi + seluruh transaksi Offline
+   Baru yang tersimpan di tabel penjualan.
+===================================================== */
+function offlineNewRowsForMonth(m){
+  return (sales||[]).filter(x=>
+    String(x.channel||'')==='Offline' &&
+    !isHistoricalSource(x.source) &&
+    monthOfSaleRow(x)===m
+  );
+}
+
+function offlineNewSummary(m){
+  const rows=offlineNewRowsForMonth(m);
+  let revenue=0,hpp=0,profit=0,qty=0;
+  rows.forEach(x=>{
+    const total=Math.round(Number(x.omzet_produk ?? x.total ?? (Number(x.qty||0)*Number(x.harga||0)))||0);
+    const modal=Math.round(Number(x.modal_hpp ?? x.hpp ?? 0)||0);
+    const labaRaw=x.laba!=null?Number(x.laba):total-modal;
+    revenue+=total;
+    hpp+=modal;
+    profit+=Math.round(Number(labaRaw)||0);
+    qty+=Math.round(Number(x.qty)||0);
+  });
+  return {rows,revenue,hpp,profit,qty};
+}
+
+function offlineCombinedLockedSummary(){
+  let revenue=OFFLINE_LOCKED_SUMMARY.revenue;
+  let hpp=OFFLINE_LOCKED_SUMMARY.hpp;
+  let gross=OFFLINE_LOCKED_SUMMARY.grossProfit;
+  let outside=OFFLINE_LOCKED_SUMMARY.outsideHpp;
+  let result=OFFLINE_LOCKED_SUMMARY.result;
+  let qty=0;
+  OFFLINE_LOCKED_MONTHLY.forEach(m=>{
+    const add=offlineNewSummary(m.m);
+    revenue+=add.revenue;
+    hpp+=add.hpp;
+    gross+=add.profit;
+    result+=add.profit;
+    qty+=add.qty;
+  });
+  return {revenue,hpp,grossProfit:gross,outsideHpp:outside,result,qty};
+}
+
 
 /*
  * Jangan hentikan seluruh Rekap bila ff-core.js terlambat/gagal dimuat.
@@ -563,12 +610,16 @@ function renderCards(){
   if(offline){
     const locked=offlineLockedMonth(m);
     if(locked){
-      $('rev').textContent=money(locked.revenue);
+      const add=offlineNewSummary(m);
+      const revenue=locked.revenue+add.revenue;
+      const hpp=locked.hpp+add.hpp;
+      const gross=locked.grossProfit+add.profit;
+      $('rev').textContent=money(revenue);
       $('out').textContent=money(0);
-      $('net').textContent=money(locked.revenue);
-      $('hpp').textContent=money(locked.hpp);
-      $('profit').textContent=money(locked.grossProfit);
-      if(marginEl)marginEl.textContent=(locked.revenue?locked.grossProfit/locked.revenue*100:0).toFixed(2)+'%';
+      $('net').textContent=money(revenue);
+      $('hpp').textContent=money(hpp);
+      $('profit').textContent=money(gross);
+      if(marginEl)marginEl.textContent=(revenue?gross/revenue*100:0).toFixed(2)+'%';
       return;
     }
   }
@@ -750,24 +801,31 @@ function renderRekapUsaha(){
   if(!card||!monthlyBody||!catBody||!classBody)return;
 
   const rows=OFFLINE_LOCKED_MONTHLY;
+  const combined=offlineCombinedLockedSummary();
   monthlyBody.innerHTML=rows.map(r=>{
-    const margin=r.revenue ? (r.result/r.revenue*100) : 0;
+    const add=offlineNewSummary(r.m);
+    const revenue=r.revenue+add.revenue;
+    const hpp=r.hpp+add.hpp;
+    const gross=r.grossProfit+add.profit;
+    const outside=r.outsideHpp;
+    const result=r.result+add.profit;
+    const margin=revenue ? (result/revenue*100) : 0;
     return '<tr>'+
       '<td><b>'+label(r.m)+'</b></td>'+
-      '<td>'+money(r.revenue)+'</td>'+
-      '<td>'+money(r.hpp)+'</td>'+
-      '<td>'+money(r.grossProfit)+'</td>'+
-      '<td>'+money(r.outsideHpp)+'</td>'+
-      '<td><b>'+money(r.result)+'</b><div class="hint" style="margin-top:4px">Margin '+margin.toFixed(2)+'%</div></td>'+
+      '<td>'+money(revenue)+'</td>'+
+      '<td>'+money(hpp)+'</td>'+
+      '<td>'+money(gross)+'</td>'+
+      '<td>'+money(outside)+'</td>'+
+      '<td><b>'+money(result)+'</b><div class="hint" style="margin-top:4px">Margin '+margin.toFixed(2)+'%</div></td>'+
     '</tr>';
   }).join('')+
   '<tr style="border-top:3px solid #0b7a45;background:#f0fbf5">'+
     '<td><b>TOTAL JANUARI–AGUSTUS</b></td>'+
-    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.revenue)+'</b></td>'+
-    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.hpp)+'</b></td>'+
-    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.grossProfit)+'</b></td>'+
-    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.outsideHpp)+'</b></td>'+
-    '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.result)+'</b></td>'+
+    '<td><b>'+money(combined.revenue)+'</b></td>'+
+    '<td><b>'+money(combined.hpp)+'</b></td>'+
+    '<td><b>'+money(combined.grossProfit)+'</b></td>'+
+    '<td><b>'+money(combined.outsideHpp)+'</b></td>'+
+    '<td><b>'+money(combined.result)+'</b></td>'+
   '</tr>';
 
   const wanted=['Bahan Baku','Gaji','Operasional','Lain-lain','Retur','Alat/Perlengkapan','Lainnya','Multi Kategori'];
@@ -821,12 +879,13 @@ function renderOfflineFinalSummary(){
   card.style.display=isOffline?'block':'none';
   if(!isOffline)return;
 
-  const totalExpense=OFFLINE_LOCKED_SUMMARY.hpp+OFFLINE_LOCKED_SUMMARY.outsideHpp;
-  $('offlineFinalRevenue').textContent=money(OFFLINE_LOCKED_SUMMARY.revenue);
-  $('offlineFinalHpp').textContent=money(OFFLINE_LOCKED_SUMMARY.hpp);
-  $('offlineFinalGross').textContent=money(OFFLINE_LOCKED_SUMMARY.grossProfit);
-  $('offlineFinalOutside').textContent=money(OFFLINE_LOCKED_SUMMARY.outsideHpp);
-  $('offlineFinalResult').textContent=money(OFFLINE_LOCKED_SUMMARY.result);
+  const combined=offlineCombinedLockedSummary();
+  const totalExpense=combined.hpp+combined.outsideHpp;
+  $('offlineFinalRevenue').textContent=money(combined.revenue);
+  $('offlineFinalHpp').textContent=money(combined.hpp);
+  $('offlineFinalGross').textContent=money(combined.grossProfit);
+  $('offlineFinalOutside').textContent=money(combined.outsideHpp);
+  $('offlineFinalResult').textContent=money(combined.result);
   $('offlineFinalExpense').textContent=money(totalExpense);
 }
 
@@ -876,17 +935,23 @@ function renderMonthly(){
     if(offline){
       const locked=offlineLockedMonth(m);
       if(locked){
-        const marginGross=locked.revenue?locked.grossProfit/locked.revenue*100:0;
-        const marginResult=locked.revenue?locked.result/locked.revenue*100:0;
+        const add=offlineNewSummary(m);
+        const revenue=locked.revenue+add.revenue;
+        const hpp=locked.hpp+add.hpp;
+        const gross=locked.grossProfit+add.profit;
+        const outside=locked.outsideHpp;
+        const result=locked.result+add.profit;
+        const marginGross=revenue?gross/revenue*100:0;
+        const marginResult=revenue?result/revenue*100:0;
         return '<tr>'+
           '<td><b>'+label(m)+'</b></td>'+
-          '<td>'+money(locked.revenue)+'</td>'+
+          '<td>'+money(revenue)+'</td>'+
           '<td>'+money(0)+'</td>'+
-          '<td><b>'+money(locked.revenue)+'</b></td>'+
-          '<td>'+money(locked.hpp)+'</td>'+
-          '<td><b>'+money(locked.grossProfit)+'</b><div class="hint" style="margin-top:4px">Margin laba kotor '+marginGross.toFixed(2)+'%</div></td>'+
-          '<td>'+money(locked.outsideHpp)+'</td>'+
-          '<td><b>'+money(locked.result)+'</b><div class="hint" style="margin-top:4px">Margin hasil usaha '+marginResult.toFixed(2)+'%</div></td>'+
+          '<td><b>'+money(revenue)+'</b></td>'+
+          '<td>'+money(hpp)+'</td>'+
+          '<td><b>'+money(gross)+'</b><div class="hint" style="margin-top:4px">Margin laba kotor '+marginGross.toFixed(2)+'%</div></td>'+
+          '<td>'+money(outside)+'</td>'+
+          '<td><b>'+money(result)+'</b><div class="hint" style="margin-top:4px">Margin hasil usaha '+marginResult.toFixed(2)+'%</div></td>'+
         '</tr>';
       }
     }
@@ -927,13 +992,13 @@ function renderMonthly(){
   }).join('') +
     (offline ? '<tr style="border-top:3px solid #0b7a45;background:#f0fbf5">'+
       '<td><b>TOTAL JANUARI–AGUSTUS</b></td>'+
-      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.revenue)+'</b></td>'+
+      '<td><b>'+money(offlineCombinedLockedSummary().revenue)+'</b></td>'+
       '<td><b>Rp 0</b></td>'+
-      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.revenue)+'</b></td>'+
-      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.hpp)+'</b></td>'+
-      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.grossProfit)+'</b></td>'+
-      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.outsideHpp)+'</b></td>'+
-      '<td><b>'+money(OFFLINE_LOCKED_SUMMARY.result)+'</b></td>'+
+      '<td><b>'+money(offlineCombinedLockedSummary().revenue)+'</b></td>'+
+      '<td><b>'+money(offlineCombinedLockedSummary().hpp)+'</b></td>'+
+      '<td><b>'+money(offlineCombinedLockedSummary().grossProfit)+'</b></td>'+
+      '<td><b>'+money(offlineCombinedLockedSummary().outsideHpp)+'</b></td>'+
+      '<td><b>'+money(offlineCombinedLockedSummary().result)+'</b></td>'+
     '</tr>' : '');
 }
 
