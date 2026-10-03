@@ -599,16 +599,16 @@ window.viewOnlineMonth=function(m){
   const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===month);
   const hist=rows.filter(x=>String(x.source||'')==='online_standard_finance');
   const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
-  const newCash=rows.filter(x=>String(x.source||'')==='online_pencairan');
+  const newCashRows=rows.filter(x=>String(x.source||'')==='online_pencairan');
   const histNet=hist.reduce((a,x)=>a+Math.round(Number(x.uang_bersih||0)),0);
   const histFee=hist.reduce((a,x)=>a+Math.round(Number(x.biaya_platform||0)),0);
   const histRev=hist.reduce((a,x)=>a+Math.round(Number(x.omzet_produk||0)),0);
   const newQty=newProducts.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
   const newHpp=newProducts.reduce((a,x)=>a+Math.round(Number(x.modal_hpp??x.hpp??0)),0);
-  const newCash=newCash.reduce((a,x)=>a+Math.round(Number(x.uang_bersih??x.omzet_produk??0)),0);
-  const totalNet=histNet+newCash;
-  const newProfit=newCash-newHpp;
-  const newMargin=newCash?newProfit/newCash*100:0;
+  const newCashAmount=newCashRows.reduce((a,x)=>a+Math.round(Number(x.uang_bersih??x.omzet_produk??0)),0);
+  const totalNet=histNet+newCashAmount;
+  const newProfit=newCashAmount-newHpp;
+  const newMargin=newCashAmount?newProfit/newCashAmount*100:0;
   const totalHpp=hppForChannel(month);
   const oldHpp=totalHpp.known?Math.max(0,totalHpp.total-newHpp):null;
 
@@ -618,7 +618,7 @@ window.viewOnlineMonth=function(m){
     '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
     '<div class="stat"><small>Data Lama</small><strong>'+money(histNet)+'</strong><div class="hint" style="margin-top:5px">Pemasukan '+money(histRev)+'<br>Potongan '+money(histFee)+'<br>HPP '+(oldHpp===null?'—':money(oldHpp))+'</div></div>'+
     '<div class="stat"><small>Transaksi Baru</small><strong>'+newQty.toLocaleString('id-ID')+' bungkus</strong><div class="hint" style="margin-top:5px">'+newProducts.length.toLocaleString('id-ID')+' baris<br>HPP '+money(newHpp)+'</div></div>'+
-    '<div class="stat"><small>Penerimaan Baru</small><strong>'+money(newCash)+'</strong><div class="hint" style="margin-top:5px">Profit '+money(newProfit)+'<br>Margin '+newMargin.toFixed(2)+'%</div></div>'+
+    '<div class="stat"><small>Penerimaan Baru</small><strong>'+money(newCashAmount)+'</strong><div class="hint" style="margin-top:5px">Profit '+money(newProfit)+'<br>Margin '+newMargin.toFixed(2)+'%</div></div>'+
     '<div class="stat profit"><small>Uang Bersih Total</small><strong>'+money(totalNet)+'</strong></div>'+
     '</div>';
 }
