@@ -10,7 +10,7 @@
 <script src="app-settings.js"></script>
 <script src="ff-core.js?v=20261001-1853"></script>
 <script>window.__REKAP_JS_LOADED=false;</script>
-<script src="rekap.js?v=20261003-0110"></script>
+<script src="rekap.js?v=20261003-0111"></script>
 
 <style>
 :root{
@@ -460,6 +460,26 @@ td{
         <thead><tr><th>Klasifikasi</th><th>Nilai</th></tr></thead>
         <tbody id="rekapUsahaClassificationRows"></tbody>
       </table>
+    </div>
+
+    <h3 style="margin:18px 0 8px">4. Top Produk</h3>
+    <div class="tablewrap">
+      <table class="cleanTable">
+        <thead><tr><th>Rank</th><th>Produk</th><th>Qty Bungkus</th><th>Omzet</th></tr></thead>
+        <tbody id="rekapUsahaTopProductRows"></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin:18px 0 8px">5. Top Konsumen</h3>
+    <div class="tablewrap">
+      <table class="cleanTable">
+        <thead><tr><th>Rank</th><th>Konsumen</th><th>Transaksi</th><th>Qty Bungkus</th><th>Omzet</th></tr></thead>
+        <tbody id="rekapUsahaTopCustomerRows"></tbody>
+      </table>
+    </div>
+
+    <div class="hint" style="margin-top:10px">
+      Top Produk diurutkan berdasarkan jumlah bungkus. Top Konsumen diurutkan berdasarkan omzet. Periode yang dibaca: Januari–Agustus 2026, termasuk transaksi Offline baru yang sudah tersimpan.
     </div>
 
     <div class="hint" style="margin-top:10px">
