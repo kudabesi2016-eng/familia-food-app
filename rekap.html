@@ -10,7 +10,7 @@
 <script src="app-settings.js"></script>
 <script src="ff-core.js?v=20261001-1853"></script>
 <script>window.__REKAP_JS_LOADED=false;</script>
-<script src="rekap.js?v=20261003-0115"></script>
+<script src="rekap.js?v=20261003-0116"></script>
 
 <style>
 :root{
@@ -170,6 +170,63 @@ table{
   width:100%;
   border-collapse:collapse;
   min-width:900px;
+}
+
+.monthlyTable{
+  min-width:1120px;
+  table-layout:fixed;
+}
+
+.monthlyTable th,
+.monthlyTable td{
+  border:1px solid #dfe8e2;
+  vertical-align:middle;
+}
+
+.monthlyTable th{
+  padding:10px 9px;
+}
+
+.monthlyTable td{
+  padding:10px 9px;
+}
+
+.monthlyTable th:nth-child(1),
+.monthlyTable td:nth-child(1){width:105px}
+
+.monthlyTable th:nth-child(2),
+.monthlyTable td:nth-child(2){width:125px}
+
+.monthlyTable th:nth-child(3),
+.monthlyTable td:nth-child(3){width:115px}
+
+.monthlyTable th:nth-child(4),
+.monthlyTable td:nth-child(4){width:160px}
+
+.monthlyTable th:nth-child(5),
+.monthlyTable td:nth-child(5){width:125px}
+
+.monthlyTable th:nth-child(6),
+.monthlyTable td:nth-child(6){width:135px}
+
+.monthlyTable th:nth-child(7),
+.monthlyTable td:nth-child(7){width:135px}
+
+.monthlyTable th:nth-child(8),
+.monthlyTable td:nth-child(8){width:135px}
+
+.monthlyTable th:nth-child(9),
+.monthlyTable td:nth-child(9){width:75px;text-align:center}
+
+.monthlyTable td:nth-child(1),
+.monthlyTable td:nth-child(2),
+.monthlyTable td:nth-child(3),
+.monthlyTable td:nth-child(4),
+.monthlyTable td:nth-child(5),
+.monthlyTable td:nth-child(6),
+.monthlyTable td:nth-child(7),
+.monthlyTable td:nth-child(8){
+  white-space:nowrap;
 }
 
 th{
@@ -394,7 +451,7 @@ td{
 
     <div class="tablewrap">
 
-      <table>
+      <table class="monthlyTable">
 
         <thead>
 
@@ -416,7 +473,7 @@ td{
         <tbody id="monthly">
 
           <tr>
-            <td colspan="8" class="empty">
+            <td colspan="10" class="empty">
               Memuat...
             </td>
           </tr>
