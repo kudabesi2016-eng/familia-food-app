@@ -714,14 +714,12 @@ window.viewOnlineMonth=function(m){
     const outside=locked.outsideHpp;
     const result=locked.result+add.profit;
     if(note)note.innerHTML='Ringkasan bulan terpilih. Data Lama tetap terkunci; transaksi Offline Baru ditambahkan.';
-    body.innerHTML=
-      '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
+    body.innerHTML='<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
       '<div class="stat"><small>Pemasukan</small><strong>'+money(revenue)+'</strong></div>'+
       '<div class="stat"><small>HPP</small><strong>'+money(hpp)+'</strong></div>'+
       '<div class="stat"><small>Beban di luar HPP</small><strong>'+money(outside)+'</strong></div>'+
       '<div class="stat profit"><small>Hasil Usaha</small><strong>'+money(result)+'</strong><div class="hint" style="margin-top:5px">Laba Kotor '+money(gross)+'</div></div>'+
-      '</div>'+
-      '<div class="hint" style="margin-top:10px">Transaksi Offline Baru: <b>'+add.qty.toLocaleString('id-ID')+' bungkus</b> • '+add.rows.length.toLocaleString('id-ID')+' baris.</div>';
+      '</div><div class="hint" style="margin-top:10px">Transaksi Offline Baru: <b>'+add.qty.toLocaleString('id-ID')+' bungkus</b> • '+add.rows.length.toLocaleString('id-ID')+' baris.</div>';
     return;
   }
 
@@ -743,8 +741,7 @@ window.viewOnlineMonth=function(m){
 
   if(title)title.textContent='📋 Detail Rekap Online • '+label(month);
   if(note)note.innerHTML='Ringkasan bulan terpilih. Tidak menampilkan daftar transaksi satu per satu.';
-  body.innerHTML=
-    '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
+  body.innerHTML='<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
     '<div class="stat"><small>Data Lama</small><strong>'+money(histNet)+'</strong><div class="hint" style="margin-top:5px">Pemasukan '+money(histRev)+'<br>Potongan '+money(histFee)+'<br>HPP '+(oldHpp===null?'—':money(oldHpp))+'</div></div>'+
     '<div class="stat"><small>Transaksi Baru</small><strong>'+newQty.toLocaleString('id-ID')+' bungkus</strong><div class="hint" style="margin-top:5px">'+newProducts.length.toLocaleString('id-ID')+' baris produk<br>HPP '+money(newHpp)+'</div></div>'+
     '<div class="stat"><small>Penerimaan Baru</small><strong>'+money(newCashAmount)+'</strong><div class="hint" style="margin-top:5px">Profit '+money(newProfit)+'<br>Margin '+newMargin.toFixed(2)+'%</div></div>'+
@@ -752,6 +749,183 @@ window.viewOnlineMonth=function(m){
     '</div>';
 };
 
+
+function renderOnlineConnection(selectedMonth){
+  const body=$('onlineConnectionBody');
+  const note=$('onlineConnectionNote');
+  if(!body||!note)return;
+
+  const m=selectedMonth||$('month').value;
+  const modeOnline=$('channel').value==='Online';
+  const modeBadge=document.getElementById('onlineConnectionMode');
+  if(modeBadge)modeBadge.textContent=modeOnline?'🔵 Online':'🟢 Offline';
+
+  if(!modeOnline){
+    const opsBuy=(purchases||[]).filter(x=>String(x.status||'Aktif').toLowerCase()==='aktif' && String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
+    const opsRet=(returns||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && String(x.channel||'')==='Offline').reduce((a,x)=>a+Number(x.nominal||0),0);
+    const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isCashExpense(x)).reduce((a,x)=>a+Number(x.nominal||0),0);
+    note.innerHTML='Bulan <b>'+esc(label(m))+'</b>. Ringkasan Offline tetap memakai rumus penjualan Familia Food. Informasi Operasional ditampilkan terpisah.';
+    body.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'+
+      '<div class="stat"><small>🛒 Pembelian Bahan Baku</small><strong>'+money(opsBuy)+'</strong></div>'+
+      '<div class="stat"><small>💸 Pengeluaran</small><strong>'+money(opsExp)+'</strong></div>'+
+      '<div class="stat"><small>↩️ Retur Offline</small><strong>'+money(opsRet)+'</strong></div>'+
+      '</div>';
+    return;
+  }
+
+  if(!m){
+    note.textContent='Belum ada bulan yang dipilih.';
+    body.innerHTML='';
+    return;
+  }
+
+  const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===m);
+  const histFinance=rows.filter(x=>String(x.source||'')==='online_standard_finance');
+  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
+  const newCash=rows.filter(x=>String(x.source||'')==='online_pencairan');
+
+  const histRev=histFinance.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
+  const histFee=histFinance.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
+  const histNet=histFinance.reduce((a,x)=>a+Number(x.uang_bersih||0),0);
+
+  const newQty=newProducts.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
+  const newModal=newProducts.reduce((a,x)=>a+Math.round(Number(x.modal_hpp??x.hpp??0)),0);
+  const newCashAmount=newCash.reduce((a,x)=>a+Number(x.uang_bersih??x.omzet_produk??0),0);
+  const opsBuy=(purchases||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
+  const opsRet=(returns||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && String(x.channel||'')==='Online').reduce((a,x)=>a+Number(x.nominal||0),0);
+  const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.nominal||0),0);
+
+  const totalHpp=hppForChannel(m);
+  const oldHppKnown=totalHpp.known;
+  const oldHpp=oldHppKnown?Math.max(0,totalHpp.total-newModal):null;
+
+  note.innerHTML='Bulan <b>'+esc(label(m))+'</b>. Data Lama ditampilkan sebagai ringkasan, sedangkan <b>👁 Lihat Data</b> hanya membuka rincian <b>Transaksi Online Baru</b>.';
+
+  let list='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+  list+='<div class="stat"><small>🛒 Pembelian Bahan Baku</small><strong>'+money(opsBuy)+'</strong></div>';
+  list+='<div class="stat"><small>💸 Pengeluaran</small><strong>'+money(opsExp)+'</strong></div>';
+  list+='<div class="stat"><small>↩️ Retur Online</small><strong>'+money(opsRet)+'</strong></div>';
+  list+='</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">';
+
+  list+='<div class="stat"><small>📁 Data Lama Online</small><strong>'+histFinance.length.toLocaleString('id-ID')+' baris</strong><div class="hint" style="margin-top:8px">Pemasukan '+money(histRev)+'<br>Potongan '+money(histFee)+'<br>Uang Bersih '+money(histNet)+'<br>Modal '+(oldHppKnown?money(oldHpp):'—')+'</div></div>';
+
+  list+='<div class="stat profit"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small>🆕 Transaksi Online Baru</small><strong>'+newProducts.length.toLocaleString('id-ID')+' baris • '+newQty.toLocaleString('id-ID')+' bungkus</strong></div><button class="btn light" type="button" id="viewNewOnlineDetail">👁 Lihat Data</button></div><div class="hint" style="margin-top:8px">Modal Produk Keluar '+money(newModal)+'<br>Penerimaan Uang '+money(newCashAmount)+'</div></div>';
+  list+='</div>';
+
+  list+='<div id="newOnlineDetail" style="display:none;margin-top:12px"><div class="tablewrap"><table style="min-width:850px"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Produk</th><th>Qty Bungkus</th><th>Modal / Bungkus</th><th>Total Modal</th></tr></thead><tbody>';
+
+  if(newProducts.length){
+    list+=newProducts.map(x=>{
+      const qty=Math.max(1,Math.round(Number(x.qty)||0));
+      const total=Math.round(Number(x.modal_hpp??x.hpp??0));
+      const unit=qty?Math.round(total/qty):0;
+      return '<tr><td>'+esc(x.tanggal||'-')+'</td><td>'+esc(x.variation||'Naget')+'</td><td>'+esc(x.product_name||'-')+'</td><td>'+qty.toLocaleString('id-ID')+'</td><td>'+money(unit)+'</td><td>'+money(total)+'</td></tr>';
+    }).join('');
+  }else{
+    list+='<tr><td colspan="6" class="empty">Belum ada transaksi Online Baru pada '+esc(label(m))+'.</td></tr>';
+  }
+
+  list+='</tbody></table></div></div>';
+  body.innerHTML=list;
+
+  const detailBtn=document.getElementById('viewNewOnlineDetail');
+  const detailBox=document.getElementById('newOnlineDetail');
+
+  if(detailBtn&&detailBox){
+    detailBtn.onclick=()=>{
+      const open=detailBox.style.display!=='none';
+      detailBox.style.display=open?'none':'block';
+      detailBtn.textContent=open?'👁 Lihat Data':'▲ Tutup Data';
+    };
+  }
+}
+
+function ffTopRangeOffline(period){
+  const m=String(period||'').slice(0,7);
+  return /^2026-0[1-8]$/.test(m);
+}
+function ffTopProductName(v){
+  let n=String(v??'').trim().toLowerCase().replace(/\s+/g,' ');
+  let m=n.match(/^naget\s*(?:isi\s*)?(10|12|20|25|30|40|50)\s*pcs?$/);
+  if(m)return 'Naget '+m[1];
+  m=n.match(/^naget\s*(?:isi\s*)?(25)\s*\+\s*saus$/);
+  if(m)return 'Naget '+m[1]+'+saus';
+  if(n==='naget')return 'Naget';
+  if(n.startsWith('cireng isi'))return 'Cireng isi';
+  if(n.startsWith('cireng biasa'))return 'Cireng biasa';
+  if(n.startsWith('cibay'))return 'Cibay';
+  return n.replace(/\b\w/g,m=>m.toUpperCase());
+}
+function ffTopCustomerName(v){
+  const n=String(v??'').trim().replace(/\s+/g,' ');
+  return n ? n.replace(/\b\w/g,m=>m.toUpperCase()) : 'Tanpa Nama';
+}
+function renderTopProdukKonsumen(){
+  const productBody=$('rekapUsahaTopProductRows');
+  const customerBody=$('rekapUsahaTopCustomerRows');
+  if(!productBody||!customerBody)return;
+
+  const productsMap=new Map();
+  (olds||[]).forEach((x,i)=>{
+    if(!ffTopRangeOffline(x.periode))return;
+    const name=ffTopProductName(x.jenis);
+    if(!name)return;
+    const qty=Math.max(0,Math.round(Number(x.catatan)||0));
+    const revenue=Math.max(0,Math.round(Number(x.nominal)||0));
+    const cur=productsMap.get(name)||{name,qty:0,revenue:0};
+    cur.qty+=qty; cur.revenue+=revenue; productsMap.set(name,cur);
+  });
+  (sales||[]).forEach(x=>{
+    if(String(x.channel||'')!=='Offline'||!ffTopRangeOffline(x.tanggal))return;
+    const name=ffTopProductName(x.product_name||x.variation);
+    if(!name)return;
+    const qty=Math.max(0,Math.round(Number(x.qty)||0));
+    const revenue=Math.max(0,Math.round(Number(x.omzet_produk ?? x.total ?? 0)||0));
+    const cur=productsMap.get(name)||{name,qty:0,revenue:0};
+    cur.qty+=qty; cur.revenue+=revenue; productsMap.set(name,cur);
+  });
+
+  const topProducts=[...productsMap.values()]
+    .sort((a,b)=>b.qty-a.qty||b.revenue-a.revenue||a.name.localeCompare(b.name))
+    .slice(0,10);
+  productBody.innerHTML=topProducts.length
+    ? topProducts.map((x,i)=>'<tr><td><b>'+(i+1)+'</b></td><td>'+esc(x.name)+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td><td><b>'+money(x.revenue)+'</b></td></tr>').join('')
+    : '<tr><td colspan="4" class="empty">Belum ada data produk.</td></tr>';
+
+  const namesBySale=new Map();
+  (pelangganLinks||[]).forEach(x=>{
+    const pid=String(x.penjualan_id);
+    const customer=(pelanggan||[]).find(c=>String(c.id)===String(x.pelanggan_id));
+    if(customer?.nama)namesBySale.set(pid,customer.nama);
+  });
+
+  const customersMap=new Map();
+  (olds||[]).forEach(x=>{
+    if(!ffTopRangeOffline(x.periode))return;
+    const name=ffTopCustomerName(x.keterangan);
+    if(name==='Tanpa Nama')return;
+    const qty=Math.max(0,Math.round(Number(x.catatan)||0));
+    const revenue=Math.max(0,Math.round(Number(x.nominal)||0));
+    const cur=customersMap.get(name)||{name,qty:0,revenue:0,orders:0};
+    cur.qty+=qty; cur.revenue+=revenue; cur.orders+=1; customersMap.set(name,cur);
+  });
+  (sales||[]).forEach(x=>{
+    if(String(x.channel||'')!=='Offline'||!ffTopRangeOffline(x.tanggal))return;
+    const name=ffTopCustomerName(namesBySale.get(String(x.id))||'Tanpa Nama');
+    if(name==='Tanpa Nama')return;
+    const qty=Math.max(0,Math.round(Number(x.qty)||0));
+    const revenue=Math.max(0,Math.round(Number(x.omzet_produk ?? x.total ?? 0)||0));
+    const cur=customersMap.get(name)||{name,qty:0,revenue:0,orders:0};
+    cur.qty+=qty; cur.revenue+=revenue; cur.orders+=1; customersMap.set(name,cur);
+  });
+
+  const topCustomers=[...customersMap.values()]
+    .sort((a,b)=>b.revenue-a.revenue||b.qty-a.qty||a.name.localeCompare(b.name))
+    .slice(0,10);
+  customerBody.innerHTML=topCustomers.length
+    ? topCustomers.map((x,i)=>'<tr><td><b>'+(i+1)+'</b></td><td>'+esc(x.name)+'</td><td>'+x.orders.toLocaleString('id-ID')+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td><td><b>'+money(x.revenue)+'</b></td></tr>').join('')
+    : '<tr><td colspan="5" class="empty">Belum ada data konsumen.</td></tr>';
+}
 
 function renderRekapUsaha(){
   const card=$('rekapUsahaCard');
