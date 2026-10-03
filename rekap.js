@@ -40,6 +40,9 @@ function offlineLockedMonth(m){return OFFLINE_LOCKED_MONTHLY.find(x=>x.m===m)||n
    Jan–Ags = snapshot resmi + seluruh transaksi Offline
    Baru yang tersimpan di tabel penjualan.
 ===================================================== */
+function isHistoricalSource(s){
+  return ['online_standard_finance','online_standard_product','online_historical_finance','online_historical_product','online_historical_import','seller_center','online_historical_cash'].includes(String(s||''));
+}
 function offlineNewRowsForMonth(m){
   return (sales||[]).filter(x=>
     String(x.channel||'')==='Offline' &&
