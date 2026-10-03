@@ -956,7 +956,7 @@ function renderMonthly(){
           '<td><b>'+money(gross)+'</b><div class="hint" style="margin-top:4px">Margin laba kotor '+marginGross.toFixed(2)+'%</div></td>'+
           '<td>'+money(outside)+'</td>'+
           '<td><b>'+money(result)+'</b><div class="hint" style="margin-top:4px">Margin hasil usaha '+marginResult.toFixed(2)+'%</div></td>'+
-          '<td><button class="mini viewbtn" type="button" onclick="window.viewOnlineMonth(\''+esc(m)+'\')">👁 Lihat Data</button></td>'+
+          '<td><button class="mini viewbtn" type="button" data-view-month="'+esc(m)+'">👁 Lihat Data</button></td>'+
         '</tr>';
       }
     }
@@ -980,7 +980,7 @@ function renderMonthly(){
         '<td>'+(gross!==null?money(gross):'—')+'</td>'+
         '<td>'+money(outside)+'</td>'+
         '<td>'+(result!==null?money(result):'—')+'</td>'+
-        '<td><button class="mini viewbtn" type="button" onclick="window.viewOnlineMonth(\''+esc(m)+'\')">👁 Lihat Data</button></td>'+
+        '<td><button class="mini viewbtn" type="button" data-view-month="'+esc(m)+'">👁 Lihat Data</button></td>'+
       '</tr>';
     }
 
@@ -994,7 +994,7 @@ function renderMonthly(){
       '<td><b>'+money(v[2])+'</b></td>'+
       '<td>'+(modal!==null?money(modal):'—')+'</td>'+
       '<td><b>'+(profit!==null?money(profit):'—')+'</b><div class="hint" style="margin-top:4px">'+(profit!==null?'Margin '+margin.toFixed(2)+'%':'HPP belum tersedia')+'</div></td>'+
-      '<td><button class="mini viewbtn" type="button" onclick="window.viewOnlineMonth(\''+esc(m)+'\')">👁 Lihat Data</button></td>'+
+      '<td><button class="mini viewbtn" type="button" data-view-month="'+esc(m)+'">👁 Lihat Data</button></td>'+
     '</tr>';
   }).join('') +
     (offline ? '<tr style="border-top:3px solid #0b7a45;background:#f0fbf5">'+
@@ -1317,6 +1317,24 @@ function renderTransactionRecap(){
   }).join('');
 }
 
+function bindMonthlyViewButtons(){
+  if(window.__REKAP_MONTH_VIEW_BOUND)return;
+  window.__REKAP_MONTH_VIEW_BOUND=true;
+  document.addEventListener('click',function(e){
+    const btn=e.target?.closest?.('[data-view-month]');
+    if(!btn)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const m=String(btn.getAttribute('data-view-month')||'').trim();
+    if(!m)return;
+    if(typeof window.viewOnlineMonth==='function'){
+      window.viewOnlineMonth(m);
+    }else{
+      console.error('viewOnlineMonth belum tersedia');
+    }
+  },true);
+}
+
 function bindTransactionRecap(){
   const monthEl=document.getElementById('trxMonth');
   const channelEl=document.getElementById('trxChannel');
@@ -1434,6 +1452,7 @@ async function init(){
   }
 
   renderMonthOptions();
+  bindMonthlyViewButtons();
   bindTransactionRecap();
   render();
   renderHistoricalExpenseAggregate();
