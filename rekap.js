@@ -126,6 +126,8 @@ let purchases = [];
 let returns = [];
 let debtRecords = [];
 let debtPayments = [];
+let pelangganLinks = [];
+let pelanggan = [];
 
 
 
@@ -797,6 +799,91 @@ function renderOnlineConnection(selectedMonth){
   }
 }
 
+function ffTopRangeOffline(period){
+  const m=String(period||'').slice(0,7);
+  return /^2026-0[1-8]$/.test(m);
+}
+function ffTopProductName(v){
+  let n=String(v??'').trim().toLowerCase().replace(/\s+/g,' ');
+  n=n.replace(/\bisi\s*\d+\s*pcs?\b/g,'').replace(/\bisi\s*\d+\b/g,'').replace(/\bpcs?\b/g,'').trim();
+  if(n==='naget')return 'Naget';
+  if(n.startsWith('naget '))return 'Naget '+n.slice(6).trim();
+  if(n.startsWith('cireng isi'))return 'Cireng isi';
+  if(n.startsWith('cireng biasa'))return 'Cireng biasa';
+  if(n.startsWith('cibay'))return 'Cibay';
+  return n.replace(/\b\w/g,m=>m.toUpperCase());
+}
+function ffTopCustomerName(v){
+  const n=String(v??'').trim().replace(/\s+/g,' ');
+  return n ? n.replace(/\b\w/g,m=>m.toUpperCase()) : 'Tanpa Nama';
+}
+function renderTopProdukKonsumen(){
+  const productBody=$('rekapUsahaTopProductRows');
+  const customerBody=$('rekapUsahaTopCustomerRows');
+  if(!productBody||!customerBody)return;
+
+  const productsMap=new Map();
+  (olds||[]).forEach((x,i)=>{
+    if(!ffTopRangeOffline(x.periode))return;
+    const name=ffTopProductName(x.jenis);
+    if(!name)return;
+    const qty=Math.max(0,Math.round(Number(x.catatan)||0));
+    const revenue=Math.max(0,Math.round(Number(x.nominal)||0));
+    const cur=productsMap.get(name)||{name,qty:0,revenue:0};
+    cur.qty+=qty; cur.revenue+=revenue; productsMap.set(name,cur);
+  });
+  (sales||[]).forEach(x=>{
+    if(String(x.channel||'')!=='Offline'||!ffTopRangeOffline(x.tanggal))return;
+    const name=ffTopProductName(x.product_name||x.variation);
+    if(!name)return;
+    const qty=Math.max(0,Math.round(Number(x.qty)||0));
+    const revenue=Math.max(0,Math.round(Number(x.omzet_produk ?? x.total ?? 0)||0));
+    const cur=productsMap.get(name)||{name,qty:0,revenue:0};
+    cur.qty+=qty; cur.revenue+=revenue; productsMap.set(name,cur);
+  });
+
+  const topProducts=[...productsMap.values()]
+    .sort((a,b)=>b.qty-a.qty||b.revenue-a.revenue||a.name.localeCompare(b.name))
+    .slice(0,10);
+  productBody.innerHTML=topProducts.length
+    ? topProducts.map((x,i)=>'<tr><td><b>'+(i+1)+'</b></td><td>'+esc(x.name)+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td><td><b>'+money(x.revenue)+'</b></td></tr>').join('')
+    : '<tr><td colspan="4" class="empty">Belum ada data produk.</td></tr>';
+
+  const namesBySale=new Map();
+  (pelangganLinks||[]).forEach(x=>{
+    const pid=String(x.penjualan_id);
+    const customer=(pelanggan||[]).find(c=>String(c.id)===String(x.pelanggan_id));
+    if(customer?.nama)namesBySale.set(pid,customer.nama);
+  });
+
+  const customersMap=new Map();
+  (olds||[]).forEach(x=>{
+    if(!ffTopRangeOffline(x.periode))return;
+    const name=ffTopCustomerName(x.keterangan);
+    if(name==='Tanpa Nama')return;
+    const qty=Math.max(0,Math.round(Number(x.catatan)||0));
+    const revenue=Math.max(0,Math.round(Number(x.nominal)||0));
+    const cur=customersMap.get(name)||{name,qty:0,revenue:0,orders:0};
+    cur.qty+=qty; cur.revenue+=revenue; cur.orders+=1; customersMap.set(name,cur);
+  });
+  (sales||[]).forEach(x=>{
+    if(String(x.channel||'')!=='Offline'||!ffTopRangeOffline(x.tanggal))return;
+    const name=ffTopCustomerName(namesBySale.get(String(x.id))||'Tanpa Nama');
+    if(name==='Tanpa Nama')return;
+    const qty=Math.max(0,Math.round(Number(x.qty)||0));
+    const revenue=Math.max(0,Math.round(Number(x.omzet_produk ?? x.total ?? 0)||0));
+    const cur=customersMap.get(name)||{name,qty:0,revenue:0,orders:0};
+    cur.qty+=qty; cur.revenue+=revenue; cur.orders+=1; customersMap.set(name,cur);
+  });
+
+  const topCustomers=[...customersMap.values()]
+    .sort((a,b)=>b.revenue-a.revenue||b.qty-a.qty||a.name.localeCompare(b.name))
+    .slice(0,10);
+  customerBody.innerHTML=topCustomers.length
+    ? topCustomers.map((x,i)=>'<tr><td><b>'+(i+1)+'</b></td><td>'+esc(x.name)+'</td><td>'+x.orders.toLocaleString('id-ID')+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td><td><b>'+money(x.revenue)+'</b></td></tr>').join('')
+    : '<tr><td colspan="5" class="empty">Belum ada data konsumen.</td></tr>';
+}
+
 function renderRekapUsaha(){
   const card=$('rekapUsahaCard');
   const monthlyBody=$('rekapUsahaMonthlyRows');
@@ -874,6 +961,7 @@ function renderRekapUsaha(){
   ];
   classBody.innerHTML=cls.map(x=>'<tr><td>'+esc(x[0])+'</td><td><b>'+money(x[1])+'</b></td></tr>').join('')+
     '<tr style="border-top:2px solid #0b7a45;background:#f0fbf5"><td><b>TOTAL BEBAN DI LUAR HPP</b></td><td><b>'+money(OFFLINE_LOCKED_SUMMARY.outsideHpp)+'</b></td></tr>';
+  renderTopProdukKonsumen();
 }
 
 function renderOfflineFinalSummary(){
@@ -1418,6 +1506,8 @@ async function loadTableList(jobs){
     if(r.key==='returns') returns=r.rows;
     if(r.key==='debtRecords') debtRecords=r.rows;
     if(r.key==='debtPayments') debtPayments=r.rows;
+    if(r.key==='pelangganLinks') pelangganLinks=r.rows;
+    if(r.key==='pelanggan') pelanggan=r.rows;
   }
   return results;
 }
@@ -1466,7 +1556,9 @@ async function init(){
   const extraJobs = [
     ['pengeluaran_item', 'expenseItems'],
     ['ff_pembelian', 'purchases'],
-    ['ff_retur_penjualan', 'returns']
+    ['ff_retur_penjualan', 'returns'],
+    ['ff_penjualan_pelanggan', 'pelangganLinks'],
+    ['ff_pelanggan', 'pelanggan']
   ];
   const extraResults = await loadTableList(extraJobs);
 
