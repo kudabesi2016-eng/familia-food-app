@@ -697,8 +697,8 @@ function renderNewOnlineMonthly(){
   const ms=months();
   if(!ms.length){tb.innerHTML='<tr><td colspan="8" class="empty">Belum ada data.</td></tr>';return;}
   tb.innerHTML=ms.map(m=>{
-    const productRows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_batch' && monthOfSaleRow(x)===m);
-    const cashRows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_pencairan' && monthOfSaleRow(x)===m);
+    const productRows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_batch' && monthOfSaleRow(x)===m && isOnlineNewMonth(m));
+    const cashRows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_pencairan' && monthOfSaleRow(x)===m && isOnlineNewMonth(m));
     const qty=productRows.reduce((a,x)=>a+Math.round(Number(x.qty||0)),0);
     let familia=0,dropship=0;
     productRows.forEach(x=>{const v=Math.round(Number(x.modal_hpp??x.hpp??0)); if(String(x.variation||'').toLowerCase()==='dropship')dropship+=v; else familia+=v;});
@@ -748,7 +748,7 @@ window.viewOnlineMonth=function(m){
   const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===month);
   const hist=rows.filter(x=>String(x.source||'')==='online_standard_finance');
   const newProducts=rows.filter(x=>String(x.source||'')==='online_batch' && isOnlineNewMonth(m));
-  const newCashRows=rows.filter(x=>String(x.source||'')==='online_pencairan');
+  const newCashRows=rows.filter(x=>String(x.source||'')==='online_pencairan' && isOnlineNewMonth(m));
   const histRev=hist.reduce((a,x)=>a+Math.round(Number(x.omzet_produk||0)),0);
   const histFee=hist.reduce((a,x)=>a+Math.round(Number(x.biaya_platform||0)),0);
   const histNet=hist.reduce((a,x)=>a+Math.round(Number(x.uang_bersih||0)),0);
