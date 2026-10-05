@@ -141,11 +141,11 @@ body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#333}
 <script>
 const rupiah=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
 const num=n=>Number(n)||0;
-const ONLINE_LOCKED_HISTORY={10:16,12:7292,20:211,25:293,30:90,40:67,50:116};
-const ONLINE_LOCKED_TOTAL=8085;
+const ONLINE_LOCKED_HISTORY=FFCore.ONLINE_LOCKED_HISTORY;
+const ONLINE_LOCKED_TOTAL=FFCore.ONLINE_LOCKED_TOTAL;
 // Biaya Online Lainnya yang sudah dikunci: modal dropship + gaji packing.
 // Berlaku sebagai biaya agregat untuk ringkasan Online saat ini.
-const ONLINE_OTHER_COST_LOCKED=35293500;
+const ONLINE_OTHER_COST_LOCKED=FFCore.ONLINE_OTHER_COST_LOCKED;
 const colorValue=(el,v,formatted=rupiah(v))=>{el.textContent=formatted;el.classList.toggle('negative',v<0)};
 const pct=(v)=>{const t=(Number(v)||0).toFixed(2)+'%';return t};
 async function fetchAll(table, select='*'){
