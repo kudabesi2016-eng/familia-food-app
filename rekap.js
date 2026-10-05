@@ -1501,6 +1501,187 @@ function bindTransactionRecap(){
   if(reload)reload.onclick=async()=>{await init();renderTransactionRecap();};
 }
 
+
+/* =====================================================
+   EXPORT REKAP BISNIS
+===================================================== */
+
+const REKAP_EXPORT_TABLES = [
+  ['monthlyTable','Rekap Bulanan'],
+  ['rekapUsahaMonthlyTable','Hasil Usaha Bulanan'],
+  ['rekapUsahaCategoryTable','Pengeluaran Kategori'],
+  ['rekapUsahaClassificationTable','Klasifikasi Beban'],
+  ['rekapUsahaTopProductTable','Top Produk'],
+  ['rekapUsahaTopCustomerTable','Top Konsumen'],
+  ['transactionRecapTable','Semua Transaksi'],
+  ['historicalExpenseTable','Pengeluaran Historis']
+];
+
+function exportStamp(){
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'_'+pad(d.getHours())+pad(d.getMinutes());
+}
+
+function exportSafeName(v){
+  return String(v||'Rekap_Bisnis').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'')||'Rekap_Bisnis';
+}
+
+function exportCurrentFilter(){
+  const channel=String(document.getElementById('channel')?.value||'Online');
+  const month=String(document.getElementById('month')?.value||'Semua');
+  return {channel,month};
+}
+
+function exportSummaryRows(){
+  const filter=exportCurrentFilter();
+  const pick=id=>String(document.getElementById(id)?.textContent||'').trim();
+  return [
+    ['Laporan','Rekap Bisnis Familia Food'],
+    ['Channel',filter.channel],
+    ['Periode',filter.month==='Semua'?'Semua Bulan':label(filter.month)],
+    ['Pemasukan',pick('rev')],
+    ['Potongan / Beban',pick('out')],
+    ['Uang Bersih',pick('net')],
+    ['Modal / HPP',pick('hpp')],
+    ['Profit',pick('profit')],
+    ['Margin',pick('margin')],
+    ['Dibuat',new Date().toLocaleString('id-ID')]
+  ];
+}
+
+function exportTableName(raw){
+  return String(raw||'Sheet').replace(/[\\/?*\[\]:]/g,' ').slice(0,31).trim()||'Sheet';
+}
+
+function bindExportButtons(){
+  if(window.__REKAP_EXPORT_BOUND)return;
+  window.__REKAP_EXPORT_BOUND=true;
+
+  const excel=document.getElementById('exportExcel');
+  const pdf=document.getElementById('exportPdf');
+
+  if(excel)excel.addEventListener('click',exportRekapExcel);
+  if(pdf)pdf.addEventListener('click',exportRekapPdf);
+}
+
+function exportRekapExcel(){
+  try{
+    if(!window.XLSX){
+      throw new Error('Library Excel belum termuat. Pastikan perangkat terhubung ke internet lalu muat ulang halaman.');
+    }
+
+    const filter=exportCurrentFilter();
+    const wb=XLSX.utils.book_new();
+
+    const summary=XLSX.utils.aoa_to_sheet(exportSummaryRows());
+    summary['!cols']=[{wch:26},{wch:32}];
+    XLSX.utils.book_append_sheet(wb,summary,'Ringkasan');
+
+    const used=new Set(['Ringkasan']);
+    REKAP_EXPORT_TABLES.forEach(([id,title])=>{
+      const table=document.getElementById(id);
+      if(!table)return;
+      const rows=table.querySelectorAll('thead tr,tbody tr');
+      if(!rows.length)return;
+      const ws=XLSX.utils.table_to_sheet(table,{raw:false});
+      const base=exportTableName(title);
+      let name=base, n=2;
+      while(used.has(name)){name=exportTableName(base+' '+n++);}
+      used.add(name);
+      XLSX.utils.book_append_sheet(wb,ws,name);
+    });
+
+    const file='Rekap_Bisnis_Familia_Food_'+exportSafeName(filter.channel)+'_'+exportStamp()+'.xlsx';
+    XLSX.writeFile(wb,file);
+  }catch(e){
+    console.error('Export Excel gagal:',e);
+    alert('Export Excel gagal: '+(e?.message||String(e)));
+  }
+}
+
+function exportPdfTables(doc){
+  let y=38;
+  const pageWidth=doc.internal.pageSize.getWidth();
+
+  REKAP_EXPORT_TABLES.forEach(([id,title])=>{
+    const table=document.getElementById(id);
+    if(!table)return;
+    const bodyRows=table.querySelectorAll('tbody tr');
+    if(!bodyRows.length)return;
+
+    if(y>188){
+      doc.addPage();
+      y=18;
+    }
+    doc.setFontSize(11);
+    doc.setFont(undefined,'bold');
+    doc.text(title,14,y);
+    y+=5;
+
+    doc.autoTable({
+      html:table,
+      startY:y,
+      margin:{left:10,right:10},
+      theme:'grid',
+      styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},
+      headStyles:{fillColor:[8,116,67],textColor:255,fontStyle:'bold'},
+      bodyStyles:{textColor:[38,53,45]},
+      alternateRowStyles:{fillColor:[247,251,248]},
+      tableWidth:'auto'
+    });
+
+    y=(doc.lastAutoTable?.finalY||y+10)+9;
+    if(y>190){
+      doc.addPage();
+      y=18;
+    }
+  });
+}
+
+function exportRekapPdf(){
+  try{
+    const jspdf=window.jspdf;
+    if(!jspdf?.jsPDF){
+      throw new Error('Library PDF belum termuat. Pastikan perangkat terhubung ke internet lalu muat ulang halaman.');
+    }
+    if(typeof jspdf.jsPDF.API?.autoTable!=='function'){
+      throw new Error('Modul tabel PDF belum termuat. Muat ulang halaman lalu coba lagi.');
+    }
+
+    const filter=exportCurrentFilter();
+    const doc=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+
+    doc.setFontSize(18);
+    doc.setFont(undefined,'bold');
+    doc.text('Rekap Bisnis Familia Food',14,16);
+    doc.setFontSize(10);
+    doc.setFont(undefined,'normal');
+    doc.text('Channel: '+filter.channel+' • Periode: '+(filter.month==='Semua'?'Semua Bulan':label(filter.month)),14,23);
+    doc.text('Dibuat: '+new Date().toLocaleString('id-ID'),14,29);
+
+    const summaryBody=exportSummaryRows().slice(3,9);
+    doc.autoTable({
+      startY:34,
+      head:[['Ringkasan','Nilai']],
+      body:summaryBody,
+      margin:{left:14,right:14},
+      theme:'grid',
+      styles:{fontSize:8,cellPadding:2},
+      headStyles:{fillColor:[8,116,67],textColor:255,fontStyle:'bold'},
+      columnStyles:{0:{cellWidth:48},1:{cellWidth:75}}
+    });
+
+    exportPdfTables(doc);
+
+    const file='Rekap_Bisnis_Familia_Food_'+exportSafeName(filter.channel)+'_'+exportStamp()+'.pdf';
+    doc.save(file);
+  }catch(e){
+    console.error('Export PDF gagal:',e);
+    alert('Export PDF gagal: '+(e?.message||String(e)));
+  }
+}
+
 /* =====================================================
    EVENT + STARTUP
 ===================================================== */
@@ -1611,6 +1792,7 @@ async function init(){
   renderMonthOptions();
   bindMonthlyViewButtons();
   bindTransactionRecap();
+  bindExportButtons();
   render();
   renderHistoricalExpenseAggregate();
 
