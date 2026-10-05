@@ -138,6 +138,14 @@ assert(bahan.includes('Arsipkan'),'Bahan Baku archive action missing');
 assert(!/\.from\(["']bahan_baku["']\)\s*\.delete\(/.test(bahan),'Bahan Baku must not hard-delete material records');
 
 const rekapPage=await read('rekap.html');
+assert(rekapPage.includes('id="exportExcel"'),'Rekap Excel export button missing');
+assert(rekapPage.includes('id="exportPdf"'),'Rekap PDF export button missing');
+assert(rekapPage.includes('xlsx-0.20.3'),'SheetJS Excel library missing');
+assert(rekapPage.includes('jspdf/2.5.2'),'jsPDF library missing');
+assert(rekapModule.includes('function exportRekapExcel()'),'Rekap Excel export logic missing');
+assert(rekapModule.includes('function exportRekapPdf()'),'Rekap PDF export logic missing');
+assert(rekapModule.includes('XLSX.writeFile'),'Excel export must write an XLSX file');
+assert(rekapModule.includes('doc.save(file)'),'PDF export must save a file');
 assert(rekapPage.includes("function offlineHpp(m)"),'Rekap page must calculate offline HPP');
 assert(rekapPage.includes('FFCore.offlineLockedFinance(m,{revenue:newRevenue,hpp:newHpp,profit:newRevenue-newHpp})'),'Rekap page must use shared Offline finance calculation');
 assert(!rekapPage.includes("Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur"),'Rekap page must not claim all expenses are excluded from profit');
