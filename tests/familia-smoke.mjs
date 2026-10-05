@@ -204,6 +204,16 @@ assert(shellCss.includes('overflow:visible!important'),'Mobile table containers 
 assert(shellCss.includes('grid-template-columns:repeat(2,minmax(0,1fr))!important'),'Professional mobile dashboard must use compact 2-column KPI cards');
 assert(shellCss.includes('PROFESSIONAL MOBILE POS V2'),'Professional mobile POS shell marker missing');
 
+const core=await read('ff-core.js');
+assert(core.includes("const ONLINE_HISTORICAL_END = '2026-08';"),'Online historical period must end at August 2026');
+assert(core.includes("const ONLINE_NEW_START = '2026-09';"),'Online new transaction period must start at September 2026');
+assert(core.includes('isOnlineHistoricalMonth'),'Shared Online historical-period guard missing');
+assert(core.includes('isOnlineNewMonth'),'Shared Online new-period guard missing');
+const rekap=await read('rekap.js');
+assert(rekap.includes("isOnlineNewMonth(m)"),'Rekap must guard new Online cash by the new-transaction period');
+assert(rekap.includes("isOnlineHistoricalMonth(monthOfSaleRow(x))"),'Rekap must guard historical Online finance by historical period');
+assert(rekap.includes("source||'')==='online_pencairan' && isOnlineNewMonth"),'Rekap must not mix historical finance with new cash');
+
 const dashboard=await read('index.html');
 assert(dashboard.includes('const ONLINE_LOCKED_TOTAL=8085;'),'Locked online quantity 8,085 missing');
 assert(dashboard.includes('const onNewFee=0;'),'New-online fee must remain zero because input is already net');
