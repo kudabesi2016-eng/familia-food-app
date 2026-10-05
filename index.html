@@ -146,6 +146,10 @@ const ONLINE_LOCKED_TOTAL=FFCore.ONLINE_LOCKED_TOTAL;
 // Biaya Online Lainnya yang sudah dikunci: modal dropship + gaji packing.
 // Berlaku sebagai biaya agregat untuk ringkasan Online saat ini.
 const ONLINE_OTHER_COST_LOCKED=FFCore.ONLINE_OTHER_COST_LOCKED;
+const ONLINE_HISTORICAL_END=FFCore.ONLINE_HISTORICAL_END;
+const ONLINE_NEW_START=FFCore.ONLINE_NEW_START;
+const isOnlineHistoricalMonth=FFCore.isOnlineHistoricalMonth;
+const isOnlineNewMonth=FFCore.isOnlineNewMonth;
 const colorValue=(el,v,formatted=rupiah(v))=>{el.textContent=formatted;el.classList.toggle('negative',v<0)};
 const pct=(v)=>{const t=(Number(v)||0).toFixed(2)+'%';return t};
 async function fetchAll(table, select='*'){
@@ -463,10 +467,10 @@ async function loadDashboard(){
     // ONLINE: STANDARD historis + transaksi online baru.
     const onlineFinanceRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='online_standard_finance');
     // Histori produk Online Jan–Agustus yang baru: source seller_center hasil audit CSV TikTok.
-    const onlineProductRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='seller_center' && monthOf(x.tanggal||x.paid_time||x.created_time||'')>='2026-01' && monthOf(x.tanggal||x.paid_time||x.created_time||'')<='2026-08');
+    const onlineProductRows=sales.filter(x=>String(x.channel||'')==='Online' && String(x.source||'')==='seller_center' && isOnlineHistoricalMonth(monthOf(x.tanggal||x.paid_time||x.created_time||'')));
     const onlineNew=sales.filter(x=>String(x.channel||'')==='Online' && !isHistoricalSource(x.source));
-    const onlineBatchNew=onlineNew.filter(x=>String(x.source||'')==='online_batch');
-    const onlineCashNew=onlineNew.filter(x=>String(x.source||'')==='online_pencairan');
+    const onlineBatchNew=onlineNew.filter(x=>String(x.source||'')==='online_batch' && isOnlineNewMonth(monthOf(x.tanggal||x.paid_time||x.created_time||'')));
+    const onlineCashNew=onlineNew.filter(x=>String(x.source||'')==='online_pencairan' && isOnlineNewMonth(monthOf(x.tanggal||x.paid_time||x.created_time||'')));
     const onOldRevenue=onlineFinanceRows.reduce((s,x)=>s+Math.round(num(x.omzet_produk)),0);
     // Historis Online: gunakan angka yang tersimpan di STANDARD,
     // bukan angka hard-coded, agar Dashboard selalu sama dengan Rekap.
