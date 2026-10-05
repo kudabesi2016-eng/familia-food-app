@@ -9,6 +9,47 @@
   const rupiah = n => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
   const esc = v => String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+  /* =====================================================
+     LOCKED OFFLINE FINANCE SNAPSHOT
+     Shared by Rekap + Dashboard so both pages use exactly
+     the same historical Jan–Agustus 2026 basis.
+     Do not change these values without business approval.
+  ===================================================== */
+  const OFFLINE_LOCKED_MONTHLY = Object.freeze([
+    {m:'2026-01',revenue:26541100,hpp:22595940,grossProfit:3945160,outsideHpp:4510300,result:-565140},
+    {m:'2026-02',revenue:33617200,hpp:28079150,grossProfit:5538050,outsideHpp:3833000,result:1705050},
+    {m:'2026-03',revenue:27881100,hpp:24000160,grossProfit:3880940,outsideHpp:3736325,result:144615},
+    {m:'2026-04',revenue:22110700,hpp:17450890,grossProfit:4659810,outsideHpp:6046700,result:-1386890},
+    {m:'2026-05',revenue:17767500,hpp:15491091,grossProfit:2276409,outsideHpp:2490800,result:-214391},
+    {m:'2026-06',revenue:21577000,hpp:19354764,grossProfit:2222236,outsideHpp:3853000,result:-1630764},
+    {m:'2026-07',revenue:24144500,hpp:21640131,grossProfit:2504369,outsideHpp:5795500,result:-3291131},
+    {m:'2026-08',revenue:12185000,hpp:10948291,grossProfit:1236709,outsideHpp:4743700,result:-3506991}
+  ]);
+  const OFFLINE_LOCKED_SUMMARY = Object.freeze(
+    OFFLINE_LOCKED_MONTHLY.reduce((a,r)=>({
+      revenue:a.revenue+r.revenue,
+      hpp:a.hpp+r.hpp,
+      grossProfit:a.grossProfit+r.grossProfit,
+      outsideHpp:a.outsideHpp+r.outsideHpp,
+      result:a.result+r.result
+    }),{revenue:0,hpp:0,grossProfit:0,outsideHpp:0,result:0})
+  );
+  function offlineLockedMonth(month){
+    return OFFLINE_LOCKED_MONTHLY.find(x=>x.m===String(month||'')) || null;
+  }
+  function offlineLockedFinance(month, add){
+    const base=offlineLockedMonth(month);
+    if(!base) return null;
+    const extra=add||{};
+    const revenue=base.revenue+Number(extra.revenue||0);
+    const hpp=base.hpp+Number(extra.hpp||0);
+    const grossProfit=base.grossProfit+Number(extra.profit||extra.grossProfit||0);
+    const outsideHpp=base.outsideHpp;
+    const expense=hpp+outsideHpp;
+    const result=base.result+Number(extra.profit||0);
+    return {month:String(month),revenue,hpp,grossProfit,outsideHpp,expense,result,net:result};
+  }
+
   const aliasMap = new Map([
     ['naget isi 10','Naget 10'], ['naget 10','Naget 10'],
     ['naget isi 12','Naget 12'], ['naget 12','Naget 12'],
@@ -229,5 +270,5 @@
     return [...map.values()].sort((a,b)=>a.channel.localeCompare(b.channel)||a.name.localeCompare(b.name,'id'));
   }
 
-  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,isCashExpense,expenseIsInHpp,productChannel,isOfflineProduct,isOnlineProduct,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary};
+  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,isCashExpense,expenseIsInHpp,productChannel,isOfflineProduct,isOnlineProduct,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary,OFFLINE_LOCKED_MONTHLY,OFFLINE_LOCKED_SUMMARY,offlineLockedMonth,offlineLockedFinance};
 })();
