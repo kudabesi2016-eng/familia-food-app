@@ -9,7 +9,7 @@ const $ = id => document.getElementById(id);
 
 // Biaya Online Lainnya yang sudah dikunci sebagai satu angka:
 // modal dropship + gaji packing.
-const ONLINE_OTHER_COST_LOCKED = 35293500;
+const ONLINE_OTHER_COST_LOCKED = FFCore.ONLINE_OTHER_COST_LOCKED;
 
 // RINGKASAN OFFLINE TERKUNCI Jan–Agustus 2026.
 // Ini adalah angka dasar resmi yang dipakai untuk ringkasan keuangan.
