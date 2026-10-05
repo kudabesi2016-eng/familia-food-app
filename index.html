@@ -532,9 +532,7 @@ async function loadDashboard(){
     // OFFLINE HISTORIS: gunakan snapshot bersama dengan Rekap.
     // Transaksi Offline Baru dari database ditambahkan setelah snapshot,
     // sehingga Dashboard dan Rekap memakai basis yang sama.
-    const offlineLocked=FFCore.offlineLockedFinance('2026-01',{
-      revenue:0,hpp:0,profit:0
-    }) ? FFCore.OFFLINE_LOCKED_SUMMARY : null;
+    const offlineLocked=FFCore.OFFLINE_LOCKED_SUMMARY;
     if(!offlineLocked) throw new Error('Snapshot Offline terkunci tidak tersedia');
     const dashboardOffRevenue=offlineLocked.revenue+offNewRevenue;
     const dashboardOffHpp=offlineLocked.hpp+offNewHpp;
