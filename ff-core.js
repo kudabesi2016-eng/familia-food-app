@@ -57,7 +57,11 @@
   ===================================================== */
   const ONLINE_LOCKED_HISTORY = Object.freeze({10:16,12:7292,20:211,25:293,30:90,40:67,50:116});
   const ONLINE_LOCKED_TOTAL = 8085;
+  const ONLINE_HISTORICAL_END = '2026-08';
+  const ONLINE_NEW_START = '2026-09';
   const ONLINE_OTHER_COST_LOCKED = 35293500;
+  const isOnlineHistoricalMonth = month => String(month||'') >= '2026-01' && String(month||'') <= ONLINE_HISTORICAL_END;
+  const isOnlineNewMonth = month => String(month||'') >= ONLINE_NEW_START;
 
   const aliasMap = new Map([
     ['naget isi 10','Naget 10'], ['naget 10','Naget 10'],
