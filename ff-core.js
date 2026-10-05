@@ -283,5 +283,5 @@
     return [...map.values()].sort((a,b)=>a.channel.localeCompare(b.channel)||a.name.localeCompare(b.name,'id'));
   }
 
-  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,isCashExpense,expenseIsInHpp,productChannel,isOfflineProduct,isOnlineProduct,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary,OFFLINE_LOCKED_MONTHLY,OFFLINE_LOCKED_SUMMARY,offlineLockedMonth,offlineLockedFinance,ONLINE_LOCKED_HISTORY,ONLINE_LOCKED_TOTAL,ONLINE_OTHER_COST_LOCKED};
+  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,isCashExpense,expenseIsInHpp,productChannel,isOfflineProduct,isOnlineProduct,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary,OFFLINE_LOCKED_MONTHLY,OFFLINE_LOCKED_SUMMARY,offlineLockedMonth,offlineLockedFinance,ONLINE_LOCKED_HISTORY,ONLINE_LOCKED_TOTAL,ONLINE_HISTORICAL_END,ONLINE_NEW_START,isOnlineHistoricalMonth,isOnlineNewMonth,ONLINE_OTHER_COST_LOCKED};
 })();
