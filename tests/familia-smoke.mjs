@@ -61,6 +61,9 @@ for(const [file, needles] of Object.entries(mustContain)){
 
 const core=await read('ff-core.js');
 assert(core.includes('const ONLINE_ONLY_PRODUCTS = new Set(['),'Locked Online-only product mapping missing in shared core.');
+assert(core.includes('const OFFLINE_LOCKED_MONTHLY = Object.freeze(['),'Shared Offline locked monthly snapshot missing.');
+assert(core.includes('function offlineLockedFinance(month, add)'),'Shared Offline finance calculator missing.');
+
 assert(core.includes("'naget 20'"),'Naget 20 must be in Online-only mapping.');
 assert(core.includes("'naget 25+saus'"),'Naget 25+Saus must be in Online-only mapping.');
 assert(core.includes("v === 'dropship'"),'Dropship must be mapped to Online.');
@@ -73,6 +76,8 @@ assert(count(rekap,'const data = () =>')===1,'Expected one rekap data() helper')
 assert(rekap.includes("newCash"),'Rekap new-online cash source missing');
 assert(rekap.includes("newModal"),'Rekap new-online modal calculation missing');
 assert(rekap.includes('purchases,\n  returns'),'Rekap data helper must pass purchases and returns into shared data context');
+assert(rekap.includes('FFCore.offlineLockedFinance(m,add)'),'Rekap monthly cards must use shared Offline finance calculator.');
+
 
 const produk=await read('produk.html');
 assert(produk.includes('toggleStatusProduk'),'Produk must use status toggle instead of hard delete');
