@@ -2134,6 +2134,7 @@ window.deleteSale=async id=>{if(!confirm('Hapus penjualan ini?'))return;const r=
       wrap.style.display=show?'block':'none';
     });
     byId('cashSave')?.addEventListener('click',saveCash);
+    byId('closeDetail')?.addEventListener('click',()=>{const card=byId('detailCard');if(card)card.style.display='none';});
     byId('cashReset')?.addEventListener('click',()=>{byId('cashTanggal').value=today();byId('cashMarketplace').value='TikTok Shop';byId('cashAmount').value='';byId('cashNote').value='';setCashMsg('');});
     if(byId('ffExpenseDate')){
       ffExpenseResetForm();
