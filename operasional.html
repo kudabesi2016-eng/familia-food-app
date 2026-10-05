@@ -584,9 +584,30 @@ async function loadExpenseItems(){
 let expenseMasterEditId=null;
 let expenseMasterRows=[];
 
-const EXPENSE_MASTER_CATEGORIES=['Bahan Baku','Operasional','Gaji','Alat & Perlengkapan','Retur','Lainnya'];
+let EXPENSE_MASTER_CATEGORIES=['Bahan Baku','Operasional','Gaji','Alat & Perlengkapan','Retur','Lainnya'];
+let expenseCategoryMasterRows=[];
+
+async function loadExpenseCategoryMaster(){
+  const r=await supabaseClient.from('pengeluaran_kategori_master').select('*').order('urutan',{ascending:true}).order('id',{ascending:true});
+  if(r.error){
+    console.warn('Master kategori tidak tersedia, memakai fallback.',r.error.message);
+    return;
+  }
+  expenseCategoryMasterRows=r.data||[];
+  const active=expenseCategoryMasterRows.filter(x=>x.aktif!==false).map(x=>String(x.nama_kategori||'').trim()).filter(Boolean);
+  if(active.length) EXPENSE_MASTER_CATEGORIES=active;
+  const selects=[$('expenseMasterCategory'),$('expCategory')];
+  selects.forEach(sel=>{
+    if(!sel)return;
+    const current=sel.value;
+    sel.innerHTML=EXPENSE_MASTER_CATEGORIES.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
+    if(EXPENSE_MASTER_CATEGORIES.includes(current))sel.value=current;
+  });
+  renderExpenseItemMaster();
+}
 
 async function loadExpenseItemMaster(){
+  await loadExpenseCategoryMaster();
   const box=$('expenseMasterRows');
   if(box)box.innerHTML='<tr><td colspan="4">Memuat master item...</td></tr>';
   const r=await supabaseClient.from('pengeluaran_item_master').select('*').order('kategori',{ascending:true}).order('nama_item',{ascending:true});
@@ -631,7 +652,7 @@ async function saveExpenseItemMaster(){
   }
   if(r.error){if(out)out.textContent='Gagal menyimpan: '+r.error.message;return;}
   if(out)out.textContent=expenseMasterEditId?'✅ Item berhasil diperbarui.':'✅ Item berhasil ditambahkan.';
-  await loadExpenseItemMaster();
+  await loadExpenseCategoryMaster().then(()=>loadExpenseItemMaster());
   resetExpenseItemMasterForm();
 }
 
