@@ -154,6 +154,7 @@ assert(!penjualan.includes("supabaseClient.from('produk').select('id,nama_produk
 assert(penjualan.includes("await loadCustomerMaster();"),'Customer master is not loaded at POS startup');
 assert(penjualan.includes('ffCustomerList'),'POS customer datalist missing');
 assert(penjualan.includes('customerLinksReady'),'POS customer links must be database-backed');
+assert(penjualan.includes("byId('closeDetail')?.addEventListener('click'"),'Online detail Close button must have a click handler');
 assert(!penjualan.includes('ff_sale_customers_v1'),'POS must not keep sale↔customer mapping only in localStorage');
 assert(/supabaseClient\.from\(['"]penjualan['"]\)\.update\(oldSale\.data\)/.test(penjualan),'Editing a sale must rollback when customer mapping fails');
 
