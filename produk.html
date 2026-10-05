@@ -346,7 +346,7 @@
         <b>Master HPP hanya berasal dari Kalkulator HPP.</b><br>
         Menu Produk hanya digunakan untuk nama produk, satuan, isi per bungkus,
         status, serta harga jual Offline/Online. HPP yang tampil di tabel adalah
-        HPP tersimpan dari Kalkulator HPP dan tidak dapat ditentukan dari menu ini.<br>
+        HPP tersimpan dari Kalkulator HPP dan tidak dapat ditentukan dari menu ini. Kolom "(Kalkulator)" mengambil nilai HPP master tersebut.<br>
         <b>Produk tidak dihapus dari database.</b> Gunakan <b>Arsipkan</b> untuk menghentikan produk dari penggunaan aktif.
       </div>
 
@@ -439,9 +439,9 @@
               <th>Nama Produk</th>
               <th>Satuan</th>
               <th>Isi/Bungkus</th>
-              <th>HPP Offline</th>
+              <th>HPP Offline (Kalkulator)</th>
               <th>Harga Offline</th>
-              <th>HPP Online</th>
+              <th>HPP Online (Kalkulator)</th>
               <th>Harga Online</th>
               <th>Status</th>
               <th>Aksi</th>
@@ -625,11 +625,14 @@
       const hppMap = {};
 
       if (hppData) {
-
         hppData.forEach(hpp => {
-
-          hppMap[hpp.produk_id] = hpp;
-
+          const key = String(hpp.produk_id);
+          const current = hppMap[key];
+          const currentTime = current ? Date.parse(current.created_at || '') || 0 : 0;
+          const nextTime = Date.parse(hpp.created_at || '') || 0;
+          if (!current || nextTime > currentTime || (nextTime === currentTime && Number(hpp.id || 0) > Number(current.id || 0))) {
+            hppMap[key] = hpp;
+          }
         });
       }
 
