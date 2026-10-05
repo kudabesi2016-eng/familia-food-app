@@ -529,22 +529,18 @@ async function loadDashboard(){
     // Jan–Agustus 2026 memakai angka histori audit seller_center yang dikunci.
     const onQty=ONLINE_LOCKED_TOTAL;
 
-    // RINGKASAN OFFLINE TERKUNCI: jangan dihitung ulang dari detail database.
-    const OFFLINE_LOCKED_SUMMARY = Object.freeze({
-      revenue:185824100,
-      hpp:159560417,
-      grossProfit:26263683,
-      outsideHpp:35009325,
-      result:-8745642
-    });
-    const offlineLockedExpense=OFFLINE_LOCKED_SUMMARY.hpp+OFFLINE_LOCKED_SUMMARY.outsideHpp;
-    // Ringkasan lama tetap dikunci. Transaksi Offline baru yang sudah tersimpan
-    // ditambahkan di atas snapshot lama agar Dashboard membaca Data Lama + transaksi baru.
-    const dashboardOffRevenue=OFFLINE_LOCKED_SUMMARY.revenue+offNewRevenue;
-    const dashboardOffHpp=OFFLINE_LOCKED_SUMMARY.hpp+offNewHpp;
-    const dashboardOffExpense=offlineLockedExpense;
-    const dashboardOffNet=OFFLINE_LOCKED_SUMMARY.result+offNewRevenue;
-    const dashboardOffProfit=OFFLINE_LOCKED_SUMMARY.result+offNewProfit;
+    // OFFLINE HISTORIS: gunakan snapshot bersama dengan Rekap.
+    // Transaksi Offline Baru dari database ditambahkan setelah snapshot,
+    // sehingga Dashboard dan Rekap memakai basis yang sama.
+    const offlineLocked=FFCore.offlineLockedFinance('2026-01',{
+      revenue:0,hpp:0,profit:0
+    }) ? FFCore.OFFLINE_LOCKED_SUMMARY : null;
+    if(!offlineLocked) throw new Error('Snapshot Offline terkunci tidak tersedia');
+    const dashboardOffRevenue=offlineLocked.revenue+offNewRevenue;
+    const dashboardOffHpp=offlineLocked.hpp+offNewHpp;
+    const dashboardOffExpense=offlineLocked.hpp+offlineLocked.outsideHpp+offNewHpp;
+    const dashboardOffNet=offlineLocked.result+offNewProfit;
+    const dashboardOffProfit=offlineLocked.result+offNewProfit;
 
     // GABUNGAN: gunakan ringkasan Offline terkunci + perhitungan Online.
     const totalRevenue=dashboardOffRevenue+onRevenue;
