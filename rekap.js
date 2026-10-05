@@ -14,25 +14,9 @@ const ONLINE_OTHER_COST_LOCKED = 35293500;
 // RINGKASAN OFFLINE TERKUNCI Jan–Agustus 2026.
 // Ini adalah angka dasar resmi yang dipakai untuk ringkasan keuangan.
 // Detail transaksi/database tidak dihapus atau diubah.
-const OFFLINE_LOCKED_SUMMARY = Object.freeze({
-  revenue: 185824100,
-  hpp: 159560417,
-  grossProfit: 26263683,
-  outsideHpp: 35009325,
-  result: -8745642
-});
-
-const OFFLINE_LOCKED_MONTHLY = Object.freeze([
-  {m:'2026-01',revenue:26541100,hpp:22595940,grossProfit:3945160,outsideHpp:4510300,result:-565140},
-  {m:'2026-02',revenue:33617200,hpp:28079150,grossProfit:5538050,outsideHpp:3833000,result:1705050},
-  {m:'2026-03',revenue:27881100,hpp:24000160,grossProfit:3880940,outsideHpp:3736325,result:144615},
-  {m:'2026-04',revenue:22110700,hpp:17450890,grossProfit:4659810,outsideHpp:6046700,result:-1386890},
-  {m:'2026-05',revenue:17767500,hpp:15491091,grossProfit:2276409,outsideHpp:2490800,result:-214391},
-  {m:'2026-06',revenue:21577000,hpp:19354764,grossProfit:2222236,outsideHpp:3853000,result:-1630764},
-  {m:'2026-07',revenue:24144500,hpp:21640131,grossProfit:2504369,outsideHpp:5795500,result:-3291131},
-  {m:'2026-08',revenue:12185000,hpp:10948291,grossProfit:1236709,outsideHpp:4743700,result:-3506991}
-]);
-function offlineLockedMonth(m){return OFFLINE_LOCKED_MONTHLY.find(x=>x.m===m)||null;}
+const OFFLINE_LOCKED_SUMMARY = FFCore.OFFLINE_LOCKED_SUMMARY;
+const OFFLINE_LOCKED_MONTHLY = FFCore.OFFLINE_LOCKED_MONTHLY;
+const offlineLockedMonth = FFCore.offlineLockedMonth;
 
 /* =====================================================
    OFFLINE BARU + DATA LAMA TERKUNCI
@@ -75,13 +59,14 @@ function offlineCombinedLockedSummary(){
   let qty=0;
   OFFLINE_LOCKED_MONTHLY.forEach(m=>{
     const add=offlineNewSummary(m.m);
-    revenue+=add.revenue;
-    hpp+=add.hpp;
-    gross+=add.profit;
-    result+=add.profit;
+    const summary=FFCore.offlineLockedFinance(m.m,add);
+    revenue=summary ? revenue + add.revenue : revenue;
+    hpp=summary ? hpp + add.hpp : hpp;
+    gross=summary ? gross + add.profit : gross;
+    result=summary ? result + add.profit : result;
     qty+=add.qty;
   });
-  return {revenue,hpp,grossProfit:gross,outsideHpp:outside,result,qty};
+  return {revenue,hpp,grossProfit:gross,outsideHpp:outside,result,qty,expense:hpp+outside,net:result};
 }
 
 
@@ -648,18 +633,15 @@ function renderCards(){
   const marginEl=$('margin');
 
   if(offline){
-    const locked=offlineLockedMonth(m);
+    const add=offlineNewSummary(m);
+    const locked=FFCore.offlineLockedFinance(m,add);
     if(locked){
-      const add=offlineNewSummary(m);
-      const revenue=locked.revenue+add.revenue;
-      const hpp=locked.hpp+add.hpp;
-      const gross=locked.grossProfit+add.profit;
-      $('rev').textContent=money(revenue);
-      $('out').textContent=money(0);
-      $('net').textContent=money(revenue);
-      $('hpp').textContent=money(hpp);
-      $('profit').textContent=money(gross);
-      if(marginEl)marginEl.textContent=(revenue?gross/revenue*100:0).toFixed(2)+'%';
+      $('rev').textContent=money(locked.revenue);
+      $('out').textContent=money(locked.expense);
+      $('net').textContent=money(locked.net);
+      $('hpp').textContent=money(locked.hpp);
+      $('profit').textContent=money(locked.result);
+      if(marginEl)marginEl.textContent=(locked.revenue?locked.result/locked.revenue*100:0).toFixed(2)+'%';
       return;
     }
   }
@@ -743,11 +725,12 @@ window.viewOnlineMonth=function(m){
       body.innerHTML='<div class="notice">Tidak ada ringkasan Offline terkunci untuk '+esc(labelMonth)+'.</div>';
       return;
     }
-    const revenue=locked.revenue+add.revenue;
-    const hpp=locked.hpp+add.hpp;
-    const gross=locked.grossProfit+add.profit;
-    const outside=locked.outsideHpp;
-    const result=locked.result+add.profit;
+    const summary=FFCore.offlineLockedFinance(month,add);
+    const revenue=summary.revenue;
+    const hpp=summary.hpp;
+    const gross=summary.grossProfit;
+    const outside=summary.outsideHpp;
+    const result=summary.result;
     if(note)note.innerHTML='Ringkasan bulan terpilih. Data Lama tetap terkunci; transaksi Offline Baru ditambahkan.';
     body.innerHTML='<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">'+
       '<div class="stat"><small>Pemasukan</small><strong>'+money(revenue)+'</strong></div>'+
@@ -973,11 +956,12 @@ function renderRekapUsaha(){
   const combined=offlineCombinedLockedSummary();
   monthlyBody.innerHTML=rows.map(r=>{
     const add=offlineNewSummary(r.m);
-    const revenue=r.revenue+add.revenue;
-    const hpp=r.hpp+add.hpp;
-    const gross=r.grossProfit+add.profit;
-    const outside=r.outsideHpp;
-    const result=r.result+add.profit;
+    const summary=FFCore.offlineLockedFinance(r.m,add);
+    const revenue=summary.revenue;
+    const hpp=summary.hpp;
+    const gross=summary.grossProfit;
+    const outside=summary.outsideHpp;
+    const result=summary.result;
     const margin=revenue ? (result/revenue*100) : 0;
     return '<tr>'+
       '<td><b>'+label(r.m)+'</b></td>'+
