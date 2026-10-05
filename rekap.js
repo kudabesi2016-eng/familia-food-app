@@ -361,7 +361,7 @@ function onlineHpp(m){
         Number(x.modal_hpp ?? (Number(x.qty||0)*Number(x.hpp||0)))<=0
       );
 
-      if(lockedRows.length && (lockedTotalAllMonths!==8085 || hasMissingHpp)){
+      if(lockedRows.length && (lockedTotalAllMonths!==FFCore.ONLINE_LOCKED_TOTAL || hasMissingHpp)){
         return {known:false,total:0};
       }
 
