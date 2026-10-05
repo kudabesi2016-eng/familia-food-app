@@ -216,7 +216,7 @@ assert(rekap.includes("isOnlineHistoricalMonth(monthOfSaleRow(x))"),'Rekap must 
 assert(rekap.includes("source||'')==='online_pencairan' && isOnlineNewMonth"),'Rekap must not mix historical finance with new cash');
 
 const dashboard=await read('index.html');
-assert(dashboard.includes('const ONLINE_LOCKED_TOTAL=8085;'),'Locked online quantity 8,085 missing');
+assert(core.includes('const ONLINE_LOCKED_TOTAL = 8085'),'Locked online quantity 8,085 missing from shared core');
 assert(dashboard.includes('const onNewFee=0;'),'New-online fee must remain zero because input is already net');
 assert(dashboard.includes('const onNewProfit=onNewNet-onNewHpp;'),'New-online profit formula regression');
 
