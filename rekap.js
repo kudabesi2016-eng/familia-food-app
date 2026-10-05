@@ -565,6 +565,8 @@ function updateChannelUI(){
   $('monthlyOutsideHead').style.display=offline?'table-cell':'none';
   $('monthlyResultHead').style.display=offline?'table-cell':'none';
   $('monthlyProfitHead').style.display=offline?'none':'table-cell';
+  const monthlyTable=$('monthlyTable');
+  if(monthlyTable) monthlyTable.classList.toggle('online-mode',!offline);
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
     ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran operasional ditampilkan terpisah.<br><b>Profit Terukur Offline = Uang Bersih − HPP yang tersedia.</b><br>Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur.<br>Margin = Profit ÷ Uang Bersih × 100%.'
