@@ -242,6 +242,8 @@ for(const table of ['produk','bahan_baku','resep','hpp','penjualan','data_lama',
   assert(new RegExp('on public\\.'+table+' for all to anon, authenticated','i').test(rls),'Loginless RLS policy missing for '+table);
 }
 
+assert(sql.includes('pengeluaran_kategori_master'),'Expense category master table missing from expansion SQL');
+assert(sql.includes('pengeluaran_kategori_master_anon_all'),'Expense category master RLS policy missing');
 const sql=await read('SUPABASE-EXPANSION.sql');
 assert(sql.includes('ff_penjualan_pelanggan'),'Customer↔sale mapping table missing from expansion SQL');
 const forbidden = ['stok','mutasi_stok','multi_outlet','user_role','pembayaran'];
