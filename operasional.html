@@ -127,7 +127,32 @@ td{padding:9px;border-bottom:1px solid #e6eee9;vertical-align:top}
     </div>
   </section>
 
-  <section class="panel" data-panel="expense"><section class="card" id="expenseItemMasterCard" style="border:2px solid #cfe4d7;margin-bottom:16px">
+  <section class="panel" data-panel="expense"><section class="card" id="expenseCategoryMasterCard" style="border:2px solid #cfe4d7;margin-bottom:16px">
+  <div class="cashhead">
+    <div>
+      <h2 style="margin:0">🗂 Master Kategori Pengeluaran</h2>
+      <div class="note">Kategori aktif dipakai sebagai pilihan pengeluaran baru. Kategori historis tidak diubah, sehingga data lama tetap aman.</div>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:14px">
+    <div class="field" style="grid-column:1/-1">
+      <label>Nama Kategori Baru</label>
+      <input id="expenseCategoryMasterName" placeholder="Contoh: Beban di luar HPP">
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="expenseCategoryMasterSave" type="button">+ Tambah Kategori</button>
+  </div>
+  <div id="expenseCategoryMasterStatus" class="status"></div>
+  <div class="tablewrap" style="margin-top:12px">
+    <table>
+      <thead><tr><th>Kategori</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="expenseCategoryMasterRows"><tr><td colspan="3">Memuat master kategori...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card" id="expenseItemMasterCard" style="border:2px solid #cfe4d7;margin-bottom:16px">
   <div class="cashhead">
     <div>
       <h2 style="margin:0">🗂 Master Item Pengeluaran per Kategori</h2>
@@ -594,6 +619,7 @@ async function loadExpenseCategoryMaster(){
     return;
   }
   expenseCategoryMasterRows=r.data||[];
+  renderExpenseCategoryMaster();
   const active=expenseCategoryMasterRows.filter(x=>x.aktif!==false).map(x=>String(x.nama_kategori||'').trim()).filter(Boolean);
   if(active.length) EXPENSE_MASTER_CATEGORIES=active;
   const selects=[$('expenseMasterCategory'),$('expCategory')];
@@ -617,6 +643,41 @@ async function loadExpenseItemMaster(){
   }
   expenseMasterRows=r.data||[];
   renderExpenseItemMaster();
+}
+
+function renderExpenseCategoryMaster(){
+  const box=$('expenseCategoryMasterRows');
+  if(!box)return;
+  box.innerHTML=expenseCategoryMasterRows.length?expenseCategoryMasterRows.map(x=>
+    '<tr><td>'+esc(x.nama_kategori)+'</td><td>'+(x.aktif!==false?'Aktif':'Nonaktif')+'</td><td>'+
+    (x.aktif!==false
+      ? '<button class="mini del" type="button" data-exp-cat-toggle="'+x.id+'">Nonaktifkan</button>'
+      : '<button class="mini edit" type="button" data-exp-cat-toggle="'+x.id+'">Aktifkan</button>')+
+    '</td></tr>'
+  ).join(''):'<tr><td colspan="3" class="empty">Belum ada kategori.</td></tr>';
+}
+async function saveExpenseCategoryMaster(){
+  const input=$('expenseCategoryMasterName');
+  const out=$('expenseCategoryMasterStatus');
+  const nama=String(input?.value||'').trim();
+  if(!nama){if(out)out.textContent='Nama kategori wajib diisi.';return;}
+  const duplicate=expenseCategoryMasterRows.some(x=>String(x.nama_kategori).trim().toLowerCase()===nama.toLowerCase());
+  if(duplicate){if(out)out.textContent='Kategori tersebut sudah ada.';return;}
+  const r=await supabaseClient.from('pengeluaran_kategori_master').insert([{nama_kategori:nama,aktif:true,urutan:expenseCategoryMasterRows.length+1}]);
+  if(r.error){if(out)out.textContent='Gagal menyimpan: '+r.error.message;return;}
+  if(input)input.value='';
+  if(out)out.textContent='✅ Kategori berhasil ditambahkan.';
+  await loadExpenseCategoryMaster();
+  renderExpenseCategoryMaster();
+}
+async function toggleExpenseCategoryMaster(id){
+  const row=expenseCategoryMasterRows.find(x=>String(x.id)===String(id));
+  if(!row)return;
+  const next=!Boolean(row.aktif);
+  const r=await supabaseClient.from('pengeluaran_kategori_master').update({aktif:next}).eq('id',id);
+  if(r.error){const out=$('expenseCategoryMasterStatus');if(out)out.textContent='Gagal mengubah status: '+r.error.message;return;}
+  await loadExpenseCategoryMaster();
+  renderExpenseCategoryMaster();
 }
 
 function renderExpenseItemMaster(){
@@ -796,7 +857,10 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.t
 $('retChannel').onchange=renderReturnSales;
 $('saveSupplier').onclick=saveSupplier;$('cancelSupplier').onclick=resetSupplier;$('addPurchaseLine').onclick=()=>addPurchaseLine();$('savePurchase').onclick=savePurchase;$('saveExpense').onclick=saveExpense;$('saveCustomer').onclick=saveCustomer;$('saveReturn').onclick=saveReturn;
 $('expenseMasterCategory').onchange=()=>{resetExpenseItemMasterForm();renderExpenseItemMaster()};$('expenseMasterSave').onclick=saveExpenseItemMaster;
+$('expenseCategoryMasterSave').onclick=saveExpenseCategoryMaster;
 document.addEventListener('click',async e=>{
+  const catToggle=e.target.closest?.('[data-exp-cat-toggle]');
+  if(catToggle){await toggleExpenseCategoryMaster(Number(catToggle.dataset.expCatToggle));return;}
   const edit=e.target.closest?.('[data-exp-master-edit]');
   const del=e.target.closest?.('[data-exp-master-del]');
   if(edit){
