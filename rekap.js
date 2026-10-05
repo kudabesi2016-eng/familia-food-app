@@ -10,6 +10,10 @@ const $ = id => document.getElementById(id);
 // Biaya Online Lainnya yang sudah dikunci sebagai satu angka:
 // modal dropship + gaji packing.
 const ONLINE_OTHER_COST_LOCKED = FFCore.ONLINE_OTHER_COST_LOCKED;
+const ONLINE_HISTORICAL_END = FFCore.ONLINE_HISTORICAL_END;
+const ONLINE_NEW_START = FFCore.ONLINE_NEW_START;
+const isOnlineHistoricalMonth = FFCore.isOnlineHistoricalMonth;
+const isOnlineNewMonth = FFCore.isOnlineNewMonth;
 
 // RINGKASAN OFFLINE TERKUNCI Jan–Agustus 2026.
 // Ini adalah angka dasar resmi yang dipakai untuk ringkasan keuangan.
@@ -267,8 +271,8 @@ function onlineFinance(m){
 
   // DATA TRANSAKSI ONLINE BARU: Produk keluar + penerimaan uang.
   // Keduanya ditambahkan ke data lama, bukan menggantikan data lama.
-  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
-  const newCash=rows.filter(x=>String(x.source||'')==='online_pencairan');
+  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch' && isOnlineNewMonth(m));
+  const newCash=rows.filter(x=>String(x.source||'')==='online_pencairan' && isOnlineNewMonth(m));
 
   const newNetKnown=newCash.length>0;
   const newNet=newCash.reduce(
@@ -340,7 +344,7 @@ function onlineHpp(m){
     let total=0;
 
     // Historis TikTok Jan–Agustus 2026: wajib audit 8.085 bungkus.
-    if(m>='2026-01' && m<='2026-08'){
+    if(isOnlineHistoricalMonth(m)){
       const lockedRows=(sales||[]).filter(x=>
         String(x.channel||'')==='Online' &&
         String(x.source||'')==='seller_center' &&
@@ -743,7 +747,7 @@ window.viewOnlineMonth=function(m){
 
   const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===month);
   const hist=rows.filter(x=>String(x.source||'')==='online_standard_finance');
-  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
+  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch' && isOnlineNewMonth(m));
   const newCashRows=rows.filter(x=>String(x.source||'')==='online_pencairan');
   const histRev=hist.reduce((a,x)=>a+Math.round(Number(x.omzet_produk||0)),0);
   const histFee=hist.reduce((a,x)=>a+Math.round(Number(x.biaya_platform||0)),0);
@@ -799,8 +803,8 @@ function renderOnlineConnection(selectedMonth){
 
   const rows=(sales||[]).filter(x=>String(x.channel||'')==='Online' && monthOfSaleRow(x)===m);
   const histFinance=rows.filter(x=>String(x.source||'')==='online_standard_finance');
-  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch');
-  const newCash=rows.filter(x=>String(x.source||'')==='online_pencairan');
+  const newProducts=rows.filter(x=>String(x.source||'')==='online_batch' && isOnlineNewMonth(m));
+  const newCash=rows.filter(x=>String(x.source||'')==='online_pencairan' && isOnlineNewMonth(m));
 
   const histRev=histFinance.reduce((a,x)=>a+Number(x.omzet_produk||0),0);
   const histFee=histFinance.reduce((a,x)=>a+Number(x.biaya_platform||0),0);
@@ -1053,10 +1057,10 @@ function renderOnlineFinalSummary(){
   const onlineRows=(sales||[]).filter(x=>String(x.channel||'')==='Online');
 
   const net=onlineRows
-    .filter(x=>String(x.source||'')==='online_standard_finance')
+    .filter(x=>String(x.source||'')==='online_standard_finance' && isOnlineHistoricalMonth(monthOfSaleRow(x)))
     .reduce((a,x)=>a+Math.round(Number(x.uang_bersih||0)),0)
     + onlineRows
-    .filter(x=>String(x.source||'')==='online_pencairan')
+    .filter(x=>String(x.source||'')==='online_pencairan' && isOnlineNewMonth(monthOfSaleRow(x)))
     .reduce((a,x)=>a+Math.round(Number(x.uang_bersih ?? x.omzet_produk ?? 0)),0);
 
   const hpp=onlineRows
