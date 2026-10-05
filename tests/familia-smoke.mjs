@@ -43,6 +43,10 @@ function count(text,needle){
   return text.split(needle).length-1;
 }
 
+const core=await read('ff-core.js');
+const rekap=await read('rekap.js');
+const sql=await read('SUPABASE-EXPANSION.sql');
+
 for(const page of corePages){
   await access(page);
 }
@@ -59,7 +63,6 @@ for(const [file, needles] of Object.entries(mustContain)){
   for(const n of needles) assert(c.includes(n), file+' missing required marker: '+n);
 }
 
-const core=await read('ff-core.js');
 assert(core.includes('const ONLINE_ONLY_PRODUCTS = new Set(['),'Locked Online-only product mapping missing in shared core.');
 assert(core.includes('const OFFLINE_LOCKED_MONTHLY = Object.freeze(['),'Shared Offline locked monthly snapshot missing.');
 assert(core.includes('function offlineLockedFinance(month, add)'),'Shared Offline finance calculator missing.');
@@ -75,7 +78,6 @@ assert(core.includes("v === 'dropship'"),'Dropship must be mapped to Online.');
 assert(core.includes('const channelMapped = isOfflineProduct(r.product_name);'),'Offline HPP must respect channel mapping for Data Lama.');
 assert(!core.includes("['cireng crispy','Cireng biasa']"),'Shared core must not silently merge Cireng crispy into Cireng biasa');
 
-const rekap=await read('rekap.js');
 assert(count(rekap,'function data(){')===0,'Duplicate legacy function data() found in rekap.js');
 assert(count(rekap,'const data = () =>')===1,'Expected one rekap data() helper');
 assert(rekap.includes("newCash"),'Rekap new-online cash source missing');
@@ -205,12 +207,10 @@ assert(shellCss.includes('overflow:visible!important'),'Mobile table containers 
 assert(shellCss.includes('grid-template-columns:repeat(2,minmax(0,1fr))!important'),'Professional mobile dashboard must use compact 2-column KPI cards');
 assert(shellCss.includes('PROFESSIONAL MOBILE POS V2'),'Professional mobile POS shell marker missing');
 
-const core=await read('ff-core.js');
 assert(core.includes("const ONLINE_HISTORICAL_END = '2026-08';"),'Online historical period must end at August 2026');
 assert(core.includes("const ONLINE_NEW_START = '2026-09';"),'Online new transaction period must start at September 2026');
 assert(core.includes('isOnlineHistoricalMonth'),'Shared Online historical-period guard missing');
 assert(core.includes('isOnlineNewMonth'),'Shared Online new-period guard missing');
-const rekap=await read('rekap.js');
 assert(rekap.includes("isOnlineNewMonth(m)"),'Rekap must guard new Online cash by the new-transaction period');
 assert(rekap.includes("isOnlineHistoricalMonth(monthOfSaleRow(x))"),'Rekap must guard historical Online finance by historical period');
 assert(rekap.includes("source||'')==='online_pencairan' && isOnlineNewMonth"),'Rekap must not mix historical finance with new cash');
@@ -245,7 +245,6 @@ for(const table of ['produk','bahan_baku','resep','hpp','penjualan','data_lama',
 
 assert(sql.includes('pengeluaran_kategori_master'),'Expense category master table missing from expansion SQL');
 assert(sql.includes('pengeluaran_kategori_master_anon_all'),'Expense category master RLS policy missing');
-const sql=await read('SUPABASE-EXPANSION.sql');
 assert(sql.includes('ff_penjualan_pelanggan'),'Customer↔sale mapping table missing from expansion SQL');
 const forbidden = ['stok','mutasi_stok','multi_outlet','user_role','pembayaran'];
 for(const f of forbidden){
