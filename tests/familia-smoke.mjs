@@ -63,6 +63,11 @@ const core=await read('ff-core.js');
 assert(core.includes('const ONLINE_ONLY_PRODUCTS = new Set(['),'Locked Online-only product mapping missing in shared core.');
 assert(core.includes('const OFFLINE_LOCKED_MONTHLY = Object.freeze(['),'Shared Offline locked monthly snapshot missing.');
 assert(core.includes('function offlineLockedFinance(month, add)'),'Shared Offline finance calculator missing.');
+assert(core.includes('const ONLINE_LOCKED_HISTORY = Object.freeze('),'Shared Online historical size basis missing.');
+assert(core.includes('const ONLINE_LOCKED_TOTAL = 8085'),'Shared Online locked total missing.');
+assert(core.includes('const ONLINE_OTHER_COST_LOCKED = 35293500'),'Shared Online other cost missing.');
+assert(rekap.includes('FFCore.ONLINE_OTHER_COST_LOCKED'),'Rekap must consume shared Online other cost.');
+
 
 assert(core.includes("'naget 20'"),'Naget 20 must be in Online-only mapping.');
 assert(core.includes("'naget 25+saus'"),'Naget 25+Saus must be in Online-only mapping.');
