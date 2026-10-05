@@ -229,6 +229,36 @@ table{
   white-space:nowrap;
 }
 
+.monthlyTable.online-mode{
+  min-width:980px;
+  table-layout:fixed;
+}
+.monthlyTable.online-mode th{
+  white-space:normal;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.monthlyTable.online-mode th:nth-child(1),
+.monthlyTable.online-mode td:nth-child(1){width:110px}
+.monthlyTable.online-mode th:nth-child(2),
+.monthlyTable.online-mode td:nth-child(2){width:165px}
+.monthlyTable.online-mode th:nth-child(3),
+.monthlyTable.online-mode td:nth-child(3){width:185px}
+.monthlyTable.online-mode th:nth-child(4),
+.monthlyTable.online-mode td:nth-child(4){width:210px}
+.monthlyTable.online-mode th:nth-child(5),
+.monthlyTable.online-mode td:nth-child(5){width:165px}
+.monthlyTable.online-mode th:nth-child(9),
+.monthlyTable.online-mode td:nth-child(9){width:120px}
+.monthlyTable.online-mode th:nth-child(10),
+.monthlyTable.online-mode td:nth-child(10){width:95px;text-align:center}
+.monthlyTable.online-mode td:nth-child(2),
+.monthlyTable.online-mode td:nth-child(3),
+.monthlyTable.online-mode td:nth-child(4),
+.monthlyTable.online-mode td:nth-child(5),
+.monthlyTable.online-mode td:nth-child(9){white-space:nowrap}
+
+
 th{
   background:var(--brand);
   color:#fff;
@@ -451,7 +481,7 @@ td{
 
     <div class="tablewrap">
 
-      <table class="monthlyTable">
+      <table class="monthlyTable" id="monthlyTable">
 
         <thead>
 
