@@ -8,9 +8,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="app-settings.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <script src="ff-core.js?v=20261001-1853"></script>
 <script>window.__REKAP_JS_LOADED=false;</script>
-<script src="rekap.js?v=20261003-0116"></script>
+<script src="rekap.js?v=20261005-1140"></script>
 
 <style>
 :root{
@@ -150,6 +153,17 @@ h1{
 .btn.light{
   background:var(--soft);
   color:var(--brand);
+}
+
+.exportActions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+
+.exportActions .btn{
+  min-width:150px;
 }
 
 .notice{
@@ -516,6 +530,21 @@ td{
 
   </div>
 
+  <div class="card" id="exportRekapCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <h2 style="margin:0">⬇️ Unduh Rekap Bisnis</h2>
+        <div class="hint" style="margin-top:5px">
+          Mengunduh data Rekap yang sedang tampil, tanpa mengubah data atau perhitungan di aplikasi.
+        </div>
+      </div>
+      <div class="exportActions" style="margin-top:0">
+        <button class="btn" id="exportExcel" type="button">📊 Download Excel</button>
+        <button class="btn light" id="exportPdf" type="button">📄 Download PDF</button>
+      </div>
+    </div>
+  </div>
+
 
   <div class="card" id="rekapUsahaCard" style="margin-top:12px">
     <h2 style="margin-top:0">📊 Rekap Usaha Offline • Januari–Agustus 2026</h2>
@@ -525,7 +554,7 @@ td{
 
     <h3 style="margin:16px 0 8px">1. Hasil Usaha per Bulan</h3>
     <div class="tablewrap">
-      <table class="cleanTable">
+      <table class="cleanTable" id="rekapUsahaMonthlyTable">
         <thead><tr>
           <th>Bulan</th><th>Pemasukan</th><th>HPP</th><th>Laba Kotor</th><th>Beban di luar HPP</th><th>Hasil Usaha</th>
         </tr></thead>
@@ -535,7 +564,7 @@ td{
 
     <h3 style="margin:18px 0 8px">2. Pengeluaran berdasarkan Kategori</h3>
     <div class="tablewrap">
-      <table class="cleanTable">
+      <table class="cleanTable" id="rekapUsahaCategoryTable">
         <thead><tr><th>Kategori</th><th>Total Jan–Ags</th></tr></thead>
         <tbody id="rekapUsahaCategoryRows"></tbody>
       </table>
@@ -543,7 +572,7 @@ td{
 
     <h3 style="margin:18px 0 8px">3. Klasifikasi Beban di luar HPP</h3>
     <div class="tablewrap">
-      <table class="cleanTable">
+      <table class="cleanTable" id="rekapUsahaClassificationTable">
         <thead><tr><th>Klasifikasi</th><th>Nilai</th></tr></thead>
         <tbody id="rekapUsahaClassificationRows"></tbody>
       </table>
@@ -551,7 +580,7 @@ td{
 
     <h3 style="margin:18px 0 8px">4. Top Produk</h3>
     <div class="tablewrap">
-      <table class="cleanTable">
+      <table class="cleanTable" id="rekapUsahaTopProductTable">
         <thead><tr><th>Rank</th><th>Produk</th><th>Qty Bungkus</th><th>Omzet</th></tr></thead>
         <tbody id="rekapUsahaTopProductRows"></tbody>
       </table>
@@ -559,7 +588,7 @@ td{
 
     <h3 style="margin:18px 0 8px">5. Top Konsumen</h3>
     <div class="tablewrap">
-      <table class="cleanTable">
+      <table class="cleanTable" id="rekapUsahaTopCustomerTable">
         <thead><tr><th>Rank</th><th>Konsumen</th><th>Transaksi</th><th>Qty Bungkus</th><th>Omzet</th></tr></thead>
         <tbody id="rekapUsahaTopCustomerRows"></tbody>
       </table>
@@ -650,7 +679,7 @@ td{
     </div>
 
     <div class="tablewrap" style="margin-top:14px">
-      <table class="cleanTable">
+      <table class="cleanTable" id="transactionRecapTable">
         <thead>
           <tr>
             <th>Tanggal/Periode</th>
@@ -682,7 +711,7 @@ td{
     <details style="margin-top:12px">
       <summary style="cursor:pointer;font-weight:700">👁 Lihat semua data historis agregat</summary>
       <div class="tablewrap" style="margin-top:12px">
-        <table class="cleanTable">
+        <table class="cleanTable" id="historicalExpenseTable">
           <thead><tr><th>Periode</th><th>Kategori</th><th>Keterangan</th><th>Cara Bayar</th><th>Nominal</th></tr></thead>
           <tbody id="historicalExpenseRows"></tbody>
         </table>
