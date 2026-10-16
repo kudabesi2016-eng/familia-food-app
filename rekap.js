@@ -1087,7 +1087,7 @@ function renderMonthly(){
   const offline=$('channel').value==='Offline';
 
   if(!ms.length){
-    $('monthly').innerHTML='<tr><td colspan="9" class="empty">Belum ada data '+$('channel').value+'.</td></tr>';
+    $('monthly').innerHTML='<tr><td colspan="10" class="empty">Belum ada data '+$('channel').value+'.</td></tr>';
     return;
   }
 
@@ -1149,6 +1149,9 @@ function renderMonthly(){
       '<td>'+money(v[1])+'</td>'+
       '<td><b>'+money(v[2])+'</b></td>'+
       '<td>'+(modal!==null?money(modal):'—')+'</td>'+
+      '<td class="online-hidden-col" style="display:none" aria-hidden="true"></td>'+
+      '<td class="online-hidden-col" style="display:none" aria-hidden="true"></td>'+
+      '<td class="online-hidden-col" style="display:none" aria-hidden="true"></td>'+
       '<td><b>'+(profit!==null?money(profit):'—')+'</b><div class="hint" style="margin-top:4px">'+(profit!==null?'Margin '+margin.toFixed(2)+'%':'HPP belum tersedia')+'</div></td>'+
       '<td><button class="mini viewbtn" type="button" data-view-month="'+esc(m)+'">👁 Lihat Data</button></td>'+
     '</tr>';
