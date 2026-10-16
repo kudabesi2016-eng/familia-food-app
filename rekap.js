@@ -979,7 +979,7 @@ function renderRekapUsaha(){
     '</tr>';
   }).join('')+
   '<tr style="border-top:3px solid #0b7a45;background:#f0fbf5">'+
-    '<td><b>TOTAL JANUARI–AGUSTUS</b></td>'+
+    '<td><b>TOTAL JAN–AGS 2026</b></td>'+
     '<td><b>'+money(combined.revenue)+'</b></td>'+
     '<td><b>'+money(combined.hpp)+'</b></td>'+
     '<td><b>'+money(combined.grossProfit)+'</b></td>'+
