@@ -1951,6 +1951,9 @@ async function init(){
 
   if(serial!==initSerial)return;
 
+  // Extras may introduce a month that was not present in sales/data_lama.
+  renderMonthOptions();
+  bindOfflineJanuaryDetailButtons();
   render();
   renderHistoricalExpenseAggregate();
 
