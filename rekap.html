@@ -410,7 +410,12 @@ td{
 </style>
 <style id="rekap-online-layout-fix">
 /* Online: kolom judul dan sel baris harus sejajar, termasuk kolom offline yang disembunyikan. */
-.monthlyTable.online-mode{min-width:1120px;table-layout:fixed}
+/* Kolom Bulan perlu cukup lebar untuk "September 2026" agar tidak menimpa Pemasukan. */
+.monthlyTable.online-mode th:nth-child(1),
+.monthlyTable.online-mode td:nth-child(1){width:150px;min-width:150px}
+.monthlyTable.online-mode td:nth-child(1){padding-right:14px;overflow:hidden;text-overflow:clip}
+
+.monthlyTable.online-mode{min-width:1165px;table-layout:fixed}
 .monthlyTable.online-mode th:nth-child(6),
 .monthlyTable.online-mode th:nth-child(7),
 .monthlyTable.online-mode th:nth-child(8){display:none!important}
