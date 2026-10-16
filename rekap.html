@@ -13,7 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <script src="ff-core.js?v=20261001-1853"></script>
 <script>window.__REKAP_JS_LOADED=false;</script>
-<script src="rekap.js?v=20261016-1925"></script>
+<script src="rekap.js?v=20261016-1945"></script>
 
 <style>
 :root{
@@ -406,6 +406,30 @@ td{
 @media(max-width:700px){
   .monthlyTable:not(.online-mode){min-width:0!important;table-layout:auto}
   .monthlyTable:not(.online-mode) td:first-child{white-space:normal;overflow-wrap:anywhere}
+}
+</style>
+<style id="rekap-online-layout-fix">
+/* Online: kolom judul dan sel baris harus sejajar, termasuk kolom offline yang disembunyikan. */
+.monthlyTable.online-mode{min-width:1120px;table-layout:fixed}
+.monthlyTable.online-mode th:nth-child(6),
+.monthlyTable.online-mode th:nth-child(7),
+.monthlyTable.online-mode th:nth-child(8){display:none!important}
+.monthlyTable.online-mode td.online-hidden-col{display:none!important}
+.monthlyTable.online-mode th:nth-child(9),
+.monthlyTable.online-mode td:nth-child(9){width:165px}
+.monthlyTable.online-mode th:nth-child(10),
+.monthlyTable.online-mode td:nth-child(10){width:125px;text-align:center}
+@media(max-width:700px){
+  .monthlyTable.online-mode{min-width:0!important;table-layout:auto}
+  #monthly tr{grid-template-columns:1fr 1fr}
+  #monthly td.online-hidden-col{display:none!important}
+  #monthly td:nth-child(9){display:flex;grid-column:1/-1}
+  #monthly td:nth-child(9)::before{content:"Profit";font-size:10px;color:#7a8781}
+  #monthly td:nth-child(10){display:flex;grid-column:1/-1}
+  #monthly td:nth-child(10)::before{content:"Aksi";font-size:10px;color:#7a8781}
+  #monthly td:nth-child(6)::before,
+  #monthly td:nth-child(7)::before,
+  #monthly td:nth-child(8)::before{content:none}
 }
 </style>
 <link rel="stylesheet" href="android-shell.css"></head>
