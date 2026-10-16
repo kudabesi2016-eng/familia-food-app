@@ -1489,6 +1489,59 @@ function renderTransactionRecap(){
   }).join('');
 }
 
+function bindOfflineJanuaryDetailButtons(){
+  const productBtn=$('viewRekapProdukJanuary');
+  const expenseBtn=$('viewPengeluaranJanuary');
+  const productCard=$('rekapProdukJanuaryDetail');
+  const expenseCard=$('rekapPengeluaranJanuaryDetail');
+
+  if(productBtn&&productCard)productBtn.onclick=()=>{
+    const open=productCard.style.display!=='none';
+    if(open){
+      productCard.style.display='none';
+      productBtn.textContent='👁 Lihat Rekap Produk Januari';
+      return;
+    }
+    const rows=(olds||[]).filter(x=>
+      String(x.periode||'').slice(0,7)==='2026-01' &&
+      isOfflineLegacyHistoricalRow(x)
+    );
+    const total=rows.reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
+    $('janProductDetailTotal').textContent=money(total);
+    $('janProductDetailRows').innerHTML=rows.length?rows.map(x=>{
+      const qty=Math.max(0,Number(x.catatan||0));
+      const unit=ffOfflineHppUnitForMonth(x.jenis,'2026-01');
+      return '<tr><td>'+esc(x.jenis||'-')+'</td><td>'+esc(x.keterangan||'-')+'</td><td>'+qty.toLocaleString('id-ID')+'</td><td><b>'+money(x.nominal)+'</b></td><td>'+(unit===null?'—':money(qty*unit))+'</td></tr>';
+    }).join(''):'<tr><td colspan="5" class="empty">Belum ada rincian produk Januari.</td></tr>';
+    productCard.style.display='block';
+    productBtn.textContent='▲ Tutup Rekap Produk Januari';
+    productCard.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+
+  if(expenseBtn&&expenseCard)expenseBtn.onclick=()=>{
+    const open=expenseCard.style.display!=='none';
+    if(open){
+      expenseCard.style.display='none';
+      expenseBtn.textContent='👁 Lihat Pengeluaran Januari';
+      return;
+    }
+    const rows=(expenses||[]).filter(x=>
+      String(x.periode||'').trim()==='2026-01' && isCashExpense(x)
+    ).sort((a,b)=>
+      String(a.tanggal||'').localeCompare(String(b.tanggal||'')) ||
+      String(a.kategori||'').localeCompare(String(b.kategori||''))
+    );
+    const total=rows.reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
+    $('janExpenseDetailTotal').textContent=money(total);
+    $('janExpenseDetailRows').innerHTML=rows.length?rows.map(x=>
+      '<tr><td>'+esc(x.tanggal||x.periode||'-')+'</td><td>'+esc(x.kategori||'-')+'</td><td>'+esc(x.keterangan||'-')+'</td><td>'+esc(x.cara_bayar||'Tunai')+'</td><td><b>'+money(x.nominal)+'</b></td></tr>'
+    ).join(''):'<tr><td colspan="5" class="empty">Belum ada pengeluaran kas Januari.</td></tr>';
+    expenseCard.style.display='block';
+    expenseBtn.textContent='▲ Tutup Pengeluaran Januari';
+    expenseCard.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+}
+
 function bindMonthlyViewButtons(){
   if(window.__REKAP_MONTH_VIEW_BOUND)return;
   window.__REKAP_MONTH_VIEW_BOUND=true;
@@ -1808,6 +1861,7 @@ async function init(){
 
   renderMonthOptions();
   bindMonthlyViewButtons();
+  bindOfflineJanuaryDetailButtons();
   bindTransactionRecap();
   bindExportButtons();
   render();
