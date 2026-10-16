@@ -233,8 +233,11 @@ function monthOfSaleRow(x){
 }
 
 function isOfflineLegacyHistoricalRow(x){
-  const n=String(x?.jenis||'').trim().toLowerCase().replace(/\\s+/g,' ');
-  return !['naget 20','naget isi 20','naget 25+saus','naget isi 25+saus','naget 25+ saus','naget isi 25+ saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(n);
+  const n=String(x?.jenis||'').trim().toLowerCase()
+    .replace(/\s+/g,' ')
+    .replace(/\s*\+\s*/g,'+');
+  // Daftar ukuran Naget online-only; variasi spasi/penulisan tetap dikenali.
+  return !/^naget(?:\s+isi)?\s+(?:20|25\+saus|30|40|50)(?:\s*pcs?)?$/.test(n);
 }
 function isCashExpense(x){
   // MODUL HUTANG BERDIRI SENDIRI.
@@ -996,7 +999,7 @@ function renderTopProdukKonsumen(){
 
   const productsMap=new Map();
   (olds||[]).forEach((x,i)=>{
-    if(!ffTopRangeOffline(x.periode))return;
+    if(!ffTopRangeOffline(x.periode)||!isOfflineLegacyHistoricalRow(x))return;
     const name=ffTopProductName(x.jenis);
     if(!name)return;
     const qty=Math.max(0,Math.round(Number(x.catatan)||0));
@@ -1030,7 +1033,7 @@ function renderTopProdukKonsumen(){
 
   const customersMap=new Map();
   (olds||[]).forEach(x=>{
-    if(!ffTopRangeOffline(x.periode))return;
+    if(!ffTopRangeOffline(x.periode)||!isOfflineLegacyHistoricalRow(x))return;
     const name=ffTopCustomerName(x.keterangan);
     if(name==='Tanpa Nama')return;
     const qty=Math.max(0,Math.round(Number(x.catatan)||0));
