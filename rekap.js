@@ -775,6 +775,8 @@ window.viewOnlineMonth=function(m){
     );
     const oldRevenue=oldRows.reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
     const summary=locked?FFCore.offlineLockedFinance(month,add):null;
+    const sourceRevenue=oldRevenue+add.revenue;
+    const lockedDifference=summary?Math.round(summary.revenue-sourceRevenue):0;
     const fallback=finance(month);
     const h=offlineHpp(month);
     const revenue=summary?summary.revenue:(fallback?Number(fallback[0]):oldRevenue+add.revenue);
@@ -817,6 +819,7 @@ window.viewOnlineMonth=function(m){
       '<div class="stat profit"><small>Hasil Usaha</small><strong>'+(result===null?'—':money(result))+'</strong><div class="hint">Margin '+(revenue?((result||0)/revenue*100).toFixed(2):'—')+'%</div></div>'+
       '</div>'+
       '<div class="hint" style="margin:8px 0 10px">Sumber database: '+oldRows.length.toLocaleString('id-ID')+' baris Data Lama ('+money(oldRevenue)+') dan '+add.rows.length.toLocaleString('id-ID')+' baris transaksi baru ('+add.qty.toLocaleString('id-ID')+' bungkus). Snapshot resmi tetap tidak diubah.</div>'+
+      (lockedDifference!==0?'<div class="notice" style="margin:10px 0;background:#fff8e1;border-color:#f2d185;color:#7a4b00"><b>Perlu audit:</b> total pemasukan snapshot berbeda '+money(lockedDifference)+' dari jumlah baris sumber yang terlihat ('+money(sourceRevenue)+'). Snapshot resmi belum diubah.</div>':'')+
       '<div class="tablewrap"><table style="min-width:900px"><thead><tr><th>Tanggal/Periode</th><th>Sumber</th><th>Produk</th><th>Keterangan</th><th>Qty Bungkus</th><th>Pemasukan</th><th>HPP/Modal</th></tr></thead><tbody>'+
       (details.length?details.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.source)+'</td><td>'+esc(x.product)+'</td><td>'+esc(x.detail)+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td><td>'+money(x.revenue)+'</td><td>'+(x.hpp===null?'—':money(x.hpp))+'</td></tr>').join(''):'<tr><td colspan="7" class="empty">Tidak ada rincian database untuk bulan ini.</td></tr>')+
       '</tbody></table></div>';
@@ -1612,6 +1615,8 @@ function bindOfflineJanuaryDetailButtons(){
 function bindMonthlyViewButtons(){
   if(window.__REKAP_MONTH_VIEW_BOUND)return;
   window.__REKAP_MONTH_VIEW_BOUND=true;
+  const closeBtn=document.getElementById('closeOnlineConnection');
+  if(closeBtn)closeBtn.onclick=()=>{const card=document.getElementById('onlineConnectionCard');if(card)card.style.display='none';};
   document.addEventListener('click',function(e){
     const btn=e.target?.closest?.('[data-view-month]');
     if(!btn)return;
