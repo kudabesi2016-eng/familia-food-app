@@ -373,6 +373,41 @@ td{
   #transactionRecapCard table{min-width:760px!important}
 }
 </style>
+<style id="rekap-table-layout-fix">
+/* Rapikan lebar kolom Rekap Offline pada desktop agar teks dan total tidak bertumpuk. */
+.monthlyTable:not(.online-mode){
+  min-width:1320px;
+  table-layout:fixed;
+}
+.monthlyTable:not(.online-mode) th:nth-child(1),
+.monthlyTable:not(.online-mode) td:nth-child(1){width:160px}
+.monthlyTable:not(.online-mode) th:nth-child(2),
+.monthlyTable:not(.online-mode) td:nth-child(2){width:145px}
+.monthlyTable:not(.online-mode) th:nth-child(3),
+.monthlyTable:not(.online-mode) td:nth-child(3){width:130px}
+.monthlyTable:not(.online-mode) th:nth-child(4),
+.monthlyTable:not(.online-mode) td:nth-child(4){width:175px}
+.monthlyTable:not(.online-mode) th:nth-child(5),
+.monthlyTable:not(.online-mode) td:nth-child(5){width:150px}
+.monthlyTable:not(.online-mode) th:nth-child(6),
+.monthlyTable:not(.online-mode) td:nth-child(6){width:155px}
+.monthlyTable:not(.online-mode) th:nth-child(7),
+.monthlyTable:not(.online-mode) td:nth-child(7){width:165px}
+.monthlyTable:not(.online-mode) th:nth-child(8),
+.monthlyTable:not(.online-mode) td:nth-child(8){width:165px}
+.monthlyTable:not(.online-mode) td:nth-child(9),
+.monthlyTable:not(.online-mode) th:nth-child(10){width:125px;text-align:center}
+.monthlyTable:not(.online-mode) tbody#monthly tr:last-child td:first-child{
+  white-space:normal;
+  overflow-wrap:anywhere;
+  line-height:1.25;
+  font-size:12px;
+}
+@media(max-width:700px){
+  .monthlyTable:not(.online-mode){min-width:0!important;table-layout:auto}
+  .monthlyTable:not(.online-mode) td:first-child{white-space:normal;overflow-wrap:anywhere}
+}
+</style>
 <link rel="stylesheet" href="android-shell.css"></head>
 
 <body>
