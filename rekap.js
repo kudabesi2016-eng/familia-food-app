@@ -1407,7 +1407,7 @@ function buildTransactionRecapRows(){
 
   (olds||[]).forEach((x,i)=>{
     const m=String(x.periode||'').slice(0,7);
-    if(!FF.isMonth(m))return;
+    if(!FF.isMonth(m) || !isOfflineLegacyHistoricalRow(x))return;
     const qty=Math.round(Number(x.qty||0));
     const nominal=Math.round(Number(x.nominal ?? x.omzet ?? x.total ?? 0));
     if(nominal<=0 && qty<=0)return;
