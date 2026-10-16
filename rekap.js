@@ -558,19 +558,28 @@ function updateChannelUI(){
   const offline=$('channel').value==='Offline';
   $('pageTitle').textContent=offline?'📊 Rekap Offline':'📊 Rekap Online';
   $('pageSub').textContent=offline?'Rekap penjualan Offline Familia Food per bulan.':'Rekap penjualan Online Shop Familia Food per bulan.';
-  $('outLabel').textContent=offline?'Potongan':'Potongan Online Shop';
-  $('monthlyOutHead').textContent=offline?'Potongan':'Potongan Online Shop';
+  $('outLabel').textContent=offline?'Beban di luar HPP':'Potongan Online Shop';
+  const netLabel=$('netLabel'), profitLabel=$('profitLabel');
+  if(netLabel)netLabel.textContent=offline?'Laba Kotor':'Uang Bersih yang Diterima';
+  if(profitLabel)profitLabel.textContent=offline?'Hasil Usaha':'Profit';
   $('monthlyTitle').textContent=offline?'Rekap Offline Bulanan':'Rekap Online Bulanan';
-  $('monthlyGrossHead').style.display=offline?'table-cell':'none';
-  $('monthlyOutsideHead').style.display=offline?'table-cell':'none';
-  $('monthlyResultHead').style.display=offline?'table-cell':'none';
-  $('monthlyProfitHead').style.display=offline?'none':'table-cell';
-  const monthlyTable=$('monthlyTable');
-  if(monthlyTable) monthlyTable.classList.toggle('online-mode',!offline);
+
+  const table=$('monthlyTable');
+  if(table){
+    table.classList.toggle('offline-mode',offline);
+    table.classList.toggle('online-mode',!offline);
+  }
+  const show=(id,yes)=>{const el=$(id);if(el)el.style.display=yes?'table-cell':'none';};
+  show('monthlyOutHead',!offline);
+  show('monthlyNetHead',!offline);
+  show('monthlyGrossHead',offline);
+  show('monthlyOutsideHead',offline);
+  show('monthlyResultHead',offline);
+  show('monthlyProfitHead',!offline);
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan berasal dari Data Lama Offline dan transaksi Offline baru.<br>Pengeluaran operasional ditampilkan terpisah.<br><b>Profit Terukur Offline = Uang Bersih − HPP yang tersedia.</b><br>Pengeluaran tidak dipotong lagi ke Profit agar HPP dan pengeluaran tidak tercampur.<br>Margin = Profit ÷ Uang Bersih × 100%.'
-    : 'Pemasukan berasal dari Data Lama Online STANDARD dan Penerimaan Uang Online baru.<br>Untuk transaksi Online Baru, angka yang dimasukkan sudah berupa <b>Uang Bersih setelah potongan</b>, jadi tidak dihitung potongan lagi.<br><b>HPP/Profit historis Jan–Agustus memakai data audit TikTok yang tersimpan sebagai seller_center dan wajib total 8.085 bungkus.</b><br><b>HPP Offline Jan–Apr dikunci ke snapshot HPP lama; Mei–Ags dikunci ke snapshot HPP baru.</b><br>Profit transaksi baru = Uang Bersih − Modal.<br>';
+    ? 'Pemasukan = Data Lama Offline + transaksi Offline baru.<br><b>Laba Kotor = Pemasukan − HPP.</b><br><b>Hasil Usaha = Laba Kotor − Beban di luar HPP.</b><br>HPP dan beban operasional ditampilkan terpisah agar tidak dihitung dua kali.<br>Margin Hasil Usaha = Hasil Usaha ÷ Pemasukan × 100%.'
+    : 'Pemasukan Online historis berasal dari Data Lama Online STANDARD; penerimaan baru sudah berupa Uang Bersih setelah potongan.<br><b>Profit = Uang Bersih − HPP/Modal.</b><br>Produk keluar dan penerimaan uang adalah sumber berbeda; produk keluar dipakai untuk modal/HPP, bukan dijumlahkan lagi sebagai pemasukan.';
 }
 
 /* =====================================================
@@ -629,6 +638,42 @@ function months(){
 }
 
 
+function monthsForChannel(channel){
+  const set=new Set();
+  const mode=String(channel||$('channel')?.value||'Online');
+  if(mode==='Online'){
+    (sales||[]).forEach(x=>{
+      if(String(x.channel||'')!=='Online')return;
+      const m=monthOfSaleRow(x);
+      if(FF.isMonth(m))set.add(m);
+    });
+  }else{
+    (olds||[]).forEach(x=>{
+      const m=String(x.periode||'').slice(0,7);
+      if(FF.isMonth(m)&&isOfflineLegacyHistoricalRow(x))set.add(m);
+    });
+    (sales||[]).forEach(x=>{
+      if(String(x.channel||'')!=='Offline')return;
+      const m=monthOfSaleRow(x);
+      if(FF.isMonth(m)&&!isHistoricalSource(x.source))set.add(m);
+    });
+    (expenses||[]).forEach(x=>{
+      const p=String(x.periode||'').trim();
+      if(FF.isMonth(p)&&isCashExpense(x))set.add(p);
+    });
+    (purchases||[]).forEach(x=>{
+      const m=String(x.tanggal||'').slice(0,7);
+      if(FF.isMonth(m))set.add(m);
+    });
+    (returns||[]).forEach(x=>{
+      if(String(x.channel||'Offline')!=='Offline')return;
+      const m=String(x.tanggal||'').slice(0,7);
+      if(FF.isMonth(m))set.add(m);
+    });
+  }
+  return [...set].sort();
+}
+
 /* =====================================================
    RENDER KARTU
 ===================================================== */
@@ -637,55 +682,51 @@ function renderCards(){
   const m=$('month').value;
   const offline=$('channel').value==='Offline';
   const marginEl=$('margin');
+  const set=(id,value)=>{const el=$(id);if(el)el.textContent=value;};
+  const v=finance(m);
+  const h=hppForChannel(m);
 
   if(offline){
-    const add=offlineNewSummary(m);
-    const locked=FFCore.offlineLockedFinance(m,add);
+    const locked=FFCore.offlineLockedFinance(m,offlineNewSummary(m));
     if(locked){
-      $('rev').textContent=money(locked.revenue);
-      $('out').textContent=money(locked.expense);
-      $('net').textContent=money(locked.net);
-      $('hpp').textContent=money(locked.hpp);
-      $('profit').textContent=money(locked.result);
+      set('rev',money(locked.revenue));
+      set('out',money(locked.outsideHpp));
+      set('net',money(locked.grossProfit));
+      set('hpp',money(locked.hpp));
+      set('profit',money(locked.result));
       if(marginEl)marginEl.textContent=(locked.revenue?locked.result/locked.revenue*100:0).toFixed(2)+'%';
       return;
     }
+    if(!v){
+      set('rev','Rp 0');set('out','Rp 0');set('net','—');set('hpp','—');set('profit','—');
+      if(marginEl)marginEl.textContent='—';
+      return;
+    }
+    const hppKnown=!!(h&&h.known&&h.measured);
+    const gross=hppKnown?Number(v[0])-Number(h.total):null;
+    const outside=Number(v[3]||0);
+    const result=gross!==null?gross-outside:null;
+    set('rev',money(v[0]));
+    set('out',money(outside));
+    set('net',gross===null?'—':money(gross));
+    set('hpp',hppKnown?money(h.total):'—');
+    set('profit',result===null?'—':money(result));
+    if(marginEl)marginEl.textContent=(result!==null&&Number(v[0])?(result/Number(v[0])*100).toFixed(2)+'%':'—');
+    return;
   }
 
-  const v=finance(m);
   if(!v){
-    $('rev').textContent='Rp 0';
-    $('out').textContent='Rp 0';
-    $('net').textContent='Rp 0';
-    $('hpp').textContent='—';
-    $('profit').textContent='—';
+    set('rev','Rp 0');set('out','Rp 0');set('net','Rp 0');set('hpp','—');set('profit','—');
     if(marginEl)marginEl.textContent='—';
     return;
   }
-
-  const h=hppForChannel(m);
-  $('rev').textContent=money(v[0]);
-  $('out').textContent=money(v[1]);
-  $('net').textContent=money(v[2]);
-
-  if(offline){
-    const profit=h.measured ? v[0]-h.total-v[3] : null;
-    const margin=v[2]!==0 && profit!==null ? (profit/v[2])*100 : null;
-    $('hpp').textContent=h.measured?money(h.total):'—';
-    $('profit').textContent=profit===null?'—':money(profit);
-    if(marginEl)marginEl.textContent=margin===null?'—':margin.toFixed(2)+'%';
-    return;
-  }
-
-  if(h.known){
-    const profit=v[2]-h.total;
-    const margin=v[2]?(profit/v[2])*100:0;
-    $('hpp').textContent=money(h.total);
-    $('profit').textContent=money(profit);
-    if(marginEl)marginEl.textContent=margin.toFixed(2)+'%';
+  set('rev',money(v[0]));set('out',money(v[1]));set('net',money(v[2]));
+  if(h&&h.known){
+    const profit=Number(v[2])-Number(h.total);
+    set('hpp',money(h.total));set('profit',money(profit));
+    if(marginEl)marginEl.textContent=(Number(v[2])?(profit/Number(v[2])*100).toFixed(2)+'%':'0.00%');
   }else{
-    $('hpp').textContent='—';
-    $('profit').textContent='—';
+    set('hpp','—');set('profit','—');
     if(marginEl)marginEl.textContent='—';
   }
 }
@@ -1083,35 +1124,32 @@ function renderOnlineFinalSummary(){
   if(p)p.style.color=profit<0?'#b42318':'';
 }
 function renderMonthly(){
-  const ms=months();
+  const ms=monthsForChannel($('channel').value);
   const offline=$('channel').value==='Offline';
+  const tbody=$('monthly');
+  const wrap=$('monthlyTable')?.closest('.tablewrap');
 
   if(!ms.length){
-    $('monthly').innerHTML='<tr><td colspan="10" class="empty">Belum ada data '+$('channel').value+'.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="10" class="empty">Belum ada data '+esc($('channel').value)+'.</td></tr>';
+    if(wrap)wrap.scrollLeft=0;
     return;
   }
 
-  $('monthly').innerHTML=ms.map(m=>{
+  tbody.innerHTML=ms.map(m=>{
     if(offline){
       const locked=offlineLockedMonth(m);
       if(locked){
-        const add=offlineNewSummary(m);
-        const revenue=locked.revenue+add.revenue;
-        const hpp=locked.hpp+add.hpp;
-        const gross=locked.grossProfit+add.profit;
-        const outside=locked.outsideHpp;
-        const result=locked.result+add.profit;
-        const marginGross=revenue?gross/revenue*100:0;
-        const marginResult=revenue?result/revenue*100:0;
+        const summary=FFCore.offlineLockedFinance(m,offlineNewSummary(m));
         return '<tr>'+
-          '<td><b>'+label(m)+'</b></td>'+
-          '<td>'+money(revenue)+'</td>'+
-          '<td>'+money(0)+'</td>'+
-          '<td><b>'+money(revenue)+'</b></td>'+
-          '<td>'+money(hpp)+'</td>'+
-          '<td><b>'+money(gross)+'</b><div class="hint" style="margin-top:4px">Margin laba kotor '+marginGross.toFixed(2)+'%</div></td>'+
-          '<td>'+money(outside)+'</td>'+
-          '<td><b>'+money(result)+'</b><div class="hint" style="margin-top:4px">Margin hasil usaha '+marginResult.toFixed(2)+'%</div></td>'+
+          '<td><b>'+esc(label(m))+'</b></td>'+
+          '<td>'+money(summary.revenue)+'</td>'+
+          '<td class="offline-hidden-col" aria-hidden="true"></td>'+
+          '<td class="offline-hidden-col" aria-hidden="true"></td>'+
+          '<td>'+money(summary.hpp)+'</td>'+
+          '<td><b>'+money(summary.grossProfit)+'</b><div class="hint" style="margin-top:4px">Margin laba kotor '+(summary.revenue?summary.grossProfit/summary.revenue*100:0).toFixed(2)+'%</div></td>'+
+          '<td>'+money(summary.outsideHpp)+'</td>'+
+          '<td><b>'+money(summary.result)+'</b><div class="hint" style="margin-top:4px">Margin hasil usaha '+(summary.revenue?summary.result/summary.revenue*100:0).toFixed(2)+'%</div></td>'+
+          '<td class="offline-hidden-col" aria-hidden="true"></td>'+
           '<td><button class="mini viewbtn" type="button" data-view-month="'+esc(m)+'">👁 Lihat Data</button></td>'+
         '</tr>';
       }
@@ -1119,101 +1157,77 @@ function renderMonthly(){
 
     const v=finance(m);
     if(!v)return '';
-
     const h=hppForChannel(m);
-    const modal=offline?(h.measured?h.total:null):(h.known?h.total:null);
 
     if(offline){
-      const gross=modal!==null?v[0]-modal:null;
+      const hppKnown=!!(h&&h.known&&h.measured);
+      const modal=hppKnown?Number(h.total):null;
+      const gross=modal!==null?Number(v[0])-modal:null;
       const outside=Number(v[3]||0);
       const result=gross!==null?gross-outside:null;
       return '<tr>'+
-        '<td><b>'+label(m)+'</b></td>'+
+        '<td><b>'+esc(label(m))+'</b></td>'+
         '<td>'+money(v[0])+'</td>'+
-        '<td>'+money(v[1])+'</td>'+
-        '<td><b>'+money(v[2])+'</b></td>'+
+        '<td class="offline-hidden-col" aria-hidden="true"></td>'+
+        '<td class="offline-hidden-col" aria-hidden="true"></td>'+
         '<td>'+(modal!==null?money(modal):'—')+'</td>'+
-        '<td>'+(gross!==null?money(gross):'—')+'</td>'+
+        '<td>'+(gross!==null?'<b>'+money(gross)+'</b>':'—')+'</td>'+
         '<td>'+money(outside)+'</td>'+
-        '<td>'+(result!==null?money(result):'—')+'</td>'+
+        '<td>'+(result!==null?'<b>'+money(result)+'</b>':'—')+'</td>'+
+        '<td class="offline-hidden-col" aria-hidden="true"></td>'+
         '<td><button class="mini viewbtn" type="button" data-view-month="'+esc(m)+'">👁 Lihat Data</button></td>'+
       '</tr>';
     }
 
-    const profit=modal!==null?v[2]-modal:null;
-    const marginBase=Number(v[2]);
-    const margin=profit!==null&&marginBase!==0?profit/marginBase*100:0;
+    const known=!!(h&&h.known);
+    const profit=known?Number(v[2])-Number(h.total):null;
+    const margin=profit!==null&&Number(v[2])!==0?profit/Number(v[2])*100:0;
     return '<tr>'+
-      '<td><b>'+label(m)+'</b></td>'+
+      '<td><b>'+esc(label(m))+'</b></td>'+
       '<td>'+money(v[0])+'</td>'+
       '<td>'+money(v[1])+'</td>'+
       '<td><b>'+money(v[2])+'</b></td>'+
-      '<td>'+(modal!==null?money(modal):'—')+'</td>'+
-      '<td class="online-hidden-col" style="display:none" aria-hidden="true"></td>'+
-      '<td class="online-hidden-col" style="display:none" aria-hidden="true"></td>'+
-      '<td class="online-hidden-col" style="display:none" aria-hidden="true"></td>'+
+      '<td>'+(known?money(h.total):'—')+'</td>'+
+      '<td class="online-hidden-col" aria-hidden="true"></td>'+
+      '<td class="online-hidden-col" aria-hidden="true"></td>'+
+      '<td class="online-hidden-col" aria-hidden="true"></td>'+
       '<td><b>'+(profit!==null?money(profit):'—')+'</b><div class="hint" style="margin-top:4px">'+(profit!==null?'Margin '+margin.toFixed(2)+'%':'HPP belum tersedia')+'</div></td>'+
       '<td><button class="mini viewbtn" type="button" data-view-month="'+esc(m)+'">👁 Lihat Data</button></td>'+
     '</tr>';
-  }).join('') +
-    (offline ? '<tr style="border-top:3px solid #0b7a45;background:#f0fbf5">'+
-      '<td><b>TOTAL JANUARI–AGUSTUS</b></td>'+
+  }).join('')+(offline ?
+    '<tr class="monthly-total-row">'+
+      '<td><b>TOTAL JAN–AGS 2026</b></td>'+
       '<td><b>'+money(offlineCombinedLockedSummary().revenue)+'</b></td>'+
-      '<td><b>Rp 0</b></td>'+
-      '<td><b>'+money(offlineCombinedLockedSummary().revenue)+'</b></td>'+
+      '<td class="offline-hidden-col" aria-hidden="true"></td>'+
+      '<td class="offline-hidden-col" aria-hidden="true"></td>'+
       '<td><b>'+money(offlineCombinedLockedSummary().hpp)+'</b></td>'+
       '<td><b>'+money(offlineCombinedLockedSummary().grossProfit)+'</b></td>'+
       '<td><b>'+money(offlineCombinedLockedSummary().outsideHpp)+'</b></td>'+
       '<td><b>'+money(offlineCombinedLockedSummary().result)+'</b></td>'+
+      '<td class="offline-hidden-col" aria-hidden="true"></td>'+
       '<td>—</td>'+
     '</tr>' : '');
+  if(wrap)wrap.scrollLeft=0;
 }
-
 
 /* =====================================================
    PILIH BULAN
 ===================================================== */
 
 function renderMonthOptions(){
-
-  const ms =
-    months();
-
-  const current =
-    $('month').value;
-
-
-  $('month').innerHTML =
-
-    ms.map(m => {
-
-      return `
-        <option value="${m}">
-          ${label(m)}
-        </option>
-      `;
-
-    }).join('');
-
-
-  if(
-    current &&
-    ms.includes(current)
-  ){
-
-    $('month').value =
-      current;
-
-  }else if(ms.length){
-
-    $('month').value =
-      ms[0];
-
-  }
-
+  const ms=monthsForChannel($('channel').value);
+  const monthEl=$('month');
+  if(!monthEl)return;
+  const current=monthEl.value;
+  monthEl.innerHTML=ms.map(m=>'<option value="'+m+'">'+esc(label(m))+'</option>').join('');
+  if(current&&ms.includes(current))monthEl.value=current;
+  else monthEl.value=ms[ms.length-1]||'';
 }
 
 
+/* =====================================================
+   RENDER
+===================================================== */
 /* =====================================================
    RENDER
 ===================================================== */
@@ -1704,15 +1718,15 @@ function showRuntimeError(e){
 
 async function bootRekap(){
   try{
-    $('month').onchange = render;
-    $('channel').onchange = render;
-    $('reload').onclick = init;
     const monthEl = $('month');
     const channelEl = $('channel');
     const reloadEl = $('reload');
 
     if(monthEl) monthEl.onchange = render;
-    if(channelEl) channelEl.onchange = render;
+    if(channelEl) channelEl.onchange = ()=>{
+      renderMonthOptions();
+      render();
+    };
     if(reloadEl) reloadEl.onclick = init;
 
     await init();
