@@ -480,6 +480,37 @@ const FF_OFFLINE_HPP_NEW = {
   'cibay':2900
 };
 
+function ffNormOfflineName(value){
+  return String(value??'').trim().toLowerCase()
+    .replace(/\bisi\b/g,' ')
+    .replace(/\bpcs?\b/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function ffOfflineMasterTarget(value){
+  const raw=String(value??'').trim().toLowerCase()
+    .replace(/\s+/g,' ')
+    .replace(/\s*\+\s*/g,'+');
+  const n=ffNormOfflineName(raw).replace(/\s*\+\s*/g,'+').trim();
+
+  if(/^naget\s+10$/.test(n))return 'naget 10';
+  if(/^naget\s+12$/.test(n))return 'naget 12';
+  if(/^naget\s+20$/.test(n))return 'naget 20';
+  if(/^naget\s+25\+saus$/.test(n))return 'naget 25+saus';
+  if(/^naget\s+30$/.test(n))return 'naget 30';
+  if(/^naget\s+40$/.test(n))return 'naget 40';
+  if(/^naget\s+50$/.test(n))return 'naget 50';
+
+  if(n==='cireng'||n==='cireng 10'||n==='cireng isi')return 'cireng isi';
+  if(n==='cireng biasa')return 'cireng biasa';
+  if(n==='cibay'||n==='cibay 10')return 'cibay';
+
+  // Cireng crispy is classified as Offline, but no separate locked HPP
+  // exists for it, so do not assign another product's HPP by assumption.
+  return null;
+}
+
 function ffOfflineHppUnitForMonth(name,m){
   const target=ffOfflineMasterTarget(name);
   if(!target)return null;
