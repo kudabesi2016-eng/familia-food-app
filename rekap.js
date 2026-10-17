@@ -482,32 +482,28 @@ const FF_OFFLINE_HPP_NEW = {
 
 function ffNormOfflineName(value){
   return String(value??'').trim().toLowerCase()
-    .replace(/\bisi\b/g,' ')
     .replace(/\bpcs?\b/g,' ')
+    .replace(/\s*\+\s*/g,'+')
     .replace(/\s+/g,' ')
     .trim();
 }
 
 function ffOfflineMasterTarget(value){
-  const raw=String(value??'').trim().toLowerCase()
-    .replace(/\s+/g,' ')
-    .replace(/\s*\+\s*/g,'+');
-  const n=ffNormOfflineName(raw).replace(/\s*\+\s*/g,'+').trim();
+  const n=ffNormOfflineName(value);
 
-  if(/^naget\s+10$/.test(n))return 'naget 10';
-  if(/^naget\s+12$/.test(n))return 'naget 12';
-  if(/^naget\s+20$/.test(n))return 'naget 20';
-  if(/^naget\s+25\+saus$/.test(n))return 'naget 25+saus';
-  if(/^naget\s+30$/.test(n))return 'naget 30';
-  if(/^naget\s+40$/.test(n))return 'naget 40';
-  if(/^naget\s+50$/.test(n))return 'naget 50';
+  if(/^naget(?:\s+isi)?\s+10$/.test(n))return 'naget 10';
+  if(/^naget(?:\s+isi)?\s+12$/.test(n))return 'naget 12';
+  if(/^naget(?:\s+isi)?\s+20$/.test(n))return 'naget 20';
+  if(/^naget(?:\s+isi)?\s+25\+saus$/.test(n))return 'naget 25+saus';
+  if(/^naget(?:\s+isi)?\s+30$/.test(n))return 'naget 30';
+  if(/^naget(?:\s+isi)?\s+40$/.test(n))return 'naget 40';
+  if(/^naget(?:\s+isi)?\s+50$/.test(n))return 'naget 50';
 
-  if(n==='cireng'||n==='cireng 10'||n==='cireng isi')return 'cireng isi';
+  if(n==='cireng isi 10'||n==='cireng isi')return 'cireng isi';
   if(n==='cireng biasa')return 'cireng biasa';
-  if(n==='cibay'||n==='cibay 10')return 'cibay';
+  if(n==='cibay isi 10'||n==='cibay')return 'cibay';
 
-  // Cireng crispy is classified as Offline, but no separate locked HPP
-  // exists for it, so do not assign another product's HPP by assumption.
+  // Cireng crispy has no separate approved snapshot HPP; don't guess its cost.
   return null;
 }
 
@@ -795,6 +791,8 @@ window.viewOnlineMonth=function(m){
 
   const month=/^\d{4}-\d{2}$/.test(String(m||''))?String(m):$('month').value;
   const monthLabel=label(month);
+  const modeBadge=$('onlineConnectionMode');
+  if(modeBadge)modeBadge.textContent=$('channel').value==='Offline'?'🟢 Offline':'🔵 Online';
   card.style.display='block';
   card.scrollIntoView({behavior:'smooth',block:'start'});
 
