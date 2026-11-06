@@ -239,7 +239,7 @@
   }
 
   function financeFor(month, channel, data){
-    const {sales=[],olds=[],expenses=[],products=[],hpps=[]} = data || {};
+    const {sales=[],olds=[],expenses=[],expenseItems=[],products=[],hpps=[]} = data || {};
     let rev=0,out=0,net=0,hpp=0,hppKnown=true;
     let expenseInHpp=0,expenseOutsideHpp=0;
     const productRows=[];
@@ -263,7 +263,17 @@
       }
       const ex = (expenses || []).filter(x => expenseMonth(x) === month && isCashExpense(x));
       const expenseTotal = ex.reduce((a,x)=>a+Number(x.nominal||0),0);
-      expenseInHpp = ex.filter(expenseIsInHpp).reduce((a,x)=>a+Number(x.nominal||0),0);
+      expenseInHpp = ex.reduce((sum,row)=>{
+        const nominal=Math.max(0,Number(row.nominal||0));
+        const items=expenseItems.filter(item=>String(item.pengeluaran_id)===String(row.id));
+        if(items.length){
+          const detailTotal=items.reduce((a,item)=>a+Math.max(0,Number(item.subtotal||0)),0);
+          const bahanTotal=items.filter(item=>norm(item.kategori)==='bahan baku')
+            .reduce((a,item)=>a+Math.max(0,Number(item.subtotal||0)),0);
+          if(detailTotal>0)return sum+Math.min(nominal,Math.max(0,Math.round(nominal*bahanTotal/detailTotal)));
+        }
+        return sum+(expenseIsInHpp(row)?nominal:0);
+      },0);
       expenseOutsideHpp = expenseTotal - expenseInHpp;
       out += expenseTotal;
       net -= expenseTotal;
