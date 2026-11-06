@@ -31,9 +31,12 @@ const offlineLockedMonth = FFCore.offlineLockedMonth;
 function isHistoricalSource(s){
   return ['online_standard_finance','online_standard_product','online_historical_finance','online_historical_product','online_historical_import','seller_center','online_historical_cash'].includes(String(s||''));
 }
+function offlineSalesRows(){
+  return FFCore.dedupeOfflineBatchDuplicates(sales||[]).rows
+    .filter(x=>String(x.channel||'')==='Offline');
+}
 function offlineNewRowsForMonth(m){
-  return (sales||[]).filter(x=>
-    String(x.channel||'')==='Offline' &&
+  return offlineSalesRows().filter(x=>
     !isHistoricalSource(x.source) &&
     monthOfSaleRow(x)===m
   );
@@ -251,7 +254,7 @@ function isCashExpense(x){
 }
 function offlineFinance(m){
   const oldRows=(olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isOfflineLegacyHistoricalRow(x));
-  const newRows=(sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m);
+  const newRows=offlineNewRowsForMonth(m);
   const expenseRows=(expenses||[]).filter(x=>String(x.periode||'').trim()===m && isCashExpense(x));
   const oldRev=oldRows.reduce((a,x)=>a+Math.round(Number(x.nominal ?? x.omzet ?? x.total ?? 0)),0);
   const newRev=newRows.reduce((a,x)=>a+Math.round(Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0)))),0);
@@ -550,7 +553,7 @@ function offlineHpp(m){
       if(unit)total+=Math.round(qty*unit);
     });
 
-    (sales||[]).filter(x=>String(x.channel||'')==='Offline' && monthOfSaleRow(x)===m).forEach(x=>{
+    offlineSalesRows().filter(x=>monthOfSaleRow(x)===m).forEach(x=>{
       const qty=Math.max(0,Number(x.qty||0));
       const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.product_name,x.variation) : true;
       if(!mappedOffline){
@@ -618,6 +621,12 @@ function updateChannelUI(){
   $('noticeText').innerHTML=offline
     ? 'Pemasukan = Data Lama Offline + transaksi Offline baru.<br><b>Laba Kotor = Pemasukan − HPP.</b><br><b>Hasil Usaha = Laba Kotor − Beban di luar HPP.</b><br>HPP dan beban operasional ditampilkan terpisah agar tidak dihitung dua kali.<br>Margin Hasil Usaha = Hasil Usaha ÷ Pemasukan × 100%.'
     : 'Pemasukan Online historis berasal dari Data Lama Online STANDARD; penerimaan baru sudah berupa Uang Bersih setelah potongan.<br><b>Profit = Uang Bersih − HPP/Modal.</b><br>Produk keluar dan penerimaan uang adalah sumber berbeda; produk keluar dipakai untuk modal/HPP, bukan dijumlahkan lagi sebagai pemasukan.';
+  if(offline){
+    const duplicateIds=FFCore.dedupeOfflineBatchDuplicates(sales||[]).duplicateIds;
+    if(duplicateIds.length){
+      $('noticeText').innerHTML+='<br><b style="color:#9a6700">Audit duplikat:</b> '+duplicateIds.length+' baris identik pada order yang sama dikeluarkan dari hitungan. Data database tetap disimpan. ID: '+duplicateIds.join(', ')+'.';
+    }
+  }
 }
 
 /* =====================================================
@@ -1047,8 +1056,8 @@ function renderTopProdukKonsumen(){
     const cur=productsMap.get(name)||{name,qty:0,revenue:0};
     cur.qty+=qty; cur.revenue+=revenue; productsMap.set(name,cur);
   });
-  (sales||[]).forEach(x=>{
-    if(String(x.channel||'')!=='Offline'||!ffTopRangeOffline(x.tanggal))return;
+  offlineSalesRows().forEach(x=>{
+    if(!ffTopRangeOffline(x.tanggal))return;
     const name=ffTopProductName(x.product_name||x.variation);
     if(!name)return;
     const qty=Math.max(0,Math.round(Number(x.qty)||0));
@@ -1081,8 +1090,8 @@ function renderTopProdukKonsumen(){
     const cur=customersMap.get(name)||{name,qty:0,revenue:0,orders:0};
     cur.qty+=qty; cur.revenue+=revenue; cur.orders+=1; customersMap.set(name,cur);
   });
-  (sales||[]).forEach(x=>{
-    if(String(x.channel||'')!=='Offline'||!ffTopRangeOffline(x.tanggal))return;
+  offlineSalesRows().forEach(x=>{
+    if(!ffTopRangeOffline(x.tanggal))return;
     const name=ffTopCustomerName(namesBySale.get(String(x.id))||'Tanpa Nama');
     if(name==='Tanpa Nama')return;
     const qty=Math.max(0,Math.round(Number(x.qty)||0));
@@ -1460,7 +1469,7 @@ function buildTransactionRecapRows(){
   // sebagai beberapa baris penjualan dengan order_id yang sama.
   // Rekap menyatukannya menjadi SATU transaksi agar tidak double count.
   const groupedOffline=new Map();
-  (sales||[]).forEach((x,i)=>{
+  FFCore.dedupeOfflineBatchDuplicates(sales||[]).rows.forEach((x,i)=>{
     const m=monthOfSaleRow(x);
     if(!FF.isMonth(m))return;
     const src=String(x.source||'').trim();
