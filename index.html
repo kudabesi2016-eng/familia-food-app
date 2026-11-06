@@ -402,8 +402,10 @@ async function loadDashboard(){
     const opSupplier=supplierRows.filter(active).length;
 
     const isOfflineLegacyHistoricalRow = x => {
-      const n=String(x?.jenis||'').trim().toLowerCase().replace(/\\s+/g,' ');
-      return !['naget 20','naget isi 20','naget 25+saus','naget isi 25+saus','naget 25+ saus','naget isi 25+ saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(n);
+      const n=String(x?.jenis||'').trim().toLowerCase()
+        .replace(/\s+/g,' ')
+        .replace(/\s*\+\s*/g,'+');
+      return !['naget 20','naget isi 20','naget 25+saus','naget isi 25+saus','naget 30','naget isi 30','naget 40','naget isi 40','naget 50','naget isi 50'].includes(n);
     };
     // OFFLINE: Data Lama + transaksi baru.
     // Ringkasan keuangan Offline Jan–Agustus sudah dikunci sebagai dasar resmi.
