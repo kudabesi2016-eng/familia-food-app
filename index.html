@@ -351,15 +351,16 @@ async function loadDashboard(){
   document.getElementById('statusText').textContent='Memuat data dari database...';
   try{
     const results=await Promise.allSettled([
-      fetchAll('produk'),fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran'),fetchAll('produk'),fetchAll('hpp'),
+      fetchAll('produk'),fetchAll('penjualan'),fetchAll('data_lama'),fetchAll('pengeluaran'),fetchAll('pengeluaran_item'),fetchAll('produk'),fetchAll('hpp'),
       fetchAll('ff_pembelian'),fetchAll('ff_retur_penjualan'),fetchAll('ff_supplier')
     ]);
-    const [rp,rs,rd,re,rprod,rhpp,rpurchase,rreturn,rsupplier]=results;
+    const [rp,rs,rd,re,rei,rprod,rhpp,rpurchase,rreturn,rsupplier]=results;
     const errors=[];
     const products=rp.status==='fulfilled'?rp.value:[]; if(rp.status!=='fulfilled') errors.push('Produk');
     const sales=rs.status==='fulfilled'?rs.value:[]; if(rs.status!=='fulfilled') errors.push('Penjualan');
     const old=rd.status==='fulfilled'?rd.value:[]; if(rd.status!=='fulfilled') errors.push('Data Lama');
     const expenseRows=re.status==='fulfilled'?re.value:[]; if(re.status!=='fulfilled') errors.push('Pengeluaran');
+    const expenseItemRows=rei.status==='fulfilled'?rei.value:[]; if(rei.status!=='fulfilled') errors.push('Rincian Pengeluaran');
     const productMaster=rprod.status==='fulfilled'?rprod.value:[]; if(rprod.status!=='fulfilled') errors.push('Produk/HPP');
     const hppRows=rhpp.status==='fulfilled'?rhpp.value:[];
     const purchaseRows=rpurchase.status==='fulfilled'?rpurchase.value:[];
@@ -378,6 +379,23 @@ async function loadDashboard(){
         cara!=='hutang' &&
         kategori!=='pembayaran hutang';
     });
+    const expenseItemsByParent=new Map();
+    expenseItemRows.forEach(item=>{
+      const key=String(item.pengeluaran_id);
+      if(!expenseItemsByParent.has(key))expenseItemsByParent.set(key,[]);
+      expenseItemsByParent.get(key).push(item);
+    });
+    const expenseHppAmount=row=>{
+      const nominal=Math.max(0,Math.round(num(row.nominal)));
+      const items=expenseItemsByParent.get(String(row.id))||[];
+      if(items.length){
+        const itemTotal=items.reduce((sum,item)=>sum+Math.max(0,num(item.subtotal)),0);
+        const bahanTotal=items.filter(item=>String(item.kategori||'').trim().toLowerCase()==='bahan baku')
+          .reduce((sum,item)=>sum+Math.max(0,num(item.subtotal)),0);
+        if(itemTotal>0)return Math.min(nominal,Math.max(0,Math.round(nominal*bahanTotal/itemTotal)));
+      }
+      return String(row.kategori||'').trim().toLowerCase()==='bahan baku'?nominal:0;
+    };
     const opPurchase=purchaseRows.filter(x=>String(x.tanggal||'').slice(0,7)===currentMonth && String(x.status||'Aktif').toLowerCase()==='aktif').reduce((s,x)=>s+Math.round(num(x.total)),0);
     const opExpense=validExpenseRows.filter(x=>String(x.periode||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.nominal)),0);
     const opReturn=returnRows.filter(x=>String(x.tanggal||'').slice(0,7)===currentMonth).reduce((s,x)=>s+Math.round(num(x.nominal)),0);
@@ -550,10 +568,19 @@ async function loadDashboard(){
     const dashboardOffHpp=offlineLocked.hpp+offNewHpp;
     // Snapshot Jan–Agustus sudah mencakup beban periode tersebut.
     // Untuk periode setelah Agustus, tambahkan pengeluaran tunai di luar Bahan Baku.
-    const offNewOutsideExpense=validExpenseRows
-      .filter(x=>String(x.periode||'').trim()>ONLINE_HISTORICAL_END)
-      .filter(x=>String(x.kategori||'').trim().toLowerCase()!=='bahan baku')
-      .reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    const offNewExpenseRows=validExpenseRows
+      .filter(x=>String(x.periode||'').trim()>ONLINE_HISTORICAL_END);
+    const offNewOutsideExpense=offNewExpenseRows.reduce((sum,x)=>{
+      const nominal=Math.max(0,Math.round(num(x.nominal)));
+      return sum+Math.max(0,nominal-expenseHppAmount(x));
+    },0);
+    const offNewBahanExpense=offNewExpenseRows.reduce((sum,x)=>sum+expenseHppAmount(x),0);
+    const expenseItemMismatch=offNewExpenseRows.filter(x=>{
+      const items=expenseItemsByParent.get(String(x.id))||[];
+      if(!items.length)return String(x.kategori||'').trim().toLowerCase()==='multi kategori';
+      const detailTotal=items.reduce((sum,item)=>sum+Math.max(0,num(item.subtotal)),0);
+      return Math.abs(detailTotal-Math.max(0,num(x.nominal)))>1;
+    }).length;
     const dashboardOffExpense=offlineLocked.hpp+offlineLocked.outsideHpp+offNewHpp+offNewOutsideExpense;
     const dashboardOffNet=offlineLocked.result+offNewProfit-offNewOutsideExpense;
     const dashboardOffProfit=offlineLocked.result+offNewProfit-offNewOutsideExpense;
@@ -597,6 +624,10 @@ async function loadDashboard(){
       let auditText='🔒 Snapshot Offline Jan–Agustus 2026 tetap menjadi dasar Rekap; transaksi Offline baru ditambahkan dari database.';
       if(snapshotGap!==0){
         auditText+=' ⚠️ Rekonsiliasi Data Lama: database '+rupiah(offOldRevenue)+'; snapshot '+rupiah(offlineLocked.revenue)+'; selisih '+rupiah(snapshotGap)+'. Snapshot dan data sumber tidak diubah.';
+      }
+      auditText+=' Pengeluaran bahan baku baru terpisah: '+rupiah(offNewBahanExpense)+'; beban di luar HPP baru: '+rupiah(offNewOutsideExpense)+'.';
+      if(expenseItemMismatch){
+        auditText+=' ⚠️ '+expenseItemMismatch+' pengeluaran belum cocok dengan rincian item; periksa detailnya.';
       }
       if(offlineDedupe.duplicateIds.length){
         auditText+=' ⚠️ '+offlineDedupe.duplicateIds.length+' baris transaksi identik pada order yang sama tidak dihitung ulang. Baris database tetap disimpan. ID: '+offlineDedupe.duplicateIds.join(', ')+'.';
