@@ -142,6 +142,7 @@ assert(bahan.includes('Arsipkan'),'Bahan Baku archive action missing');
 assert(!/\.from\(["']bahan_baku["']\)\s*\.delete\(/.test(bahan),'Bahan Baku must not hard-delete material records');
 
 const rekapPage=await read('rekap.html');
+const rekapModule=await read('rekap.js');
 assert(rekapPage.includes('id="exportExcel"'),'Rekap Excel export button missing');
 assert(rekapPage.includes('id="exportPdf"'),'Rekap PDF export button missing');
 assert(rekapPage.includes('xlsx-0.20.3'),'SheetJS Excel library missing');
