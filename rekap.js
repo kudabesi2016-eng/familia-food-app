@@ -185,6 +185,7 @@ const data = () => ({
   sales,
   olds,
   expenses,
+  expenseItems,
   products,
   hpps,
   purchases,
