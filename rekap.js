@@ -526,7 +526,7 @@ function ffOfflineHppUnitForMonth(name,m){
   if(!p)return null;
   const h=(hpps||[]).find(x=>String(x.produk_id)===String(p.id));
   if(!h)return null;
-  if(h.hpp_unit!=null && Number(h.hpp_unit)>0)return Math.trunc(Number(h.hpp_unit));
+  if(h.hpp_unit!=null && Number(h.hpp_unit)>0)return Math.round(Number(h.hpp_unit));
   return null;
 }
 
@@ -555,6 +555,14 @@ function offlineHpp(m){
       const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.product_name,x.variation) : true;
       if(!mappedOffline){
         if(qty>0)known=false;
+        return;
+      }
+
+      const recordedModal=x.modal_hpp!=null
+        ? Number(x.modal_hpp)
+        : (x.hpp!=null ? qty*Number(x.hpp) : null);
+      if(recordedModal!=null && Number.isFinite(recordedModal) && (recordedModal>0 || qty<=0)){
+        total+=Math.round(recordedModal);
         return;
       }
 
