@@ -33,10 +33,15 @@ for(const file of htmlFiles){
   }
 
   const scripts=[...text.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/gi)];
+  let inlineIndex=0;
   for(const [,attrs,body] of scripts){
     if(!body.trim() || /src\s*=/.test(attrs)) continue;
+    inlineIndex++;
     try{ new Function(body); }
-    catch(e){ fail('Inline script syntax error in '+file+': '+e.message); }
+    catch(e){
+      const stack=String(e?.stack||'').split('\n').slice(0,4).join(' | ');
+      fail('Inline script #'+inlineIndex+' syntax error in '+file+' (chars '+body.length+'): '+e.message+' | '+stack);
+    }
   }
 }
 
