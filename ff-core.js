@@ -156,7 +156,11 @@
     }));
   }
   function offlineNewRows(sales, month){
-    return (sales || []).filter(x => x.channel === 'Offline' && monthOf(x.tanggal) === month)
+    const m=String(month||'');
+    // Data Lama + snapshot Offline resmi telah menutup Jan–Agustus 2026.
+    // Manual rows backfilled ke rentang ini tetap untuk detail/audit, bukan tambahan omzet.
+    if(m>='2026-01' && m<=ONLINE_HISTORICAL_END) return [];
+    return (sales || []).filter(x => x.channel === 'Offline' && monthOf(x.tanggal) === m)
       .map(x => ({
         source:x.source || 'manual', channel:'Offline', tanggal:monthOf(x.tanggal),
         product_id:x.produk_id, product_name:x.product_name || '-', qty:Number(x.qty || 0),
