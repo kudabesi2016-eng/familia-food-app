@@ -38,7 +38,7 @@ for(const file of htmlFiles){
   for(const [,attrs,body] of scripts){
     if(!body.trim() || /src\s*=/.test(attrs)) continue;
     inlineIndex++;
-    try{ new Script('(function(){\\n'+body+'\\n})', {filename:file+'#inline-'+inlineIndex}); }
+    try{ new Script(body, {filename:file+'#inline-'+inlineIndex}); }
     catch(e){
       const stack=String(e?.stack||'').split('\n').slice(0,4).join(' | ');
       fail('Inline script #'+inlineIndex+' syntax error in '+file+' (chars '+body.length+'): '+e.message+' | '+stack);
