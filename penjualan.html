@@ -925,11 +925,31 @@ async function saveAllOfflineDrafts(){
     if(btn)btn.disabled=true;
 
     if(sales.length){
-      const sr=await supabaseClient.from('penjualan').insert(sales.map(x=>x.data)).select('id');
-      if(sr.error)throw sr.error;
-      const ids=(sr.data||[]).map(x=>Number(x.id)).filter(Boolean);
-      if(ids.length!==sales.length)throw new Error('Tidak semua Pemasukan berhasil disimpan.');
-      for(let i=0;i<ids.length;i++){insertedSales.push(ids[i]);if(sales[i].pelanggan)await saveCustomerLink(ids[i],sales[i].pelanggan);}
+      const keys=sales.map(x=>String(x?.data?.import_key||'').trim());
+      if(keys.some(k=>!k) || new Set(keys).size!==keys.length){
+        throw new Error('Kunci transaksi tidak valid atau ada baris yang sama dalam daftar. Muat ulang daftar transaksi sebelum menyimpan.');
+      }
+      const existingResult=await supabaseClient.from('penjualan')
+        .select('id,import_key').in('import_key',keys);
+      if(existingResult.error)throw existingResult.error;
+      const idByKey=new Map((existingResult.data||[]).map(x=>[String(x.import_key),Number(x.id)]));
+      const pending=sales.filter(x=>!idByKey.has(String(x.data.import_key)));
+      if(pending.length){
+        const sr=await supabaseClient.from('penjualan').insert(pending.map(x=>x.data)).select('id,import_key');
+        if(sr.error)throw sr.error;
+        const inserted=sr.data||[];
+        if(inserted.length!==pending.length)throw new Error('Tidak semua Pemasukan berhasil disimpan.');
+        inserted.forEach(x=>{
+          const id=Number(x.id);
+          idByKey.set(String(x.import_key),id);
+          if(id)insertedSales.push(id);
+        });
+      }
+      for(const draft of sales){
+        const id=idByKey.get(String(draft.data.import_key));
+        if(!id)throw new Error('ID transaksi tidak ditemukan setelah penyimpanan.');
+        if(draft.pelanggan)await saveCustomerLink(id,draft.pelanggan);
+      }
     }
 
     for(const x of expenses){
@@ -1045,14 +1065,18 @@ $('save').onclick=async()=>{
     if(nama&&(!customerDbReady||!customerLinksReady))return msg('Master Pelanggan belum sepenuhnya terhubung.',true);
     const hargaBulat=Math.round(harga),hppBulat=Math.round(hpp),total=qty*hargaBulat,hppTotal=qty*hppBulat,laba=total-hppTotal;
     const draftEdit=window.__offlineDraftEdit;
-    let orderId=(draftEdit?.type==='sale')
-      ? (window.__offlineDraftSales.find(x=>String(x._seq)===String(draftEdit.seq))?.data?.order_id||'')
-      : ensureOfflineOrder(nama,tanggal);
+    const existingDraft=(draftEdit?.type==='sale')
+      ? window.__offlineDraftSales.find(x=>String(x._seq)===String(draftEdit.seq))
+      : null;
+    const draftSeq=existingDraft?._seq:(String(Date.now())+'-'+Math.random().toString(36).slice(2,9));
+    let orderId=existingDraft?.data?.order_id||ensureOfflineOrder(nama,tanggal);
     if(!orderId&&!wasEdit)orderId=ensureOfflineOrder(nama,tanggal);
+    const importKey=existingDraft?.data?.import_key||
+      ('manual|'+String(channel||'Offline')+'|'+String(orderId||'')+'|'+String(p.id)+'|'+String(draftSeq));
 
     const data={tanggal,produk_id:p.id,qty,channel,harga:hargaBulat,hpp:hppTotal,laba,total,source:'manual',
       order_id:orderId||null,product_name:p.nama_produk,omzet_produk:total,modal_hpp:hppTotal,
-      uang_bersih:total,biaya_platform:0,profit_online:channel==='Online'?laba:null};
+      uang_bersih:total,biaya_platform:0,profit_online:channel==='Online'?laba:null,import_key:importKey};
 
     if(!wasEdit && draftEdit?.type==='sale'){
       const i=window.__offlineDraftSales.findIndex(x=>String(x._seq)===String(draftEdit.seq));
@@ -1070,13 +1094,15 @@ $('save').onclick=async()=>{
       const oldSale=await supabaseClient.from('penjualan').select('*').eq('id',editId).maybeSingle();
       if(oldSale.error)throw oldSale.error;
       if(oldSale.data?.order_id) data.order_id=oldSale.data.order_id;
+      if(oldSale.data?.import_key) data.import_key=oldSale.data.import_key;
+      else delete data.import_key;
       const up=await supabaseClient.from('penjualan').update(data).eq('id',editId);
       if(up.error)throw up.error;
       try{await saveCustomerLink(editId,nama);}catch(e){await supabaseClient.from('penjualan').update(oldSale.data).eq('id',editId);throw e;}
       msg('Penjualan diperbarui.');editId=null;resetOfflineCurrentOrder();$('cancel').style.display='none';$('save').textContent='+ Tambah ke Daftar';await load();return;
     }
 
-    window.__offlineDraftSales.push({data,pelanggan:nama,_seq:Date.now()+Math.random()});
+    window.__offlineDraftSales.push({data,pelanggan:nama,_seq:draftSeq});
     renderOfflineDrafts();
     msg(nama
       ? 'Produk ditambahkan ke satu transaksi customer. Tambah produk lain dengan customer yang sama, lalu Simpan Semua.'
