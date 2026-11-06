@@ -38,7 +38,8 @@ function offlineSalesRows(){
 function offlineNewRowsForMonth(m){
   return offlineSalesRows().filter(x=>
     !isHistoricalSource(x.source) &&
-    monthOfSaleRow(x)===m
+    monthOfSaleRow(x)===m &&
+    monthOfSaleRow(x)>ONLINE_HISTORICAL_END
   );
 }
 
@@ -565,7 +566,7 @@ function offlineHpp(m){
       if(unit)total+=Math.round(qty*unit);
     });
 
-    offlineSalesRows().filter(x=>monthOfSaleRow(x)===m).forEach(x=>{
+    offlineNewRowsForMonth(m).forEach(x=>{
       const qty=Math.max(0,Number(x.qty||0));
       const mappedOffline = FF.isOfflineProduct ? FF.isOfflineProduct(x.product_name,x.variation) : true;
       if(!mappedOffline){
@@ -828,6 +829,9 @@ window.viewOnlineMonth=function(m){
   if($('channel').value==='Offline'){
     const locked=offlineLockedMonth(month);
     const add=offlineNewSummary(month);
+    const detailSales=offlineSalesRows().filter(x=>
+      !isHistoricalSource(x.source) && monthOfSaleRow(x)===month
+    );
     const oldRows=(olds||[]).filter(x=>
       String(x.periode||'').slice(0,7)===month && isOfflineLegacyHistoricalRow(x)
     );
@@ -857,12 +861,14 @@ window.viewOnlineMonth=function(m){
         hpp:unit===null?null:Math.round(qty*unit)
       });
     });
-    add.rows.forEach(x=>{
+    detailSales.forEach(x=>{
       const qty=Math.max(0,Number(x.qty||0));
       const rawRevenue=x.omzet_produk??x.total??(qty*Number(x.harga||0));
       const rawHpp=x.modal_hpp??(qty*Number(x.hpp||0));
+      const isBackfilled=!!locked;
       details.push({
-        date:String(x.tanggal||month),source:'Transaksi Offline Baru',
+        date:String(x.tanggal||month),
+        source:isBackfilled?'Detail Historis • tidak dihitung ulang':'Transaksi Offline Baru',
         product:x.product_name||x.variation||'-',detail:x.order_id||'-',qty,
         revenue:Math.round(Number(rawRevenue)||0),
         hpp:rawHpp==null?null:Math.round(Number(rawHpp)||0)
@@ -876,7 +882,7 @@ window.viewOnlineMonth=function(m){
       '<div class="stat"><small>Laba Kotor</small><strong>'+(gross===null?'—':money(gross))+'</strong><div class="hint">Beban di luar HPP '+money(outside)+'</div></div>'+
       '<div class="stat profit"><small>Hasil Usaha</small><strong>'+(result===null?'—':money(result))+'</strong><div class="hint">Margin '+(revenue?((result||0)/revenue*100).toFixed(2):'—')+'%</div></div>'+
       '</div>'+
-      '<div class="hint" style="margin:8px 0 10px">Sumber database: '+oldRows.length.toLocaleString('id-ID')+' baris Data Lama ('+money(oldRevenue)+') dan '+add.rows.length.toLocaleString('id-ID')+' baris transaksi baru ('+add.qty.toLocaleString('id-ID')+' bungkus). Snapshot resmi tetap tidak diubah.</div>'+
+      '<div class="hint" style="margin:8px 0 10px">Sumber database: '+oldRows.length.toLocaleString('id-ID')+' baris Data Lama ('+money(oldRevenue)+') dan '+detailSales.length.toLocaleString('id-ID')+' baris detail transaksi ('+detailSales.reduce((a,x)=>a+Math.max(0,Number(x.qty||0)),0).toLocaleString('id-ID')+' bungkus). '+(locked?'Detail historis tidak dijumlahkan lagi ke snapshot.':'Transaksi baru dijumlahkan ke Rekap.')+'</div>'+
       (lockedDifference!==0?'<div class="notice" style="margin:10px 0;background:#fff8e1;border-color:#f2d185;color:#7a4b00"><b>Perlu audit:</b> total pemasukan snapshot berbeda '+money(lockedDifference)+' dari jumlah baris sumber yang terlihat ('+money(sourceRevenue)+'). Snapshot resmi belum diubah.</div>':'')+
       '<div class="tablewrap"><table style="min-width:900px"><thead><tr><th>Tanggal/Periode</th><th>Sumber</th><th>Produk</th><th>Keterangan</th><th>Qty Bungkus</th><th>Pemasukan</th><th>HPP/Modal</th></tr></thead><tbody>'+
       (details.length?details.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.source)+'</td><td>'+esc(x.product)+'</td><td>'+esc(x.detail)+'</td><td>'+x.qty.toLocaleString('id-ID')+'</td><td>'+money(x.revenue)+'</td><td>'+(x.hpp===null?'—':money(x.hpp))+'</td></tr>').join(''):'<tr><td colspan="7" class="empty">Tidak ada rincian database untuk bulan ini.</td></tr>')+
@@ -1069,7 +1075,7 @@ function renderTopProdukKonsumen(){
     cur.qty+=qty; cur.revenue+=revenue; productsMap.set(name,cur);
   });
   offlineSalesRows().forEach(x=>{
-    if(!ffTopRangeOffline(x.tanggal))return;
+    if(monthOfSaleRow(x)<=ONLINE_HISTORICAL_END)return;
     const name=ffTopProductName(x.product_name||x.variation);
     if(!name)return;
     const qty=Math.max(0,Math.round(Number(x.qty)||0));
@@ -1103,7 +1109,7 @@ function renderTopProdukKonsumen(){
     cur.qty+=qty; cur.revenue+=revenue; cur.orders+=1; customersMap.set(name,cur);
   });
   offlineSalesRows().forEach(x=>{
-    if(!ffTopRangeOffline(x.tanggal))return;
+    if(monthOfSaleRow(x)<=ONLINE_HISTORICAL_END)return;
     const name=ffTopCustomerName(namesBySale.get(String(x.id))||'Tanpa Nama');
     if(name==='Tanpa Nama')return;
     const qty=Math.max(0,Math.round(Number(x.qty)||0));
@@ -1500,6 +1506,11 @@ function buildTransactionRecapRows(){
     }
     const qty=Math.round(Number(x.qty||0));
     if(nominal<=0 && qty<=0)return;
+
+    if(channel==='Offline' && src==='manual' && m>='2026-01' && m<=ONLINE_HISTORICAL_END){
+      // Backfilled transaction dates in the locked historical period are audit detail only.
+      return;
+    }
 
     if(channel==='Offline' && src==='manual' && String(x.order_id||'').trim()){
       const oid=String(x.order_id).trim();
