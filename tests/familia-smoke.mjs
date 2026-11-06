@@ -160,7 +160,7 @@ assert(rekapModule.includes('const result=gross!==null?gross-outside:null;'),'Re
 assert(!rekapModule.includes("key==='cireng crispy'"),'Rekap must not silently merge Cireng crispy into Cireng biasa');
 assert(rekapModule.includes("String(x.status||'Aktif').toLowerCase()==='aktif'"),'Rekap purchase KPI must ignore cancelled purchases');
 assert(rekapModule.includes('partial:!known && total>0'),'Rekap must expose partial HPP state');
-assert(rekapModule.includes("expenseInHpp=expenseRows.filter(x=>String(x.kategori||'').trim().toLowerCase()==='bahan baku')"),'Rekap must separate HPP-included expenses from other cash expenses');
+assert(rekapModule.includes('expenseInHpp=expenseRows.reduce((a,x)=>a+offlineExpenseHppAmount(x),0);'),'Rekap must allocate HPP-included expenses from item details.');
 
 
 const penjualan=await read('penjualan.html');
