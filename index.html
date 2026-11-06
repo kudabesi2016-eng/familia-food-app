@@ -155,7 +155,12 @@ const pct=(v)=>{const t=(Number(v)||0).toFixed(2)+'%';return t};
 async function fetchAll(table, select='*'){
   const page=1000; let offset=0, all=[];
   while(true){
-    const r=await supabaseClient.from(table).select(select).range(offset,offset+page-1);
+    const r=await new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>reject(new Error('Timeout membaca tabel '+table+' (offset '+offset+').')),20000);
+      supabaseClient.from(table).select(select).range(offset,offset+page-1)
+        .then(result=>{clearTimeout(timer);resolve(result);})
+        .catch(error=>{clearTimeout(timer);reject(error);});
+    });
     if(r.error) throw r.error;
     const rows=r.data||[]; all.push(...rows);
     if(rows.length<page) break;
@@ -577,7 +582,12 @@ async function loadDashboard(){
     document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
     const offlineAudit=document.getElementById('offlineHppAudit');
     if(offlineAudit){
-      offlineAudit.textContent='🔒 Data Lama Jan–Agustus 2026 tetap terkunci; transaksi Offline Baru ditambahkan dari database secara real-time.';
+      const snapshotGap=Math.round(offlineLocked.revenue-offOldRevenue);
+      let auditText='🔒 Snapshot Offline Jan–Agustus 2026 tetap menjadi dasar Rekap; transaksi Offline baru ditambahkan dari database.';
+      if(snapshotGap!==0){
+        auditText+=' ⚠️ Rekonsiliasi Data Lama: database '+rupiah(offOldRevenue)+'; snapshot '+rupiah(offlineLocked.revenue)+'; selisih '+rupiah(snapshotGap)+'. Snapshot dan data sumber tidak diubah.';
+      }
+      offlineAudit.textContent=auditText;
     }
 
     document.getElementById('onIncomeRows').textContent=onlineFinanceRows.length.toLocaleString('id-ID');
