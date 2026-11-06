@@ -83,7 +83,11 @@ assert(count(rekap,'const data = () =>')===1,'Expected one rekap data() helper')
 assert(rekap.includes("newCash"),'Rekap new-online cash source missing');
 assert(rekap.includes("newModal"),'Rekap new-online modal calculation missing');
 assert(rekap.includes('purchases,\n  returns'),'Rekap data helper must pass purchases and returns into shared data context');
-assert(rekap.includes('FFCore.offlineLockedFinance(m,add)'),'Rekap monthly cards must use shared Offline finance calculator.');
+assert(
+  rekap.includes('const summary=FFCore.offlineLockedFinance(m,offlineNewSummary(m));') ||
+  rekap.includes('FFCore.offlineLockedFinance(r.m,add)'),
+  'Rekap monthly cards must use shared Offline finance calculator.'
+);
 
 
 const produk=await read('produk.html');
