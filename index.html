@@ -157,7 +157,7 @@ async function fetchAll(table, select='*'){
   while(true){
     const r=await new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>reject(new Error('Timeout membaca tabel '+table+' (offset '+offset+').')),20000);
-      supabaseClient.from(table).select(select).range(offset,offset+page-1)
+      Promise.resolve(supabaseClient.from(table).select(select).range(offset,offset+page-1))
         .then(result=>{clearTimeout(timer);resolve(result);})
         .catch(error=>{clearTimeout(timer);reject(error);});
     });
