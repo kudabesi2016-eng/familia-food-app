@@ -632,7 +632,7 @@ function updateChannelUI(){
   show('monthlyProfitHead',!offline);
   $('noticeChannel').textContent=offline?'🟢 Rekap Offline':'🔵 Rekap Online';
   $('noticeText').innerHTML=offline
-    ? 'Pemasukan = Data Lama Offline + transaksi Offline baru.<br><b>Laba Kotor = Pemasukan − HPP.</b><br><b>Hasil Usaha = Laba Kotor − Beban di luar HPP.</b><br>HPP dan beban operasional ditampilkan terpisah agar tidak dihitung dua kali.<br>Margin Hasil Usaha = Hasil Usaha ÷ Pemasukan × 100%.'
+    ? 'Pemasukan = snapshot Data Lama Jan–Agustus + transaksi baru mulai September.<br>Detail transaksi yang tanggalnya Jan–Agustus hanya untuk audit dan tidak dijumlahkan lagi ke snapshot.<br><b>Laba Kotor = Pemasukan − HPP.</b><br><b>Hasil Usaha = Laba Kotor − Beban di luar HPP.</b><br>HPP dan beban operasional ditampilkan terpisah agar tidak dihitung dua kali.<br>Margin Hasil Usaha = Hasil Usaha ÷ Pemasukan × 100%.'
     : 'Pemasukan Online historis berasal dari Data Lama Online STANDARD; penerimaan baru sudah berupa Uang Bersih setelah potongan.<br><b>Profit = Uang Bersih − HPP/Modal.</b><br>Produk keluar dan penerimaan uang adalah sumber berbeda; produk keluar dipakai untuk modal/HPP, bukan dijumlahkan lagi sebagai pemasukan.';
   if(offline){
     const duplicateIds=FFCore.dedupeOfflineBatchDuplicates(sales||[]).duplicateIds;
@@ -849,7 +849,7 @@ window.viewOnlineMonth=function(m){
 
     if(title)title.textContent='📋 Detail Rekap Offline • '+monthLabel;
     if(note)note.innerHTML=locked
-      ?'Ringkasan utama menggunakan snapshot Offline yang dikunci. Daftar di bawah menampilkan baris database untuk pemeriksaan; angka daftar tidak ditambahkan lagi ke snapshot.'
+      ?'Ringkasan utama menggunakan snapshot Offline yang dikunci sampai Agustus. Detail transaksi manual bertanggal Jan–Agustus tetap ditampilkan untuk audit, tetapi tidak ditambahkan lagi ke snapshot.'
       :'Ringkasan dihitung dari data yang tersedia di database untuk bulan ini.';
     const details=[];
     oldRows.forEach(x=>{
