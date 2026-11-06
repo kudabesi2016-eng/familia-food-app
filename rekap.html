@@ -11,9 +11,9 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
-<script src="ff-core.js?v=20261001-1853"></script>
+<script src="ff-core.js?v=20261106-offlinefix1"></script>
 <script>window.__REKAP_JS_LOADED=false;</script>
-<script src="rekap.js?v=20261017-1030"></script>
+<script src="rekap.js?v=20261106-offlinefix1"></script>
 
 <style>
 :root{
@@ -931,10 +931,14 @@ td{
         const kategori=String(x?.kategori||'').trim().toLowerCase();
         return cara!=='hutang' && kategori!=='pembayaran hutang';
       }
+      function uniqueOfflineSales(){
+        return FFCore.dedupeOfflineBatchDuplicates(sales||[]).rows
+          .filter(x=>String(x.channel||'')==='Offline');
+      }
       function offlineFinance(m){
         const oldRev=olds.filter(x=>String(x.periode||'').slice(0,7)===m&&isOfflineLegacyRow(x))
           .reduce((a,x)=>a+Math.round(safeNum(x.nominal)),0);
-        const newRev=sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m)
+        const newRev=uniqueOfflineSales().filter(x=>monthOf(x.tanggal)===m)
           .reduce((a,x)=>a+Math.round(safeNum(x.omzet_produk??x.total??(safeNum(x.qty)*safeNum(x.harga)))),0);
         const expense=expenses.filter(x=>String(x.periode||'').trim()===m&&cashExpense(x))
           .reduce((a,x)=>a+Math.round(safeNum(x.nominal)),0);
@@ -971,7 +975,7 @@ td{
           if(qty>0 && !unit)known=false;
           if(unit)total+=Math.round(qty*unit);
         });
-        sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m).forEach(x=>{
+        uniqueOfflineSales().filter(x=>monthOf(x.tanggal)===m).forEach(x=>{
           const qty=Math.max(0,Number(x.qty||0));
           const unit=productHpp.get(String(x.produk_id)) || resolveHppByName(x.product_name);
           if(qty>0 && !unit)known=false;
@@ -998,7 +1002,7 @@ td{
         const v=off?offlineFinance(m):onlineFinance(m);
         let display;
         if(off){
-          const newRows=sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m);
+          const newRows=uniqueOfflineSales().filter(x=>monthOf(x.tanggal)===m);
           const newRevenue=newRows.reduce((a,x)=>a+Math.round(safeNum(x.omzet_produk??x.total??(safeNum(x.qty)*safeNum(x.harga)))),0);
           const newHpp=newRows.reduce((a,x)=>a+Math.round(safeNum(x.modal_hpp??x.hpp)),0);
           display=FFCore.offlineLockedFinance(m,{revenue:newRevenue,hpp:newHpp,profit:newRevenue-newHpp});
@@ -1024,10 +1028,14 @@ td{
         document.getElementById('noticeText').innerHTML=off
           ?'Pemasukan berasal dari <b>Data Lama + Transaksi Offline Baru</b>.<br>Pengeluaran tunai ditampilkan terpisah.<br><b>Profit Terukur Offline = Pemasukan − HPP − Beban di luar HPP.</b><br>Pengeluaran Bahan Baku tidak dipotong lagi karena sudah termasuk HPP.<br>Uang Bersih Offline = Pemasukan − seluruh Pengeluaran Tunai.'
           :'Pemasukan berasal dari <b>Data Lama Online + Penerimaan Uang Online</b>.<br>Penerimaan baru sudah berupa <b>Uang Bersih</b> setelah potongan.<br><b>Profit = Uang Bersih − HPP/modal.</b><br>HPP/Modal produk keluar ditampilkan terpisah.';
+        if(off){
+          const duplicateIds=FFCore.dedupeOfflineBatchDuplicates(sales||[]).duplicateIds;
+          if(duplicateIds.length)document.getElementById('noticeText').innerHTML+='<br><b style="color:#9a6700">Audit duplikat:</b> '+duplicateIds.length+' baris identik pada order yang sama dikeluarkan dari hitungan. Data database tetap disimpan. ID: '+duplicateIds.join(', ')+'.';
+        }
         const tbody=document.getElementById('monthly');
         tbody.innerHTML=ms.map(mm=>{
           if(off){
-            const rows=sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===mm);
+            const rows=uniqueOfflineSales().filter(x=>monthOf(x.tanggal)===mm);
             const nr=rows.reduce((a,x)=>a+Math.round(safeNum(x.omzet_produk??x.total??(safeNum(x.qty)*safeNum(x.harga)))),0);
             const nh=rows.reduce((a,x)=>a+Math.round(safeNum(x.modal_hpp??x.hpp)),0);
             const z=FFCore.offlineLockedFinance(mm,{revenue:nr,hpp:nh,profit:nr-nh});
