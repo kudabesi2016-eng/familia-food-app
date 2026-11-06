@@ -902,10 +902,11 @@ td{
   }
   async function boot(){
     try{
-      const [sales,olds,expenses,products,hpps]=await Promise.all([
-        all('penjualan','id,tanggal,channel,source,qty,harga,total,hpp,omzet_produk,uang_bersih,modal_hpp,biaya_platform,product_name,variation,order_id,produk_id'),
+      const [sales,olds,expenses,expenseItems,products,hpps]=await Promise.all([
+        all('penjualan','id,tanggal,channel,source,qty,harga,total,hpp,omzet_produk,uang_bersih,modal_hpp,biaya_platform,product_name,variation,order_id,produk_id,created_at'),
         all('data_lama','id,periode,jenis,keterangan,nominal,catatan'),
         all('pengeluaran','id,periode,tanggal,kategori,keterangan,nominal,cara_bayar'),
+        all('pengeluaran_item','id,pengeluaran_id,kategori,subtotal'),
         all('produk','id,nama_produk,status'),
         all('hpp','produk_id,hpp_unit')
       ]);
@@ -935,14 +936,27 @@ td{
         return FFCore.dedupeOfflineBatchDuplicates(sales||[]).rows
           .filter(x=>String(x.channel||'')==='Offline');
       }
+      function expenseHppAmount(row){
+        const nominal=Math.max(0,Math.round(safeNum(row?.nominal)));
+        const items=(expenseItems||[]).filter(item=>String(item.pengeluaran_id)===String(row?.id));
+        if(items.length){
+          const detailTotal=items.reduce((sum,item)=>sum+Math.max(0,safeNum(item.subtotal)),0);
+          const bahanTotal=items.filter(item=>String(item.kategori||'').trim().toLowerCase()==='bahan baku')
+            .reduce((sum,item)=>sum+Math.max(0,safeNum(item.subtotal)),0);
+          if(detailTotal>0)return Math.min(nominal,Math.max(0,Math.round(nominal*bahanTotal/detailTotal)));
+        }
+        return String(row?.kategori||'').trim().toLowerCase()==='bahan baku'?nominal:0;
+      }
       function offlineFinance(m){
         const oldRev=olds.filter(x=>String(x.periode||'').slice(0,7)===m&&isOfflineLegacyRow(x))
           .reduce((a,x)=>a+Math.round(safeNum(x.nominal)),0);
         const newRev=uniqueOfflineSales().filter(x=>monthOf(x.tanggal)===m)
           .reduce((a,x)=>a+Math.round(safeNum(x.omzet_produk??x.total??(safeNum(x.qty)*safeNum(x.harga)))),0);
-        const expense=expenses.filter(x=>String(x.periode||'').trim()===m&&cashExpense(x))
-          .reduce((a,x)=>a+Math.round(safeNum(x.nominal)),0);
-        return [oldRev+newRev,expense,oldRev+newRev-expense];
+        const cashRows=expenses.filter(x=>String(x.periode||'').trim()===m&&cashExpense(x));
+        const expense=cashRows.reduce((a,x)=>a+Math.round(safeNum(x.nominal)),0);
+        const expenseInHpp=cashRows.reduce((a,x)=>a+expenseHppAmount(x),0);
+        const expenseOutsideHpp=expense-expenseInHpp;
+        return [oldRev+newRev,expense,oldRev+newRev-expense,expenseOutsideHpp,expenseInHpp];
       }
       function normalizeProductName(v){
         return String(v||'').toLowerCase()
@@ -977,6 +991,11 @@ td{
         });
         uniqueOfflineSales().filter(x=>monthOf(x.tanggal)===m).forEach(x=>{
           const qty=Math.max(0,Number(x.qty||0));
+          const stored=Number(x.modal_hpp??x.hpp);
+          if(Number.isFinite(stored)&&stored>0){
+            total+=Math.round(stored);
+            return;
+          }
           const unit=productHpp.get(String(x.produk_id)) || resolveHppByName(x.product_name);
           if(qty>0 && !unit)known=false;
           if(unit)total+=Math.round(qty*unit);
@@ -1007,11 +1026,13 @@ td{
           const newHpp=newRows.reduce((a,x)=>a+Math.round(safeNum(x.modal_hpp??x.hpp)),0);
           display=FFCore.offlineLockedFinance(m,{revenue:newRevenue,hpp:newHpp,profit:newRevenue-newHpp});
         }
-        const h=off?{known:!!display,measured:!!display,total:display?.hpp||0}:{known:true,total:onlineHpp(m),measured:true};
+        const h=off?(display?{known:true,measured:true,total:display.hpp}:offlineHpp(m)):{known:true,total:onlineHpp(m),measured:true};
         const rev=display?display.revenue:v[0];
         const out=display?display.expense:v[1];
         const net=display?display.net:v[2];
-        const profit=display?display.result:(h.measured?v[2]-h.total:null);
+        const profit=display?display.result:(off
+          ? (h.known&&h.measured?rev-h.total-Number(v[3]||0):null)
+          : (h.measured?net-h.total:null));
         document.getElementById('rev').textContent=rupiah(rev);
         document.getElementById('out').textContent=rupiah(out);
         document.getElementById('net').textContent=rupiah(net);
@@ -1038,8 +1059,13 @@ td{
             const rows=uniqueOfflineSales().filter(x=>monthOf(x.tanggal)===mm);
             const nr=rows.reduce((a,x)=>a+Math.round(safeNum(x.omzet_produk??x.total??(safeNum(x.qty)*safeNum(x.harga)))),0);
             const nh=rows.reduce((a,x)=>a+Math.round(safeNum(x.modal_hpp??x.hpp)),0);
-            const z=FFCore.offlineLockedFinance(mm,{revenue:nr,hpp:nh,profit:nr-nh});
-            if(z)return '<tr><td><b>'+label(mm)+'</b></td><td>'+rupiah(z.revenue)+'</td><td>'+rupiah(z.expense)+'</td><td><b>'+rupiah(z.net)+'</b></td><td>'+rupiah(z.hpp)+'</td><td><b>'+rupiah(z.result)+'</b><div class="hint">Margin '+(z.revenue?(z.result/z.revenue*100):0).toFixed(2)+'%</div></td></tr>';
+            const locked=FFCore.offlineLockedFinance(mm,{revenue:nr,hpp:nh,profit:nr-nh});
+            const z=locked||offlineFinance(mm);
+            const hh=locked?{known:true,measured:true,total:z.hpp}:offlineHpp(mm);
+            const outside=locked?z.outsideHpp:Number(z[3]||0);
+            const gross=hh.known&&hh.measured?Number(z.revenue??z[0])-hh.total:null;
+            const result=gross===null?null:gross-outside;
+            return '<tr><td><b>'+label(mm)+'</b></td><td>'+rupiah(locked?z.revenue:z[0])+'</td><td>'+rupiah(locked?z.expense: z[1])+'</td><td><b>'+(locked?rupiah(z.net):rupiah(z[2]))+'</b></td><td>'+(hh.measured?rupiah(hh.total):'—')+'</td><td><b>'+(result===null?'—':rupiah(locked?z.result:result))+'</b><div class="hint">Margin '+((locked?z.revenue:z[0])?((locked?z.result:result)/(locked?z.revenue:z[0])*100):0).toFixed(2)+'%</div></td></tr>';
           }
           const z=onlineFinance(mm), hh={known:true,total:onlineHpp(mm)};
           const pp=hh.measured?z[2]-hh.total:null;
@@ -1054,7 +1080,7 @@ td{
         const revRows=[];
         olds.forEach((x,i)=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m)&&isOfflineLegacyRow(x)&&safeNum(x.nominal)>0)revRows.push({date:m,period:m,channel:'Offline',type:'Pemasukan',source:'Data Lama Offline',detail:[x.jenis,x.keterangan].filter(Boolean).join(' • '),qty:safeNum(x.catatan),nominal:Math.round(safeNum(x.nominal))})});
         const grouped=new Map();
-        sales.forEach((x,i)=>{
+        FFCore.dedupeOfflineBatchDuplicates(sales||[]).rows.forEach((x,i)=>{
           const m=monthOf(x.tanggal); if(!m)return;
           const src=String(x.source||''); let type='Pemasukan', nominal=0;
           if(['seller_center','online_batch','online_standard_product'].includes(src)){type='Modal/HPP';nominal=Math.round(safeNum(x.modal_hpp??x.hpp??(safeNum(x.qty)*safeNum(x.hpp))))}
