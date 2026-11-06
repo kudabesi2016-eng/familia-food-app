@@ -795,6 +795,7 @@ function renderCards(){
    RENDER TABEL
 ===================================================== */
 
+// Profit transaksi baru = Uang Bersih yang diterima - modal/HPP produk keluar.
 function renderNewOnlineMonthly(){
   const tb=document.getElementById('newOnlineMonthly'); if(!tb)return;
   const ms=months();
