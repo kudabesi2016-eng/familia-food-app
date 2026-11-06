@@ -545,9 +545,15 @@ async function loadDashboard(){
     if(!offlineLocked) throw new Error('Snapshot Offline terkunci tidak tersedia');
     const dashboardOffRevenue=offlineLocked.revenue+offNewRevenue;
     const dashboardOffHpp=offlineLocked.hpp+offNewHpp;
-    const dashboardOffExpense=offlineLocked.hpp+offlineLocked.outsideHpp+offNewHpp;
-    const dashboardOffNet=offlineLocked.result+offNewProfit;
-    const dashboardOffProfit=offlineLocked.result+offNewProfit;
+    // Snapshot Jan–Agustus sudah mencakup beban periode tersebut.
+    // Untuk periode setelah Agustus, tambahkan pengeluaran tunai di luar Bahan Baku.
+    const offNewOutsideExpense=validExpenseRows
+      .filter(x=>String(x.periode||'').trim()>ONLINE_HISTORICAL_END)
+      .filter(x=>String(x.kategori||'').trim().toLowerCase()!=='bahan baku')
+      .reduce((s,x)=>s+Math.round(num(x.nominal)),0);
+    const dashboardOffExpense=offlineLocked.hpp+offlineLocked.outsideHpp+offNewHpp+offNewOutsideExpense;
+    const dashboardOffNet=offlineLocked.result+offNewProfit-offNewOutsideExpense;
+    const dashboardOffProfit=offlineLocked.result+offNewProfit-offNewOutsideExpense;
 
     // GABUNGAN: gunakan ringkasan Offline terkunci + perhitungan Online.
     const totalRevenue=dashboardOffRevenue+onRevenue;
