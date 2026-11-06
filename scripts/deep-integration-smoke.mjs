@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { Script } from 'node:vm';
 
 const root=process.cwd();
 const htmlFiles=fs.readdirSync(root).filter(f=>f.endsWith('.html'));
@@ -37,7 +38,7 @@ for(const file of htmlFiles){
   for(const [,attrs,body] of scripts){
     if(!body.trim() || /src\s*=/.test(attrs)) continue;
     inlineIndex++;
-    try{ new Function(body); }
+    try{ new Script('(function(){\\n'+body+'\\n})', {filename:file+'#inline-'+inlineIndex}); }
     catch(e){
       const stack=String(e?.stack||'').split('\n').slice(0,4).join(' | ');
       fail('Inline script #'+inlineIndex+' syntax error in '+file+' (chars '+body.length+'): '+e.message+' | '+stack);
