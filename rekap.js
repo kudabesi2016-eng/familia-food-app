@@ -1437,13 +1437,13 @@ function buildTransactionRecapRows(){
   (olds||[]).forEach((x,i)=>{
     const m=String(x.periode||'').slice(0,7);
     if(!FF.isMonth(m) || !isOfflineLegacyHistoricalRow(x))return;
-    const qty=Math.round(Number(x.qty||0));
+    const qty=Math.round(Number(x.catatan||0));
     const nominal=Math.round(Number(x.nominal ?? x.omzet ?? x.total ?? 0));
     if(nominal<=0 && qty<=0)return;
     rows.push({
       key:'old-'+(x.id??i),period:m,date:m,channel:'Offline',type:'Pemasukan',
       source:'Data Lama Offline',
-      detail:[x.konsumen,x.produk].filter(Boolean).join(' • ')||'Data lama offline',
+      detail:[x.jenis,x.keterangan].filter(Boolean).join(' • ')||'Data lama offline',
       qty,nominal
     });
   });
