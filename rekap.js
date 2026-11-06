@@ -252,6 +252,17 @@ function isCashExpense(x){
   if(kategori==='pembayaran hutang')return false;
   return true;
 }
+function offlineExpenseHppAmount(row){
+  const nominal=Math.max(0,Math.round(Number(row?.nominal||0)));
+  const items=(expenseItems||[]).filter(item=>String(item.pengeluaran_id)===String(row?.id));
+  if(items.length){
+    const detailTotal=items.reduce((sum,item)=>sum+Math.max(0,Number(item.subtotal||0)),0);
+    const bahanTotal=items.filter(item=>String(item.kategori||'').trim().toLowerCase()==='bahan baku')
+      .reduce((sum,item)=>sum+Math.max(0,Number(item.subtotal||0)),0);
+    if(detailTotal>0)return Math.min(nominal,Math.max(0,Math.round(nominal*bahanTotal/detailTotal)));
+  }
+  return String(row?.kategori||'').trim().toLowerCase()==='bahan baku'?nominal:0;
+}
 function offlineFinance(m){
   const oldRows=(olds||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isOfflineLegacyHistoricalRow(x));
   const newRows=offlineNewRowsForMonth(m);
@@ -260,7 +271,7 @@ function offlineFinance(m){
   const newRev=newRows.reduce((a,x)=>a+Math.round(Number(x.omzet_produk ?? (Number(x.qty||0)*Number(x.harga||0)))),0);
   const rev=oldRev+newRev;
   const expense=expenseRows.reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
-  const expenseInHpp=expenseRows.filter(x=>String(x.kategori||'').trim().toLowerCase()==='bahan baku').reduce((a,x)=>a+Math.round(Number(x.nominal||0)),0);
+  const expenseInHpp=expenseRows.reduce((a,x)=>a+offlineExpenseHppAmount(x),0);
   const expenseOutsideHpp=expense-expenseInHpp;
   const net=rev-expense;
   return [rev,expense,net,expenseOutsideHpp,expenseInHpp];
