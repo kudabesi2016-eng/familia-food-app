@@ -1068,7 +1068,7 @@ $('save').onclick=async()=>{
     const existingDraft=(draftEdit?.type==='sale')
       ? window.__offlineDraftSales.find(x=>String(x._seq)===String(draftEdit.seq))
       : null;
-    const draftSeq=existingDraft?._seq:(String(Date.now())+'-'+Math.random().toString(36).slice(2,9));
+    const draftSeq=existingDraft ? existingDraft._seq : (String(Date.now())+'-'+Math.random().toString(36).slice(2,9));
     let orderId=existingDraft?.data?.order_id||ensureOfflineOrder(nama,tanggal);
     if(!orderId&&!wasEdit)orderId=ensureOfflineOrder(nama,tanggal);
     const importKey=existingDraft?.data?.import_key||
