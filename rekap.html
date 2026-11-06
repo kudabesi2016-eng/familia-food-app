@@ -921,9 +921,18 @@ td{
       month.innerHTML=ms.map(m=>'<option value="'+m+'">'+label(m)+'</option>').join('');
       month.value=(current&&ms.includes(current))?current:(ms[ms.length-1]||'');
       
-      function cashExpense(x){return String(x.cara_bayar||'Tunai').trim()!=='Hutang'}
+      function isOfflineLegacyRow(x){
+        const n=String(x?.jenis||'').trim().toLowerCase()
+          .replace(/\s+/g,' ').replace(/\s*\+\s*/g,'+');
+        return !/^naget(?:\s+isi)?\s+(?:20|25\+saus|30|40|50)$/.test(n);
+      }
+      function cashExpense(x){
+        const cara=String(x?.cara_bayar||'Tunai').trim().toLowerCase();
+        const kategori=String(x?.kategori||'').trim().toLowerCase();
+        return cara!=='hutang' && kategori!=='pembayaran hutang';
+      }
       function offlineFinance(m){
-        const oldRev=olds.filter(x=>String(x.periode||'').slice(0,7)===m)
+        const oldRev=olds.filter(x=>String(x.periode||'').slice(0,7)===m&&isOfflineLegacyRow(x))
           .reduce((a,x)=>a+Math.round(safeNum(x.nominal)),0);
         const newRev=sales.filter(x=>x.channel==='Offline'&&monthOf(x.tanggal)===m)
           .reduce((a,x)=>a+Math.round(safeNum(x.omzet_produk??x.total??(safeNum(x.qty)*safeNum(x.harga)))),0);
@@ -956,7 +965,7 @@ td{
       }
       function offlineHpp(m){
         let total=0,known=true;
-        olds.filter(x=>String(x.periode||'').slice(0,7)===m).forEach(x=>{
+        olds.filter(x=>String(x.periode||'').slice(0,7)===m&&isOfflineLegacyRow(x)).forEach(x=>{
           const qty=Math.max(0,Number(x.catatan||0));
           const unit=resolveHppByName(x.jenis);
           if(qty>0 && !unit)known=false;
@@ -1035,7 +1044,7 @@ td{
         const tm=document.getElementById('trxMonth'),tc=document.getElementById('trxChannel'),tt=document.getElementById('trxType'),body=document.getElementById('transactionRecapRows');
         if(!tm||!tc||!tt||!body)return;
         const revRows=[];
-        olds.forEach((x,i)=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m)&&safeNum(x.nominal)>0)revRows.push({date:m,period:m,channel:'Offline',type:'Pemasukan',source:'Data Lama Offline',detail:x.keterangan||x.jenis,qty:safeNum(x.catatan),nominal:Math.round(safeNum(x.nominal))})});
+        olds.forEach((x,i)=>{const m=String(x.periode||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m)&&isOfflineLegacyRow(x)&&safeNum(x.nominal)>0)revRows.push({date:m,period:m,channel:'Offline',type:'Pemasukan',source:'Data Lama Offline',detail:[x.jenis,x.keterangan].filter(Boolean).join(' • '),qty:safeNum(x.catatan),nominal:Math.round(safeNum(x.nominal))})});
         const grouped=new Map();
         sales.forEach((x,i)=>{
           const m=monthOf(x.tanggal); if(!m)return;
