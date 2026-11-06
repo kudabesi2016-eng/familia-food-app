@@ -191,7 +191,47 @@
   }
 
   function isCashExpense(x){
-    return String(x?.cara_bayar || 'Tunai') !== 'Hutang';
+    const method = norm(x?.cara_bayar || 'Tunai');
+    const category = norm(x?.kategori || '');
+    return method !== 'hutang' && category !== 'pembayaran hutang';
+  }
+
+  // Abaikan salinan persis yang masuk dalam satu batch POS yang sama.
+  // Rekaman asli tetap berada di database; helper ini hanya mencegah
+  // duplikat identik ikut dihitung dua kali di laporan.
+  function dedupeOfflineBatchDuplicates(rows){
+    const seen = new Set();
+    const kept = [];
+    const duplicateIds = [];
+    for(const row of (rows || [])){
+      const channel = norm(row?.channel);
+      const orderId = String(row?.order_id || '').trim();
+      const createdAt = String(row?.created_at || '').trim();
+      if(channel !== 'offline' || !orderId || !createdAt){
+        kept.push(row);
+        continue;
+      }
+      const key = [
+        monthOf(row?.tanggal),
+        orderId,
+        String(row?.produk_id ?? ''),
+        norm(row?.product_name || ''),
+        norm(row?.variation || ''),
+        Number(row?.qty || 0),
+        Number(row?.harga || 0),
+        Number(row?.total ?? row?.omzet_produk ?? 0),
+        Number(row?.modal_hpp ?? row?.hpp ?? 0),
+        Number(row?.laba ?? 0),
+        createdAt
+      ].join('|');
+      if(seen.has(key)){
+        if(row?.id != null) duplicateIds.push(String(row.id));
+        continue;
+      }
+      seen.add(key);
+      kept.push(row);
+    }
+    return {rows:kept, duplicateIds};
   }
 
   function expenseIsInHpp(x){
@@ -283,5 +323,5 @@
     return [...map.values()].sort((a,b)=>a.channel.localeCompare(b.channel)||a.name.localeCompare(b.name,'id'));
   }
 
-  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,isCashExpense,expenseIsInHpp,productChannel,isOfflineProduct,isOnlineProduct,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary,OFFLINE_LOCKED_MONTHLY,OFFLINE_LOCKED_SUMMARY,offlineLockedMonth,offlineLockedFinance,ONLINE_LOCKED_HISTORY,ONLINE_LOCKED_TOTAL,ONLINE_HISTORICAL_END,ONLINE_NEW_START,isOnlineHistoricalMonth,isOnlineNewMonth,ONLINE_OTHER_COST_LOCKED};
+  window.FFCore={norm,monthOf,isMonth,rupiah,esc,findProduct,hppMap,hppFor,expenseMonth,isRangeExpense,isCashExpense,expenseIsInHpp,dedupeOfflineBatchDuplicates,productChannel,isOfflineProduct,isOnlineProduct,offlineOldRows,offlineNewRows,onlineIncomeRows,onlineSellerRows,financeFor,monthsOfData,productSummary,OFFLINE_LOCKED_MONTHLY,OFFLINE_LOCKED_SUMMARY,offlineLockedMonth,offlineLockedFinance,ONLINE_LOCKED_HISTORY,ONLINE_LOCKED_TOTAL,ONLINE_HISTORICAL_END,ONLINE_NEW_START,isOnlineHistoricalMonth,isOnlineNewMonth,ONLINE_OTHER_COST_LOCKED};
 })();
