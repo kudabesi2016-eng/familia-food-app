@@ -390,7 +390,10 @@ async function loadDashboard(){
     // OFFLINE: Data Lama + transaksi baru.
     // Ringkasan keuangan Offline Jan–Agustus sudah dikunci sebagai dasar resmi.
     const offOld=old.filter(isOfflineLegacyHistoricalRow);
-    const offNew=sales.filter(x=>String(x.channel||'')==='Offline' && !isHistoricalSource(x.source));
+    const offlineDedupe=FFCore.dedupeOfflineBatchDuplicates(
+      sales.filter(x=>String(x.channel||'')==='Offline' && !isHistoricalSource(x.source))
+    );
+    const offNew=offlineDedupe.rows;
     const offOldRevenue=offOld.reduce((s,x)=>s+Math.round(num(x.nominal ?? x.omzet ?? x.total)),0);
     const offNewRevenue=offNew.reduce((s,x)=>s+Math.round(num(x.omzet_produk ?? (num(x.qty)*num(x.harga)))),0);
     const offNewHpp=offNew.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? x.hpp ?? 0)),0);
@@ -438,7 +441,7 @@ async function loadDashboard(){
       if(m>='2026-05'&&m<='2026-08')return HPP_OFFLINE_NEW[target]??null;
       const p=productMaster.find(x=>normOfflineName(x.nama_produk)===target)||productMaster.find(x=>normOfflineName(x.nama_produk).includes(target));
       const h=p?hppRows.find(x=>String(x.produk_id)===String(p.id)):null;
-      return Number(h?.hpp_unit)>0?Math.trunc(Number(h.hpp_unit)):null;
+      return Number(h?.hpp_unit)>0?Math.round(Number(h.hpp_unit)):null;
     };
     let offHpp=0,offHppKnown=true,offHppMeasured=false;
     offlineMonths.forEach(m=>{
@@ -582,7 +585,9 @@ async function loadDashboard(){
     document.getElementById('totalPenjualan').textContent=sales.filter(x=>!isHistoricalSource(x.source)).length.toLocaleString('id-ID');
 
     document.getElementById('offOldCount').textContent=offOld.length.toLocaleString('id-ID')+' baris';
-    document.getElementById('offNewCount').textContent=offNew.length.toLocaleString('id-ID');
+    document.getElementById('offNewCount').textContent=
+      offNew.length.toLocaleString('id-ID')+
+      (offlineDedupe.duplicateIds.length?' ('+offlineDedupe.duplicateIds.length+' duplikat disisihkan)':'');
     setNumber('offRevenue',dashboardOffRevenue); setNumber('offExpense',dashboardOffExpense); setNumber('offNet',dashboardOffNet);
     setNumber('offProfit',dashboardOffProfit);
     document.getElementById('offQty').textContent=offQty.toLocaleString('id-ID');
@@ -592,6 +597,9 @@ async function loadDashboard(){
       let auditText='🔒 Snapshot Offline Jan–Agustus 2026 tetap menjadi dasar Rekap; transaksi Offline baru ditambahkan dari database.';
       if(snapshotGap!==0){
         auditText+=' ⚠️ Rekonsiliasi Data Lama: database '+rupiah(offOldRevenue)+'; snapshot '+rupiah(offlineLocked.revenue)+'; selisih '+rupiah(snapshotGap)+'. Snapshot dan data sumber tidak diubah.';
+      }
+      if(offlineDedupe.duplicateIds.length){
+        auditText+=' ⚠️ '+offlineDedupe.duplicateIds.length+' baris transaksi identik pada order yang sama tidak dihitung ulang. Baris database tetap disimpan. ID: '+offlineDedupe.duplicateIds.join(', ')+'.';
       }
       offlineAudit.textContent=auditText;
     }
