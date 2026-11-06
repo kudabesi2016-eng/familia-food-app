@@ -413,7 +413,17 @@ async function loadDashboard(){
     const offlineDedupe=FFCore.dedupeOfflineBatchDuplicates(
       sales.filter(x=>String(x.channel||'')==='Offline' && !isHistoricalSource(x.source))
     );
-    const offNew=offlineDedupe.rows;
+    const offlineManualRows=offlineDedupe.rows;
+    // Snapshot resmi menutup seluruh periode Jan–Agustus.
+    // Baris yang baru dimasukkan tetapi tanggal transaksinya berada di periode
+    // tersebut tetap tersedia untuk audit, namun tidak boleh dijumlahkan lagi.
+    const offHistoricalDetail=offlineManualRows.filter(x=>{
+      const m=monthOf(x.tanggal||x.created_time||'');
+      return m>='2026-01' && m<=ONLINE_HISTORICAL_END;
+    });
+    const offNew=offlineManualRows.filter(x=>
+      monthOf(x.tanggal||x.created_time||'')>ONLINE_HISTORICAL_END
+    );
     const offOldRevenue=offOld.reduce((s,x)=>s+Math.round(num(x.nominal ?? x.omzet ?? x.total)),0);
     const offNewRevenue=offNew.reduce((s,x)=>s+Math.round(num(x.omzet_produk ?? (num(x.qty)*num(x.harga)))),0);
     const offNewHpp=offNew.reduce((s,x)=>s+Math.round(num(x.modal_hpp ?? x.hpp ?? 0)),0);
@@ -626,6 +636,9 @@ async function loadDashboard(){
       let auditText='🔒 Snapshot Offline Jan–Agustus 2026 tetap menjadi dasar Rekap; transaksi Offline baru ditambahkan dari database.';
       if(snapshotGap!==0){
         auditText+=' ⚠️ Rekonsiliasi Data Lama: database '+rupiah(offOldRevenue)+'; snapshot '+rupiah(offlineLocked.revenue)+'; selisih '+rupiah(snapshotGap)+'. Snapshot dan data sumber tidak diubah.';
+      }
+      if(offHistoricalDetail.length){
+        auditText+=' '+offHistoricalDetail.length.toLocaleString('id-ID')+' baris detail transaksi bertanggal Jan–Agustus hanya untuk audit karena sudah tercakup dalam snapshot; tidak ditambahkan lagi.';
       }
       auditText+=' Pengeluaran bahan baku baru terpisah: '+rupiah(offNewBahanExpense)+'; beban di luar HPP baru: '+rupiah(offNewOutsideExpense)+'.';
       if(expenseItemMismatch){
