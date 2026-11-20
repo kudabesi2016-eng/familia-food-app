@@ -1,11 +1,26 @@
-import { readFile } from 'node:fs/promises';
+const PRODUCTION_PROJECT_REF = 'zaqdjyhosksbdlafhluc';
+const TEST_PROJECT_REF = String(process.env.SUPABASE_TEST_PROJECT_REF || '').trim();
+const TEST_URL = String(process.env.SUPABASE_TEST_URL || '').trim();
+const TEST_KEY = String(process.env.SUPABASE_TEST_ANON_KEY || '').trim();
 
-const supabaseJs = await readFile('supabase.js','utf8');
-const urlMatch = supabaseJs.match(/SUPABASE_URL\s*=\s*["']([^"']+)["']/);
-const keyMatch = supabaseJs.match(/SUPABASE_KEY\s*=\s*["']([^"']+)["']/);
-if(!urlMatch || !keyMatch) throw new Error('Supabase config not found');
-const BASE = urlMatch[1].replace(/\/$/,'');
-const KEY = keyMatch[1];
+if(!TEST_PROJECT_REF && !TEST_URL && !TEST_KEY){
+  console.log('SUPABASE_TEST_SKIPPED: dedicated test project secrets are not configured.');
+  process.exit(0);
+}
+if(!TEST_PROJECT_REF || !TEST_URL || !TEST_KEY){
+  throw new Error('Set SUPABASE_TEST_PROJECT_REF, SUPABASE_TEST_URL, and SUPABASE_TEST_ANON_KEY together.');
+}
+if(TEST_PROJECT_REF===PRODUCTION_PROJECT_REF){
+  throw new Error('Refusing to run write tests against the production Supabase project.');
+}
+let parsedTestUrl;
+try{ parsedTestUrl=new URL(TEST_URL); }
+catch{ throw new Error('SUPABASE_TEST_URL must be a valid HTTPS Supabase project URL.'); }
+if(parsedTestUrl.protocol!=='https:' || parsedTestUrl.hostname!==TEST_PROJECT_REF+'.supabase.co'){
+  throw new Error('SUPABASE_TEST_URL must match the dedicated SUPABASE_TEST_PROJECT_REF host.');
+}
+const BASE=parsedTestUrl.origin;
+const KEY=TEST_KEY;
 
 const headers = {
   apikey: KEY,
@@ -72,6 +87,7 @@ let supplierId = null;
 let customerId = null;
 let purchaseId = null;
 let saleId = null;
+let saleLinkId = null;
 let returnId = null;
 let expenseId = null;
 
@@ -142,7 +158,10 @@ try {
       body:{penjualan_id:saleId,pelanggan_id:customerId}
     });
     if(!Array.isArray(links) || !links.length) throw new Error('Customer↔sale link insert returned no row');
-    await request('ff_penjualan_pelanggan?penjualan_id=eq.'+encodeURIComponent(String(saleId)),{method:'DELETE'});
+    saleLinkId = links[0]?.id ?? null;
+    if(saleLinkId == null) throw new Error('Customer↔sale link insert returned no id');
+    await request('ff_penjualan_pelanggan?id=eq.'+encodeURIComponent(String(saleLinkId)),{method:'DELETE'});
+    saleLinkId = null;
   }
 
   const expenses = await request('pengeluaran',{
@@ -170,8 +189,8 @@ try {
   if(returnId){
     try { await request('ff_retur_penjualan?id=eq.'+encodeURIComponent(String(returnId)),{method:'DELETE'}); } catch(e) { console.error('Cleanup return failed:',e.message); }
   }
-  if(saleId){
-    try { await request('ff_penjualan_pelanggan?penjualan_id=eq.'+encodeURIComponent(String(saleId)),{method:'DELETE'}); } catch(e) { console.error('Cleanup customer-sale link failed:',e.message); }
+  if(saleLinkId != null){
+    try { await request('ff_penjualan_pelanggan?id=eq.'+encodeURIComponent(String(saleLinkId)),{method:'DELETE'}); } catch(e) { console.error('Cleanup customer-sale link failed:',e.message); }
   }
   if(purchaseId){
     try { await request('ff_pembelian?id=eq.'+encodeURIComponent(String(purchaseId)),{method:'DELETE'}); } catch(e) { console.error('Cleanup purchase failed:',e.message); }
