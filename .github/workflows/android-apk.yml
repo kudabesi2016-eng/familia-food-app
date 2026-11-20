@@ -56,10 +56,12 @@ jobs:
       - name: AI agent structure test
         run: node tests/ai-agent-smoke.mjs
 
-      # Disabled until a dedicated test project is configured.
-      # tests/supabase-live.mjs currently writes and deletes rows in production.
-      # - name: Live Supabase integration test
-      #   run: node tests/supabase-live.mjs
+      - name: Isolated Supabase integration test
+        env:
+          SUPABASE_TEST_PROJECT_REF: ${{ secrets.SUPABASE_TEST_PROJECT_REF }}
+          SUPABASE_TEST_URL: ${{ secrets.SUPABASE_TEST_URL }}
+          SUPABASE_TEST_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
+        run: node tests/supabase-live.mjs
 
       - name: Syntax check web scripts
         shell: bash
