@@ -44,7 +44,7 @@ jobs:
           rm -rf www
           mkdir -p www
           find . -maxdepth 1 -type f \
-            \( -name "*.html" -o -name "*.js" -o -name "*.css" \) \
+            \\( -name "*.html" -o -name "*.js" -o -name "*.css" \\) \
             ! -name "capacitor.config.json" \
             -exec cp -f {} www/ \;
 
@@ -56,8 +56,10 @@ jobs:
       - name: AI agent structure test
         run: node tests/ai-agent-smoke.mjs
 
-      - name: Live Supabase integration test
-        run: node tests/supabase-live.mjs
+      # Disabled until a dedicated test project is configured.
+      # tests/supabase-live.mjs currently writes and deletes rows in production.
+      # - name: Live Supabase integration test
+      #   run: node tests/supabase-live.mjs
 
       - name: Syntax check web scripts
         shell: bash

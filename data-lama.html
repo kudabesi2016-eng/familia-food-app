@@ -53,7 +53,7 @@
 <div id="preview" class="preview"><h3>Preview Data Historis</h3><p class="hint" id="fileInfo"></p><div id="validation"></div><div class="tablewrap"><table><thead id="prevHead"></thead><tbody id="prevRows"></tbody></table></div><button class="btn" id="importBtn">+ Simpan Semua Data Preview</button><button class="btn secondary" id="cancelImport">Batal</button><div id="importMsg"></div></div></details></div>
 
 
-<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Upload <b>CSV TikTok asli</b> untuk audit produk keluar Jan–Agustus 2026, atau <b>Excel STANDARD Familia Food</b>. CSV TikTok akan dikonversi otomatis menjadi <b>bungkus audit</b> setelah retur dan ekspansi paket 2/3/6. Data audit harus menghasilkan <b>8.085 bungkus</b> sebelum dapat disimpan.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>CSV TikTok asli atau Excel STANDARD.</b> Untuk mengganti histori produk lama dengan audit terbaru, gunakan CSV TikTok Jan–Agustus 2026. Beberapa file boleh dipilih; data yang sama tidak akan digandakan.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button type="button" class="btn" id="onlineOldSave" style="position:relative;z-index:20;pointer-events:auto">+ Simpan Data Lama Online</button><div id="onlineOldSaveStatus" class="hint" style="margin-top:8px"></div><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
+<div class="card"><details><summary>🔵 Data Lama Online</summary><h2>🔵 Import Data Lama Online</h2><p class="hint">Upload <b>CSV TikTok asli</b> untuk audit produk keluar Jan–Agustus 2026, atau <b>Excel STANDARD Familia Food</b>. CSV TikTok akan dikonversi otomatis menjadi <b>bungkus audit</b> setelah retur dan ekspansi paket 2/3/6. Data audit harus menghasilkan <b>8.085 bungkus</b> sebelum dapat disimpan.</p><div class="filebox"><input id="onlineOldFile" type="file" accept=".xlsx,.xls,.csv" multiple><p class="hint" style="margin-top:8px"><b>CSV TikTok asli atau Excel STANDARD.</b> Impor hanya menambahkan baris yang belum tersimpan. Baris lama tidak diganti atau dihapus. Jika sumber berbeda dari histori tersimpan, penyimpanan dihentikan agar dapat direkonsiliasi. Beberapa file boleh dipilih; data yang sama tidak akan digandakan.</p><div id="onlineOldFiles" class="hint" style="margin-top:10px"></div></div><div id="onlineOldPreview" style="display:none"><div id="onlineOldInfo"></div><div id="onlineOldMonthTabs" class="monthtabs"></div><div id="onlineOldMonthTables"></div><div class="actions"><button type="button" class="btn" id="onlineOldSave" style="position:relative;z-index:20;pointer-events:auto">+ Simpan Data Lama Online</button><div id="onlineOldSaveStatus" class="hint" style="margin-top:8px"></div><button class="btn secondary" id="onlineOldCancel">Batal</button></div><div id="onlineOldMsg"></div></div></details></div>
 
 <div class="card"><details><summary>✍️ Tambah Manual</summary><h2>✍️ Tambah Manual</h2><p class="hint">Gunakan satu baris untuk satu <b>produk</b>. Contoh: Bu Euis → Naget isi 12 → 1.020 bungkus → Rp3.774.000.</p><div class="grid">
 <div class="field"><label>Periode</label><input id="periode" type="month"></div><div class="field"><label>Konsumen</label><input id="konsumen" placeholder="Contoh: Bu Euis"></div><div class="field"><label>Produk</label><input id="produk" placeholder="Contoh: Naget isi 12"></div><div class="field"><label>Jumlah / Qty (bungkus)</label><input id="qty" type="number" min="0" step="1" value="0"></div><div class="field"><label>Omzet (Rp)</label><input id="omzet" type="number" min="0" step="1" value="0"></div></div><button class="btn" id="save">+ Tambah Data Lama</button><div id="msg"></div></details></div>
@@ -961,6 +961,30 @@ function auditOnlineLockedRows(rows){
     ok:lockedRows===0 || total===ONLINE_LOCKED_TOTAL
   };
 }
+function findMissingLockedImportKeys(existingRows,incomingRows){
+  const incomingKeys=new Set((incomingRows||[]).map(x=>String(x?.import_key||'').trim()).filter(Boolean));
+  return (existingRows||[]).filter(x=>{
+    const key=String(x?.import_key||'').trim();
+    return !key||!incomingKeys.has(key);
+  });
+}
+async function readExistingLockedOnlineRows(){
+  const PAGE=250;let offset=0;const rows=[];
+  while(true){
+    const r=await supabaseClient.from('penjualan')
+      .select('id,import_key')
+      .eq('channel','Online')
+      .in('source',['online_standard_product','seller_center'])
+      .gte('tanggal','2026-01-01').lt('tanggal','2026-09-01')
+      .order('id',{ascending:true})
+      .range(offset,offset+PAGE-1);
+    if(r.error)throw r.error;
+    const batch=r.data||[];rows.push(...batch);
+    if(batch.length<PAGE)break;
+    offset+=batch.length;
+  }
+  return rows;
+}
 function lockedAuditMessage(audit){
   if(!audit.lockedRows)return '';
   const diffs=[10,12,20,25,30,40,50].map(s=>[s,Number(audit.bySize[s]||0)-ONLINE_LOCKED_HISTORY[s]])
@@ -1020,6 +1044,8 @@ async function saveOnlineHistoricalRows(rows){
     return base;
   });
   rows=prepared;
+  const missingKey=rows.find(x=>!String(x.import_key||'').trim());
+  if(missingKey)throw new Error('Impor dihentikan: ada baris tanpa kunci impor yang dapat dipakai untuk mencegah duplikat.');
   // Gunakan batch kecil agar URL query .in() tidak terlalu panjang dan POST tidak rapuh.
   const QUERY_BATCH=75;
   const INSERT_BATCH=50;
@@ -1036,10 +1062,16 @@ async function saveOnlineHistoricalRows(rows){
   }
 
   const rowsToSave=rows.filter(x=>!existing.has(String(x.import_key||'')));
+  let saved=0;
   for(let i=0;i<rowsToSave.length;i+=INSERT_BATCH){
     const batch=rowsToSave.slice(i,i+INSERT_BATCH);
     const r=await supabaseClient.from('penjualan').insert(batch);
-    if(r.error)throw r.error;
+    if(r.error){
+      const error=new Error(r.error.message||String(r.error));
+      error.message='Penyimpanan terhenti setelah '+saved.toLocaleString('id-ID')+' baris baru tersimpan. Baris lama tetap dipertahankan. Unggah ulang sumber yang sama untuk melanjutkan dengan aman. '+error.message;
+      throw error;
+    }
+    saved+=batch.length;
   }
   return {saved:rowsToSave.length,duplicates:rows.length-rowsToSave.length};
 }
@@ -1068,15 +1100,20 @@ async function runOnlineOldSave(){
         msgBox.scrollIntoView({behavior:'smooth',block:'center'});
         return;
       }
-      status.innerHTML='<span style="color:#087443;font-weight:bold">✅ Audit 8.085 bungkus lolos. Mengganti detail produk Online Jan–Agustus...</span>';
-      const oldProduct=await supabaseClient.from('penjualan').select('id').eq('channel','Online').in('source',['online_standard_product','seller_center']).gte('tanggal','2026-01-01').lt('tanggal','2026-09-01');
-      if(oldProduct.error)throw oldProduct.error;
-      const ids=(oldProduct.data||[]).map(x=>x.id).filter(Boolean);
-      for(let i=0;i<ids.length;i+=100){
-        const batch=ids.slice(i,i+100);
-        const del=await supabaseClient.from('penjualan').delete().in('id',batch);
-        if(del.error)throw del.error;
+      const keys=lockedRows.map(x=>String(x.import_key||'').trim());
+      if(keys.some(x=>!x)||new Set(keys).size!==keys.length){
+        status.innerHTML='<span style="color:#a22;font-weight:bold">⛔ Penyimpanan dihentikan: setiap baris produk terkunci harus memiliki kunci impor unik.</span>';
+        msgBox.innerHTML='<div class="msg">Tidak ada data yang diubah. Periksa file sumber dan impor ulang setelah setiap baris memiliki identitas unik.</div>';
+        return;
       }
+      const existingLocked=await readExistingLockedOnlineRows();
+      const missingOldKeys=findMissingLockedImportKeys(existingLocked,lockedRows);
+      if(missingOldKeys.length){
+        status.innerHTML='<span style="color:#a22;font-weight:bold">⛔ Penyimpanan dihentikan: sumber berbeda dari histori Online yang sudah tersimpan.</span>';
+        msgBox.innerHTML='<div class="msg">'+missingOldKeys.length.toLocaleString('id-ID')+' baris lama tidak ditemukan di file ini. Tidak ada baris lama yang dihapus atau ditimpa. Rekonsiliasikan perbedaannya sebelum menyimpan.</div>';
+        return;
+      }
+      status.innerHTML='<span style="color:#087443;font-weight:bold">✅ Audit lolos. Menambahkan baris yang belum ada; histori tersimpan tetap dipertahankan.</span>';
     }
     status.innerHTML='<span style="color:#087443;font-weight:bold">⏳ Menyimpan data historis Online...</span>';
     const result=await saveOnlineHistoricalRows(onlineOldImportRows);
@@ -1183,19 +1220,4 @@ $('file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{pd
 $('cancelImport').onclick=()=>{$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[]};
 $('importBtn').onclick=async()=>{
   if(!importRows.length)return;
-  let out=[];
-  if(pdfMode){out=importRows.map(r=>({periode:r[0],konsumen:r[1],produk:r[2],qty:Math.round(Number(r[3])||0),omzet:Math.round(Number(r[4])||0)})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
-  else{const idx={};const pick=(kind)=>{const a=(DATA_LAMA_ALIASES[kind]||[]).map(normKey);return headers.findIndex(h=>a.includes(normKey(h)))};for(const k of Object.keys(DATA_LAMA_ALIASES))idx[k]=pick(k);if(Object.values(idx).some(v=>v<0))return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Periode, Konsumen, Produk, Qty, dan Omzet wajib ada.</div>';out=importRows.map(r=>({periode:normalPeriode(r[idx.periode]),konsumen:String(r[idx.konsumen]??'').trim(),produk:String(r[idx.produk]??'').trim(),qty:Math.round(toNum(r[idx.qty])),omzet:Math.round(toNum(r[idx.omzet]))})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
-  if(!out.length)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data valid untuk disimpan.</div>';
-  try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';
-    const resolved=await insertDataLamaResolved(out,schema);
-    const used=resolved.used, rows=out.map(x=>{const row={};row[used.periode]=x.periode;row[used.konsumen]=x.konsumen;row[used.produk]=x.produk;row[used.qty]=x.qty;row[used.omzet]=x.omzet;return row});
-    if(schema.inferred){schemaCache={...schema,map:used,keys:[...new Set([...schema.keys,...Object.values(used)])],inferred:false}}
-    $('importMsg').innerHTML='<div class="msg">Berhasil menyimpan '+rows.length+' baris historis'+(resolved.duplicateCount?'. '+resolved.duplicateCount+' baris duplikat dilewati':'')+'.</div>';$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[];load();
-  }catch(e){$('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}
-};
-load();
-</script>
-<script src="android-shell.js" defer></script>
-</body>
-</html>
+  l
