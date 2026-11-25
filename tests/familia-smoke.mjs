@@ -247,7 +247,7 @@ for(const forbiddenHpp of [
 }
 
 const supabaseConfig=await read('supabase.js');
-assert(supabaseConfig.includes('createClient(SUPABASE_URL, SUPABASE_KEY)'),'Supabase client bootstrap missing');
+assert(/(?:window\\.)?supabase\\.createClient\\(SUPABASE_URL,\\s*SUPABASE_KEY/.test(supabaseConfig),'Supabase client bootstrap missing');
 assert(!supabaseConfig.includes('signInAnonymously'),'Loginless app must not require anonymous-auth provider at startup');
 
 const rls=await read('SUPABASE-RLS-AUTH.sql');
