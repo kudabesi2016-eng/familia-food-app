@@ -233,6 +233,11 @@ const label = m => {
    Historis resmi dibaca dari Data Lama Online STANDARD.
 ===================================================== */
 
+function exactExpenseMonth(row){
+  const period=String(row?.periode||'').trim();
+  return /^\\d{4}-\\d{2}$/.test(period)?period:'';
+}
+
 function monthOfSaleRow(x){
   return FF.monthOf(x.tanggal||x.paid_time||x.created_time||'') || String(x.periode||'').slice(0,7);
 }
@@ -963,7 +968,7 @@ function renderOnlineConnection(selectedMonth){
   if(!modeOnline){
     const opsBuy=(purchases||[]).filter(x=>String(x.status||'Aktif').toLowerCase()==='aktif' && String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
     const opsRet=(returns||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && String(x.channel||'')==='Offline').reduce((a,x)=>a+Number(x.nominal||0),0);
-    const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m && isCashExpense(x)).reduce((a,x)=>a+Number(x.nominal||0),0);
+    const opsExp=(expenses||[]).filter(x=>exactExpenseMonth(x)===m && isCashExpense(x)).reduce((a,x)=>a+Number(x.nominal||0),0);
     note.innerHTML='Bulan <b>'+esc(label(m))+'</b>. Ringkasan Offline tetap memakai rumus penjualan Familia Food. Informasi Operasional ditampilkan terpisah.';
     body.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'+
       '<div class="stat"><small>🛒 Pembelian Bahan Baku</small><strong>'+money(opsBuy)+'</strong></div>'+
@@ -993,7 +998,7 @@ function renderOnlineConnection(selectedMonth){
   const newCashAmount=newCash.reduce((a,x)=>a+Number(x.uang_bersih??x.omzet_produk??0),0);
   const opsBuy=(purchases||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.total||0),0);
   const opsRet=(returns||[]).filter(x=>String(x.tanggal||'').slice(0,7)===m && String(x.channel||'')==='Online').reduce((a,x)=>a+Number(x.nominal||0),0);
-  const opsExp=(expenses||[]).filter(x=>String(x.periode||'').slice(0,7)===m).reduce((a,x)=>a+Number(x.nominal||0),0);
+  const opsExp=(expenses||[]).filter(x=>exactExpenseMonth(x)===m).reduce((a,x)=>a+Number(x.nominal||0),0);
 
   const totalHpp=hppForChannel(m);
   const oldHppKnown=totalHpp.known;
@@ -1559,7 +1564,7 @@ function buildTransactionRecapRows(){
   });
 
   (expenses||[]).forEach((x,i)=>{
-    const m=String(x.periode||'').slice(0,7);
+    const m=exactExpenseMonth(x);
     if(!FF.isMonth(m) || !isCashExpense(x))return;
     const nominal=Math.round(Number(x.nominal||0));
     if(nominal<=0)return;

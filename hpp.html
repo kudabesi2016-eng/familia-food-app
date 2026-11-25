@@ -1712,8 +1712,11 @@ async function remote(q){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body:JSON.stringify({message:instruction+'\nKONTEKS DATA:\n'+JSON.stringify(ctx)+'\nPERTANYAAN PENGGUNA:\n'+q,history:[]})
     });
-    if(!r.ok)return null;
     const d=await r.json();
+    if(!r.ok){
+      if(d?.data_complete===false)return '⚠️ '+String(d.error||'Data belum lengkap; analisis AI tidak dibuat.');
+      return null;
+    }
     return String(d.answer||d.output_text||'').trim()||null;
   }catch(e){return null}
 }

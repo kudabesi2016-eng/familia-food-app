@@ -1220,4 +1220,20 @@ $('file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{pd
 $('cancelImport').onclick=()=>{$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[]};
 $('importBtn').onclick=async()=>{
   if(!importRows.length)return;
-  l
+  let out=[];
+  if(pdfMode){out=importRows.map(r=>({periode:r[0],konsumen:r[1],produk:r[2],qty:Math.round(Number(r[3])||0),omzet:Math.round(Number(r[4])||0)})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
+  else{const idx={};const pick=(kind)=>{const a=(DATA_LAMA_ALIASES[kind]||[]).map(normKey);return headers.findIndex(h=>a.includes(normKey(h)))};for(const k of Object.keys(DATA_LAMA_ALIASES))idx[k]=pick(k);if(Object.values(idx).some(v=>v<0))return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Periode, Konsumen, Produk, Qty, dan Omzet wajib ada.</div>';out=importRows.map(r=>({periode:normalPeriode(r[idx.periode]),konsumen:String(r[idx.konsumen]??'').trim(),produk:String(r[idx.produk]??'').trim(),qty:Math.round(toNum(r[idx.qty])),omzet:Math.round(toNum(r[idx.omzet]))})).filter(x=>x.periode&&x.konsumen&&x.produk&&x.qty>0)}
+  if(!out.length)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">Tidak ada data valid untuk disimpan.</div>';
+  try{const schema=await getDataLamaSchema();const er=schemaError(schema);if(er)return $('importMsg').innerHTML='<div class="msg" style="color:#a22">'+esc(er)+'</div>';
+    const resolved=await insertDataLamaResolved(out,schema);
+    const used=resolved.used, rows=out.map(x=>{const row={};row[used.periode]=x.periode;row[used.konsumen]=x.konsumen;row[used.produk]=x.produk;row[used.qty]=x.qty;row[used.omzet]=x.omzet;return row});
+    if(schema.inferred){schemaCache={...schema,map:used,keys:[...new Set([...schema.keys,...Object.values(used)])],inferred:false}}
+    $('importMsg').innerHTML='<div class="msg">Berhasil menyimpan '+rows.length+' baris historis'+(resolved.duplicateCount?'. '+resolved.duplicateCount+' baris duplikat dilewati':'')+'.</div>';$('preview').style.display='none';$('file').value='';importRows=[];headers=[];pdfMode=false;monthChecks=[];load();
+  }catch(e){$('importMsg').innerHTML='<div class="msg" style="color:#a22">Gagal impor: '+esc(e.message||e)+'</div>'}
+};
+load();
+</script>
+<script src="android-shell.js" defer></script>
+</body>
+</html>
+

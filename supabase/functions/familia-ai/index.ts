@@ -50,11 +50,21 @@ async function makeDb(req){
   return createClient(url,key,{global:{headers:{Authorization:auth}},auth:{persistSession:false,autoRefreshToken:false}});
 }
 
-async function read(db, table, select="*", filterFn=null, limit=5000){
-  const r=await db.from(table).select(select).limit(limit);
-  if(r.error) throw new Error(table+": "+r.error.message);
-  const rows=r.data || [];
-  return filterFn ? rows.filter(filterFn) : rows;
+async function read(db, table, select="*"){
+  const pageSize=1000;
+  let start=0;
+  const rows=[];
+  while(true){
+    const r=await db.from(table).select(select)
+      .order("id",{ascending:true})
+      .range(start,start+pageSize-1);
+    if(r.error) throw new Error(table+": "+r.error.message);
+    const page=r.data || [];
+    rows.push(...page);
+    if(page.length<pageSize) break;
+    start+=pageSize;
+  }
+  return rows;
 }
 
 function buildSnapshot(month, q, data){
@@ -86,7 +96,7 @@ function buildSnapshot(month, q, data){
   const onlineCash=sales.filter(x=>x.channel==="Online" && monthOf(x.tanggal)===month && x.source==="online_pencairan");
 
   const offlineRevenue=oldOffline.reduce((a,x)=>a+n(x.omzet ?? x.nominal),0)+newOffline.reduce((a,x)=>a+(n(x.omzet_produk ?? (n(x.qty)*n(x.harga)))),0);
-  const monthExpenses=expenses.filter(x=>monthOf(x.periode)===month);
+  const monthExpenses=expenses.filter(x=>String(x.periode||"").trim()===month);
   const offlineExpense=monthExpenses.reduce((a,x)=>a+n(x.nominal),0);
   const offlineNet=offlineRevenue-offlineExpense;
   let offlineModal=0, offlineHppKnown=true;
@@ -224,7 +234,7 @@ function buildSnapshot(month, q, data){
 
 async function getData(db, month){
   const specs=[
-    ["penjualan","*"],["data_lama","*"],["pengeluaran","*"],["produk","*"],["hpp","*"],
+    ["penjualan","*"],["data_lama","*"],["pengeluaran","*"],["produk","*"],["hpp","*"],["bahan_baku","*"],
     ["ff_pembelian","id,tanggal,total"],["ff_retur_penjualan","id,tanggal,channel,nama_produk,qty,nominal"],
     ["ff_supplier","id,status"],["ff_pelanggan","id,status"]
   ];
@@ -235,7 +245,7 @@ async function getData(db, month){
   }
   return {
     sales:out.penjualan||[], olds:out.data_lama||[], expenses:out.pengeluaran||[],
-    products:out.produk||[], hpps:out.hpp||[], purchases:out.ff_pembelian||[],
+    products:out.produk||[], hpps:out.hpp||[], materials:out.bahan_baku||[], purchases:out.ff_pembelian||[],
     returns:out.ff_retur_penjualan||[], suppliers:out.ff_supplier||[], customers:out.ff_pelanggan||[],
     errors:Object.entries(out).filter(([k,v])=>k.endsWith("_error")).map(([k,v])=>v)
   };
@@ -255,6 +265,9 @@ Deno.serve(async req=>{
 
     const month=requestedMonth(message);
     const data=await getData(db,month);
+    if(data.errors.length){
+      return json({error:"Data belum lengkap. Agen AI tidak membuat kesimpulan.",data_complete:false,failed_tables:data.errors},503);
+    }
     const snapshot=buildSnapshot(month,message,data);
     const history=Array.isArray(body?.history)?body.history.slice(-6):[];
 
