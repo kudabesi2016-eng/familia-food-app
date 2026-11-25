@@ -45,6 +45,7 @@ function count(text,needle){
 
 const core=await read('ff-core.js');
 const rekap=await read('rekap.js');
+const rekapHtml=await read('rekap.html');
 const sql=await read('SUPABASE-EXPANSION.sql');
 
 for(const page of corePages){
@@ -226,6 +227,9 @@ assert(core.includes('isOnlineNewMonth'),'Shared Online new-period guard missing
 assert(rekap.includes("isOnlineNewMonth(m)"),'Rekap must guard new Online cash by the new-transaction period');
 assert(rekap.includes("isOnlineHistoricalMonth(monthOfSaleRow(x))"),'Rekap must guard historical Online finance by historical period');
 assert(rekap.includes("source||'')==='online_pencairan' && isOnlineNewMonth"),'Rekap must not mix historical finance with new cash');
+assert(rekap.includes('exactExpenseMonth(x)===m'),'Aggregate expense periods must be excluded from single-month totals');
+assert(rekap.includes('const m=exactExpenseMonth(x);'),'Transaction detail must require an exact monthly expense period');
+assert(rekapHtml.includes("const m=String(x.periode||'').trim();if(/^\\d{4}-\\d{2}$/.test(m)&&cashExpense(x)"),'Fallback transaction detail must not classify aggregate expenses as January');
 
 const dashboard=await read('index.html');
 assert(core.includes('const ONLINE_LOCKED_TOTAL = 8085'),'Locked online quantity 8,085 missing from shared core');
