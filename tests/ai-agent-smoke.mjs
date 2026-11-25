@@ -34,6 +34,11 @@ if(!ai.includes('Buka Kalkulator HPP')) throw new Error('Compatibility AI page m
 if(!fn.includes('OPENAI_API_KEY')) throw new Error('AI server secret missing');
 if(!fn.includes('SUPABASE_PUBLISHABLE_KEYS')) throw new Error('AI data adapter missing Supabase publishable key');
 if(!fn.includes('buildSnapshot')) throw new Error('AI business snapshot missing');
+if(!fn.includes('.range(start,start+pageSize-1)')) throw new Error('AI snapshot must read tables in pages without a 5,000-row cap');
+if(!fn.includes('data.errors.length')) throw new Error('AI must refuse to conclude when any source table fails');
+if(!fn.includes('Data belum lengkap. Agen AI tidak membuat kesimpulan.')) throw new Error('AI partial-data warning missing');
+if(!fn.includes('String(x.periode||"").trim()===month')) throw new Error('AI must keep aggregate expense periods out of monthly totals');
+if(!fn.includes('["bahan_baku","*"]')) throw new Error('AI snapshot must include raw-material data');
 if(!fn.includes('const onlineHist=sales.filter')) throw new Error('AI online historical dataset missing');
 if(!fn.includes('const onlineSeller=sales.filter')) throw new Error('AI Seller Center dataset missing');
 if(!fn.includes('const onlineNew=sales.filter')) throw new Error('AI online batch dataset missing');
