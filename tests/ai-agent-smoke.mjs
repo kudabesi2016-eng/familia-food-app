@@ -7,6 +7,7 @@ const arch=await readFile('AI-AGENT-ARCHITECTURE.md','utf8');
 if(!hpp.includes('AI Agent • Kalkulator HPP')) throw new Error('HPP page missing embedded AI Agent');
 if(!hpp.includes('signInAnonymously') && !hpp.includes('ensureHppAiSession')) throw new Error('HPP AI session bootstrap missing');
 if(!hpp.includes('Authorization')) throw new Error('HPP AI must send Authorization to Edge Function');
+if(!hpp.includes('d?.data_complete===false')) throw new Error('HPP AI must surface the server incomplete-data warning');
 if(!hpp.includes('__healthcheck__') && !hpp.includes('familia-ai')) throw new Error('HPP AI endpoint integration missing');
 if(!hpp.includes('Pengeluaran kategori Bahan Baku')) throw new Error('HPP AI Bahan Baku expense source missing');
 if(!hpp.includes('data_lama')) throw new Error('HPP AI must load Data Lama context');
