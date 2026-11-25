@@ -1,17 +1,24 @@
 const PRODUCTION_PROJECT_REF = 'zaqdjyhosksbdlafhluc';
+const OWNER_EMAIL = 'kudabesi2016@gmail.com';
 const TEST_PROJECT_REF = String(process.env.SUPABASE_TEST_PROJECT_REF || '').trim();
 const TEST_URL = String(process.env.SUPABASE_TEST_URL || '').trim();
 const TEST_KEY = String(process.env.SUPABASE_TEST_ANON_KEY || '').trim();
+const TEST_EMAIL = String(process.env.SUPABASE_TEST_EMAIL || '').trim();
+const TEST_PASSWORD = String(process.env.SUPABASE_TEST_PASSWORD || '');
 
-if(!TEST_PROJECT_REF && !TEST_URL && !TEST_KEY){
-  console.log('SUPABASE_TEST_SKIPPED: dedicated test project secrets are not configured.');
+const testConfig=[TEST_PROJECT_REF,TEST_URL,TEST_KEY,TEST_EMAIL,TEST_PASSWORD];
+if(testConfig.every(x=>!x)){
+  console.log('SUPABASE_TEST_SKIPPED: dedicated authenticated test project secrets are not configured.');
   process.exit(0);
 }
-if(!TEST_PROJECT_REF || !TEST_URL || !TEST_KEY){
-  throw new Error('Set SUPABASE_TEST_PROJECT_REF, SUPABASE_TEST_URL, and SUPABASE_TEST_ANON_KEY together.');
+if(testConfig.some(x=>!x)){
+  throw new Error('Set all five SUPABASE_TEST_* project and owner-login secrets together.');
 }
 if(TEST_PROJECT_REF===PRODUCTION_PROJECT_REF){
   throw new Error('Refusing to run write tests against the production Supabase project.');
+}
+if(TEST_EMAIL.toLowerCase()!==OWNER_EMAIL){
+  throw new Error('The test Auth user email must match the owner email allowed by the test RLS policies.');
 }
 let parsedTestUrl;
 try{ parsedTestUrl=new URL(TEST_URL); }
@@ -22,9 +29,21 @@ if(parsedTestUrl.protocol!=='https:' || parsedTestUrl.hostname!==TEST_PROJECT_RE
 const BASE=parsedTestUrl.origin;
 const KEY=TEST_KEY;
 
+const authResponse=await fetch(BASE+'/auth/v1/token?grant_type=password',{
+  method:'POST',
+  headers:{apikey:KEY,'Content-Type':'application/json'},
+  body:JSON.stringify({email:TEST_EMAIL,password:TEST_PASSWORD})
+});
+const authText=await authResponse.text();
+let authData=null;
+try{authData=authText?JSON.parse(authText):null;}catch{}
+if(!authResponse.ok || !authData?.access_token){
+  throw new Error('Could not authenticate the isolated Supabase test user: HTTP '+authResponse.status+' '+authText.slice(0,300));
+}
+
 const headers = {
   apikey: KEY,
-  Authorization: 'Bearer ' + KEY,
+  Authorization: 'Bearer ' + authData.access_token,
   'Content-Type': 'application/json',
   Prefer: 'return=representation'
 };

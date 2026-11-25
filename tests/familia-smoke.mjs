@@ -251,16 +251,23 @@ for(const forbiddenHpp of [
 }
 
 const supabaseConfig=await read('supabase.js');
-assert(supabaseConfig.includes('createClient(SUPABASE_URL, SUPABASE_KEY)'),'Supabase client bootstrap missing');
+assert(/(?:window\.)?supabase\.createClient\(SUPABASE_URL,\s*SUPABASE_KEY/.test(supabaseConfig),'Supabase client bootstrap missing');
 assert(!supabaseConfig.includes('signInAnonymously'),'Loginless app must not require anonymous-auth provider at startup');
 
 const rls=await read('SUPABASE-RLS-AUTH.sql');
-for(const table of ['produk','bahan_baku','resep','hpp','penjualan','data_lama','pengeluaran','pengeluaran_item','pengaturan','ff_hutang_piutang','ff_hutang_piutang_bayar']){
-  assert(new RegExp('on public\\.'+table+' for all to anon, authenticated','i').test(rls),'Loginless RLS policy missing for '+table);
+const ownerRls=await read('SUPABASE-OWNER-AUTH.sql');
+assert(rls.includes('retired')&&rls.includes('RAISE EXCEPTION'),'Legacy open-access RLS script must be retired');
+assert(ownerRls.includes('email_confirmed_at IS NOT NULL'),'Owner migration must require a confirmed owner account');
+assert(ownerRls.includes('ADD COLUMN IF NOT EXISTS owner_id uuid'),'Owner migration must preserve rows by assigning an owner id');
+assert(ownerRls.includes('FOR ALL TO authenticated'),'Owner migration must limit data policies to authenticated users');
+assert(ownerRls.includes('FROM anon, authenticated'),'Owner migration must replace open grants');
+for(const table of ['produk','bahan_baku','resep','hpp','penjualan','data_lama','pengaturan','pengeluaran','ff_supplier','ff_pelanggan','ff_pembelian','ff_pembelian_item','ff_retur_penjualan','ff_penjualan_pelanggan','ff_hutang_piutang','ff_hutang_piutang_bayar','pengeluaran_item','pengeluaran_item_master','pengeluaran_kategori_master']){
+  assert(ownerRls.includes("'"+table+"'"),'Owner migration table coverage missing for '+table);
 }
 
 assert(sql.includes('pengeluaran_kategori_master'),'Expense category master table missing from expansion SQL');
-assert(sql.includes('pengeluaran_kategori_master_anon_all'),'Expense category master RLS policy missing');
+assert(sql.toLowerCase().includes('from anon;'),'Expansion SQL must keep anonymous access revoked');
+assert(!/create\\s+policy[^;]*\\bto\\s+anon\\b/i.test(sql),'Expansion SQL must not create anonymous data policies');
 assert(sql.includes('ff_penjualan_pelanggan'),'Customer↔sale mapping table missing from expansion SQL');
 const forbidden = ['stok','mutasi_stok','multi_outlet','user_role','pembayaran'];
 for(const f of forbidden){

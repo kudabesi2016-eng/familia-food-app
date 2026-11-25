@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#087443">
+<title>Masuk - Familia Food</title>
+<style>
+*{box-sizing:border-box}
+:root{--brand:#087443;--line:#dce8e1;--muted:#6f7d76;--bg:#f5f8f6}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:var(--bg);font-family:Arial,sans-serif;color:#20352b}
+.card{width:min(100%,420px);background:#fff;padding:28px;border-radius:18px;box-shadow:0 8px 32px rgba(10,50,30,.10)}
+.brand{color:var(--brand);font-size:23px;font-weight:700;margin-bottom:8px}
+h1{font-size:22px;margin:0 0 8px}
+p{color:var(--muted);line-height:1.5;margin:0 0 20px}
+label{display:block;font-weight:700;margin:16px 0 7px}
+input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font:inherit}
+input[readonly]{background:#f4f7f5;color:#52645a}
+button{width:100%;margin-top:20px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;font-size:16px;padding:13px;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+#message{min-height:24px;margin-top:14px;color:#a22;font-size:14px}
+.note{font-size:12px;margin-top:14px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+</head>
+<body>
+<main class="card">
+  <div class="brand">🍀 Familia Food</div>
+  <h1>Masuk ke aplikasi</h1>
+  <p>Gunakan akun pemilik untuk membuka data usaha.</p>
+  <form id="loginForm">
+    <label for="email">Email pemilik</label>
+    <input id="email" type="email" autocomplete="username" readonly>
+    <label for="password">Kata sandi</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button id="submit" type="submit">Masuk</button>
+    <div id="message" role="status" aria-live="polite"></div>
+  </form>
+  <p class="note">Akun harus dibuat dan diaktifkan terlebih dahulu di Supabase Auth. Form ini tidak membuka pendaftaran umum.</p>
+</main>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const email=window.FF_OWNER_EMAIL||'';
+  const next=window.FF_SAFE_NEXT(new URLSearchParams(location.search).get('next'));
+  $('email').value=email;
+
+  window.supabaseClient.auth.getSession().then(({data})=>{
+    if(data?.session) location.replace(next);
+  });
+
+  $('loginForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const button=$('submit'),message=$('message');
+    button.disabled=true;message.textContent='Memeriksa akun…';
+    const {data,error}=await window.supabaseClient.auth.signInWithPassword({
+      email,
+      password:$('password').value
+    });
+    if(error||!data?.session){
+      $('password').value='';
+      message.textContent='Email atau kata sandi tidak sesuai. Pastikan akun pemilik sudah aktif.';
+      button.disabled=false;
+      return;
+    }
+    location.replace(next);
+  });
+})();
+</script>
+</body>
+</html>
