@@ -44,7 +44,7 @@ jobs:
           rm -rf www
           mkdir -p www
           find . -maxdepth 1 -type f \
-            \\( -name "*.html" -o -name "*.js" -o -name "*.css" \\) \
+            \( -name "*.html" -o -name "*.js" -o -name "*.css" \) \
             ! -name "capacitor.config.json" \
             -exec cp -f {} www/ \;
 
@@ -61,8 +61,6 @@ jobs:
           SUPABASE_TEST_PROJECT_REF: ${{ secrets.SUPABASE_TEST_PROJECT_REF }}
           SUPABASE_TEST_URL: ${{ secrets.SUPABASE_TEST_URL }}
           SUPABASE_TEST_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
-          SUPABASE_TEST_EMAIL: ${{ secrets.SUPABASE_TEST_EMAIL }}
-          SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
         run: node tests/supabase-live.mjs
 
       - name: Syntax check web scripts
